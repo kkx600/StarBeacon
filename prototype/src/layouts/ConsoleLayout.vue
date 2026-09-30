@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,QuestionCircleOutlined,LogoutOutlined,CheckOutlined } from '@ant-design/icons-vue'
+import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,LogoutOutlined } from '@ant-design/icons-vue'
 import type {PreviewState} from '../models'
 import { groups,pageById,pages,states } from '../data/catalog'
+import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage} from '../data/navigation'
 import { usePreview } from '../composables/usePreview'
 
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
@@ -14,12 +15,21 @@ const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOu
 const current=computed(()=>pageById.get(String(route.params.id)))
 const title=computed(()=>current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
 const groupTitle=computed(()=>groups.find(g=>g.id===current.value?.group)?.title??'星烽 StarBeacon')
+const currentWorkspace=computed(()=>workspaceForPage.get(String(route.params.id)))
+const lastViews=ref<Record<string,string>>({})
 const menuOpen=ref<string[]>(['overview'])
 const visited=ref<string[]>(['overview','alerts','search'])
-watch(()=>route.params.id, id=>{if(typeof id==='string'&&pageById.has(id)){menuOpen.value=collapsed.value?[]:[pageById.get(id)!.group];if(!visited.value.includes(id)){visited.value.push(id);if(visited.value.length>8)visited.value.shift()}document.title=`${pageById.get(id)!.title} · 星烽 StarBeacon`}}, {immediate:true})
+watch(()=>route.params.id,id=>{
+  if(typeof id!=='string'||!pageById.has(id))return
+  const workspace=workspaceForPage.get(id)
+  menuOpen.value=collapsed.value?[]:[pageById.get(id)!.group]
+  if(workspace){lastViews.value[workspace.id]=id;if(!visited.value.includes(workspace.id)){visited.value.push(workspace.id);if(visited.value.length>5)visited.value.shift()}}
+  document.title=`${pageById.get(id)!.title} · 星烽 StarBeacon`
+},{immediate:true})
 watch(collapsed,value=>{menuOpen.value=value?[]:[current.value?.group??'overview']})
 const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
 function navigate(id:string){void router.push(`/page/${id}`);searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}
+function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??workspace.pages[0]!)}
 function profileAction(key:string){if(key==='account')navigate('my-account');if(key==='logout')void router.push('/auth/login')}
 </script>
 
@@ -30,18 +40,18 @@ function profileAction(key:string){if(key==='account')navigate('my-account');if(
         <span class="brand-symbol"><SafetyCertificateOutlined /></span><span v-if="!collapsed" class="brand-copy"><b>星烽 <span>StarBeacon</span></b><small>态势感知系统</small></span>
       </button>
       <div v-if="!collapsed" class="nav-section-label">安全运营</div>
-      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="[String(route.params.id)]" v-model:openKeys="menuOpen" class="main-menu">
-        <a-sub-menu v-for="group in groups" :key="group.id">
+      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="[currentWorkspace?.id??String(route.params.id)]" v-model:openKeys="menuOpen" class="main-menu">
+        <template v-for="group in groups" :key="group.id"><a-menu-item v-if="workspaces.filter(w=>w.group===group.id).length===1" :key="workspaces.find(w=>w.group===group.id)!.id" @click="openWorkspace(workspaces.find(w=>w.group===group.id)!.id)"><template #icon><component :is="iconMap[group.icon]"/></template>{{workspaces.find(w=>w.group===group.id)!.title}}</a-menu-item><a-sub-menu v-else :key="group.id">
           <template #icon><component :is="iconMap[group.icon]" /></template><template #title>{{group.title}}</template>
-          <a-menu-item v-for="page in pages.filter(p=>p.group===group.id)" :key="page.id" @click="navigate(page.id)">{{page.title}}</a-menu-item>
-        </a-sub-menu>
+          <a-menu-item v-for="workspace in workspaces.filter(w=>w.group===group.id)" :key="workspace.id" @click="openWorkspace(workspace.id)">{{workspace.title}}</a-menu-item>
+        </a-sub-menu></template>
       </a-menu>
-      <div class="sidebar-footer"><span class="status-dot success"></span><span v-if="!collapsed">演示环境 · 合成数据</span></div>
+      <div class="sidebar-footer"><span class="status-dot success"></span><span v-if="!collapsed">交互原型 · 合成数据</span></div>
     </aside>
     <div class="console-main">
       <header class="topbar">
-        <div class="topbar-left"><a-button type="text" :aria-label="collapsed?'展开导航':'收起导航'" @click="collapsed=!collapsed"><MenuUnfoldOutlined v-if="collapsed"/><MenuFoldOutlined v-else/></a-button><a-breadcrumb><a-breadcrumb-item>工作空间</a-breadcrumb-item><a-breadcrumb-item>{{groupTitle}}</a-breadcrumb-item><a-breadcrumb-item>{{title}}</a-breadcrumb-item></a-breadcrumb></div>
-        <div class="topbar-actions">
+        <div class="topbar-left"><a-button type="text" :aria-label="collapsed?'展开导航':'收起导航'" @click="collapsed=!collapsed"><MenuUnfoldOutlined v-if="collapsed"/><MenuFoldOutlined v-else/></a-button><a-breadcrumb><a-breadcrumb-item>工作空间</a-breadcrumb-item><a-breadcrumb-item>{{groupTitle}}</a-breadcrumb-item><a-breadcrumb-item v-if="currentWorkspace&&currentWorkspace.title!==groupTitle">{{currentWorkspace.title}}</a-breadcrumb-item><a-breadcrumb-item v-if="title!==currentWorkspace?.title">{{title}}</a-breadcrumb-item></a-breadcrumb></div>
+        <div class="topbar-actions"><a-dropdown v-if="current" trigger="click"><a-button size="small" class="preview-state-button" :aria-label="`原型状态：${states.find(item=>item.value===state)?.label}`">原型状态：{{states.find(item=>item.value===state)?.label}}</a-button><template #overlay><a-menu :selected-keys="[state]" @click="({key}:{key:string|number})=>setState(String(key) as PreviewState)"><a-menu-item v-for="item in states" :key="item.value">{{item.label}}</a-menu-item></a-menu></template></a-dropdown>
           <a-select aria-label="当前租户" v-model:value="tenant" class="tenant-select" :options="['总部安全中心','研发事业部','集团审计组织'].map(value=>({value,label:value}))" />
           <a-tooltip title="搜索页面"><a-button type="text" aria-label="搜索页面" @click="searchOpen=true"><SearchOutlined/></a-button></a-tooltip>
           <a-tooltip title="页面目录"><a-button type="text" aria-label="页面目录" @click="router.push('/catalog')"><AppstoreOutlined/></a-button></a-tooltip>
@@ -52,11 +62,10 @@ function profileAction(key:string){if(key==='account')navigate('my-account');if(
           <a-dropdown><button class="profile-button"><a-avatar :size="28"><template #icon><UserOutlined/></template></a-avatar><span>陈宁</span></button><template #overlay><a-menu @click="({key}:{key:string|number})=>profileAction(String(key))"><a-menu-item key="account"><UserOutlined/> 个人设置</a-menu-item><a-menu-item key="logout"><LogoutOutlined/> 退出登录</a-menu-item></a-menu></template></a-dropdown>
         </div>
       </header>
-      <nav class="workspace-tabs" aria-label="已访问页面"><button v-for="id in visited" :key="id" :class="{active:id===route.params.id}" @click="navigate(id)"><span v-if="id===route.params.id" class="tab-dot"></span>{{pageById.get(id)?.title}}</button><button :class="{active:route.path==='/catalog'}" @click="router.push('/catalog')"><AppstoreOutlined/> 页面目录</button></nav>
-      <div class="preview-bar"><span><span class="preview-dot"></span>交互原型 <span class="preview-caption">· 全部数据为合成示例</span></span><div v-if="current" class="preview-controls"><span class="preview-label">页面状态</span><a-segmented :value="state" :options="states.map(s=>({value:s.value,label:s.label}))" size="small" @change="(value:string|number)=>setState(value as PreviewState)"/></div><a-button v-else size="small" type="text" @click="navigate('overview')">返回态势总览</a-button></div>
+      <nav class="workspace-tabs" aria-label="已访问工作区"><button v-for="id in visited" :key="id" :class="{active:id===currentWorkspace?.id}" @click="openWorkspace(id)"><span v-if="id===currentWorkspace?.id" class="tab-dot"></span>{{workspaceById.get(id)?.title}}</button><button :class="{active:route.path==='/catalog'}" @click="router.push('/catalog')"><AppstoreOutlined/>页面目录</button></nav>
       <main class="content-area"><slot/></main>
       <footer class="app-footer">星烽 StarBeacon <span>合成数据仅用于界面评审</span></footer>
     </div>
-    <a-modal v-model:open="searchOpen" title="搜索页面" :footer="null" :width="650"><a-input v-model:value="search" placeholder="输入功能或页面名称" allow-clear autofocus><template #prefix><SearchOutlined/></template></a-input><div class="page-search-results"><button v-for="result in results" :key="result.id" @click="navigate(result.id)"><div><b>{{result.title}}</b><small>{{result.description}}</small></div><span>{{groups.find(g=>g.id===result.group)?.title}}</span></button><a-empty v-if="!results.length" description="没有匹配的页面，请尝试其他关键词。"/></div></a-modal>
+    <a-modal v-model:open="searchOpen" title="搜索页面" :footer="null" :width="650"><a-input v-model:value="search" placeholder="输入功能或页面名称" allow-clear autofocus><template #prefix><SearchOutlined/></template></a-input><div class="page-search-results"><button v-for="result in results" :key="result.id" @click="navigate(result.id)"><div><b>{{result.title}}</b><small>{{result.description}}</small></div><span>{{workspaceTitleForPage(result.id)}}</span></button><a-empty v-if="!results.length" description="没有匹配的页面，请尝试其他关键词。"/></div></a-modal>
   </div>
 </template>

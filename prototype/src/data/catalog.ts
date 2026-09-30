@@ -12,7 +12,7 @@ export const groups: GroupSpec[] = [
   { id: 'notifications', title: '通知中心', icon: 'BellOutlined' },
   { id: 'ai', title: '智能助手', icon: 'RobotOutlined' },
   { id: 'reports', title: '安全报告', icon: 'BarChartOutlined' },
-  { id: 'sensors', title: '探针管理', icon: 'ApiOutlined' },
+  { id: 'sensors', title: '探针与版本', icon: 'ApiOutlined' },
   { id: 'system', title: '系统管理', icon: 'SettingOutlined' },
 ]
 
@@ -60,7 +60,6 @@ const definitions: Definition[] = [
   ['SB-NET-001','capture-policy','traffic','捕获与归档策略','capture','配置全量捕获、分层存储与压缩；业务留存默认 180 天。','name:策略名称|scope:探针范围|retention:留存天数|codec:压缩方式|estimate:容量估算|status:状态','创建捕获策略'],
   ['SB-NET-002','capture-scope','traffic','镜像与捕获范围','capture-scope','登记 TAP／SPAN、方向、接口、VLAN 和镜像限制。','name:捕获点|sensor:探针|interface:接口|direction:方向|vlans:VLAN|status:观测状态','登记捕获点'],
   ['SB-NET-003','session-integrity','traffic','会话完整性','integrity','检查三次握手、双向字节连续性与 FIN／RST 结束证据。','name:会话|source:源 IP|destination:目的 IP|handshake:握手|continuity:连续性|closure:结束证据|status:判定','创建核验任务'],
-  ['SB-NET-004','pcap-downloads','traffic','PCAP 导出与下载','pcap-export','跟踪重组、完整性验证、授权下载与证据清单。','name:导出任务|format:输出格式|bytes:体积|handshake:握手|expires:下载到期|status:导出状态','创建导出'],
   ['SB-NET-005','inspection-depth','traffic','检测深度与限制','inspection','管理重组、应用检查和文件深度，区分捕获与检测覆盖。','name:检测配置|scope:探针范围|stream:流重组深度|http:HTTP 检查深度|file:文件提取深度|status:生效状态','创建检测配置'],
   ['SB-NET-006','capture-quality','traffic','捕获质量','quality','比较镜像、NIC、内核和引擎计数，定位丢包和重复风险。','name:捕获点|bps:吞吐|pps:PPS|drop:丢包率|duplicates:重复率|gap:交付滞后|status:质量状态','创建质量检查'],
   ['SB-NET-007','tls-visibility','traffic','TLS 可见性','tls','区分加密元数据与授权明文来源，展示解密能力和证据缺口。','name:会话|version:TLS 版本|sni:SNI|fingerprint:指纹|visibility:可见范围|status:解密状态','创建授权分析'],
@@ -103,7 +102,6 @@ const definitions: Definition[] = [
   ['SB-AI-006','mcp','ai','MCP 服务','mcp','向授权 Agent 提供查询工具，限制数据范围、输出和调用预算。','name:服务名称|transport:传输|tools:工具范围|scope:数据范围|quota:调用配额|status:状态','创建 MCP 客户端'],
   ['SB-VIS-006','reports','reports','日报周报月报','report','根据固定数据窗口生成日报、周报与月报，引用统计和研判依据。','name:报告名称|type:报告周期|window:统计窗口|model:总结模型|owner:审核人|status:报告状态','创建报告'],
   ['SB-OPS-001','sensors','sensors','探针列表','sensor','登记探针、站点、捕获域与执行角色，管理证书和连接状态。','name:探针名称|site:站点|role:角色|version:版本|lastSeen:最近心跳|status:连接状态','注册探针'],
-  ['SB-OPS-002','sensor-health','sensors','探针运行状态','sensor-health','查看 CPU、内存、磁盘、流量、丢包和传输积压。','name:探针|cpu:CPU|memory:内存|disk:磁盘|bps:流量|drop:丢包率|status:健康状态','配置健康阈值'],
   ['SB-OPS-003','releases','sensors','发布中心','release','灰度发布探针、引擎、规则与应用识别包，核对实际生效版本。','name:发布任务|type:内容类型|version:目标版本|scope:探针范围|progress:进度|status:发布状态','创建发布任务'],
   ['SB-DAT-001','data-sources','system','数据源','data-source','创建、验证、启停数据源，绑定认证租户与网络域。','name:数据源名称|type:来源类型|scope:所属网络域|eps:EPS|quality:解析成功率|status:连接状态','接入数据源'],
   ['SB-DAT-002','syslog-input','system','Syslog 接收','syslog-input','配置独立入站监听、来源绑定、传输与分帧。','name:监听器|address:监听地址|transport:传输|binding:来源绑定|format:格式|status:状态','创建监听器'],
@@ -134,10 +132,11 @@ const commonFields: FieldSpec[] = [
   { key: 'owner', label: '责任人', type: 'select', required: true, options: ['陈宁','林悦','值班分析组'], value: '值班分析组' },
   { key: 'notes', label: '说明', type: 'textarea', hint: '记录业务目的、依据和适用边界。' },
 ]
-function fieldsForColumns(columnText:string):FieldSpec[]{
-  const options:Record<string,string[]>={protocol:['HTTP','TLS','DNS','TCP','UDP','SMB'],type:['授权数据导入','本地配置','连接器'],scope:['总部网络域','研发网络域','分支网络域'],source:['总部网络探针','授权设备日志','身份目录','授权扫描器'],owner:['陈宁','林悦','值班分析组'],transport:['TLS/TCP','TCP','UDP'],format:['JSON','CSV','PCAPNG'],entity:['source.ip','asset.id','user.id']}
+function fieldsForColumns(columnText:string,family:string):FieldSpec[]{
+  const types:Record<string,string[]>={field:['IP / MAC','字符串','布尔','时间'],relation:['业务依赖','通信关系','身份关联'],exposure:['公网资产','异常外连','暴露变更'],release:['探针','引擎','检测规则','应用识别包'],import:['JSON','CSV','Syslog'],parser:['JSON','Syslog','CSV'],connector:['设备联动','文件沙箱','漏洞扫描','工单'],delivery:['邮件','企业微信','钉钉','飞书','Webhook'],'intel-source':['IP','域名','URL','文件哈希'],indicator:['IP','域名','URL','文件哈希']}
+  const options:Record<string,string[]|undefined>={protocol:['HTTP','TLS','DNS','TCP','UDP','SMB','RDP'],type:types[family],scope:['总部网络域','研发网络域','分支网络域'],owner:['陈宁','林悦','值班分析组'],transport:['TLS/TCP','TCP','UDP'],format:['JSON','CSV','PCAPNG'],entity:['source.ip','asset.id','user.id']}
   const excluded=new Set(['status','time','updated','quality','progress','count','hits','confidence','risk','bytes','duration','evidence','accepted','effective','observed'])
-  const fields=columnText.split('|').map(part=>part.split(':')).filter(([key])=>!excluded.has(key!)).slice(0,5).map(([key,label]):FieldSpec=>({key:key!,label:label!,required:true,type:options[key!]?'select':['retention','concurrency','limit','threshold','priority','ttl'].includes(key!)?'number':'text',options:options[key!],value:options[key!]?.[0]??(key==='name'?'':key==='version'?'1.0':key==='window'?'300 秒':key==='schedule'?'每天 08:00（Asia/Shanghai）':key==='cidr'?'10.20.0.0/16':key==='expires'?'2026-10-30':key==='refresh'?'每 4 小时':undefined)}))
+  const fields=columnText.split('|').map(part=>part.split(':')).filter(([key])=>!excluded.has(key!)).slice(0,5).map(([key,label]):FieldSpec=>({key:key!,label:label!,required:true,type:options[key!]?'select':['retention','concurrency','threshold','priority','ttl'].includes(key!)?'number':'text',options:options[key!],value:options[key!]?.[0]??(key==='name'?'':key==='version'?'1.0':key==='window'?'300 秒':key==='schedule'?'每天 08:00（Asia/Shanghai）':key==='cidr'?'10.20.0.0/16':key==='expires'?'2026-10-30':key==='refresh'?'每 4 小时':undefined)}))
   if(!fields.some(f=>f.key==='scope'))fields.push({...commonFields[1]!})
   if(!fields.some(f=>f.key==='owner'))fields.push({...commonFields[2]!})
   fields.push({...commonFields[3]!})
@@ -149,23 +148,22 @@ const policyFields: Record<string, FieldSpec[]> = {
   assessment: [field('model','研判模型','select','本地安全模型',['本地安全模型','Jev 适配器','Laya 适配器','通用大模型']),field('task','判断任务','select','恶意行为',['恶意行为','利用成功','处置建议']),field('scope','证据范围','select','告警与会话',['告警与会话','授权终端信号','完整调查快照']),field('notes','补充依据','textarea')],
   asset: [field('name','资产名称'),field('ip','IP 地址','text','10.20.1.15'),field('type','资产类型','select','服务器',['服务器','终端','网络设备','云资源']),field('group','资产组','select','核心业务',['核心业务','办公终端','研发服务']),field('owner','责任人','select','陈宁',['陈宁','林悦','值班分析组'])],
   network: [field('name','资产组名称'),field('cidr','CIDR 网段','text','10.20.0.0/16'),field('zone','网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域']),field('owner','责任人','select','陈宁',['陈宁','林悦']),field('reason','划分依据','textarea')],
-  rule: [field('name','规则名称'),field('sid','SID','number',1000001,undefined,'平台分配本地 SID，提交前检查冲突。'),field('protocol','协议','select','http',['http','tls','dns','tcp','udp','smb']),field('rule','规则正文','textarea','alert http any any -> $HOME_NET any (msg:"SB HTTP suspicious request"; flow:to_server,established; http.uri; content:"/admin"; sid:1000001; rev:1;)'),field('notes','测试依据','textarea')],
+  rule: [field('name','规则名称'),field('sid','SID','number',1000001,undefined,'平台分配本地 SID，提交前检查冲突。'),field('protocol','协议','select','HTTP',['HTTP','TLS','DNS','TCP','UDP','SMB','RDP']),field('rule','规则正文','textarea','alert http any any -> $HOME_NET any (msg:"SB HTTP suspicious request"; flow:to_server,established; http.uri; content:"/admin"; sid:1000001; rev:1;)'),field('notes','测试依据','textarea')],
   correlation: [field('name','规则名称'),field('entity','实体键','select','source.ip',['source.ip','destination.ip','asset.id','user.id']),field('window','窗口（秒）','number',300),field('threshold','触发阈值','number',20),field('lateness','允许迟到（秒）','number',60),field('notes','关联条件','textarea')],
   decision: [field('name','策略名称'),field('mode','运行模式','select','审批',['影子','审批','自动']),field('model','决策模型','select','本地安全模型',['本地安全模型','Jev 适配器','Laya 适配器','通用大模型']),field('confidence','校准置信度门槛','number',0.97,undefined,'取值 0–1；0.97 表示 97%。仅作为资格条件之一，不能替代证据、授权和保护名单检查。'),field('ttl','动作 TTL（分钟）','number',30),field('scope','授权网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域']),field('calibration','校准与评测版本','text','eval-web-202609'),field('notes','人工复核要求','textarea')],
-  device: [field('name','设备名称'),field('type','设备类型','select','防火墙',['防火墙','EDR','交换机']),field('address','管理地址','text','https://192.0.2.20'),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('auth','访问模式','select','官方 API',['官方 API','认证插件']),field('credential','凭据引用','text','vault/device/hq-fw'),field('scope','授权网络域','select','总部网络域',['总部网络域','分支网络域'])],
-  action: [field('target','目标 IP','text','198.51.100.24'),field('operation','动作类型','select','封禁 IP',['封禁 IP','解封 IP','隔离终端','恢复终端']),field('device','目标设备','select','总部边界防火墙',['总部边界防火墙','总部 EDR']),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('ttl','有效期（分钟）','number',30),field('approval','授权依据','text','审批单 APR-20260930-001'),field('reason','处置原因','textarea')],
+  device: [field('name','设备名称'),field('type','设备类型','select','防火墙',['防火墙','EDR','交换机']),field('address','管理地址','text','https://192.0.2.20'),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('auth','访问模式','select','官方 API',['官方 API','认证插件']),field('credential','凭据引用','text','vault/device/hq-fw'),field('scope','授权网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域'])],
+  action: [field('target','目标 IP','text','198.51.100.24'),field('operation','动作类型','select','封禁 IP',['封禁 IP','解封 IP','隔离终端','恢复终端']),field('device','目标设备','select','总部边界防火墙',['总部边界防火墙','总部终端 EDR']),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('ttl','有效期（分钟）','number',30),field('approval','授权依据','text','审批单 APR-20260930-001'),field('reason','处置原因','textarea')],
   emergency: [field('scope','控制范围','select','当前租户',['当前租户','总部网络域','总部边界防火墙']),field('operation','控制类型','select','停止新动作',['停止新动作','撤销有效动作','隔离故障执行器']),field('reason','执行原因','textarea'),field('confirm','输入确认文字','text','',undefined,'输入“确认控制”后才能提交。停止调度与撤销租约分别追踪。')],
   channel: [field('name','渠道名称'),field('type','渠道类型','select','邮件',['邮件','企业微信','钉钉','飞书','Webhook']),field('address','接收地址','text','security@example.test'),field('credential','凭据引用','text','vault/notification/mail'),field('rate','每分钟限额','number',30),field('notes','消息模板','textarea','[星烽] {{alert.severity}} · {{alert.name}} · {{alert.id}}')],
   syslog: [field('name','目标名称'),field('address','服务器地址','text','192.0.2.40:6514'),field('transport','传输方式','select','TLS/TCP',['TLS/TCP','TCP','UDP']),field('format','消息格式','select','RFC 5424',['RFC 5424','RFC 3164']),field('credential','TLS 凭据引用','text','vault/syslog/client'),field('notes','转发范围','textarea')],
   model: [field('name','配置名称'),field('provider','供应商／适配器','select','本地模型',['本地模型','通用 API','Jev','Laya']),field('endpoint','服务地址','text','https://model.example.test/v1'),field('model','精确模型 ID','text','security-small-example'),field('credential','API 密钥引用','text','vault/models/local'),field('residency','数据驻留','select','本地',['本地','授权云区域']),field('budget','每日预算（元）','number',100),field('notes','允许的任务','textarea')],
   report: [field('name','报告名称'),field('type','报告周期','select','日报',['日报','周报','月报']),field('window','统计窗口','text','2026-09-29 00:00 — 23:59'),field('model','总结模型','select','本地安全模型',['本地安全模型','通用大模型']),field('owner','审核人','select','陈宁',['陈宁','林悦']),field('schedule','自动生成','switch',false)],
-  sensor: [field('name','探针名称'),field('site','站点','select','总部',['总部','研发中心','分支机构']),field('role','角色','select','采集与检测',['采集与检测','执行采集器','采集与执行']),field('zone','网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域']),field('version','目标版本','text','Suricata 8.0.7'),field('notes','镜像接入说明','textarea')],
+  sensor: [field('name','探针名称'),field('site','站点','select','总部',['总部','研发中心','分支机构']),field('role','角色','select','采集与检测',['采集与检测','执行采集器','采集与执行']),field('zone','网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域']),field('targetVersion','目标引擎版本','text','Suricata 8.0.7'),field('notes','镜像接入说明','textarea')],
   capture: [field('name','策略名称'),field('scope','探针范围','select','总部探针组',['总部探针组','分支探针组']),field('retention','留存（天）','number',180),field('codec','压缩方式','select','Zstandard 独立块',['Zstandard 独立块','LZ4 独立块','不压缩']),field('level','压缩级别','number',3),field('block','独立块目标（MiB）','number',16),field('notes','归档边界','textarea')],
   inspection: [field('name','配置名称'),field('scope','探针范围','select','总部探针组',['总部探针组','分支探针组']),field('stream','流重组深度（MiB）','number',8),field('http','HTTP 检查深度（MiB）','number',4),field('file','文件提取深度（MiB）','number',32),field('notes','性能验收依据','textarea')],
   retention: [field('category','数据类别','select','PCAP',['PCAP','告警','协议明细','操作日志','登录日志','通知记录','文件样本','报告']),field('retention','留存（天）','number',180),field('scope','租户范围','select','当前租户',['当前租户','指定组织']),field('reason','变更依据','textarea'),field('preview','已核对影响预览','switch',false)],
-  mcp: [field('name','客户端名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('tools','工具权限','select','只读分析',['只读分析','查询与报告']),field('expires','有效期限','select','30 天',['7 天','30 天','90 天']),field('quota','每分钟调用限额','number',20),field('notes','用途说明','textarea')],
+  mcp: [field('name','客户端名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('tools','工具权限','select','只读分析',['只读分析','查询与报告']),field('validity','有效期限','select','30 天',['7 天','30 天','90 天']),field('quota','每分钟调用限额','number',20),field('notes','用途说明','textarea')],
   pcap: [field('name','任务名称'),field('session','会话 ID','text','FLOW-20260930-0142'),field('mode','导出模式','select','完整会话',['完整会话','观测快照']),field('format','文件格式','select','PCAPNG',['PCAPNG','PCAP']),field('reason','取证用途','textarea')],
-  'pcap-export': [field('name','任务名称'),field('session','会话 ID','text','FLOW-20260930-0142'),field('mode','导出模式','select','完整会话',['完整会话','观测快照']),field('format','文件格式','select','PCAPNG',['PCAPNG','PCAP']),field('reason','取证用途','textarea')],
 }
 
 const notices: Record<string, string> = {
@@ -174,7 +172,6 @@ const notices: Record<string, string> = {
   application: '应用识别以规则、域名、SNI 等观测依据为准。共享域名、CDN、ECH 或加密载荷可能造成未知或冲突。',
   'packet-time': '旁路单臂镜像通常只有捕获时间；没有独立观测来源时，入站／出站时间显示“不可观测”。',
   pcap: '完整会话必须验证真实三次握手、双向连续性与结束证据；缺包时只能导出观测快照。',
-  'pcap-export': '禁止补造握手。活动会话或范围缺失需要选择快照，并附带完整性清单。',
   integrity: '握手完整不代表应用内容全部可见。TLS 密文、丢包、重组限制和单向镜像分别核对。',
   tls: '保存 TLS 密文不等于能够解密。没有授权密钥或明文来源时，仅提供可观测元数据。',
   inspection: '原包捕获与规则检查分开。超出检查深度、重组内存或解析范围时产生覆盖缺口，不推断为安全。',
@@ -194,13 +191,13 @@ const notices: Record<string, string> = {
   mcp: '客户端继承租户、对象和字段权限；读分析工具与具有副作用的处置动作分开授权。',
 }
 
-const readOnlyFamilies = new Set(['field','metric','latency','audit','protocol','packet-time','attack','data-quality','quality','platform','sensor-health','risk'])
+const readOnlyFamilies = new Set(['field','metric','latency','audit','protocol','packet-time','attack','data-quality','quality','platform','risk'])
 const detailTabs: Record<string, string[]> = {
   alert: ['告警信息','通信证据','研判与响应','处理记录'],
   incident: ['事件信息','关联证据','任务与时间线','处理记录'],
   case: ['案件信息','关联证据','任务与时间线','处理记录'],
   action: ['动作信息','执行链路','回执与核验','处理记录'],
-  sensor: ['探针信息','资源与质量','版本与任务','处理记录'],
+  sensor: ['基本信息','运行状态','采集与版本','运行记录'],
   report: ['报告信息','报告正文','统计依据','处理记录'],
   rule: ['规则信息','规则正文','测试与发布','处理记录'],
   model: ['模型信息','能力与评测','路由与预算','处理记录'],
@@ -216,17 +213,17 @@ function columnsFromText(text: string): ColumnSpec[] {
 
 export const pages: PageSpec[] = definitions.map(([requirement,id,group,title,family,description,columnText,primary]) => ({
   id,title,group,family,description,requirement:[requirement],kind: ['overview','topology','search','chat','rule-studio','playbook','retention'].includes(family) ? family as PageSpec['kind'] : 'table',
-  columns: columnsFromText(columnText), fields: policyFields[family] ?? fieldsForColumns(columnText),
+  columns: columnsFromText(columnText), fields: policyFields[family] ?? fieldsForColumns(columnText,family),
   primary: primary ?? '创建记录', rowAction: readOnlyFamilies.has(family) ? '导出' : ['alert','assessment'].includes(family) ? '研判' : family === 'action' ? '撤销' : family === 'rule' ? '编辑' : family === 'report' ? '审核' : '操作',
   emptyTitle: `暂无${title.replace(/列表$/,'')}数据`,
   emptyDescription: `当前租户与筛选范围内没有${title.replace(/列表$/,'')}记录。请核对时间和网络域，或${(primary ?? '完成相关配置')}。`,
-  objectLabel: title.replace(/列表$/,''), notice: notices[family], detailTabs: detailTabs[family] ?? ['基本信息','依据与范围','处理记录'],
-  readOnly: readOnlyFamilies.has(family), actionMode: readOnlyFamilies.has(family) ? 'export' : ['scan','assessment','pcap','pcap-export','import','replay','sandbox','static','export'].includes(family) ? 'task' : 'create',
-  statusOptions: statusesFor({family,actionMode:['scan','assessment','pcap','pcap-export','import','replay','sandbox','static','export'].includes(family)?'task':'create'}),
+  objectLabel: title.replace(/列表$/,''), notice: notices[family], detailTabs: detailTabs[family] ?? ['基本信息'],
+  readOnly: readOnlyFamilies.has(family), actionMode: readOnlyFamilies.has(family) ? 'export' : ['scan','assessment','pcap','import','replay','sandbox','static','export'].includes(family) ? 'task' : 'create',
+  statusOptions: statusesFor({family,actionMode:['scan','assessment','pcap','import','replay','sandbox','static','export'].includes(family)?'task':'create'}),
 }))
 
 function supplemental(id: string, title: string, group: string, family: string, description: string, cols: string, primary: string): PageSpec {
-  return { id,title,group,family,description,kind:'table',requirement:[],columns:columnsFromText(cols),fields:fieldsForColumns(cols),primary,rowAction:'操作',emptyTitle:`暂无${title}`,emptyDescription:'当前筛选范围内没有记录，请核对时间范围或完成相关配置。',objectLabel:title }
+  return { id,title,group,family,description,kind:'table',requirement:[],columns:columnsFromText(cols),fields:fieldsForColumns(cols,family),primary,rowAction:'操作',emptyTitle:`暂无${title}`,emptyDescription:'当前筛选范围内没有记录，请核对时间范围或完成相关配置。',objectLabel:title }
 }
 pages.push(
   { ...supplemental('big-screen','态势大屏','overview','screen','按网络域展示风险、流量与响应状态。','name:对象|status:状态','配置大屏'),kind:'screen',requirement:['SB-VIS-007'] },
@@ -237,7 +234,6 @@ pages.push(
   { ...supplemental('rule-tests','规则测试与回放','detection','rule-test','检查语法、正负样本、覆盖缺口和吞吐，测试结果与生产生效分开。','name:测试任务|version:规则版本|positive:正样本|negative:负样本|performance:性能验证|status:结果','创建测试'),requirement:['SB-DET-002','SB-AI-004'] },
   supplemental('report-schedules','报告计划','reports','report-schedule','配置日报、周报和月报的时间窗口、审核与授权发送。','name:计划名称|type:报告周期|schedule:生成时间|model:总结模型|owner:审核人|status:状态','创建报告计划'),
   { ...supplemental('login-logs','登录日志','system','login-log','查看登录、MFA、认证失败与会话撤销，支持范围内审计。','name:账号|method:认证方式|source:来源 IP|mfa:MFA|time:时间|status:登录结果','导出登录日志'),readOnly:true,actionMode:'export',requirement:['SB-GOV-007'] },
-  { ...supplemental('operation-logs','操作日志','system','audit','记录规则、模型、设备与权限变更的前后摘要。','name:操作|actor:操作人|object:对象|source:来源 IP|time:时间|status:结果','导出操作日志'),readOnly:true,actionMode:'export',requirement:['SB-GOV-007'] },
   supplemental('users','用户管理','system','user','维护组织用户、角色、状态和 MFA。','name:姓名|account:账号|department:组织|role:角色|mfa:MFA|status:状态','创建用户'),
   supplemental('my-account','个人设置','system','account','管理显示偏好、通知订阅与会话安全。','name:设置项|value:当前值|scope:作用范围|status:状态','保存个人设置'),
 )
@@ -251,15 +247,15 @@ const customFields: Record<string, FieldSpec[]> = {
   'data-sources': [field('name','数据源名称'),field('type','来源类型','select','Syslog',['Syslog','API','文件','对象存储','主机事件']),field('scope','网络域','select','总部网络域',['总部网络域','研发网络域']),field('credential','认证身份引用','text','vault/source/device'),field('parser','解析器','select','RFC 5424 标准映射',['RFC 5424 标准映射','JSON 事件映射']),field('eps','EPS 限额','number',1000)],
   'syslog-input': [field('name','监听器名称'),field('address','监听地址','text','0.0.0.0:6514'),field('transport','传输方式','select','TLS/TCP',['TLS/TCP','TCP','UDP']),field('binding','来源身份绑定','text','client-cert/hq-device'),field('parser','解析器','select','RFC 5424 标准映射',['RFC 5424 标准映射','RFC 3164 标准映射']),field('notes','来源归属与限额','textarea')],
   'parsers': [field('name','解析器名称'),field('type','输入类型','select','JSON',['JSON','Syslog','CSV']),field('sample','授权样例','textarea','{"timestamp":"2026-09-30T09:42:16+08:00","src_ip":"10.20.1.15"}'),field('mapping','字段映射','textarea','src_ip → source.ip\ntimestamp → @timestamp'),field('timezone','默认时区','text','Asia/Shanghai'),field('notes','验证与灰度范围','textarea')],
-  'roles': [field('name','角色名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('permissions','权限模板','select','安全分析员',['安全分析员','响应审批员','租户管理员','只读审计员']),field('redaction','字段可见性','select','默认脱敏',['默认脱敏','授权完整字段']),field('notes','授权依据','textarea')],
+  'roles': [field('name','角色名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('permissionTemplate','权限模板','select','安全分析员',['安全分析员','响应审批员','租户管理员','只读审计员']),field('redaction','字段可见性','select','默认脱敏',['默认脱敏','授权完整字段']),field('notes','授权依据','textarea')],
   'tenants': [field('name','租户名称'),field('parent','上级组织','select','星烽示例集团',['星烽示例集团','独立组织']),field('cell','数据单元','select','cell-demo-01',['cell-demo-01','cell-demo-02']),field('owner','管理员','select','陈宁',['陈宁','林悦']),field('quota','探针配额','number',200)],
-  'users': [field('name','姓名'),field('account','账号','text','analyst@example.test'),field('department','组织','select','总部安全中心',['总部安全中心','研发中心']),field('role','角色','select','安全分析员',['安全分析员','响应审批员','租户管理员','只读审计员']),field('mfa','要求 MFA','switch',true)],
-  'api-keys': [field('name','服务身份名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('tools','权限范围','select','查询与报告',['只读查询','查询与报告']),field('expires','有效期','select','30 天',['7 天','30 天','90 天']),field('notes','使用目的','textarea')],
-  'authentication': [field('name','策略名称'),field('provider','认证方式','select','OIDC＋本地应急账号',['OIDC＋本地应急账号','本地账号']),field('issuer','OIDC Issuer','text','https://id.example.test'),field('mfa','强制 MFA','switch',true),field('timeout','会话期限（分钟）','number',60),field('notes','应急账号管理','textarea')],
+  'users': [field('name','姓名'),field('account','账号','text','analyst@example.test'),field('department','组织','select','总部安全中心',['总部安全中心','研发中心']),field('role','角色','select','安全分析员',['安全分析员','响应审批员','租户管理员','只读审计员']),field('requireMfa','要求 MFA','switch',true)],
+  'api-keys': [field('name','服务身份名称'),field('scope','数据范围','select','总部网络域',['总部网络域','当前租户']),field('tools','权限范围','select','查询与报告',['只读查询','查询与报告']),field('validity','有效期','select','30 天',['7 天','30 天','90 天']),field('notes','使用目的','textarea')],
+  'authentication': [field('name','策略名称'),field('provider','认证方式','select','OIDC＋本地应急账号',['OIDC＋本地应急账号','本地账号']),field('issuer','OIDC Issuer','text','https://id.example.test'),field('requireMfa','强制 MFA','switch',true),field('timeout','会话期限（分钟）','number',60),field('notes','应急账号管理','textarea')],
   'samples': [field('name','样本名称'),field('source','样本来源','select','授权上传',['授权上传','会话提取']),field('file','示例文件','select','example-sample.bin',['example-sample.bin','example-document.pdf']),field('purpose','分析用途','textarea'),field('isolated','隔离访问','switch',true)],
   'sandbox': [field('name','任务名称'),field('sample','授权样本','select','example-sample.bin',['example-sample.bin','example-document.pdf']),field('profile','沙箱环境','select','隔离 Windows 环境',['隔离 Windows 环境','隔离 Linux 环境']),field('connector','连接器','select','沙箱示例连接器',['沙箱示例连接器']),field('timeout','超时（秒）','number',180),field('notes','授权与网络限制','textarea')],
   'report-schedules': [field('name','计划名称'),field('type','报告周期','select','日报',['日报','周报','月报']),field('schedule','生成时间','text','每天 08:00（Asia/Shanghai）'),field('model','总结模型','select','本地安全模型',['本地安全模型','通用大模型']),field('owner','审核人','select','陈宁',['陈宁','林悦']),field('notification','审核后通知','switch',false)],
-  'screens': [field('name','大屏名称'),field('scope','数据范围','select','当前租户',['当前租户','总部网络域']),field('layout','展示模板','select','安全态势',['安全态势','运营效能','网络流量']),field('interval','刷新间隔（秒）','number',30),field('expires','访问有效期','select','1 小时',['1 小时','8 小时','1 天'])],
+  'screens': [field('name','大屏名称'),field('scope','数据范围','select','当前租户',['当前租户','总部网络域']),field('layout','展示模板','select','安全态势',['安全态势','运营效能','网络流量']),field('interval','刷新间隔（秒）','number',30),field('validity','访问有效期','select','1 小时',['1 小时','8 小时','1 天'])],
 }
 for (const page of pages) {
   page.statusOptions=[...new Set(statusesFor(page))]
@@ -267,9 +263,38 @@ for (const page of pages) {
   if (customFields[page.id]) page.fields = customFields[page.id]!
   if(page.family==='alert'){page.emptyTitle='暂无告警';page.emptyDescription='当前租户与查询范围内没有告警。请核对时间范围、数据源接入与检测规则生效状态。'}
 }
-export const pageById = new Map(pages.map(p => [p.id,p]))
 export const states = [
   { value: 'data', label: '有数据' }, { value: 'empty', label: '无数据' },
   { value: 'detail', label: '查看详情' }, { value: 'action', label: '操作表单' },
   { value: 'loading', label: '加载中' }, { value: 'error', label: '加载失败' },
 ] as const
+
+const sensorPage=pages.find(page=>page.id==='sensors')!
+sensorPage.title='探针管理'
+sensorPage.description='统一查看探针连接、健康、资源与流量，管理接入配置和运行记录。'
+sensorPage.requirement=['SB-OPS-001','SB-OPS-002']
+sensorPage.objectLabel='探针'
+sensorPage.rowAction='编辑'
+sensorPage.emptyTitle='暂无探针'
+sensorPage.emptyDescription='当前租户和网络域内没有探针。注册并连接探针后，可查看运行指标与采集质量。'
+sensorPage.columns=[{key:'name',title:'探针',width:180},{key:'status',title:'连接',width:70,kind:'status'},{key:'health',title:'健康',width:110,kind:'status'},{key:'resources',title:'资源（CPU / 内存 / 磁盘）',width:178},{key:'bps',title:'镜像流量',width:105},{key:'drop',title:'丢包率',width:74},{key:'lastSeen',title:'最近心跳',width:145},{key:'version',title:'引擎版本',width:180}]
+
+const auditPage=pages.find(page=>page.id==='audit')!
+auditPage.title='操作日志'
+auditPage.description='追溯操作、查询、导出和授权变更，核对主体、对象、范围与结果。'
+auditPage.objectLabel='操作日志'
+const pcapPage=pages.find(page=>page.id==='pcap-tasks')!
+pcapPage.title='PCAP 取证'
+pcapPage.description='从会话创建取证任务，统一核对完整性、导出结果与下载授权。'
+pcapPage.requirement=['SB-SRH-007','SB-NET-004']
+pcapPage.objectLabel='取证任务'
+pcapPage.detailTabs=['任务信息','会话完整性','导出结果']
+pcapPage.rowAction='编辑'
+pcapPage.columns=[{key:'name',title:'取证任务',width:190},{key:'session',title:'会话',width:180},{key:'mode',title:'导出模式',width:110},{key:'format',title:'格式',width:90},{key:'status',title:'任务状态',width:115,kind:'status'},{key:'expires',title:'下载到期',width:170}]
+
+auditPage.emptyTitle='暂无操作日志'
+auditPage.emptyDescription='当前时间、主体和授权范围内没有操作记录。请调整检索条件；审计记录只能查询和导出。'
+pcapPage.emptyTitle='暂无取证任务'
+pcapPage.emptyDescription='选择授权会话创建取证任务后，可在同一列表跟踪完整性验证、导出与下载授权。'
+
+export const pageById = new Map(pages.map(p => [p.id,p]))

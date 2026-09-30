@@ -3,6 +3,7 @@ import type { BusinessRecord, PageSpec } from '../models'
 import { createFixtures } from '../data/fixtures'
 import {initialStatusFor} from '../data/statuses'
 import {formatCell} from './formatRecord'
+import {examplePermissionCounts,expiryFromDuration} from './formValues'
 
 const recordsByPage = reactive<Record<string,BusinessRecord[]>>({})
 export function useRecords(page: PageSpec) {
@@ -12,6 +13,19 @@ export function useRecords(page: PageSpec) {
     const items = recordsByPage[page.id]!
     const index = items.findIndex(r => r.id === recordId)
     const clean = Object.fromEntries(Object.entries(values).filter(([key,value]) => key!=='id'&&['string','number','boolean'].includes(typeof value))) as Partial<BusinessRecord>
+    if(page.family==='sensor'&&typeof clean.zone==='string')clean.scope=clean.zone
+    if(typeof clean.scope==='string'&&['总部网络域','研发网络域','分支网络域'].includes(clean.scope))clean.zone=clean.scope
+    if(typeof clean.validity==='string'){
+      const expiry=expiryFromDuration(clean.validity,'2026-09-30T09:48:00Z')
+      if(expiry)clean.expires=expiry
+    }
+    if(page.family==='role'&&typeof clean.permissionTemplate==='string')clean.permissions=examplePermissionCounts[clean.permissionTemplate]
+    for(const field of page.fields){
+      if(field.type!=='number'||typeof clean[field.key]!=='number')continue
+      if(field.label.includes('MiB'))clean[field.key]=`${clean[field.key]} MiB`
+      else if(field.label.includes('（秒）'))clean[field.key]=`${clean[field.key]} 秒`
+      else if(field.key==='rate')clean[field.key]=`${clean[field.key]} 次／分钟`
+    }
     if (index>=0) items[index] = {...items[index]!,...clean,updated:'2026-09-30 09:48:00'}
     else items.unshift({...clean,id:`${page.id.toUpperCase()}-LOCAL-${Date.now()}`,name: typeof values.name==='string' && values.name ? values.name : `${page.objectLabel}示例记录`,status:typeof clean.status==='string'?clean.status:initialStatusFor(page),updated:'2026-09-30 09:48:00'})
   }

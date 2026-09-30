@@ -9,7 +9,8 @@
     "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
-    "check:coverage": "node scripts/check-coverage.mjs"
+    "check:coverage": "node scripts/check-coverage.mjs",
+    "check:workspaces": "node scripts/check-workspaces.mjs"
   },
   "dependencies": {
     "@ant-design/icons-vue": "7.0.1",

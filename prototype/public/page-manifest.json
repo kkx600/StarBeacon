@@ -2,6 +2,421 @@
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "requirementCount": 107,
+  "workspaces": [
+    {
+      "id": "overview",
+      "title": "态势总览",
+      "group": "overview",
+      "pages": [
+        "overview"
+      ]
+    },
+    {
+      "id": "topology",
+      "title": "网络拓扑",
+      "group": "overview",
+      "pages": [
+        "topology"
+      ]
+    },
+    {
+      "id": "response-metrics",
+      "title": "响应效能",
+      "group": "overview",
+      "pages": [
+        "response-metrics"
+      ]
+    },
+    {
+      "id": "screens",
+      "title": "态势大屏",
+      "group": "overview",
+      "pages": [
+        "big-screen",
+        "screens"
+      ]
+    },
+    {
+      "id": "alerts",
+      "title": "告警管理",
+      "group": "alerts",
+      "pages": [
+        "alerts",
+        "assessments"
+      ]
+    },
+    {
+      "id": "search",
+      "title": "高级检索",
+      "group": "alerts",
+      "pages": [
+        "search",
+        "fields",
+        "exports"
+      ]
+    },
+    {
+      "id": "investigation",
+      "title": "事件调查",
+      "group": "incidents",
+      "pages": [
+        "incidents",
+        "cases",
+        "timelines",
+        "case-sharing",
+        "reviews"
+      ]
+    },
+    {
+      "id": "duty",
+      "title": "值班管理",
+      "group": "incidents",
+      "pages": [
+        "duty"
+      ]
+    },
+    {
+      "id": "tickets",
+      "title": "处置工单",
+      "group": "incidents",
+      "pages": [
+        "tickets"
+      ]
+    },
+    {
+      "id": "assets",
+      "title": "资产管理",
+      "group": "assets",
+      "pages": [
+        "assets",
+        "interfaces",
+        "address-history",
+        "nat",
+        "identities",
+        "services",
+        "asset-relations"
+      ]
+    },
+    {
+      "id": "asset-groups",
+      "title": "资产组与网段",
+      "group": "assets",
+      "pages": [
+        "asset-groups"
+      ]
+    },
+    {
+      "id": "asset-risk",
+      "title": "资产风险",
+      "group": "assets",
+      "pages": [
+        "asset-risk",
+        "vulnerabilities",
+        "scan-tasks",
+        "risk-priorities",
+        "remediations",
+        "baselines",
+        "external-exposure"
+      ]
+    },
+    {
+      "id": "applications",
+      "title": "应用与行为",
+      "group": "traffic",
+      "pages": [
+        "applications",
+        "behaviors"
+      ]
+    },
+    {
+      "id": "packets",
+      "title": "通信取证",
+      "group": "traffic",
+      "pages": [
+        "packets",
+        "packet-times",
+        "payloads",
+        "tls-visibility"
+      ]
+    },
+    {
+      "id": "sessions",
+      "title": "会话与 PCAP",
+      "group": "traffic",
+      "pages": [
+        "sessions",
+        "session-integrity",
+        "pcap-tasks"
+      ]
+    },
+    {
+      "id": "capture-policy",
+      "title": "流量采集",
+      "group": "traffic",
+      "pages": [
+        "capture-policy",
+        "capture-scope",
+        "inspection-depth",
+        "capture-quality",
+        "protocols"
+      ]
+    },
+    {
+      "id": "pipeline-latency",
+      "title": "处理性能",
+      "group": "traffic",
+      "pages": [
+        "pipeline-latency",
+        "capacity"
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "检测规则",
+      "group": "detection",
+      "pages": [
+        "rules",
+        "correlation",
+        "sigma",
+        "application-rules",
+        "rule-tests"
+      ]
+    },
+    {
+      "id": "hunts",
+      "title": "威胁狩猎",
+      "group": "detection",
+      "pages": [
+        "hunts",
+        "behavior-baselines"
+      ]
+    },
+    {
+      "id": "threat-scenarios",
+      "title": "威胁场景",
+      "group": "detection",
+      "pages": [
+        "threat-scenarios",
+        "attack-coverage"
+      ]
+    },
+    {
+      "id": "file-analysis",
+      "title": "文件分析",
+      "group": "detection",
+      "pages": [
+        "file-analysis",
+        "samples",
+        "static-analysis",
+        "sandbox",
+        "sample-access",
+        "analysis-pools",
+        "analysis-reports"
+      ]
+    },
+    {
+      "id": "intelligence",
+      "title": "威胁情报",
+      "group": "detection",
+      "pages": [
+        "indicators",
+        "intel-sources",
+        "intel-lifecycle",
+        "intel-hits",
+        "intel-sharing"
+      ]
+    },
+    {
+      "id": "watchlists",
+      "title": "保护与观察名单",
+      "group": "detection",
+      "pages": [
+        "watchlists"
+      ]
+    },
+    {
+      "id": "decision-policies",
+      "title": "决策策略",
+      "group": "response",
+      "pages": [
+        "decision-policies"
+      ]
+    },
+    {
+      "id": "devices",
+      "title": "联动设备",
+      "group": "response",
+      "pages": [
+        "devices",
+        "auth-plugins"
+      ]
+    },
+    {
+      "id": "actions",
+      "title": "响应动作",
+      "group": "response",
+      "pages": [
+        "actions",
+        "emergency"
+      ]
+    },
+    {
+      "id": "playbooks",
+      "title": "自动化编排",
+      "group": "response",
+      "pages": [
+        "playbooks",
+        "playbook-runs"
+      ]
+    },
+    {
+      "id": "notifications",
+      "title": "通知管理",
+      "group": "notifications",
+      "pages": [
+        "channels",
+        "notification-routes",
+        "notification-templates",
+        "delivery-logs",
+        "syslog-output"
+      ]
+    },
+    {
+      "id": "models",
+      "title": "模型与知识",
+      "group": "ai",
+      "pages": [
+        "models",
+        "knowledge"
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "智能对话",
+      "group": "ai",
+      "pages": [
+        "chat"
+      ]
+    },
+    {
+      "id": "rule-studio",
+      "title": "规则生成",
+      "group": "ai",
+      "pages": [
+        "rule-studio"
+      ]
+    },
+    {
+      "id": "mcp",
+      "title": "MCP 服务",
+      "group": "ai",
+      "pages": [
+        "mcp"
+      ]
+    },
+    {
+      "id": "reports",
+      "title": "安全报告",
+      "group": "reports",
+      "pages": [
+        "reports",
+        "report-schedules"
+      ]
+    },
+    {
+      "id": "sensors",
+      "title": "探针管理",
+      "group": "sensors",
+      "pages": [
+        "sensors"
+      ]
+    },
+    {
+      "id": "releases",
+      "title": "版本发布",
+      "group": "sensors",
+      "pages": [
+        "releases"
+      ]
+    },
+    {
+      "id": "data-sources",
+      "title": "数据接入",
+      "group": "system",
+      "pages": [
+        "data-sources",
+        "syslog-input",
+        "imports",
+        "flow-sources",
+        "parsers",
+        "data-quality",
+        "replays"
+      ]
+    },
+    {
+      "id": "logs",
+      "title": "日志检索",
+      "group": "system",
+      "pages": [
+        "logs"
+      ]
+    },
+    {
+      "id": "platform-health",
+      "title": "平台运维",
+      "group": "system",
+      "pages": [
+        "platform-health",
+        "backups",
+        "connectors",
+        "software-catalog"
+      ]
+    },
+    {
+      "id": "users",
+      "title": "账号与权限",
+      "group": "system",
+      "pages": [
+        "users",
+        "authentication",
+        "roles",
+        "api-keys"
+      ]
+    },
+    {
+      "id": "tenants",
+      "title": "租户管理",
+      "group": "system",
+      "pages": [
+        "tenants",
+        "quotas"
+      ]
+    },
+    {
+      "id": "governance",
+      "title": "数据治理",
+      "group": "system",
+      "pages": [
+        "retention",
+        "data-security",
+        "governance"
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "审计日志",
+      "group": "system",
+      "pages": [
+        "audit",
+        "login-logs"
+      ]
+    }
+  ],
+  "legacyPages": {
+    "sensor-health": "sensors",
+    "pcap-downloads": "pcap-tasks",
+    "operation-logs": "audit"
+  },
   "groups": [
     {
       "id": "overview",
@@ -55,7 +470,7 @@
     },
     {
       "id": "sensors",
-      "title": "探针管理",
+      "title": "探针与版本",
       "icon": "ApiOutlined"
     },
     {
@@ -1911,12 +2326,13 @@
     },
     {
       "id": "pcap-tasks",
-      "title": "PCAP 取证任务",
+      "title": "PCAP 取证",
       "group": "traffic",
       "kind": "table",
-      "description": "选择真实完整会话或观测快照，核对握手、连续性和结束证据。",
+      "description": "从会话创建取证任务，统一核对完整性、导出结果与下载授权。",
       "requirements": [
-        "SB-SRH-007"
+        "SB-SRH-007",
+        "SB-NET-004"
       ],
       "states": [
         {
@@ -2098,54 +2514,6 @@
           "title": "加载失败",
           "url": "/page/session-integrity?state=error",
           "image": "session-integrity/error.jpg"
-        }
-      ]
-    },
-    {
-      "id": "pcap-downloads",
-      "title": "PCAP 导出与下载",
-      "group": "traffic",
-      "kind": "table",
-      "description": "跟踪重组、完整性验证、授权下载与证据清单。",
-      "requirements": [
-        "SB-NET-004"
-      ],
-      "states": [
-        {
-          "state": "data",
-          "title": "有数据",
-          "url": "/page/pcap-downloads?state=data",
-          "image": "pcap-downloads/data.jpg"
-        },
-        {
-          "state": "empty",
-          "title": "无数据",
-          "url": "/page/pcap-downloads?state=empty",
-          "image": "pcap-downloads/empty.jpg"
-        },
-        {
-          "state": "detail",
-          "title": "查看详情",
-          "url": "/page/pcap-downloads?state=detail",
-          "image": "pcap-downloads/detail.jpg"
-        },
-        {
-          "state": "action",
-          "title": "操作表单",
-          "url": "/page/pcap-downloads?state=action",
-          "image": "pcap-downloads/action.jpg"
-        },
-        {
-          "state": "loading",
-          "title": "加载中",
-          "url": "/page/pcap-downloads?state=loading",
-          "image": "pcap-downloads/loading.jpg"
-        },
-        {
-          "state": "error",
-          "title": "加载失败",
-          "url": "/page/pcap-downloads?state=error",
-          "image": "pcap-downloads/error.jpg"
         }
       ]
     },
@@ -4119,12 +4487,13 @@
     },
     {
       "id": "sensors",
-      "title": "探针列表",
+      "title": "探针管理",
       "group": "sensors",
       "kind": "table",
-      "description": "登记探针、站点、捕获域与执行角色，管理证书和连接状态。",
+      "description": "统一查看探针连接、健康、资源与流量，管理接入配置和运行记录。",
       "requirements": [
-        "SB-OPS-001"
+        "SB-OPS-001",
+        "SB-OPS-002"
       ],
       "states": [
         {
@@ -4162,54 +4531,6 @@
           "title": "加载失败",
           "url": "/page/sensors?state=error",
           "image": "sensors/error.jpg"
-        }
-      ]
-    },
-    {
-      "id": "sensor-health",
-      "title": "探针运行状态",
-      "group": "sensors",
-      "kind": "table",
-      "description": "查看 CPU、内存、磁盘、流量、丢包和传输积压。",
-      "requirements": [
-        "SB-OPS-002"
-      ],
-      "states": [
-        {
-          "state": "data",
-          "title": "有数据",
-          "url": "/page/sensor-health?state=data",
-          "image": "sensor-health/data.jpg"
-        },
-        {
-          "state": "empty",
-          "title": "无数据",
-          "url": "/page/sensor-health?state=empty",
-          "image": "sensor-health/empty.jpg"
-        },
-        {
-          "state": "detail",
-          "title": "查看详情",
-          "url": "/page/sensor-health?state=detail",
-          "image": "sensor-health/detail.jpg"
-        },
-        {
-          "state": "action",
-          "title": "操作表单",
-          "url": "/page/sensor-health?state=action",
-          "image": "sensor-health/action.jpg"
-        },
-        {
-          "state": "loading",
-          "title": "加载中",
-          "url": "/page/sensor-health?state=loading",
-          "image": "sensor-health/loading.jpg"
-        },
-        {
-          "state": "error",
-          "title": "加载失败",
-          "url": "/page/sensor-health?state=error",
-          "image": "sensor-health/error.jpg"
         }
       ]
     },
@@ -5079,10 +5400,10 @@
     },
     {
       "id": "audit",
-      "title": "审计日志",
+      "title": "操作日志",
       "group": "system",
       "kind": "table",
-      "description": "追溯登录、操作、访问与导出，保留主体和对象快照。",
+      "description": "追溯操作、查询、导出和授权变更，核对主体、对象、范围与结果。",
       "requirements": [
         "SB-GOV-007"
       ],
@@ -5643,54 +5964,6 @@
           "title": "加载失败",
           "url": "/page/login-logs?state=error",
           "image": "login-logs/error.jpg"
-        }
-      ]
-    },
-    {
-      "id": "operation-logs",
-      "title": "操作日志",
-      "group": "system",
-      "kind": "table",
-      "description": "记录规则、模型、设备与权限变更的前后摘要。",
-      "requirements": [
-        "SB-GOV-007"
-      ],
-      "states": [
-        {
-          "state": "data",
-          "title": "有数据",
-          "url": "/page/operation-logs?state=data",
-          "image": "operation-logs/data.jpg"
-        },
-        {
-          "state": "empty",
-          "title": "无数据",
-          "url": "/page/operation-logs?state=empty",
-          "image": "operation-logs/empty.jpg"
-        },
-        {
-          "state": "detail",
-          "title": "查看详情",
-          "url": "/page/operation-logs?state=detail",
-          "image": "operation-logs/detail.jpg"
-        },
-        {
-          "state": "action",
-          "title": "操作表单",
-          "url": "/page/operation-logs?state=action",
-          "image": "operation-logs/action.jpg"
-        },
-        {
-          "state": "loading",
-          "title": "加载中",
-          "url": "/page/operation-logs?state=loading",
-          "image": "operation-logs/loading.jpg"
-        },
-        {
-          "state": "error",
-          "title": "加载失败",
-          "url": "/page/operation-logs?state=error",
-          "image": "operation-logs/error.jpg"
         }
       ]
     },

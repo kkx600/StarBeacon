@@ -8,7 +8,7 @@ StarBeacon — stellar early-warning for security posture.
 
 ## 页面原型
 
-[交互原型与启动说明](prototype/README.md)覆盖 118 个业务页面、107 项需求、每页六种状态及八个登录／访问边界页面。布局采用 Vue 3 与 Ant Design Vue，以筛选表单、表格、详情弹窗和操作弹窗为主，参考用户指定的 Soybean Admin Ant 后台结构。
+[交互原型与启动说明](prototype/README.md)提供 42 个主导航工作区、115 个功能视图，覆盖 107 项需求、每页六种状态及八个登录／访问边界页面。布局采用 Vue 3 与 Ant Design Vue，以筛选表单、表格、详情弹窗和操作弹窗为主，参考用户指定的 Soybean Admin Ant 后台结构。
 
 下载仓库后，可以直接打开 [页面原型图目录](prototype/public/screenshots/index.html) 查看图片；交互页面需要启动本地服务。页面范围、状态和关键业务边界见[页面原型设计](docs/页面原型设计.md)。原型使用合成数据，本地操作不触发模型、设备、邮件或实际数据清理。
 

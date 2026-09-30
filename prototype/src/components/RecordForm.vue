@@ -3,6 +3,7 @@ import { computed,reactive,ref,watch } from 'vue'
 import { message } from 'ant-design-vue'
 import type {FormInstance} from 'ant-design-vue'
 import type {BusinessRecord,FieldSpec,PageSpec} from '../models'
+import {formValueFor} from '../composables/formValues'
 const props=defineProps<{open:boolean;page:PageSpec;record?:BusinessRecord}>()
 const emit=defineEmits<{close:[];save:[values:Record<string,unknown>]}>()
 const formRef=ref<FormInstance>();const values=reactive<Record<string,unknown>>({});const busy=ref(false)
@@ -13,7 +14,7 @@ const fields=computed<FieldSpec[]>(()=>exportMode.value?[
   {key:'reason',label:'使用目的',type:'textarea',required:true,value:'界面评审与业务核对'},
 ]:props.page.fields)
 const title=computed(()=>exportMode.value?props.page.primary:props.record?`${props.page.rowAction} · ${props.record.name}`:props.page.primary)
-watch(()=>props.open,open=>{if(open){Object.keys(values).forEach(k=>delete values[k]);fields.value.forEach(f=>values[f.key]=props.record?.[f.key]??f.value??(f.type==='switch'?false:''));formRef.value?.clearValidate()}},{immediate:true})
+watch(()=>props.open,open=>{if(open){Object.keys(values).forEach(k=>delete values[k]);fields.value.forEach(f=>values[f.key]=formValueFor(f,props.record));formRef.value?.clearValidate()}},{immediate:true})
 const rules=computed(()=>Object.fromEntries(fields.value.map(f=>[f.key,[...(f.required?[{required:true,message:`请${f.type==='select'?'选择':'填写'}${f.label}`}]:[])]])))
 function checkBusiness(){
   const ip=String(values.ip??values.target??'')
