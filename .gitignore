@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+*.tsbuildinfo
+prototype/.capture-cache/
+.impeccable/*
+!.impeccable/design.json
+prototype/.impeccable/

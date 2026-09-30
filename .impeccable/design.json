@@ -1,0 +1,728 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30T16:23:50Z",
+  "title": "Design System: 星烽 StarBeacon",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "displayName": "操作蓝",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.21521 262.88)",
+          "oklch(26.43% 0.21521 262.88)",
+          "oklch(37.86% 0.21521 262.88)",
+          "oklch(49.29% 0.21521 262.88)",
+          "oklch(60.71% 0.21521 262.88)",
+          "oklch(72.14% 0.21521 262.88)",
+          "oklch(83.57% 0.21521 262.88)",
+          "oklch(95.00% 0.21521 262.88)"
+        ]
+      },
+      "surface": {
+        "displayName": "面板白",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "workspace": {
+        "displayName": "工作区灰",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00453 258.32)",
+          "oklch(26.43% 0.00453 258.32)",
+          "oklch(37.86% 0.00453 258.32)",
+          "oklch(49.29% 0.00453 258.32)",
+          "oklch(60.71% 0.00453 258.32)",
+          "oklch(72.14% 0.00453 258.32)",
+          "oklch(83.57% 0.00453 258.32)",
+          "oklch(95.00% 0.00453 258.32)"
+        ]
+      },
+      "line": {
+        "displayName": "分隔线灰",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.01088 256.70)",
+          "oklch(26.43% 0.01088 256.70)",
+          "oklch(37.86% 0.01088 256.70)",
+          "oklch(49.29% 0.01088 256.70)",
+          "oklch(60.71% 0.01088 256.70)",
+          "oklch(72.14% 0.01088 256.70)",
+          "oklch(83.57% 0.01088 256.70)",
+          "oklch(95.00% 0.01088 256.70)"
+        ]
+      },
+      "text": {
+        "displayName": "正文墨色",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.02960 256.85)",
+          "oklch(26.43% 0.02960 256.85)",
+          "oklch(37.86% 0.02960 256.85)",
+          "oklch(49.29% 0.02960 256.85)",
+          "oklch(60.71% 0.02960 256.85)",
+          "oklch(72.14% 0.02960 256.85)",
+          "oklch(83.57% 0.02960 256.85)",
+          "oklch(95.00% 0.02960 256.85)"
+        ]
+      },
+      "muted": {
+        "displayName": "辅助灰",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.03522 260.62)",
+          "oklch(26.43% 0.03522 260.62)",
+          "oklch(37.86% 0.03522 260.62)",
+          "oklch(49.29% 0.03522 260.62)",
+          "oklch(60.71% 0.03522 260.62)",
+          "oklch(72.14% 0.03522 260.62)",
+          "oklch(83.57% 0.03522 260.62)",
+          "oklch(95.00% 0.03522 260.62)"
+        ]
+      },
+      "text-placeholder": {
+        "displayName": "占位灰",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.03928 256.40)",
+          "oklch(26.43% 0.03928 256.40)",
+          "oklch(37.86% 0.03928 256.40)",
+          "oklch(49.29% 0.03928 256.40)",
+          "oklch(60.71% 0.03928 256.40)",
+          "oklch(72.14% 0.03928 256.40)",
+          "oklch(83.57% 0.03928 256.40)",
+          "oklch(95.00% 0.03928 256.40)"
+        ]
+      },
+      "field-label": {
+        "displayName": "字段标签",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.04428 259.68)",
+          "oklch(26.43% 0.04428 259.68)",
+          "oklch(37.86% 0.04428 259.68)",
+          "oklch(49.29% 0.04428 259.68)",
+          "oklch(60.71% 0.04428 259.68)",
+          "oklch(72.14% 0.04428 259.68)",
+          "oklch(83.57% 0.04428 259.68)",
+          "oklch(95.00% 0.04428 259.68)"
+        ]
+      },
+      "record-text": {
+        "displayName": "记录文字",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.03916 257.29)",
+          "oklch(26.43% 0.03916 257.29)",
+          "oklch(37.86% 0.03916 257.29)",
+          "oklch(49.29% 0.03916 257.29)",
+          "oklch(60.71% 0.03916 257.29)",
+          "oklch(72.14% 0.03916 257.29)",
+          "oklch(83.57% 0.03916 257.29)",
+          "oklch(95.00% 0.03916 257.29)"
+        ]
+      },
+      "table-header": {
+        "displayName": "表头浅灰",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00341 247.86)",
+          "oklch(26.43% 0.00341 247.86)",
+          "oklch(37.86% 0.00341 247.86)",
+          "oklch(49.29% 0.00341 247.86)",
+          "oklch(60.71% 0.00341 247.86)",
+          "oklch(72.14% 0.00341 247.86)",
+          "oklch(83.57% 0.00341 247.86)",
+          "oklch(95.00% 0.00341 247.86)"
+        ]
+      },
+      "row-hover": {
+        "displayName": "记录悬停底",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00621 255.47)",
+          "oklch(26.43% 0.00621 255.47)",
+          "oklch(37.86% 0.00621 255.47)",
+          "oklch(49.29% 0.00621 255.47)",
+          "oklch(60.71% 0.00621 255.47)",
+          "oklch(72.14% 0.00621 255.47)",
+          "oklch(83.57% 0.00621 255.47)",
+          "oklch(95.00% 0.00621 255.47)"
+        ]
+      },
+      "nav-selected": {
+        "displayName": "选中导航底",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.01485 260.73)",
+          "oklch(26.43% 0.01485 260.73)",
+          "oklch(37.86% 0.01485 260.73)",
+          "oklch(49.29% 0.01485 260.73)",
+          "oklch(60.71% 0.01485 260.73)",
+          "oklch(72.14% 0.01485 260.73)",
+          "oklch(83.57% 0.01485 260.73)",
+          "oklch(95.00% 0.01485 260.73)"
+        ]
+      },
+      "tab-selected": {
+        "displayName": "选中页签底",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.01441 264.50)",
+          "oklch(26.43% 0.01441 264.50)",
+          "oklch(37.86% 0.01441 264.50)",
+          "oklch(49.29% 0.01441 264.50)",
+          "oklch(60.71% 0.01441 264.50)",
+          "oklch(72.14% 0.01441 264.50)",
+          "oklch(83.57% 0.01441 264.50)",
+          "oklch(95.00% 0.01441 264.50)"
+        ]
+      },
+      "success": {
+        "displayName": "成功绿",
+        "tonalRamp": [
+          "oklch(15.00% 0.13710 150.07)",
+          "oklch(26.43% 0.13710 150.07)",
+          "oklch(37.86% 0.13710 150.07)",
+          "oklch(49.29% 0.13710 150.07)",
+          "oklch(60.71% 0.13710 150.07)",
+          "oklch(72.14% 0.13710 150.07)",
+          "oklch(83.57% 0.13710 150.07)",
+          "oklch(95.00% 0.13710 150.07)"
+        ]
+      },
+      "warning": {
+        "displayName": "提示棕",
+        "tonalRamp": [
+          "oklch(15.00% 0.12956 52.02)",
+          "oklch(26.43% 0.12956 52.02)",
+          "oklch(37.86% 0.12956 52.02)",
+          "oklch(49.29% 0.12956 52.02)",
+          "oklch(60.71% 0.12956 52.02)",
+          "oklch(72.14% 0.12956 52.02)",
+          "oklch(83.57% 0.12956 52.02)",
+          "oklch(95.00% 0.12956 52.02)"
+        ]
+      },
+      "control-warning": {
+        "displayName": "控件警示色",
+        "tonalRamp": [
+          "oklch(15.00% 0.14551 49.00)",
+          "oklch(26.43% 0.14551 49.00)",
+          "oklch(37.86% 0.14551 49.00)",
+          "oklch(49.29% 0.14551 49.00)",
+          "oklch(60.71% 0.14551 49.00)",
+          "oklch(72.14% 0.14551 49.00)",
+          "oklch(83.57% 0.14551 49.00)",
+          "oklch(95.00% 0.14551 49.00)"
+        ]
+      },
+      "danger": {
+        "displayName": "危险红",
+        "tonalRamp": [
+          "oklch(15.00% 0.19049 27.52)",
+          "oklch(26.43% 0.19049 27.52)",
+          "oklch(37.86% 0.19049 27.52)",
+          "oklch(49.29% 0.19049 27.52)",
+          "oklch(60.71% 0.19049 27.52)",
+          "oklch(72.14% 0.19049 27.52)",
+          "oklch(83.57% 0.19049 27.52)",
+          "oklch(95.00% 0.19049 27.52)"
+        ]
+      },
+      "status-surface": {
+        "displayName": "中性标签底",
+        "tonalRamp": [
+          "oklch(15.00% 0.00624 255.48)",
+          "oklch(26.43% 0.00624 255.48)",
+          "oklch(37.86% 0.00624 255.48)",
+          "oklch(49.29% 0.00624 255.48)",
+          "oklch(60.71% 0.00624 255.48)",
+          "oklch(72.14% 0.00624 255.48)",
+          "oklch(83.57% 0.00624 255.48)",
+          "oklch(95.00% 0.00624 255.48)"
+        ]
+      },
+      "status-text": {
+        "displayName": "中性标签文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.03323 256.56)",
+          "oklch(26.43% 0.03323 256.56)",
+          "oklch(37.86% 0.03323 256.56)",
+          "oklch(49.29% 0.03323 256.56)",
+          "oklch(60.71% 0.03323 256.56)",
+          "oklch(72.14% 0.03323 256.56)",
+          "oklch(83.57% 0.03323 256.56)",
+          "oklch(95.00% 0.03323 256.56)"
+        ]
+      },
+      "status-success-surface": {
+        "displayName": "成功标签底",
+        "tonalRamp": [
+          "oklch(15.00% 0.01236 157.00)",
+          "oklch(26.43% 0.01236 157.00)",
+          "oklch(37.86% 0.01236 157.00)",
+          "oklch(49.29% 0.01236 157.00)",
+          "oklch(60.71% 0.01236 157.00)",
+          "oklch(72.14% 0.01236 157.00)",
+          "oklch(83.57% 0.01236 157.00)",
+          "oklch(95.00% 0.01236 157.00)"
+        ]
+      },
+      "status-success-text": {
+        "displayName": "成功标签文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.12096 149.54)",
+          "oklch(26.43% 0.12096 149.54)",
+          "oklch(37.86% 0.12096 149.54)",
+          "oklch(49.29% 0.12096 149.54)",
+          "oklch(60.71% 0.12096 149.54)",
+          "oklch(72.14% 0.12096 149.54)",
+          "oklch(83.57% 0.12096 149.54)",
+          "oklch(95.00% 0.12096 149.54)"
+        ]
+      },
+      "status-warning-surface": {
+        "displayName": "警示标签底",
+        "tonalRamp": [
+          "oklch(15.00% 0.02034 81.78)",
+          "oklch(26.43% 0.02034 81.78)",
+          "oklch(37.86% 0.02034 81.78)",
+          "oklch(49.29% 0.02034 81.78)",
+          "oklch(60.71% 0.02034 81.78)",
+          "oklch(72.14% 0.02034 81.78)",
+          "oklch(83.57% 0.02034 81.78)",
+          "oklch(95.00% 0.02034 81.78)"
+        ]
+      },
+      "status-warning-text": {
+        "displayName": "警示标签文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.11827 57.95)",
+          "oklch(26.43% 0.11827 57.95)",
+          "oklch(37.86% 0.11827 57.95)",
+          "oklch(49.29% 0.11827 57.95)",
+          "oklch(60.71% 0.11827 57.95)",
+          "oklch(72.14% 0.11827 57.95)",
+          "oklch(83.57% 0.11827 57.95)",
+          "oklch(95.00% 0.11827 57.95)"
+        ]
+      },
+      "status-danger-surface": {
+        "displayName": "危险标签底",
+        "tonalRamp": [
+          "oklch(15.00% 0.01632 22.08)",
+          "oklch(26.43% 0.01632 22.08)",
+          "oklch(37.86% 0.01632 22.08)",
+          "oklch(49.29% 0.01632 22.08)",
+          "oklch(60.71% 0.01632 22.08)",
+          "oklch(72.14% 0.01632 22.08)",
+          "oklch(83.57% 0.01632 22.08)",
+          "oklch(95.00% 0.01632 22.08)"
+        ]
+      },
+      "status-danger-text": {
+        "displayName": "危险标签文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.17107 26.58)",
+          "oklch(26.43% 0.17107 26.58)",
+          "oklch(37.86% 0.17107 26.58)",
+          "oklch(49.29% 0.17107 26.58)",
+          "oklch(60.71% 0.17107 26.58)",
+          "oklch(72.14% 0.17107 26.58)",
+          "oklch(83.57% 0.17107 26.58)",
+          "oklch(95.00% 0.17107 26.58)"
+        ]
+      },
+      "status-info-surface": {
+        "displayName": "信息标签底",
+        "tonalRamp": [
+          "oklch(15.00% 0.01733 264.49)",
+          "oklch(26.43% 0.01733 264.49)",
+          "oklch(37.86% 0.01733 264.49)",
+          "oklch(49.29% 0.01733 264.49)",
+          "oklch(60.71% 0.01733 264.49)",
+          "oklch(72.14% 0.01733 264.49)",
+          "oklch(83.57% 0.01733 264.49)",
+          "oklch(95.00% 0.01733 264.49)"
+        ]
+      },
+      "status-info-text": {
+        "displayName": "信息标签文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.17591 261.59)",
+          "oklch(26.43% 0.17591 261.59)",
+          "oklch(37.86% 0.17591 261.59)",
+          "oklch(49.29% 0.17591 261.59)",
+          "oklch(60.71% 0.17591 261.59)",
+          "oklch(72.14% 0.17591 261.59)",
+          "oklch(83.57% 0.17591 261.59)",
+          "oklch(95.00% 0.17591 261.59)"
+        ]
+      },
+      "screen-workspace": {
+        "displayName": "大屏深蓝工作区",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.04798 259.91)",
+          "oklch(26.43% 0.04798 259.91)",
+          "oklch(37.86% 0.04798 259.91)",
+          "oklch(49.29% 0.04798 259.91)",
+          "oklch(60.71% 0.04798 259.91)",
+          "oklch(72.14% 0.04798 259.91)",
+          "oklch(83.57% 0.04798 259.91)",
+          "oklch(95.00% 0.04798 259.91)"
+        ]
+      },
+      "screen-panel": {
+        "displayName": "大屏内容面板",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.05147 257.90)",
+          "oklch(26.43% 0.05147 257.90)",
+          "oklch(37.86% 0.05147 257.90)",
+          "oklch(49.29% 0.05147 257.90)",
+          "oklch(60.71% 0.05147 257.90)",
+          "oklch(72.14% 0.05147 257.90)",
+          "oklch(83.57% 0.05147 257.90)",
+          "oklch(95.00% 0.05147 257.90)"
+        ]
+      },
+      "screen-metric": {
+        "displayName": "大屏指标背景",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.05132 257.90)",
+          "oklch(26.43% 0.05132 257.90)",
+          "oklch(37.86% 0.05132 257.90)",
+          "oklch(49.29% 0.05132 257.90)",
+          "oklch(60.71% 0.05132 257.90)",
+          "oklch(72.14% 0.05132 257.90)",
+          "oklch(83.57% 0.05132 257.90)",
+          "oklch(95.00% 0.05132 257.90)"
+        ]
+      },
+      "screen-line": {
+        "displayName": "大屏分隔线",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.05295 256.12)",
+          "oklch(26.43% 0.05295 256.12)",
+          "oklch(37.86% 0.05295 256.12)",
+          "oklch(49.29% 0.05295 256.12)",
+          "oklch(60.71% 0.05295 256.12)",
+          "oklch(72.14% 0.05295 256.12)",
+          "oklch(83.57% 0.05295 256.12)",
+          "oklch(95.00% 0.05295 256.12)"
+        ]
+      },
+      "screen-text": {
+        "displayName": "大屏正文",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.02008 257.47)",
+          "oklch(26.43% 0.02008 257.47)",
+          "oklch(37.86% 0.02008 257.47)",
+          "oklch(49.29% 0.02008 257.47)",
+          "oklch(60.71% 0.02008 257.47)",
+          "oklch(72.14% 0.02008 257.47)",
+          "oklch(83.57% 0.02008 257.47)",
+          "oklch(95.00% 0.02008 257.47)"
+        ]
+      },
+      "screen-muted": {
+        "displayName": "大屏说明",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.03902 255.63)",
+          "oklch(26.43% 0.03902 255.63)",
+          "oklch(37.86% 0.03902 255.63)",
+          "oklch(49.29% 0.03902 255.63)",
+          "oklch(60.71% 0.03902 255.63)",
+          "oklch(72.14% 0.03902 255.63)",
+          "oklch(83.57% 0.03902 255.63)",
+          "oklch(95.00% 0.03902 255.63)"
+        ]
+      },
+      "screen-number": {
+        "displayName": "大屏数值",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.01316 262.38)",
+          "oklch(26.43% 0.01316 262.38)",
+          "oklch(37.86% 0.01316 262.38)",
+          "oklch(49.29% 0.01316 262.38)",
+          "oklch(60.71% 0.01316 262.38)",
+          "oklch(72.14% 0.01316 262.38)",
+          "oklch(83.57% 0.01316 262.38)",
+          "oklch(95.00% 0.01316 262.38)"
+        ]
+      },
+      "screen-link": {
+        "displayName": "大屏入口",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.10855 260.54)",
+          "oklch(26.43% 0.10855 260.54)",
+          "oklch(37.86% 0.10855 260.54)",
+          "oklch(49.29% 0.10855 260.54)",
+          "oklch(60.71% 0.10855 260.54)",
+          "oklch(72.14% 0.10855 260.54)",
+          "oklch(83.57% 0.10855 260.54)",
+          "oklch(95.00% 0.10855 260.54)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "页面标题",
+        "purpose": "普通工作区名称。"
+      },
+      "detail-title": {
+        "displayName": "详情对象名称",
+        "purpose": "详情当前对象名称；未设置属性继续继承。"
+      },
+      "section-title": {
+        "displayName": "内容分节",
+        "purpose": "详情分节与内容分组。"
+      },
+      "panel-title": {
+        "displayName": "面板标题",
+        "purpose": "面板与工具栏名称。"
+      },
+      "body": {
+        "displayName": "正文",
+        "purpose": "App 组件主题正文；局部密集记录使用自己的字号。"
+      },
+      "button": {
+        "displayName": "按钮文字",
+        "purpose": "实际主按钮字号、字重与行高。"
+      },
+      "record-link": {
+        "displayName": "记录入口",
+        "purpose": "进入当前记录详情的文字入口。"
+      },
+      "field-label": {
+        "displayName": "字段标签",
+        "purpose": "筛选标签与表头。"
+      },
+      "caption": {
+        "displayName": "辅助说明",
+        "purpose": "辅助说明及元数据。"
+      },
+      "status-label": {
+        "displayName": "状态文字",
+        "purpose": "文字与圆点共同表达状态。"
+      },
+      "technical": {
+        "displayName": "技术内容",
+        "purpose": "查询、代码与原始证据的等宽内容。"
+      },
+      "metric": {
+        "displayName": "指标数值",
+        "purpose": "普通指标；宽屏和紧凑视口存在局部字号变化。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "button-primary",
+        "value": "0px 2px 0px 0px rgba(5, 122, 255, 0.06)",
+        "purpose": "实际采样的 Ant 主按钮反馈。"
+      },
+      {
+        "name": "sidebar-overlay",
+        "value": "5px 0 20px #29394a1c",
+        "purpose": "≤899px 时覆盖展开导航的源码投影。"
+      },
+      {
+        "name": "workspace-tab-active",
+        "value": "inset 0 -2px 0 var(--primary)",
+        "purpose": "当前页的位置标记；不是面板抬升。"
+      },
+      {
+        "name": "workflow-node-selected",
+        "value": "0 0 0 2px #e1ecff",
+        "purpose": "剧本节点选中边界；不表达任务成功。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-duration",
+        "value": "0.2s",
+        "purpose": "普通主按钮实际 transition-duration，property 为 all。"
+      },
+      {
+        "name": "button-easing",
+        "value": "cubic-bezier(0.645, 0.045, 0.355, 1)",
+        "purpose": "普通主按钮实际过渡缓动。"
+      },
+      {
+        "name": "menu-durations",
+        "value": "0.3s, 0.3s, 0.2s",
+        "purpose": "选中导航实际 border-color、background、padding 过渡时间。"
+      },
+      {
+        "name": "menu-easing",
+        "value": "ease, ease, cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "purpose": "与菜单三项过渡按顺序对应。"
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "prefers-reduced-motion:reduce 下动画和过渡时长，迭代为 1，scroll-behavior 为 auto。"
+      },
+      {
+        "name": "capture-motion",
+        "value": "none",
+        "purpose": "仅截图 capture-mode 禁用动画和过渡，scroll-behavior 为 auto。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-min",
+        "value": "1650px"
+      },
+      {
+        "name": "compact-max",
+        "value": "1180px"
+      },
+      {
+        "name": "narrow-max",
+        "value": "899px"
+      },
+      {
+        "name": "phone-max",
+        "value": "550px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主要动作按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "普通主按钮的主题与实际采样值。悬停、按下与禁用的 Ant 配色未独立采样；片段只保留已确认的指针与键盘焦点规则。",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">查询</button>",
+      "css": ".ds-btn-primary{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;height:34px;padding:5px 15px;font-size:14px;font-weight:400;line-height:22px;background:var(--primary, #2563eb);color:#fff;border:1px solid transparent;border-radius:6px;box-shadow:0 2px 0 0 rgba(5,122,255,.06);transition:all .2s cubic-bezier(.645,.045,.355,1);cursor:pointer}.ds-btn-primary:hover{cursor:pointer}.ds-btn-primary:focus-visible{outline:2px solid var(--primary, #2563eb);outline-offset:3px;}.ds-btn-primary:disabled{cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-btn-primary{transition-duration:.01ms;animation-duration:.01ms;animation-iteration-count:1}}"
+    },
+    {
+      "name": "记录链接",
+      "kind": "button",
+      "refersTo": "record-link",
+      "description": "点击记录名称进入当前对象详情；轻量文字入口不依赖按钮容器。",
+      "html": "<button class=\"ds-record-link\" type=\"button\">HTTP 可疑管理路径访问</button>",
+      "css": ".ds-record-link{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;border:0;background:transparent;color:var(--primary, #2563eb);font-weight:500;font-size:13px;padding:0;text-align:left;cursor:pointer}.ds-record-link:hover{text-decoration:underline}.ds-record-link:focus-visible{outline:2px solid var(--primary, #2563eb);outline-offset:3px;}.ds-record-link:disabled{cursor:not-allowed}"
+    },
+    {
+      "name": "检索示例按钮",
+      "kind": "button",
+      "refersTo": "query-example",
+      "description": "检索编辑器的辅助表达式入口；悬停边框与文字采用主色。",
+      "html": "<button class=\"ds-query-example\" type=\"button\">源 IP</button>",
+      "css": ".ds-query-example{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;border:1px solid var(--line, #e5eaf1);border-radius:4px;background:#fff;color:#53627a;padding:4px 8px;font-size:11px;cursor:pointer}.ds-query-example:hover{border-color:var(--primary, #2563eb);color:var(--primary, #2563eb)}.ds-query-example:focus-visible{outline:2px solid var(--primary, #2563eb);outline-offset:3px;}.ds-query-example:disabled{cursor:not-allowed}"
+    },
+    {
+      "name": "检索表达式输入框",
+      "kind": "input",
+      "refersTo": "query-editor",
+      "description": "现行检索编辑框的行号与等宽文本区域；普通 Ant 输入框的其余派生态继续继承固定组件主题。",
+      "html": "<div class=\"ds-query-editor\"><span class=\"ds-query-number\" aria-hidden=\"true\">1</span><textarea class=\"ds-query-field\" rows=\"2\" aria-label=\"检索表达式\" placeholder=\"输入检索表达式\">src_ip == 198.51.100.24</textarea></div>",
+      "css": ".ds-query-editor{display:flex;background:#f8fafc;border:1px solid #d9e2ef;border-radius:5px;overflow:hidden}.ds-query-number{padding:11px 10px;color:#8a9ab2;background:#f1f5f9;font-family:monospace;font-size:12px}.ds-query-field{flex:1;min-width:0;border:0;background:transparent;border-radius:0;box-shadow:none;resize:none;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;line-height:1.9;padding:9px 12px;font-size:13px;color:#1f2937}.ds-query-field:not(:disabled)::placeholder{color:#65758b;opacity:1}.ds-query-field:hover{cursor:text}.ds-query-field:focus-visible{box-shadow:none}"
+    },
+    {
+      "name": "工作页面标签",
+      "kind": "nav",
+      "refersTo": "workspace-tab",
+      "description": "当前页使用浅蓝背景、圆点与底部选中线；标签带保留内部横向滚动。",
+      "html": "<nav class=\"ds-workspace-tabs\" aria-label=\"工作页面\"><button class=\"ds-workspace-tab\" type=\"button\">态势总览</button><button class=\"ds-workspace-tab ds-workspace-tab-active\" type=\"button\" aria-current=\"page\"><span class=\"ds-tab-dot\" aria-hidden=\"true\"></span>告警列表</button><button class=\"ds-workspace-tab\" type=\"button\">高级检索</button></nav>",
+      "css": ".ds-workspace-tabs{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;height:44px;background:#fff;border-bottom:1px solid var(--line, #e5eaf1);display:flex;align-items:flex-end;padding:0 16px;gap:4px;overflow-x:auto;white-space:nowrap}.ds-workspace-tab{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;height:36px;background:transparent;border:0;border-radius:5px 5px 0 0;padding:0 15px;color:var(--muted, #596579);display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}.ds-workspace-tab:hover{background:#f6f8fb}.ds-workspace-tab:focus-visible{outline:2px solid var(--primary, #2563eb);outline-offset:3px;}.ds-workspace-tab-active{background:#f0f5ff;color:var(--primary, #2563eb);box-shadow:inset 0 -2px 0 var(--primary, #2563eb)}.ds-tab-dot{height:5px;width:5px;background:var(--primary, #2563eb);border-radius:50%}"
+    },
+    {
+      "name": "业务状态标签",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "文字与圆点共同表达当前对象状态；标签不暗示可点击或已执行。",
+      "html": "<div class=\"ds-status-examples\"><span class=\"ds-status-tag ds-status-warning\"><span class=\"ds-status-dot\" aria-hidden=\"true\"></span>待研判</span><span class=\"ds-status-tag ds-status-info\"><span class=\"ds-status-dot\" aria-hidden=\"true\"></span>研判中</span><span class=\"ds-status-tag\"><span class=\"ds-status-dot\" aria-hidden=\"true\"></span>已关联事件</span></div>",
+      "css": ".ds-status-examples{display:flex;gap:8px;flex-wrap:wrap}.ds-status-tag{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:4px;white-space:nowrap;background:#f1f4f8;color:#536072;font-size:11px;line-height:1.5}.ds-status-dot{display:inline-block;flex-shrink:0;width:5px;height:5px;border-radius:50%;background:#8491a3}.ds-status-warning{background:#fff7e9;color:#955006}.ds-status-warning .ds-status-dot{background:#b45309}.ds-status-info{background:#edf3ff;color:#245cc6}.ds-status-info .ds-status-dot{background:#2563eb}.ds-status-success{background:#eff8f2;color:#126b31}.ds-status-success .ds-status-dot{background:#15803d}.ds-status-danger{background:#fff0ef;color:#a92222}.ds-status-danger .ds-status-dot{background:#b91c1c}"
+    },
+    {
+      "name": "内容面板",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "平面白色容器，使用细边框组织内容；标题和说明沿用各自局部内边距。",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-panel-heading\"><h2 class=\"ds-panel-title\">告警记录</h2><span class=\"ds-panel-meta\">10 条记录</span></header><small class=\"ds-panel-footnote\">合成示例仅用于界面评审。</small></section>",
+      "css": ".ds-panel{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;background:#fff;border:1px solid var(--line, #e5eaf1);border-radius:8px;min-width:0;color:#1f2937}.ds-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 19px 10px}.ds-panel-title{margin:0;font-size:15px;font-weight:600;line-height:1.5}.ds-panel-meta{font-size:11px;color:var(--muted, #596579)}.ds-panel-footnote{display:block;font-size:11px;color:var(--muted, #596579);margin:0 19px 15px}"
+    },
+    {
+      "name": "证据范围摘要",
+      "kind": "custom",
+      "refersTo": "evidence-strip",
+      "description": "详情顶部并列说明当前记录的观测范围与证据边界，按现行断点转为两列或一列。",
+      "html": "<div class=\"ds-evidence-strip\"><div><span class=\"ds-evidence-label\">租户范围</span><b class=\"ds-evidence-value\">总部安全中心</b></div><div><span class=\"ds-evidence-label\">捕获范围</span><b class=\"ds-evidence-value\">旁路镜像</b></div><div><span class=\"ds-evidence-label\">会话完整性</span><b class=\"ds-evidence-value\">证据不完整</b></div><div><span class=\"ds-evidence-label\">攻击结果</span><b class=\"ds-evidence-value\">无法判定</b></div></div>",
+      "css": ".ds-evidence-strip{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border:1px solid var(--line, #e5eaf1);border-radius:6px;padding:14px;margin-bottom:16px;color:#1f2937}.ds-evidence-label{display:block;font-size:11px;color:var(--muted, #596579);margin-bottom:7px}.ds-evidence-value{font-size:12px;font-weight:500}@media(max-width:899px){.ds-evidence-strip{grid-template-columns:1fr 1fr}}@media(max-width:550px){.ds-evidence-strip{grid-template-columns:1fr}}"
+    },
+    {
+      "name": "原始字节选择",
+      "kind": "custom",
+      "refersTo": "packet-byte-selected",
+      "description": "HEX 字节使用等宽字体与明确选中态，白色文字置于主色背景；片段不表示解密或真实取证已经完成。",
+      "html": "<div class=\"ds-hex-bytes\" aria-label=\"合成示例字节\"><button class=\"ds-hex-byte\" type=\"button\" aria-label=\"偏移 0，字节 47\">47</button><button class=\"ds-hex-byte ds-hex-byte-selected\" type=\"button\" aria-label=\"偏移 1，字节 45，当前选中\" aria-pressed=\"true\">45</button><button class=\"ds-hex-byte\" type=\"button\" aria-label=\"偏移 2，字节 54\">54</button><button class=\"ds-hex-byte\" type=\"button\" aria-label=\"偏移 3，字节 20\">20</button></div>",
+      "css": ".ds-hex-bytes{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;white-space:nowrap;display:flex;gap:2px}.ds-hex-byte{color:#34435a;border:0;background:transparent;padding:1px 1px;font-family:inherit;font-size:10px;border-radius:2px;cursor:pointer}.ds-hex-byte:hover,.ds-hex-byte-selected{background:var(--primary, #2563eb);color:#fff}.ds-hex-byte:focus-visible{outline:2px solid var(--primary, #2563eb);outline-offset:3px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "清晰的安全运营工作台",
+    "overview": "星烽 StarBeacon 采用用户指定的 Soybean Admin Ant 后台布局，以白色侧栏、白色内容面板、浅灰工作区和克制蓝色动作形成稳定的安全运营环境。表格、表单、详情与操作弹窗承载主要工作；视觉层级服务于识别对象、核对依据和执行获准动作。\n\n工作区保持足够的信息密度，以文字、对齐、细边框与留白区分内容。记录名称可进入详情，严重级别与执行状态同时提供可读文字和颜色。态势大屏使用独立深色工作区；这套局部配色不改变控制台的浅色基准。\n\n本系统从已交付的 Vue 3、TypeScript 与 Ant Design Vue 原型提取；原型全部使用合成数据，操作仅改变本地内存。设计说明不代表后端、身份、模型、MCP、设备访问、数据清理或性能已经验收。",
+    "keyCharacteristics": [
+      "白色结构面板与浅灰工作区，蓝色集中表达可执行动作与可进入记录。",
+      "桌面优先，表格、表单、详情和操作弹窗使用一致的空间与状态语言。",
+      "系统中文字体、等宽技术字段和等宽数字分别承担阅读、取证与数值比较。",
+      "证据不足、不可观测、运行模式与生命周期各自保持独立含义。"
+    ],
+    "rules": [
+      {
+        "name": "文字与颜色",
+        "body": "颜色辅助定位状态；严重级别、生命周期、执行结果与证据缺口必须同时有可读文字。",
+        "section": "colors"
+      },
+      {
+        "name": "正文与取证",
+        "body": "业务文字使用声明的系统字体栈；原始查询、协议字节和技术标识使用等宽字体，连续数值使用等宽数字。",
+        "section": "typography"
+      },
+      {
+        "name": "平面工作区",
+        "body": "控制台面板依靠底色、细边框与间距区分；投影用于控件反馈和窄屏覆盖导航，不为每个面板制造浮起效果。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "保持白色侧栏、白色面板与浅灰工作区，沿用用户指定的后台布局。",
+      "将蓝色用于主要动作、可进入记录和已选导航，并保留文字说明。",
+      "为每类对象使用对应的生命周期；运行模式、设备接受、配置回读与效果观察分别展示。",
+      "使来源、时间、租户范围、完整性与证据缺口绑定当前记录；缺少依据时说明尚不可确定的内容。",
+      "保留有数据、无数据、详情、操作、加载和失败之间的语义差异，并提供业务原因或下一步。",
+      "在普通输入框与选择框中保持占位提示可读，禁用控件保留独立语义。",
+      "以 0–1 保存置信度，列表、详情与导出使用百分比；表单说明单位。",
+      "让表格在自己的容器内横向滚动，窄屏表单转单列，并保留可见的操作出口。",
+      "将 180 天业务留存、旁路可见性、TLS 密文与合成数据说明作为用户理解当前结果所需的边界信息。"
+    ],
+    "donts": [
+      "避免用空状态、加载失败或权限不足替代彼此的业务含义。",
+      "避免用其它记录的样本、固定成功回执或推定解密结果填补当前对象的证据缺口。",
+      "避免将影子、审批与自动执行写成生命周期，或将设备接受显示为配置已生效与效果已验证。",
+      "避免将原型评审状态切换条、本地提交、示例回复或合成指标写成生产能力承诺。",
+      "避免把深色大屏配色扩散到普通表格与表单页面，或为平面面板增加装饰性厚重阴影。",
+      "避免传承未被现行界面采用的标题前装饰标签样式，或把登录入口的局部展示尺寸扩散为通用页面标题。",
+      "避免把侧车合成色带、未独立采样的组件派生态或局部窄屏检查当作已经确认的全局 token 或完整验收。"
+    ]
+  }
+}
