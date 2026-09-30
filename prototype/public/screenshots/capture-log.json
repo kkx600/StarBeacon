@@ -11424,6 +11424,742 @@
         "width": 1280
       },
       "bytes": 77469
+    },
+    {
+      "file": "collector/overview/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=data&capture=1",
+      "title": "运行状态",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:56.592Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 107563
+    },
+    {
+      "file": "collector/overview/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=empty&capture=1",
+      "title": "运行状态",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:56.780Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49255
+    },
+    {
+      "file": "collector/overview/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=detail&capture=1",
+      "title": "运行状态",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:57.088Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94206
+    },
+    {
+      "file": "collector/overview/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=action&capture=1",
+      "title": "运行状态",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:57.260Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 87322
+    },
+    {
+      "file": "collector/overview/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=loading&capture=1",
+      "title": "运行状态",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:57.403Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 48797
+    },
+    {
+      "file": "collector/overview/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=error&capture=1",
+      "title": "运行状态",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:57.496Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52472
+    },
+    {
+      "file": "collector/network/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "网络与采集",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:57.641Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 97379
+    },
+    {
+      "file": "collector/network/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=empty&capture=1",
+      "title": "网络与采集",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:57.754Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49603
+    },
+    {
+      "file": "collector/network/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=detail&capture=1",
+      "title": "网络与采集",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:57.952Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 84481
+    },
+    {
+      "file": "collector/network/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=action&capture=1",
+      "title": "网络与采集",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:58.174Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 98645
+    },
+    {
+      "file": "collector/network/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=loading&capture=1",
+      "title": "网络与采集",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:58.315Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 50093
+    },
+    {
+      "file": "collector/network/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=error&capture=1",
+      "title": "网络与采集",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:58.417Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 53767
+    },
+    {
+      "file": "collector/connection/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=data&capture=1",
+      "title": "平台接入",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:58.622Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 99878
+    },
+    {
+      "file": "collector/connection/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=empty&capture=1",
+      "title": "平台接入",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:58.722Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49286
+    },
+    {
+      "file": "collector/connection/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=detail&capture=1",
+      "title": "平台接入",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:58.822Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 84935
+    },
+    {
+      "file": "collector/connection/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=action&capture=1",
+      "title": "平台接入",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:58.990Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 85391
+    },
+    {
+      "file": "collector/connection/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=loading&capture=1",
+      "title": "平台接入",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:59.123Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49059
+    },
+    {
+      "file": "collector/connection/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=error&capture=1",
+      "title": "平台接入",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:59.225Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52731
+    },
+    {
+      "file": "collector/maintenance/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "系统维护",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:28:20.399Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 107732
+    },
+    {
+      "file": "collector/maintenance/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=empty&capture=1",
+      "title": "系统维护",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:28:20.500Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49566
+    },
+    {
+      "file": "collector/maintenance/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=detail&capture=1",
+      "title": "系统维护",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:28:20.640Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 91772
+    },
+    {
+      "file": "collector/maintenance/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=action&capture=1",
+      "title": "系统维护",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:28:20.807Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 89968
+    },
+    {
+      "file": "collector/maintenance/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=loading&capture=1",
+      "title": "系统维护",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:28:21.011Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49835
+    },
+    {
+      "file": "collector/maintenance/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=error&capture=1",
+      "title": "系统维护",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:28:21.113Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 53494
+    },
+    {
+      "file": "boundary/collector-login.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/login?capture=1",
+      "title": "采集器登录",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:28:21.318Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 55577
+    },
+    {
+      "file": "boundary/collector-expired.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/expired?capture=1",
+      "title": "采集器会话过期",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:28:21.525Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 47969
+    },
+    {
+      "file": "supplemental/collector-capture-settings.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：实际采集配置",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:28:21.974Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 81597
+    },
+    {
+      "file": "supplemental/collector-capture-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：镜像网卡与捕获参数",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:28:22.387Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 75094
+    },
+    {
+      "file": "supplemental/collector-registration.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=data&capture=1",
+      "title": "采集器：一次性注册密钥",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:29:16.733Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83340
+    },
+    {
+      "file": "supplemental/collector-sync-settings.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：规则自动同步配置",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:29:17.239Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94421
+    },
+    {
+      "file": "supplemental/collector-network-validation.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=action&capture=1",
+      "title": "采集器：网络配置输入校验",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:30:12.216Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 92090
+    },
+    {
+      "file": "supplemental/collector-network-request.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：网络变更申请与回读状态",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:45.115Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 95211
+    },
+    {
+      "file": "supplemental/collector-audits.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：本地操作与任务审计",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:45.622Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78573
+    },
+    {
+      "file": "supplemental/collector-diagnostic-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：脱敏诊断包申请",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:46.333Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88511
+    },
+    {
+      "file": "supplemental/collector-service-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：指定服务维护",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:47.013Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 90812
+    },
+    {
+      "file": "collector/updates/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "规则与升级",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:33:38.151Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 108622
+    },
+    {
+      "file": "collector/updates/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=empty&capture=1",
+      "title": "规则与升级",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:33:38.357Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49523
+    },
+    {
+      "file": "collector/updates/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=detail&capture=1",
+      "title": "规则与升级",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:33:38.560Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78663
+    },
+    {
+      "file": "collector/updates/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=action&capture=1",
+      "title": "规则与升级",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:33:38.717Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94565
+    },
+    {
+      "file": "collector/updates/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=loading&capture=1",
+      "title": "规则与升级",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:33:38.863Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49366
+    },
+    {
+      "file": "collector/updates/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=error&capture=1",
+      "title": "规则与升级",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:33:38.965Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52996
+    },
+    {
+      "file": "supplemental/collector-rollback.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：规则版本回滚",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:33:39.441Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94471
+    },
+    {
+      "file": "supplemental/collector-platform-link.jpg",
+      "url": "http://127.0.0.1:4173/#/page/sensors?state=detail&capture=1",
+      "title": "主控平台：探针详情与采集器本地入口",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:33:41.305Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 125255
+    },
+    {
+      "file": "boundary/collector-mfa.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/mfa?capture=1",
+      "title": "采集器多因素认证",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:43:06.503Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52243
+    },
+    {
+      "file": "supplemental/collector-system-upgrade.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：系统组件与实际版本",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:46:49.374Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 105399
+    },
+    {
+      "file": "supplemental/collector-upgrade-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：系统升级申请",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:46:49.887Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 95382
     }
   ],
   "errors": []

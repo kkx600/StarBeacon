@@ -547,6 +547,268 @@
       "url": "/status/tenant"
     }
   ],
+  "collector": {
+    "title": "采集器管理",
+    "boundary": [
+      {
+        "id": "collector-login",
+        "title": "采集器登录",
+        "url": "/collector/auth/login"
+      },
+      {
+        "id": "collector-mfa",
+        "title": "采集器多因素认证",
+        "url": "/collector/auth/mfa"
+      },
+      {
+        "id": "collector-expired",
+        "title": "采集器会话过期",
+        "url": "/collector/auth/expired"
+      }
+    ],
+    "pages": [
+      {
+        "id": "collector-overview",
+        "title": "运行状态",
+        "group": "collector",
+        "description": "查看本机资源、采集链路、平台连接和待执行任务。",
+        "requirements": [
+          "SB-OPS-002"
+        ],
+        "states": [
+          {
+            "state": "data",
+            "title": "有数据",
+            "url": "/collector/overview?state=data",
+            "image": "collector/overview/data.jpg"
+          },
+          {
+            "state": "empty",
+            "title": "无数据",
+            "url": "/collector/overview?state=empty",
+            "image": "collector/overview/empty.jpg"
+          },
+          {
+            "state": "detail",
+            "title": "查看详情",
+            "url": "/collector/overview?state=detail",
+            "image": "collector/overview/detail.jpg"
+          },
+          {
+            "state": "action",
+            "title": "操作表单",
+            "url": "/collector/overview?state=action",
+            "image": "collector/overview/action.jpg"
+          },
+          {
+            "state": "loading",
+            "title": "加载中",
+            "url": "/collector/overview?state=loading",
+            "image": "collector/overview/loading.jpg"
+          },
+          {
+            "state": "error",
+            "title": "加载失败",
+            "url": "/collector/overview?state=error",
+            "image": "collector/overview/error.jpg"
+          }
+        ]
+      },
+      {
+        "id": "collector-network",
+        "title": "网络与采集",
+        "group": "collector",
+        "description": "配置管理网络、选择镜像网卡，并核对捕获参数与检测边界。",
+        "requirements": [
+          "SB-OPS-001",
+          "SB-NET-002",
+          "SB-NET-005",
+          "SB-NET-006"
+        ],
+        "states": [
+          {
+            "state": "data",
+            "title": "有数据",
+            "url": "/collector/network?state=data",
+            "image": "collector/network/data.jpg"
+          },
+          {
+            "state": "empty",
+            "title": "无数据",
+            "url": "/collector/network?state=empty",
+            "image": "collector/network/empty.jpg"
+          },
+          {
+            "state": "detail",
+            "title": "查看详情",
+            "url": "/collector/network?state=detail",
+            "image": "collector/network/detail.jpg"
+          },
+          {
+            "state": "action",
+            "title": "操作表单",
+            "url": "/collector/network?state=action",
+            "image": "collector/network/action.jpg"
+          },
+          {
+            "state": "loading",
+            "title": "加载中",
+            "url": "/collector/network?state=loading",
+            "image": "collector/network/loading.jpg"
+          },
+          {
+            "state": "error",
+            "title": "加载失败",
+            "url": "/collector/network?state=error",
+            "image": "collector/network/error.jpg"
+          }
+        ]
+      },
+      {
+        "id": "collector-connection",
+        "title": "平台接入",
+        "group": "collector",
+        "description": "管理主控平台地址、注册凭据、设备证书与数据上报。",
+        "requirements": [
+          "SB-OPS-001"
+        ],
+        "states": [
+          {
+            "state": "data",
+            "title": "有数据",
+            "url": "/collector/connection?state=data",
+            "image": "collector/connection/data.jpg"
+          },
+          {
+            "state": "empty",
+            "title": "无数据",
+            "url": "/collector/connection?state=empty",
+            "image": "collector/connection/empty.jpg"
+          },
+          {
+            "state": "detail",
+            "title": "查看详情",
+            "url": "/collector/connection?state=detail",
+            "image": "collector/connection/detail.jpg"
+          },
+          {
+            "state": "action",
+            "title": "操作表单",
+            "url": "/collector/connection?state=action",
+            "image": "collector/connection/action.jpg"
+          },
+          {
+            "state": "loading",
+            "title": "加载中",
+            "url": "/collector/connection?state=loading",
+            "image": "collector/connection/loading.jpg"
+          },
+          {
+            "state": "error",
+            "title": "加载失败",
+            "url": "/collector/connection?state=error",
+            "image": "collector/connection/error.jpg"
+          }
+        ]
+      },
+      {
+        "id": "collector-updates",
+        "title": "规则与升级",
+        "group": "collector",
+        "description": "核对目标与实际版本，跟踪规则同步、系统升级和回滚。",
+        "requirements": [
+          "SB-OPS-003"
+        ],
+        "states": [
+          {
+            "state": "data",
+            "title": "有数据",
+            "url": "/collector/updates?state=data",
+            "image": "collector/updates/data.jpg"
+          },
+          {
+            "state": "empty",
+            "title": "无数据",
+            "url": "/collector/updates?state=empty",
+            "image": "collector/updates/empty.jpg"
+          },
+          {
+            "state": "detail",
+            "title": "查看详情",
+            "url": "/collector/updates?state=detail",
+            "image": "collector/updates/detail.jpg"
+          },
+          {
+            "state": "action",
+            "title": "操作表单",
+            "url": "/collector/updates?state=action",
+            "image": "collector/updates/action.jpg"
+          },
+          {
+            "state": "loading",
+            "title": "加载中",
+            "url": "/collector/updates?state=loading",
+            "image": "collector/updates/loading.jpg"
+          },
+          {
+            "state": "error",
+            "title": "加载失败",
+            "url": "/collector/updates?state=error",
+            "image": "collector/updates/error.jpg"
+          }
+        ]
+      },
+      {
+        "id": "collector-maintenance",
+        "title": "系统维护",
+        "group": "collector",
+        "description": "管理时间、缓冲与服务，查看维护任务和本地操作日志。",
+        "requirements": [
+          "SB-OPS-002",
+          "SB-OPS-003",
+          "SB-NET-001"
+        ],
+        "states": [
+          {
+            "state": "data",
+            "title": "有数据",
+            "url": "/collector/maintenance?state=data",
+            "image": "collector/maintenance/data.jpg"
+          },
+          {
+            "state": "empty",
+            "title": "无数据",
+            "url": "/collector/maintenance?state=empty",
+            "image": "collector/maintenance/empty.jpg"
+          },
+          {
+            "state": "detail",
+            "title": "查看详情",
+            "url": "/collector/maintenance?state=detail",
+            "image": "collector/maintenance/detail.jpg"
+          },
+          {
+            "state": "action",
+            "title": "操作表单",
+            "url": "/collector/maintenance?state=action",
+            "image": "collector/maintenance/action.jpg"
+          },
+          {
+            "state": "loading",
+            "title": "加载中",
+            "url": "/collector/maintenance?state=loading",
+            "image": "collector/maintenance/loading.jpg"
+          },
+          {
+            "state": "error",
+            "title": "加载失败",
+            "url": "/collector/maintenance?state=error",
+            "image": "collector/maintenance/error.jpg"
+          }
+        ]
+      }
+    ]
+  },
   "pages": [
     {
       "id": "overview",

@@ -4,6 +4,7 @@ import type {BusinessRecord} from '../models'
 import {healthFor} from '../data/sensorHealth'
 import {sensorThresholds} from '../composables/useSensorHealth'
 import StatusTag from './StatusTag.vue'
+import {collectorDevice} from '../data/collector'
 const props=defineProps<{record:BusinessRecord;tab:string}>()
 const health=computed(()=>healthFor(props.record,sensorThresholds))
 const observable=computed(()=>health.value!=='不可观测')
@@ -41,6 +42,8 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
     </a-descriptions>
     <p class="field-hint">配置目标版本不表示升级成功；生产环境以探针上报版本和发布任务回执为准。</p>
     <router-link to="/page/releases"><a-button style="margin-top:16px">查看版本发布</a-button></router-link>
+    <router-link v-if="record.id===collectorDevice.id" to="/collector/overview"><a-button style="margin:16px 0 0 8px">采集器本地管理</a-button></router-link>
+    <p v-if="record.id===collectorDevice.id" class="field-hint">本地管理原型绑定当前样机，提供网卡、平台接入与维护流程；生产入口需独立鉴权和管理网络可达。</p>
   </template>
   <template v-else>
     <a-timeline v-if="record.snapshotAt"><a-timeline-item><b>{{record.lastSeen}}</b> 最近一次心跳<small class="timeline-note">{{record.id}} · 合成探针遥测</small></a-timeline-item><a-timeline-item :color="observable?'blue':'orange'"><b>{{record.snapshotAt}}</b> 健康状态评估<small class="timeline-note">{{health}} · 按快照与当前阈值计算</small></a-timeline-item></a-timeline>

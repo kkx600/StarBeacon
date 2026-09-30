@@ -2,8 +2,8 @@
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "renderer": "Codex in-app browser",
-  "baseStateCount": 698,
-  "supplementalCount": 16,
+  "baseStateCount": 731,
+  "supplementalCount": 29,
   "entries": [
     {
       "file": "overview/data.jpg",
@@ -14496,6 +14496,636 @@
       "sha256": "3d2ba508e0016e9780f69256c238805d581496ea0d65a646a255bc517263b6d2"
     },
     {
+      "file": "collector/overview/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=data&capture=1",
+      "title": "运行状态",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:56.592Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 107563,
+      "image": {
+        "width": 1280,
+        "height": 944
+      },
+      "sha256": "3839ffef37b3f0b5e824b7d8dbff7d4344e1dc05f3baceb0d868179bc57de54d"
+    },
+    {
+      "file": "collector/overview/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=empty&capture=1",
+      "title": "运行状态",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:56.780Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49255,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "76e8e569a5ce25664fb71127ada7063082186ff1014d599ba1619229ceb12ace"
+    },
+    {
+      "file": "collector/overview/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=detail&capture=1",
+      "title": "运行状态",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:57.088Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94206,
+      "image": {
+        "width": 1280,
+        "height": 944
+      },
+      "sha256": "0ef70c0c38e3b4873598c85a7b0889b17eb3d9b4fbbbe09e83ad0e6aecdf4fb4"
+    },
+    {
+      "file": "collector/overview/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=action&capture=1",
+      "title": "运行状态",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:57.260Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 87322,
+      "image": {
+        "width": 1280,
+        "height": 944
+      },
+      "sha256": "9af6f871cc90ae49cf50ad85d95fe4b6420e72da50bad6e94f2f1e67d3880bd1"
+    },
+    {
+      "file": "collector/overview/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=loading&capture=1",
+      "title": "运行状态",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:57.403Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 48797,
+      "image": {
+        "width": 1280,
+        "height": 739
+      },
+      "sha256": "da6388590dd9ed8a32bd3e11d57b23d104baefea4b5f88d28345422bb8712650"
+    },
+    {
+      "file": "collector/overview/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/overview?state=error&capture=1",
+      "title": "运行状态",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:57.496Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52472,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "d9f608a884926e436dd05f83b752d762566f3984db262fb0d8ea9f15437705e3"
+    },
+    {
+      "file": "collector/network/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "网络与采集",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:57.641Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 97379,
+      "image": {
+        "width": 1280,
+        "height": 933
+      },
+      "sha256": "3e43bfc9c851b77a9282b77a00939b475f6e13ac80997c5e9ce2abc1480a5491"
+    },
+    {
+      "file": "collector/network/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=empty&capture=1",
+      "title": "网络与采集",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:57.754Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49603,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "2372d0ed7bfb1df13a94f5464b896199eb7d9f1a41cdef40b5283c02965e68ff"
+    },
+    {
+      "file": "collector/network/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=detail&capture=1",
+      "title": "网络与采集",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:57.952Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 84481,
+      "image": {
+        "width": 1280,
+        "height": 933
+      },
+      "sha256": "5ddf7b508917caf076959288526fdca6a7a17228b8f2b3a660c0629bf9f2d4de"
+    },
+    {
+      "file": "collector/network/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=action&capture=1",
+      "title": "网络与采集",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:58.174Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 98645,
+      "image": {
+        "width": 1280,
+        "height": 933
+      },
+      "sha256": "595c909ec9ead4b9b7adc0c7acd37047fc88035b4f16a4f407a4faea87f94ac4"
+    },
+    {
+      "file": "collector/network/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=loading&capture=1",
+      "title": "网络与采集",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:58.315Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 50093,
+      "image": {
+        "width": 1280,
+        "height": 739
+      },
+      "sha256": "df8595670aa2925fafdb66aef3694ac843960f742c22a525ccf0f77640fd988c"
+    },
+    {
+      "file": "collector/network/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=error&capture=1",
+      "title": "网络与采集",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:58.417Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 53767,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "48c3b25174841c5b70af564be0687be03abb39230e0dda8f6c1e7e5a74f1a8ee"
+    },
+    {
+      "file": "collector/connection/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=data&capture=1",
+      "title": "平台接入",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:27:58.622Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 99878,
+      "image": {
+        "width": 1280,
+        "height": 781
+      },
+      "sha256": "4770bf23ffe4bf6ddb08e5550894ac992d8d32a01ff2c19167d5c9b41355269a"
+    },
+    {
+      "file": "collector/connection/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=empty&capture=1",
+      "title": "平台接入",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:27:58.722Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49286,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "fb7e368d635d6f121ca188091dbae15d1ee49777d9a26321f6bea4964e21ea6a"
+    },
+    {
+      "file": "collector/connection/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=detail&capture=1",
+      "title": "平台接入",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:27:58.822Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 84935,
+      "image": {
+        "width": 1280,
+        "height": 781
+      },
+      "sha256": "e5811620a4ca20555ba68903f3021cb24b00176c87310a7e506e66be61a18e8e"
+    },
+    {
+      "file": "collector/connection/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=action&capture=1",
+      "title": "平台接入",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:27:58.990Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 85391,
+      "image": {
+        "width": 1280,
+        "height": 781
+      },
+      "sha256": "698726874fea547b0b5a1eac7ae478586fb7b687aa80b5174364d2d8aeb7ef34"
+    },
+    {
+      "file": "collector/connection/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=loading&capture=1",
+      "title": "平台接入",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:27:59.123Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49059,
+      "image": {
+        "width": 1280,
+        "height": 739
+      },
+      "sha256": "cb5afdc92d7b010c91d019e67ad71d14b3b32b60b024d1a782ba574bbed53102"
+    },
+    {
+      "file": "collector/connection/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=error&capture=1",
+      "title": "平台接入",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:27:59.225Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52731,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "ec0afba1d4df62f163b89814cda16361a034648b546ebe506c889db0dfa18e11"
+    },
+    {
+      "file": "collector/updates/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "规则与升级",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:33:38.151Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 108622,
+      "image": {
+        "width": 1280,
+        "height": 1032
+      },
+      "sha256": "b6bc4e1d986614061ada28399065fac062f0ff16fea45d9e3e6d852318a33d28"
+    },
+    {
+      "file": "collector/updates/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=empty&capture=1",
+      "title": "规则与升级",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:33:38.357Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49523,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "fb2d860c34d5f07862a5f6911b6db9f72f697113212d9cd40e58ff18bf882201"
+    },
+    {
+      "file": "collector/updates/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=detail&capture=1",
+      "title": "规则与升级",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:33:38.560Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78663,
+      "image": {
+        "width": 1280,
+        "height": 1032
+      },
+      "sha256": "129b12219c52627feef3fd3595f71941c63448cfd86ba748eb8b8e50f1218d17"
+    },
+    {
+      "file": "collector/updates/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=action&capture=1",
+      "title": "规则与升级",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:33:38.717Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94565,
+      "image": {
+        "width": 1280,
+        "height": 1032
+      },
+      "sha256": "3b13736acd2825f6c95fcd1cb6bd0ca640e10b46c9432fb1a5271e08eaa4e445"
+    },
+    {
+      "file": "collector/updates/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=loading&capture=1",
+      "title": "规则与升级",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:33:38.863Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49366,
+      "image": {
+        "width": 1280,
+        "height": 739
+      },
+      "sha256": "3ffd5c70d583df8a01a2ffb998d6d8c2c16f99c6c1314a3886fda0b0ca3e168a"
+    },
+    {
+      "file": "collector/updates/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=error&capture=1",
+      "title": "规则与升级",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:33:38.965Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52996,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "25e9f63b10639542bd0f1056bd7098460a036198569edb548abfbf6f936e2098"
+    },
+    {
+      "file": "collector/maintenance/data.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "系统维护",
+      "state": "data",
+      "capturedAt": "2026-09-30T20:28:20.399Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 107732,
+      "image": {
+        "width": 1280,
+        "height": 927
+      },
+      "sha256": "0b8e5848181a07af627b03f982b7079c77531197a27759d9c2fbbac5f2d7422f"
+    },
+    {
+      "file": "collector/maintenance/empty.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=empty&capture=1",
+      "title": "系统维护",
+      "state": "empty",
+      "capturedAt": "2026-09-30T20:28:20.500Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49566,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "d791f0232b8f8b12397bf4c0b5ddc8f91c0bf1b0c869bb31355f10956dfad9af"
+    },
+    {
+      "file": "collector/maintenance/detail.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=detail&capture=1",
+      "title": "系统维护",
+      "state": "detail",
+      "capturedAt": "2026-09-30T20:28:20.640Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 91772,
+      "image": {
+        "width": 1280,
+        "height": 927
+      },
+      "sha256": "8d96b93d3eb9660c35016fddfa2107997aafea725c88a02f3afc5e27d3635f2f"
+    },
+    {
+      "file": "collector/maintenance/action.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=action&capture=1",
+      "title": "系统维护",
+      "state": "action",
+      "capturedAt": "2026-09-30T20:28:20.807Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 89968,
+      "image": {
+        "width": 1280,
+        "height": 927
+      },
+      "sha256": "414bdd59fbee78040bcdea6202b026f3fd38f58120f4db096d6eb36d926600fe"
+    },
+    {
+      "file": "collector/maintenance/loading.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=loading&capture=1",
+      "title": "系统维护",
+      "state": "loading",
+      "capturedAt": "2026-09-30T20:28:21.011Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 49835,
+      "image": {
+        "width": 1280,
+        "height": 739
+      },
+      "sha256": "1075e9c654e3328e87acd5347b415176a98b78b9a61c52b4a16d91fc8aa4f389"
+    },
+    {
+      "file": "collector/maintenance/error.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=error&capture=1",
+      "title": "系统维护",
+      "state": "error",
+      "capturedAt": "2026-09-30T20:28:21.113Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 53494,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "28b5d05fef197e86e212867d1d894b588dbbc24805cf00d568b58145aae4f201"
+    },
+    {
       "file": "boundary/auth-login.jpg",
       "url": "http://127.0.0.1:4173/#/auth/login?capture=1",
       "title": "登录",
@@ -14662,6 +15292,69 @@
         "height": 784
       },
       "sha256": "19290d716484d6331f46a29b0e73f12458a0325feb0e22bc2cff4eb8072728e3"
+    },
+    {
+      "file": "boundary/collector-login.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/login?capture=1",
+      "title": "采集器登录",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:28:21.318Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 55577,
+      "image": {
+        "width": 1280,
+        "height": 795
+      },
+      "sha256": "60fbf9de83c8f1a903e0f8f64c21bd44843557f47d28bdf29754bbfae033acaa"
+    },
+    {
+      "file": "boundary/collector-mfa.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/mfa?capture=1",
+      "title": "采集器多因素认证",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:43:06.503Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 52243,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "b5dbbae9c4f4c592cada78930ac1dfcc20a0345155a1216b4b6ce368ecb4780e"
+    },
+    {
+      "file": "boundary/collector-expired.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/auth/expired?capture=1",
+      "title": "采集器会话过期",
+      "state": "boundary",
+      "capturedAt": "2026-09-30T20:28:21.525Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 47969,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "004b4ef33c07b51003f7cd6112217cdcefb0e53f608f4cff8524607653841c43"
     },
     {
       "file": "supplemental/alert-packet-evidence.jpg",
@@ -14998,6 +15691,279 @@
         "height": 720
       },
       "sha256": "940355e236a7ebd9701c97d33511d3dba486a27de9bae3cf948b43502d230f71"
+    },
+    {
+      "file": "supplemental/collector-capture-settings.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：实际采集配置",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:28:21.974Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 81597,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "d1133a4574c2351d405153910438ba2ac812503554eab5009fe797b462d993a7"
+    },
+    {
+      "file": "supplemental/collector-capture-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：镜像网卡与捕获参数",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:28:22.387Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 75094,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "f28ce781a825254924164bb4cf471117992936aa200527c464fbd6036a4b9454"
+    },
+    {
+      "file": "supplemental/collector-registration.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/connection?state=data&capture=1",
+      "title": "采集器：一次性注册密钥",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:29:16.733Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83340,
+      "image": {
+        "width": 1280,
+        "height": 781
+      },
+      "sha256": "37b4905de855f580f54a5c23b85d1358645ec679b3ffbf7734e729984e35f604"
+    },
+    {
+      "file": "supplemental/collector-sync-settings.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：规则自动同步配置",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:29:17.239Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94421,
+      "image": {
+        "width": 1280,
+        "height": 1032
+      },
+      "sha256": "71e95c59927066f88aaec7a75044916e6278d9d7f175a7d1eb39559526288a13"
+    },
+    {
+      "file": "supplemental/collector-network-validation.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=action&capture=1",
+      "title": "采集器：网络配置输入校验",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:30:12.216Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 92090,
+      "image": {
+        "width": 1280,
+        "height": 933
+      },
+      "sha256": "39c1c30bb6d771cb029769bbc287cf32b66506f5bb2c18ebe1f2b301a94e2f17"
+    },
+    {
+      "file": "supplemental/collector-network-request.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/network?state=data&capture=1",
+      "title": "采集器：网络变更申请与回读状态",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:45.115Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 95211,
+      "image": {
+        "width": 1280,
+        "height": 933
+      },
+      "sha256": "20a45139db898f9aad7955ad1c000eeeae7f85684906bc20834ef2aa3e2ed4ea"
+    },
+    {
+      "file": "supplemental/collector-audits.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：本地操作与任务审计",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:45.622Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78573,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "f2b448dfd309fea61b86b16debcbd7954c440278b1abe0709282a6edf7f05679"
+    },
+    {
+      "file": "supplemental/collector-diagnostic-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：脱敏诊断包申请",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:46.333Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88511,
+      "image": {
+        "width": 1280,
+        "height": 927
+      },
+      "sha256": "c2810d70b842b32289b381533f8657261e04132d4c5c9fd6bf181157d21e48d4"
+    },
+    {
+      "file": "supplemental/collector-service-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/maintenance?state=data&capture=1",
+      "title": "采集器：指定服务维护",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:32:47.013Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 90812,
+      "image": {
+        "width": 1280,
+        "height": 927
+      },
+      "sha256": "1cf55468d83ad7e67ec45813a98091f7cc70ac8f2ca5c01098b297ba7d952ecf"
+    },
+    {
+      "file": "supplemental/collector-rollback.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：规则版本回滚",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:33:39.441Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 94471,
+      "image": {
+        "width": 1280,
+        "height": 1032
+      },
+      "sha256": "973fc277985184ec31dc727a77cddd1e806924f55bd9f40c5582f0c8a213f44f"
+    },
+    {
+      "file": "supplemental/collector-platform-link.jpg",
+      "url": "http://127.0.0.1:4173/#/page/sensors?state=detail&capture=1",
+      "title": "主控平台：探针详情与采集器本地入口",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:33:41.305Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 125255,
+      "image": {
+        "width": 1280,
+        "height": 1286
+      },
+      "sha256": "2bbc31a02ad5dc7f31106589309d811a1fbe9fb01561b1f1567e15607d34bcea"
+    },
+    {
+      "file": "supplemental/collector-system-upgrade.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：系统组件与实际版本",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:46:49.374Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 105399,
+      "image": {
+        "width": 1280,
+        "height": 993
+      },
+      "sha256": "0cc6f978195ac350fc3191b1ddf58715c8f73f5be5d2d219f1c78737bbbe3330"
+    },
+    {
+      "file": "supplemental/collector-upgrade-form.jpg",
+      "url": "http://127.0.0.1:4173/#/collector/updates?state=data&capture=1",
+      "title": "采集器：系统升级申请",
+      "state": "supplemental",
+      "capturedAt": "2026-09-30T20:46:49.887Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 95382,
+      "image": {
+        "width": 1280,
+        "height": 993
+      },
+      "sha256": "9ee5dc8e63b88167a41d4fc9d5d07cad60b6dff6e99a310893fe780240c7816d"
     }
   ]
 }

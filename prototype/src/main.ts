@@ -4,5 +4,6 @@ import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 import { router } from './router'
 import './styles.css'
+import './collector.css'
 
 createApp(App).use(Antd).use(router).mount('#app')

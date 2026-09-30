@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto'
 const root=new URL('../public/screenshots/',import.meta.url)
 const manifest=JSON.parse(await readFile(new URL('../public/page-manifest.json',import.meta.url),'utf8'))
 const log=JSON.parse(await readFile(new URL('capture-log.json',root),'utf8'))
-const expected=[...manifest.pages.flatMap(p=>p.states.map(s=>s.image)),...manifest.boundary.map(p=>`boundary/${p.id}.jpg`)]
+const expected=[...manifest.pages.flatMap(p=>p.states.map(s=>s.image)),...(manifest.collector?.pages??[]).flatMap(p=>p.states.map(s=>s.image)),...[...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>`boundary/${p.id}.jpg`)]
 const refresh=process.argv.includes('--refresh')
 const prior=refresh?null:JSON.parse(await readFile(new URL('provenance.json',root),'utf8'))
 const entries=[]
