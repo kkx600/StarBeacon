@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-01T08:49:48Z",
+  "generatedAt": "2026-10-01T16:56:20Z",
   "title": "Design System: 星烽 StarBeacon",
   "extensions": {
     "colorMeta": {
@@ -924,11 +924,19 @@
       "description": "白色指标栏上下间距12px、横向内边距16px，数值与说明相隔4px；窄屏指标块内边距12px，状态含义由文字、数值与说明表达。",
       "html": "<div class=\"ds-metric-bar\"><div class=\"ds-metric-item\"><span class=\"ds-metric-label\">安全事件</span><strong class=\"ds-metric-value\">9</strong><small class=\"ds-metric-note\">合成示例</small></div><div class=\"ds-metric-item ds-metric-danger\"><span class=\"ds-metric-label\">高危与严重告警</span><strong class=\"ds-metric-value\">12</strong><small class=\"ds-metric-note\">合成告警示例</small></div><div class=\"ds-metric-item ds-metric-warning\"><span class=\"ds-metric-label\">探针需要关注</span><strong class=\"ds-metric-value\">2</strong><small class=\"ds-metric-note\">连接、资源与采集质量</small></div></div>",
       "css": ".ds-metric-bar{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;display:flex;background:var(--surface, #ffffff);border:1px solid var(--line, #e8e8e8);border-radius:8px;margin-bottom:var(--section-gap, 12px);padding:var(--section-gap, 12px) 0;min-width:0}.ds-metric-item{flex:1;min-width:0;padding:0 var(--panel-inset, 16px);border-right:1px solid var(--line, #e8e8e8);display:flex;flex-direction:column;gap:var(--label-gap, 4px)}.ds-metric-item:last-child{border-right:0}.ds-metric-label{font-size:12px;color:var(--muted, #526581)}.ds-metric-value{font-size:25px;font-weight:650;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--link, #0759d5);white-space:nowrap}.ds-metric-note{font-size:11px;color:var(--muted, #526581)}.ds-metric-danger .ds-metric-label,.ds-metric-danger .ds-metric-value,.ds-metric-danger .ds-metric-note{color:var(--danger, #cc2640)}.ds-metric-warning .ds-metric-label,.ds-metric-warning .ds-metric-value,.ds-metric-warning .ds-metric-note{color:var(--warning, #a65a00)}.ds-metric-success .ds-metric-label,.ds-metric-success .ds-metric-value,.ds-metric-success .ds-metric-note{color:var(--success, #087a43)}@media(min-width:1650px){.ds-metric-bar{padding:var(--section-gap, 12px) 0}.ds-metric-value{font-size:29px}}@media(max-width:1180px){.ds-metric-item{padding:0 var(--panel-inset, 16px)}.ds-metric-value{font-size:23px}}@media(max-width:899px){.ds-metric-bar{flex-wrap:wrap;padding:0;margin-bottom:var(--section-gap, 12px)}.ds-metric-item{flex:1 1 50%;padding:var(--section-gap, 12px);border-bottom:1px solid var(--line, #e8e8e8)}.ds-metric-item:nth-child(even){border-right:0}.ds-metric-item:last-child{border-bottom:0}.ds-metric-value{font-size:23px}}"
+    },
+    {
+      "name": "执行回执",
+      "kind": "custom",
+      "refersTo": "execution-receipt",
+      "description": "实际任务详情的默认折叠回执，等宽内容允许折行并保持内部滚动；片段中的空值为合成组件示例，不表示执行已经完成。",
+      "html": "<details class=\"ds-execution-receipt\"><summary>执行回执</summary><pre class=\"ds-execution-receipt-data\" aria-label=\"合成执行回执示例\">{\n  \"replay\": \"not_run\",\n  \"packets_processed\": null,\n  \"alert_count\": null\n}</pre></details>",
+      "css": ".ds-execution-receipt{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;font-size:14px;color:var(--text, #22334d)}.ds-execution-receipt summary:focus-visible{outline:2px solid var(--primary, #096bff);outline-offset:2px}.ds-execution-receipt-data{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--table-header, #fafafa);padding:var(--section-gap, 12px);border-radius:6px;max-height:320px;overflow:auto;font-size:12px;line-height:1.6;font-variant-numeric:tabular-nums}"
     }
   ],
   "narrative": {
     "northStar": "清晰的安全运营工作台",
-    "overview": "星烽 StarBeacon 采用用户指定的后台布局，以白色导航、白色指标与内容面板、纯浅灰工作区和明亮蓝色动作形成清晰的安全运营环境。表格、表单、详情与操作弹窗承载主要工作；视觉层级服务于识别对象、核对依据和执行获准动作。\n\n工作区保持足够的信息密度，以文字、对齐、细边框与留白区分内容。记录名称可进入详情，严重级别与执行状态同时提供可读文字和颜色。态势大屏使用独立深灰工作区、高亮蓝青数字和玫红风险值；这套局部配色不改变控制台的浅色基准。\n\n本系统从已交付的 Vue 3、TypeScript 与 Ant Design Vue 原型提取；原型全部使用合成数据，操作仅改变本地内存。设计说明不代表后端、身份、模型、MCP、设备访问、数据清理或性能已经验收。",
+    "overview": "星烽 StarBeacon 采用用户指定的后台布局，以白色导航、白色指标与内容面板、纯浅灰工作区和明亮蓝色动作形成清晰的安全运营环境。表格、表单、详情与操作弹窗承载主要工作；视觉层级服务于识别对象、核对依据和执行获准动作。\n\n工作区保持足够的信息密度，以文字、对齐、细边框与留白区分内容。记录名称可进入详情，严重级别与执行状态同时提供可读文字和颜色。态势大屏使用独立深灰工作区、高亮蓝青数字和玫红风险值；这套局部配色不改变控制台的浅色基准。\n\n本系统的基础规范来自 Vue 3、TypeScript 与 Ant Design Vue 原型；原型全部使用合成数据，操作仅改变本地内存。`web/` 工程沿用同一调色板和空间变量，以实际 API 状态承载业务。PCAP 重放的任务与结果来自真实执行；原型交互覆盖、工程实现范围与部署验收各自保留证据边界，设计说明不承担生产能力或性能验收。",
     "keyCharacteristics": [
       "白色导航、指标与结构面板，纯浅灰工作区与认证背景；明亮操作蓝与深蓝链接分别表达动作和记录入口。",
       "桌面优先，表格、表单、详情和操作弹窗使用一致的空间与状态语言。",
@@ -983,17 +991,19 @@
       "**Do** 让表格在自己的容器内横向滚动，窄屏表单转单列，并保留可见的操作出口。",
       "**Do** 通过工作区页签与对象详情衔接相关任务，共用探针记录、健康口径与任务身份。",
       "**Do** 只展示适用的业务指标，静态边界说明使用低强调的信息提示，警示提示表达当前风险或限制。",
-      "**Do** 将 180 天业务留存、旁路可见性、TLS 密文与合成数据说明作为用户理解当前结果所需的边界信息。"
+      "**Do** 将 180 天业务留存、旁路可见性、TLS 密文与合成数据说明作为用户理解当前结果所需的边界信息。",
+      "**Do** 在离线重放详情中先呈现检测结论、包数、命中数与耗时，任务身份、时间和原始回执使用折叠追溯区域。"
     ],
     "donts": [
       "**Don't** 用空状态、加载失败或权限不足替代彼此的业务含义。",
       "**Don't** 用其它记录的样本、固定成功回执或推定解密结果填补当前对象的证据缺口。",
       "**Don't** 将影子、审批与自动执行写成生命周期，或将设备接受显示为配置已生效与效果已验证。",
-      "**Don't** 将原型评审状态下拉、本地提交、示例回复或合成指标写成生产能力承诺。",
+      "**Don't** 将原型评审状态下拉、原型本地提交、示例回复或合成指标写成生产能力承诺。",
       "**Don't** 把大屏的深色工作区配色扩散到普通表格与表单页面，或为平面面板增加装饰性厚重阴影。",
       "**Don't** 为控制台、认证入口、辅助区域或选中项使用浅蓝背景；蓝色保留在动作、链接、图表、文字和焦点等前景语义。",
       "**Don't** 传承未被现行界面采用的标题前装饰标签样式，或把登录入口的局部展示尺寸扩散为通用页面标题。",
-      "**Don't** 把侧车合成色带、未独立采样的组件派生态或局部窄屏检查当作已经确认的全局 token 或完整验收。"
+      "**Don't** 把侧车合成色带、未独立采样的组件派生态或局部窄屏检查当作已经确认的全局 token 或完整验收。",
+      "**Don't** 将未命中视为流量安全、将登记规则快照视为必然正在运行的实时规则，或将装载和重放通过视为自动发布资格。"
     ]
   }
 }

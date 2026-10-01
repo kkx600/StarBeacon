@@ -2,7 +2,7 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"log/slog"
 	"math/rand/v2"
 	"sync"
@@ -10,13 +10,13 @@ import (
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/config"
+	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
-	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func pause(ctx context.Context, d time.Duration) bool {
@@ -71,40 +71,39 @@ func upload(ctx context.Context, client sensorv1.SensorServiceClient, wal *WAL, 
 		}
 	}
 }
-func heartbeat(ctx context.Context, client sensorv1.SensorServiceClient, wal *WAL, c config.Config) {
-	for ctx.Err() == nil {
-		call, cancel := context.WithTimeout(ctx, 8*time.Second)
-		h := wal.Health(call, c.StatePath)
-		raw, e := json.Marshal(h)
-		if e == nil {
-			var stream grpc.BidiStreamingClient[sensorv1.AgentMessage, sensorv1.PlatformCommand]
-			stream, e = client.Control(call)
-			if e == nil {
-				e = stream.Send(&sensorv1.AgentMessage{SensorId: c.SensorID, SensorRegistrationId: c.RegistrationID, MessageId: store.RandomID("hb_"), Kind: sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT, PayloadSchema: "host.health.v1", PayloadJson: raw, ObservedAt: timestamppb.New(h.ObservedAt)})
-			}
-			if e == nil {
-				_, e = stream.Recv()
-			}
-			if stream != nil {
-				_ = stream.CloseSend()
-			}
-		}
-		cancel()
-		if e != nil {
-			slog.Warn("健康上报待重试", "error", e)
-		}
-		wal.setFailure("control_unavailable", e != nil)
-		if !pause(ctx, c.HeartbeatInterval) {
-			return
-		}
-	}
-}
 func Run(ctx context.Context, c config.Config) error {
 	wal, e := OpenWAL(c.StatePath, c.TenantID, c.SensorID, c.RegistrationID, c.WALBytes)
 	if e != nil {
 		return e
 	}
 	defer wal.Close()
+	publicKey, e := control.PublicKey(c.CommandPublicKey)
+	if e != nil {
+		return e
+	}
+	engine := &Engine{Config: c, WAL: wal}
+	recovery, recoveryStop := context.WithTimeout(ctx, 40*time.Second)
+	e = engine.Recover(recovery)
+	recoveryStop()
+	if e != nil {
+		return fmt.Errorf("规则恢复未完成: %w", e)
+	}
+	tasks, e := NewTaskManager(wal, publicKey, engine)
+	if e != nil {
+		return e
+	}
+	storage, e := replay.NewLocal(c.ReplayDir, c.ReplayBytes)
+	if e != nil {
+		return e
+	}
+	samples := &ReplayService{WAL: wal, Storage: storage, Tasks: tasks, Engine: engine, RetentionDays: c.ReplayRetentionDays}
+	engine.LocalReplay = samples
+	tasks.Replay = samples
+	wal.registeredRulesAvailable = c.SuricataRulesPath != ""
+	if len(publicKey) > 0 {
+		wal.taskCapabilities = engine.Capabilities()
+		wal.commandSignerSHA256 = control.Digest(publicKey)
+	}
 	tlsConfig, e := transport.TLS(c.TLSCA, c.TLSCert, c.TLSKey, false)
 	if e != nil {
 		return e
@@ -114,11 +113,12 @@ func Run(ctx context.Context, c config.Config) error {
 		return e
 	}
 	defer data.Close()
-	control, e := grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())))
+	controlConnection, e := grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())))
 	if e != nil {
 		return e
 	}
-	defer control.Close()
+	defer controlConnection.Close()
+	engine.ReplayClient = sensorv1.NewSensorServiceClient(controlConnection)
 	client := sensorv1.NewSensorServiceClient(data)
 	var routeMu sync.Mutex
 	routes := map[string]*sensorv1.Route{}
@@ -172,13 +172,33 @@ func Run(ctx context.Context, c config.Config) error {
 	for _, stream := range []string{"alerts", "context"} {
 		group.Go(func() error { upload(run, client, wal, stream); return nil })
 	}
-	group.Go(func() error { heartbeat(run, sensorv1.NewSensorServiceClient(control), wal, c); return nil })
+	group.Go(func() error { return tasks.Run(run) })
+	group.Go(func() error {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-run.Done():
+				return nil
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(run, 10*time.Second)
+				e := samples.Sweep(ctx)
+				cancel()
+				if e != nil && run.Err() == nil {
+					slog.Warn("本地重放样本清理未完成")
+				}
+			}
+		}
+	})
+	group.Go(func() error {
+		return controlLoop(run, sensorv1.NewSensorServiceClient(controlConnection), wal, tasks, c)
+	})
 	group.Go(func() error {
 		cert, key := "", ""
 		if c.Mode == "production" {
 			cert, key = c.TLSCert, c.TLSKey
 		}
-		return httpapi.Serve(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath), cert, key)
+		return httpapi.Serve(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key)
 	})
 	return group.Wait()
 }

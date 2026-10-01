@@ -15,9 +15,13 @@ var CommitAge = prometheus.NewHistogram(prometheus.HistogramOpts{Name: "starbeac
 var ClockAnomalies = prometheus.NewCounter(prometheus.CounterOpts{Name: "starbeacon_clock_anomalies_total", Help: "事件观察时间晚于平台完成时间的次数。"})
 var WALPending = prometheus.NewGauge(prometheus.GaugeOpts{Name: "starbeacon_agent_wal_pending_records", Help: "采集器待传队列记录数。"})
 var WALBytes = prometheus.NewGauge(prometheus.GaugeOpts{Name: "starbeacon_agent_wal_pending_bytes", Help: "采集器待传记录编码字节数，不代表数据库文件体积。"})
+var ControlConnections = prometheus.NewGauge(prometheus.GaugeOpts{Name: "starbeacon_control_connections", Help: "当前已认证采集器控制连接数。"})
+var CommandDeliveries = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_command_deliveries_total", Help: "平台投递命令次数，包含重投。"}, []string{"kind"})
+var CommandDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{Name: "starbeacon_agent_command_seconds", Help: "采集器命令执行耗时，不包含排队或平台确认。", Buckets: []float64{.01, .05, .1, .25, .5, 1, 2, 5, 10, 30, 60, 120}}, []string{"kind"})
+var CommandResults = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_agent_command_results_total", Help: "采集器完成的命令次数，不包含重复投递。"}, []string{"kind", "state"})
 
 func init() {
-	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes)
+	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes, ControlConnections, CommandDeliveries, CommandDuration, CommandResults)
 }
 func ObserveCommit(observed time.Time) {
 	d := time.Since(observed).Seconds()

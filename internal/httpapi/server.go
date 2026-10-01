@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -91,7 +92,19 @@ func Middleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Referrer-Policy", "same-origin")
-		r = r.WithContext(context.WithValue(r.Context(), requestKey, id))
+		peer, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if net.ParseIP(peer) == nil {
+			peer = ""
+		}
+		ua := strings.ToValidUTF8(r.UserAgent(), "�")
+		if len(ua) > 512 {
+			ua = ua[:512]
+			for !utf8.ValidString(ua) {
+				ua = ua[:len(ua)-1]
+			}
+		}
+		meta := model.RequestMetadata{SourceIP: peer, UserAgent: ua, RequestID: id}
+		r = r.WithContext(model.WithRequestMetadata(context.WithValue(r.Context(), requestKey, id), meta))
 		defer func() {
 			if v := recover(); v != nil {
 				slog.Error("HTTP 请求异常", "request_id", id)

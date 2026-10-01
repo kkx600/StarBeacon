@@ -41,6 +41,7 @@ dev-setup: build
 	python3 scripts/env-run.py .local/owner.env bin/starbeaconctl bootstrap --if-missing
 	@test -f .local/pki/ca.crt || bin/starbeaconctl dev-pki
 	python3 scripts/provision-dev-agent.py
+	python3 scripts/provision-command-keys.py
 platform:
 	python3 scripts/env-run.py .local/platform.env bin/starbeacon
 ingest:

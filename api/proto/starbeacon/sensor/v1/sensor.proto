@@ -8,7 +8,11 @@ service SensorService {
   rpc UploadEvents(stream EventBatch) returns (stream IngestAck);
   rpc Control(stream AgentMessage) returns (stream PlatformCommand);
   rpc GetRoute(RouteRequest) returns (Route);
+  rpc DownloadReplaySample(ReplaySampleRequest) returns (stream ReplaySampleChunk);
 }
+
+message ReplaySampleRequest { string command_id = 1; string sample_id = 2; }
+message ReplaySampleChunk { uint64 offset = 1; bytes data = 2; }
 
 message EventRecord {
   string event_id = 1;
@@ -62,7 +66,7 @@ message IngestAck {
 }
 message RejectedRecord { uint64 sequence = 1; string error_code = 2; bool retryable = 3; }
 
-enum AgentMessageKind { AGENT_MESSAGE_KIND_UNSPECIFIED = 0; AGENT_MESSAGE_KIND_HEARTBEAT = 1; }
+enum AgentMessageKind { AGENT_MESSAGE_KIND_UNSPECIFIED = 0; AGENT_MESSAGE_KIND_HEARTBEAT = 1; AGENT_MESSAGE_KIND_TASK_RECEIPT = 2; }
 message AgentMessage {
   string sensor_id = 1;
   string message_id = 2;
@@ -73,13 +77,15 @@ message AgentMessage {
   google.protobuf.Timestamp observed_at = 7;
   string sensor_registration_id = 8;
 }
-enum CommandKind { COMMAND_KIND_UNSPECIFIED = 0; COMMAND_KIND_HEARTBEAT_ACK = 1; }
+enum CommandKind { COMMAND_KIND_UNSPECIFIED = 0; COMMAND_KIND_HEARTBEAT_ACK = 1; COMMAND_KIND_TASK = 2; COMMAND_KIND_RECEIPT_ACK = 3; }
 message PlatformCommand {
   string command_id = 1;
   CommandKind kind = 2;
   string payload_schema = 3;
   bytes payload_json = 4;
+  // 原始 payload_json 的 32 字节 SHA-256，回执 ACK 同样确认原始回执字节。
   bytes payload_sha256 = 5;
+  // 任务签名为 Ed25519，签名域与规范见 api/README.md；ACK 不携带签名。
   bytes signature = 6;
   google.protobuf.Timestamp expires_at = 7;
 }

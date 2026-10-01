@@ -9,8 +9,8 @@ export class ApiClient {
   onUnauthorized?: () => void
   constructor(readonly prefix: string) {}
   setCSRF(value: string) {this.csrf = value}
-  async request<T>(path: string, options: {method?: string; body?: unknown; signal?: AbortSignal} = {}): Promise<T> {
-    const response = await fetch(this.prefix + path, {method: options.method ?? 'GET', credentials: 'same-origin', signal: options.signal, headers: {'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf}, body: options.body == null ? undefined : JSON.stringify(options.body)})
+  async request<T>(path: string, options: {method?: string; body?: unknown; file?: File; signal?: AbortSignal; headers?: Record<string,string>} = {}): Promise<T> {
+    const response = await fetch(this.prefix + path, {method: options.method ?? 'GET', credentials: 'same-origin', signal: options.signal, headers: {...options.headers, 'Content-Type': options.file?'application/octet-stream':'application/json', 'X-CSRF-Token': this.csrf,...(options.file?{'X-Filename':encodeURIComponent(options.file.name)}:{})}, body: options.file??(options.body == null ? undefined : JSON.stringify(options.body))})
     const body = await response.json().catch(() => ({}))
     if (!response.ok) {
       if (response.status === 401 && path !== '/auth/login') this.onUnauthorized?.()

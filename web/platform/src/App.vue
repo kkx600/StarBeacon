@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h, watch } from 'vue'
-import { RadarChartOutlined, AlertOutlined } from '@ant-design/icons-vue'
+import { RadarChartOutlined, AlertOutlined, FileProtectOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
@@ -8,7 +8,7 @@ import { appTheme } from '@starbeacon/shared/theme.ts'
 import AppShell from '@starbeacon/shared/components/AppShell.vue'
 import { session } from './session'
 const route = useRoute(), router = useRouter()
-const items = [{key: '/sensors', label: '探针管理', icon: () => h(RadarChartOutlined)}, {key: '/alerts', label: '告警管理', icon: () => h(AlertOutlined)}]
+const items = [{key: '/sensors', label: '探针管理', icon: () => h(RadarChartOutlined)}, {key: '/alerts', label: '告警管理', icon: () => h(AlertOutlined)}, {key: '/rules', label: '规则管理', icon: () => h(FileProtectOutlined)}]
 watch(session.current, user => {if (!user && route.path !== '/login') void router.replace('/login')})
 async function logout() {try {await session.logout(); await router.replace('/login')} catch (e) {message.error(e instanceof Error ? e.message : '退出失败')}}
 </script>

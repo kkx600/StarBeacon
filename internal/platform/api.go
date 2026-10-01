@@ -3,23 +3,30 @@ package platform
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/hosthealth"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/redis/go-redis/v9"
 )
 
 type API struct {
-	DB    *store.Postgres
-	ES    *store.Elasticsearch
-	Redis *redis.Client
-	Auth  *httpapi.Auth
+	DB          *store.Postgres
+	ES          *store.Elasticsearch
+	Redis       *redis.Client
+	Auth        *httpapi.Auth
+	Signer      ed25519.PrivateKey
+	Wakeup      *control.Wakeup
+	Samples     replay.Storage
+	SampleQuota int64
 }
 
 func (a *API) Handler() http.Handler {
@@ -31,6 +38,9 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("POST /api/v1/alerts/search", a.Auth.Require(false, a.alerts))
 	m.HandleFunc("GET /api/v1/platform/health", a.Auth.Require(true, a.health))
 	m.HandleFunc("GET /api/v1/audits/operations", a.Auth.Require(true, a.audits))
+	m.HandleFunc("GET /api/v1/audits/logins", a.Auth.Require(true, a.loginAudits))
+	a.registerTasks(m)
+	a.registerReplay(m)
 	return m
 }
 func (a *API) Ready(ctx context.Context) error {
@@ -105,31 +115,5 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 	if a.ES.Ping(ctx) != nil {
 		states["elasticsearch"] = "unavailable"
 	}
-	httpapi.JSON(w, 200, map[string]any{"services": states, "observed_at": time.Now().UTC()})
-}
-func (a *API) audits(w http.ResponseWriter, r *http.Request) {
-	items := make([]map[string]any, 0)
-	u := httpapi.Principal(r)
-	e := a.DB.TenantTx(r.Context(), u.TenantID, func(tx pgx.Tx) error {
-		rows, e := tx.Query(r.Context(), "SELECT id,user_id,action,object_id,request_id,created_at FROM operation_audits WHERE tenant_id=$1 ORDER BY id DESC LIMIT 200", u.TenantID)
-		if e != nil {
-			return e
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var id int64
-			var user, action, object, request string
-			var at time.Time
-			if e = rows.Scan(&id, &user, &action, &object, &request, &at); e != nil {
-				return e
-			}
-			items = append(items, map[string]any{"id": strconv.FormatInt(id, 10), "user_id": user, "action": action, "object_id": object, "request_id": request, "created_at": at})
-		}
-		return rows.Err()
-	})
-	if e != nil {
-		httpapi.Fail(w, r, 503, "audit_unavailable", "暂时无法读取操作日志")
-		return
-	}
-	httpapi.JSON(w, 200, map[string]any{"items": items})
+	httpapi.JSON(w, 200, map[string]any{"services": states, "observed_at": time.Now().UTC(), "runtime": hosthealth.Read(ctx)})
 }

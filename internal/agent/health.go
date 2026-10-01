@@ -55,6 +55,9 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 		h.Errors = append(h.Errors, "wal_unavailable")
 	}
 	w.mu.RLock()
+	h.TaskCapabilities = append([]string(nil), w.taskCapabilities...)
+	h.CommandSignerSHA256 = w.commandSignerSHA256
+	h.RegisteredRulesAvailable = w.registeredRulesAvailable
 	for code, active := range w.failures {
 		if active {
 			h.Errors = append(h.Errors, code)

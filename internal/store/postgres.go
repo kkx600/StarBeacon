@@ -75,7 +75,7 @@ func (p *Postgres) TenantTx(ctx context.Context, tenant string, fn func(pgx.Tx) 
 }
 func (p *Postgres) VerifyRuntimeRole(ctx context.Context) error {
 	var bad bool
-	e := p.Pool.QueryRow(ctx, `SELECT r.rolsuper OR r.rolbypassrls OR EXISTS(SELECT 1 FROM pg_tables t WHERE t.schemaname='public' AND t.tablename='sensors' AND t.tableowner=current_user) FROM pg_roles r WHERE r.rolname=current_user`).Scan(&bad)
+	e := p.Pool.QueryRow(ctx, `SELECT r.rolsuper OR r.rolbypassrls OR EXISTS(SELECT 1 FROM pg_tables t WHERE t.schemaname='public' AND t.tablename IN ('tenants','users','sessions','sensors','routes','retention_policies','operation_audits','login_audits','sensor_tasks','rule_packages') AND t.tableowner=current_user) FROM pg_roles r WHERE r.rolname=current_user`).Scan(&bad)
 	if e != nil {
 		return e
 	}
@@ -111,12 +111,16 @@ func (p *Postgres) DeleteSession(ctx context.Context, token string) error {
 	return e
 }
 func (p *Postgres) LoginAudit(ctx context.Context, u model.Principal, success bool) error {
-	var tenant any
-	if u.TenantID != "" {
-		tenant = u.TenantID
+	meta := model.RequestMetadataFrom(ctx)
+	if u.TenantID == "" {
+		_, e := p.Pool.Exec(ctx, `INSERT INTO login_audits(tenant_id,username,success,source_ip,user_agent,request_id) VALUES(NULL,$1,$2,$3,$4,$5)`, u.Username, success, meta.SourceIP, meta.UserAgent, meta.RequestID)
+		return e
 	}
-	_, e := p.Pool.Exec(ctx, "INSERT INTO login_audits(tenant_id,username,success) VALUES($1,$2,$3)", tenant, u.Username, success)
-	return e
+	return p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
+		_, e := tx.Exec(ctx, `INSERT INTO login_audits(tenant_id,username,success,source_ip,user_agent,request_id,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='logins'),180)))`, u.TenantID, u.Username, success, meta.SourceIP, meta.UserAgent, meta.RequestID)
+		return e
+	})
+
 }
 func (p *Postgres) Sensors(ctx context.Context, tenant string) ([]model.Sensor, error) {
 	out := make([]model.Sensor, 0)
@@ -203,7 +207,6 @@ func (p *Postgres) SetSensorActive(ctx context.Context, u model.Principal, id st
 		if tag.RowsAffected() != 1 {
 			return pgx.ErrNoRows
 		}
-		_, e = tx.Exec(ctx, "INSERT INTO operation_audits(tenant_id,user_id,action,object_id,request_id) VALUES($1,$2,$3,$4,$5)", u.TenantID, u.ID, fmt.Sprintf("sensor.active=%t", active), id, request)
-		return e
+		return insertOperationAudit(ctx, tx, u, fmt.Sprintf("sensor.active=%t", active), id, request)
 	})
 }

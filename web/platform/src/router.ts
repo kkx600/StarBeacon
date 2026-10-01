@@ -4,6 +4,7 @@ export const router = createRouter({history: createWebHashHistory(), routes: [
   {path: '/', redirect: '/sensors'},
   {path: '/login', component: () => import('./views/LoginView.vue')},
   {path: '/sensors', component: () => import('./views/SensorsView.vue')},
+  {path: '/rules', component: () => import('./views/RulesView.vue')},
   {path: '/alerts', component: () => import('./views/AlertsView.vue')},
   {path: '/:pathMatch(.*)*', redirect: '/sensors'},
 ]})

@@ -106,9 +106,22 @@ func Interfaces() ([]NetworkInterface, error) {
 	}
 	return out, nil
 }
-func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string) http.Handler {
+func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*TaskManager) http.Handler {
 	m := http.NewServeMux()
 	auth.Register(m, "/api/local/v1")
+	if len(managers) > 0 && managers[0] != nil {
+		if managers[0].Replay != nil {
+			managers[0].Replay.Register(m, auth)
+		}
+		m.HandleFunc("GET /api/local/v1/tasks", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+			items, e := managers[0].List()
+			if e != nil {
+				httpapi.Fail(w, r, 503, "storage_unavailable", "无法读取执行任务")
+				return
+			}
+			httpapi.JSON(w, 200, map[string]any{"items": items})
+		}))
+	}
 	httpapi.Health(m, func(ctx context.Context) error { _, _, e := wal.Stats(); return e })
 	m.HandleFunc("GET /api/local/v1/health", auth.Require(true, func(w http.ResponseWriter, r *http.Request) { httpapi.JSON(w, 200, wal.Health(r.Context(), statePath)) }))
 	m.HandleFunc("GET /api/local/v1/network/interfaces", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {

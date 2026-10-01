@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -19,6 +20,15 @@ type Config struct {
 	StreamBytes                                                               int64
 	Replicas                                                                  int
 	HeartbeatInterval                                                         time.Duration
+	CommandSigningKey, CommandPublicKey                                       string
+	SuricataBinary, SuricataConfig, SuricataSocket, SuricataRulesPath         string
+	AllowRuleApply                                                            bool
+	SuricataPIDFile                                                           string
+	ReplayDir, ReplayBackend, ReplayS3Endpoint, ReplayS3Bucket                string
+	ReplayS3AccessKey, ReplayS3SecretKey                                      string
+	ReplayS3Secure                                                            bool
+	ReplayBytes                                                               int64
+	ReplayRetentionDays                                                       int
 }
 
 func env(key, fallback string) string {
@@ -48,11 +58,51 @@ func Load(role string) (Config, error) {
 		PlatformAddr: env("PLATFORM_ADDR", "127.0.0.1:29091"), IngestAddr: env("INGEST_ADDR", "127.0.0.1:29090"),
 		EVEPath: env("EVE_PATH", "/var/log/suricata/eve.json"), StatePath: env("STATE_PATH", "/var/lib/starbeacon/agent.db"), LocalPassword: env("LOCAL_PASSWORD", ""),
 		CookieName: "starbeacon_session", HeartbeatInterval: 10 * time.Second,
+		CommandSigningKey: env("COMMAND_SIGNING_KEY", ""), CommandPublicKey: env("COMMAND_PUBLIC_KEY", ""),
+		SuricataBinary: env("SURICATA_BINARY", ""), SuricataConfig: env("SURICATA_CONFIG", ""),
+		SuricataSocket: env("SURICATA_SOCKET", ""), SuricataRulesPath: env("SURICATA_RULES_PATH", ""),
+		AllowRuleApply:  env("ALLOW_RULE_APPLY", "false") == "true",
+		SuricataPIDFile: env("SURICATA_PID_FILE", ""),
+		ReplayDir:       env("REPLAY_DIR", ".local/replay-"+role), ReplayBackend: env("REPLAY_BACKEND", ""),
+		ReplayS3Endpoint: env("REPLAY_S3_ENDPOINT", ""), ReplayS3Bucket: env("REPLAY_S3_BUCKET", ""),
+		ReplayS3AccessKey: env("REPLAY_S3_ACCESS_KEY", ""), ReplayS3SecretKey: env("REPLAY_S3_SECRET_KEY", ""), ReplayS3Secure: env("REPLAY_S3_SECURE", "true") == "true",
 	}
 	if c.Mode != "development" && c.Mode != "production" {
 		return c, fmt.Errorf("SB_MODE 必须为 development 或 production")
 	}
+	if c.Mode == "production" {
+		fallback := "/var/lib/starbeacon/replay-staging"
+		if role == "agent" {
+			fallback = filepath.Join(filepath.Dir(c.StatePath), "replay")
+		}
+		c.ReplayDir = env("REPLAY_DIR", fallback)
+		if !filepath.IsAbs(c.ReplayDir) {
+			return c, fmt.Errorf("生产重放目录必须为绝对路径")
+		}
+	}
 	var err error
+	c.ReplayBytes, err = strconv.ParseInt(env("REPLAY_BYTES", "1073741824"), 10, 64)
+	if err != nil || c.ReplayBytes < 100*1024*1024 {
+		return c, fmt.Errorf("SB_REPLAY_BYTES 至少为 100 MiB")
+	}
+	c.ReplayRetentionDays, err = strconv.Atoi(env("REPLAY_RETENTION_DAYS", "180"))
+	if err != nil || c.ReplayRetentionDays < 1 || c.ReplayRetentionDays > 3650 {
+		return c, fmt.Errorf("样本保留期必须为 1–3650 天")
+	}
+	if role == "platform" {
+		if c.Mode == "development" && c.ReplayBackend == "" {
+			c.ReplayBackend = "filesystem"
+		}
+		if c.ReplayBackend != "" && c.ReplayBackend != "filesystem" && c.ReplayBackend != "s3" {
+			return c, fmt.Errorf("重放存储类型无效")
+		}
+		if c.Mode == "production" && c.ReplayBackend == "filesystem" {
+			return c, fmt.Errorf("生产平台重放样本要求 S3 对象存储")
+		}
+		if c.ReplayBackend == "s3" && (c.ReplayS3Endpoint == "" || c.ReplayS3Bucket == "" || c.ReplayS3AccessKey == "" || c.ReplayS3SecretKey == "" || (c.Mode == "production" && !c.ReplayS3Secure)) {
+			return c, fmt.Errorf("S3 样本存储配置不完整或未启用 TLS")
+		}
+	}
 	c.WALBytes, err = strconv.ParseUint(env("WAL_BYTES", "268435456"), 10, 64)
 	if err != nil || c.WALBytes < 4*1024*1024 {
 		return c, fmt.Errorf("SB_WAL_BYTES 必须至少为 4 MiB")

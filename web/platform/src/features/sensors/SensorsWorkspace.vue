@@ -5,9 +5,11 @@ import type { Sensor } from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import SensorTable from './SensorTable.vue'
 import SensorDetail from './SensorDetail.vue'
+import TaskWorkspace from './TaskWorkspace.vue'
 import { useSensors } from './useSensors'
 import { session } from '../../session'
 const {items, pending, error, saving, refresh, toggle} = useSensors()
+const tasks = shallowRef<InstanceType<typeof TaskWorkspace>|null>(null)
 const selected = shallowRef<Sensor | null>(null)
 async function change(sensor: Sensor) {try {await toggle(sensor); message.success('探针状态保存成功')} catch(e) {message.error(e instanceof Error ? e.message : '保存失败')}}
 </script>
@@ -18,5 +20,6 @@ async function change(sensor: Sensor) {try {await toggle(sensor); message.succes
       <SensorTable :items="items" :admin="session.current.value?.role === 'admin'" :saving="saving" @view="selected = $event" @toggle="change" />
     </StatePanel>
   </section>
-  <SensorDetail :sensor="selected" @close="selected = null" />
+  <TaskWorkspace v-if="session.current.value?.role==='admin'" ref="tasks" />
+  <SensorDetail :sensor="selected" @close="selected = null" @submitted="tasks?.refresh()" />
 </template>

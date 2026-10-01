@@ -78,8 +78,11 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 		GRANT SELECT,UPDATE ON sensors TO starbeacon_app;
 		GRANT SELECT,INSERT,UPDATE ON routes TO starbeacon_app;
 		GRANT SELECT,INSERT ON operation_audits TO starbeacon_app;
-		GRANT INSERT ON login_audits TO starbeacon_app;
+		GRANT SELECT,INSERT ON login_audits TO starbeacon_app;
 		GRANT USAGE ON SEQUENCE operation_audits_id_seq,login_audits_id_seq TO starbeacon_app`); e != nil {
+		return e
+	}
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE ON sensor_tasks TO starbeacon_app; GRANT SELECT,INSERT ON rule_packages TO starbeacon_app; GRANT SELECT,INSERT,UPDATE,DELETE ON replay_samples TO starbeacon_app`); e != nil {
 		return e
 	}
 	return tx.Commit(ctx)

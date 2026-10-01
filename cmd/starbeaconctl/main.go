@@ -6,9 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/admin"
+	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/store"
 )
 
@@ -31,6 +33,12 @@ func run() error {
 	}
 	if command == "dev-pki" {
 		return admin.DevPKI(*dir)
+	}
+	if command == "command-keys" {
+		if e := os.MkdirAll(*dir, 0700); e != nil {
+			return e
+		}
+		return control.GenerateKeys(filepath.Join(*dir, "command.key"), filepath.Join(*dir, "command.pub"))
 	}
 	dsn := os.Getenv("SB_MIGRATION_DATABASE_URL")
 	if dsn == "" {

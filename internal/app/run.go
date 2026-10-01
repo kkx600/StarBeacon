@@ -19,9 +19,11 @@ import (
 	"github.com/kkx600/StarBeacon/internal/buildinfo"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/config"
+	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/ingest"
 	"github.com/kkx600/StarBeacon/internal/platform"
+	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"github.com/kkx600/StarBeacon/internal/worker"
@@ -138,9 +140,52 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			return e
 		}
 		auth := httpapi.NewAuth(db, redisClient, c.AllowedOrigin, c.CookieName, c.Mode == "production")
-		api := &platform.API{DB: db, ES: es, Redis: redisClient, Auth: auth}
+		signer, e := control.PrivateKey(c.CommandSigningKey)
+		if e != nil {
+			return e
+		}
+		wakeup := &control.Wakeup{}
+		var samples replay.Storage
+		if c.ReplayBackend != "" {
+			local, e := replay.NewLocal(c.ReplayDir, c.ReplayBytes)
+			if e != nil {
+				return e
+			}
+			samples = local
+			if c.ReplayBackend == "s3" {
+				samples, e = replay.NewS3(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure, local)
+				if e != nil {
+					return e
+				}
+			}
+		}
+		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes}
+		if samples != nil {
+			group.Go(func() error {
+				timer := time.NewTicker(time.Minute)
+				defer timer.Stop()
+				for {
+					select {
+					case <-run.Done():
+						return nil
+					case <-timer.C:
+						ctx, cancel := context.WithTimeout(run, 20*time.Second)
+						e := db.SweepSamples(ctx, samples)
+						if object, ok := samples.(*replay.S3Storage); ok && e == nil {
+							e = object.Staging.PurgeOrphans(ctx, nil)
+						}
+						cancel()
+						if e != nil && run.Err() == nil {
+							slog.Warn("重放样本清理未完成")
+						}
+					}
+				}
+			})
+		}
 		handler = api.Handler()
-		group.Go(func() error { return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true}) })
+		group.Go(func() error {
+			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples})
+		})
 	case "ingest":
 		httpapi.Health(m, func(ctx context.Context) error {
 			if e := db.Pool.Ping(ctx); e != nil {

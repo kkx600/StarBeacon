@@ -24,18 +24,21 @@ type Sensor struct {
 	Status         string          `json:"status"`
 }
 type HostHealth struct {
-	Version       string    `json:"version"`
-	Hostname      string    `json:"hostname"`
-	ObservedAt    time.Time `json:"observed_at"`
-	CPUPercent    *float64  `json:"cpu_percent"`
-	MemoryPercent *float64  `json:"memory_percent"`
-	DiskPercent   *float64  `json:"disk_percent"`
-	RXBytes       string    `json:"rx_bytes"`
-	TXBytes       string    `json:"tx_bytes"`
-	WALPending    uint64    `json:"wal_pending"`
-	WALBytes      int64     `json:"wal_bytes"`
-	Errors        []string  `json:"errors"`
-	CaptureStatus string    `json:"capture_status"`
+	RegisteredRulesAvailable bool      `json:"registered_rules_available"`
+	TaskCapabilities         []string  `json:"task_capabilities,omitempty"`
+	CommandSignerSHA256      string    `json:"command_signer_sha256,omitempty"`
+	Version                  string    `json:"version"`
+	Hostname                 string    `json:"hostname"`
+	ObservedAt               time.Time `json:"observed_at"`
+	CPUPercent               *float64  `json:"cpu_percent"`
+	MemoryPercent            *float64  `json:"memory_percent"`
+	DiskPercent              *float64  `json:"disk_percent"`
+	RXBytes                  string    `json:"rx_bytes"`
+	TXBytes                  string    `json:"tx_bytes"`
+	WALPending               uint64    `json:"wal_pending"`
+	WALBytes                 int64     `json:"wal_bytes"`
+	Errors                   []string  `json:"errors"`
+	CaptureStatus            string    `json:"capture_status"`
 }
 type Endpoint struct {
 	IP   string `json:"ip,omitempty"`

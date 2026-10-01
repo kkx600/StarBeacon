@@ -27,6 +27,9 @@ type WAL struct {
 	MaxBytes                                  uint64
 	mu                                        sync.RWMutex
 	failures                                  map[string]bool
+	taskCapabilities                          []string
+	commandSignerSHA256                       string
+	registeredRulesAvailable                  bool
 }
 type Source struct {
 	FileID       string `json:"file_id"`
