@@ -11,7 +11,8 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "check:coverage": "node scripts/check-coverage.mjs",
     "check:workspaces": "node scripts/check-workspaces.mjs",
-    "check:collector": "node scripts/check-collector.mjs"
+    "check:collector": "node scripts/check-collector.mjs",
+    "check:theme": "node scripts/check-theme.mjs"
   },
   "dependencies": {
     "@ant-design/icons-vue": "7.0.1",

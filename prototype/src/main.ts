@@ -5,5 +5,7 @@ import App from './App.vue'
 import { router } from './router'
 import './styles.css'
 import './collector.css'
+import {applyPalette} from './theme'
 
+applyPalette()
 createApp(App).use(Antd).use(router).mount('#app')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {palette} from '../theme'
 import {computed,ref,watch} from 'vue'
 import {useRouter} from 'vue-router'
 import type {EChartsCoreOption} from 'echarts/core'
@@ -17,7 +18,7 @@ const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineE
 const selected=ref('业务 API 节点');const scope=ref('全部网络域');const relationship=ref('通信与依赖');const detail=ref(false);const formOpen=ref(false)
 const assetPage=pageById.get('assets')!;const assets=createFixtures(assetPage)
 const record=computed(()=>assets.find(r=>r.name===selected.value)??assets[0]!)
-const option=computed<EChartsCoreOption>(()=>({tooltip:{trigger:'item'},series:[{type:'graph',layout:'none',roam:false,symbolSize:55,label:{show:true,color:'#334155',position:'bottom',fontSize:13},lineStyle:{color:'#aab7ca',width:1.8},edgeSymbol:['none','arrow'],edgeSymbolSize:6,data:[{name:'边界网关',x:180,y:160,itemStyle:{color:'#2563eb'},symbolSize:66},{name:'业务 API 节点',x:400,y:100,itemStyle:{color:'#b45309'}},{name:'订单数据库',x:650,y:100,itemStyle:{color:'#64748b'}},{name:'身份服务',x:410,y:280,itemStyle:{color:'#2563eb'}},{name:'办公终端 A',x:170,y:340,itemStyle:{color:'#0891b2'}},{name:'研发构建节点',x:655,y:325,itemStyle:{color:'#2563eb'}},{name:'外部目的地',x:-10,y:110,itemStyle:{color:'#b91c1c'},symbol:'roundRect',symbolSize:[70,48]}],links:[{source:'外部目的地',target:'边界网关'},{source:'边界网关',target:'业务 API 节点'},{source:'业务 API 节点',target:'订单数据库'},{source:'业务 API 节点',target:'身份服务'},{source:'办公终端 A',target:'身份服务'},{source:'研发构建节点',target:'身份服务'},{source:'边界网关',target:'办公终端 A'}]}]}))
+const option=computed<EChartsCoreOption>(()=>({tooltip:{trigger:'item'},series:[{type:'graph',layout:'none',roam:false,symbolSize:55,label:{show:true,color:palette.recordText,position:'bottom',fontSize:13},lineStyle:{color:palette.controlBorder,width:1.8},edgeSymbol:['none','arrow'],edgeSymbolSize:6,data:[{name:'边界网关',x:180,y:160,itemStyle:{color:palette.primary},symbolSize:66},{name:'业务 API 节点',x:400,y:100,itemStyle:{color:palette.chartOrange}},{name:'订单数据库',x:650,y:100,itemStyle:{color:palette.muted}},{name:'身份服务',x:410,y:280,itemStyle:{color:palette.primary}},{name:'办公终端 A',x:170,y:340,itemStyle:{color:palette.teal}},{name:'研发构建节点',x:655,y:325,itemStyle:{color:palette.primary}},{name:'外部目的地',x:-10,y:110,itemStyle:{color:palette.danger},symbol:'roundRect',symbolSize:[70,48]}],links:[{source:'外部目的地',target:'边界网关'},{source:'边界网关',target:'业务 API 节点'},{source:'业务 API 节点',target:'订单数据库'},{source:'业务 API 节点',target:'身份服务'},{source:'办公终端 A',target:'身份服务'},{source:'研发构建节点',target:'身份服务'},{source:'边界网关',target:'办公终端 A'}]}]}))
 watch(()=>props.state,state=>{detail.value=state==='detail';formOpen.value=state==='action'},{immediate:true})
 function close(){detail.value=false;formOpen.value=false;if(['detail','action'].includes(props.state))emit('state','data')}
 </script>

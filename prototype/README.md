@@ -71,11 +71,12 @@ pnpm dev
 pnpm check:coverage
 pnpm check:workspaces
 pnpm check:collector
+pnpm check:theme
 pnpm build
 pnpm preview
 ```
 
-覆盖脚本核对页面与功能矩阵的编号、重复路由和必要配置，并生成图片目录的页面清单。构建包含 TypeScript 与 Vue 模板检查。截图文件核对脚本检查全部状态文件、JPEG 格式和来源校验值。
+覆盖脚本核对页面与功能矩阵的编号、重复路由和必要配置，并生成图片目录的页面清单。构建包含 TypeScript 与 Vue 模板检查。配色脚本核对 49 组文字组合的对比度不低于 4.5、16 组控件与图形组合不低于 3，并检查静态目录颜色与主题一致；这是语义色组合检查，不代替全页面无障碍验收。截图文件核对脚本检查全部状态文件、JPEG 格式和来源校验值。
 
 ```sh
 node scripts/check-screenshots.mjs
@@ -92,6 +93,7 @@ node scripts/check-screenshots.mjs
 - `src/data/collector.ts`、`src/composables/useCollector.ts`：采集器样机、配置检查和待执行任务；不调用真实设备。
 - `src/views/`：概览、检索、规则、助手、留存、剧本、拓扑、大屏等独立工作区。
 - `src/components/`：通用列表、表单、详情、通信证据与状态组件。
+- `src/theme.ts`：语义色、图表色、根级颜色变量与 Ant Design Vue 4.2.6 主题接口。
 - `public/screenshots/`：全部状态图片、补充图片、图片目录与来源清单。
 - `public/page-manifest.json`：可机读的页面、状态和需求映射。
 - `scripts/`：覆盖与图片完整性核对。
@@ -99,3 +101,5 @@ node scripts/check-screenshots.mjs
 布局参考 [Soybean Admin Ant](https://github.com/soybeanjs/soybean-admin-antd) 与[其产品介绍](https://admin-docs.soybeanjs.cn/guide/intro)，采用本仓库业务字段和交互实现。组件使用依据来自 Vue、Ant Design Vue、Vue Router 与 ECharts 官方文档，经 Context7 查询核对。
 
 颜色、字体、组件与业务状态的一致性约束见[界面设计规范](../DESIGN.md)。
+
+配色由 `src/theme.ts` 统一定义，白色面板与浅蓝工作区承载内容，亮蓝用于主操作，绿色、琥珀色和玫红分别表达正常、关注与风险。状态保留文字说明；指标使用对应的浅色底，图表使用蓝、青、紫和橙色，大屏使用蓝色底与高亮蓝青色。挂载到 `body` 的弹窗、通知和下拉控件继承同一套根级颜色变量。
