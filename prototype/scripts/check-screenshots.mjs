@@ -38,6 +38,7 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
     const size=dimensions(bytes)
     if(!size.width||!size.height||bytes.length<1000)throw new Error('图像为空或尺寸无效')
     if(size.width!==source.viewport.width)throw new Error(`图片宽度 ${size.width} 与视口 ${source.viewport.width} 不一致`)
+    if(size.height<source.viewport.height)throw new Error('图片未覆盖完整视口')
     if(source.viewport.scrollWidth>source.viewport.width)throw new Error('页面存在视口外的横向溢出')
     const sha256=createHash('sha256').update(bytes).digest('hex')
     if(!refresh&&prior?.entries.find(e=>e.file===file)?.sha256!==sha256)throw new Error('文件校验值与来源清单不一致')

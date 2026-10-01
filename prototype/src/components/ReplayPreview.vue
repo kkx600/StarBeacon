@@ -1,0 +1,43 @@
+<script setup lang="ts">
+import {computed,ref,watch} from 'vue'
+import {useRouter} from 'vue-router'
+import {message} from 'ant-design-vue'
+import type {PreviewState} from '../models'
+import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.vue'
+import {inspectRules} from '../../../web/packages/shared/src/utils/ruleSyntax'
+import {formatBytes} from '../../../web/packages/shared/src/utils/format'
+import {exampleRule} from '../data/fixtures'
+import PageHeader from './PageHeader.vue'
+import StatePanel from './StatePanel.vue'
+import StatusTag from './StatusTag.vue'
+const props=defineProps<{state:PreviewState;tasks?:boolean;local?:boolean;embedded?:boolean}>()
+const emit=defineEmits<{state:[value:PreviewState];view:[value:string]}>()
+const router=useRouter()
+const importing=ref(false),testing=ref(false),detail=ref(false),formError=ref(''),file=ref<File>()
+const sampleRows=ref([{id:'SAMPLE-DEMO-001',name:'example-http-session.pcap',size:835,format:'PCAP',sha:'合成摘要示例',created:'2026-10-02 08:32:07',expires:'2027-03-31 08:32:07'}])
+const taskRows=ref([{id:'REPLAY-DEMO-001',name:'HTTP 规则验证',sensor:'总部核心探针',source:'平台规则包修订 1',status:'示例报告',packets:'9',hits:'1',duration:'227 ms',time:'2026-10-02 08:33:01'}])
+const currentTask=ref(taskRows.value[0]!)
+const target=ref('总部核心探针'),mode=ref('package'),rule=ref(exampleRule),selected=ref(sampleRows.value[0]!)
+const items=computed(()=>props.state==='empty'?[]:props.tasks?taskRows.value:sampleRows.value)
+const columns=computed(()=>props.tasks?[{title:'重放任务',key:'name',width:220},{title:'执行探针',dataIndex:'sensor',width:160},{title:'规则来源',dataIndex:'source',width:200},{title:'状态',key:'status',width:130},{title:'创建时间',dataIndex:'time',width:180},{title:'操作',key:'action',width:100}]:[{title:'样本名称',key:'name',width:250},{title:'格式 / 大小',key:'size',width:150},{title:'摘要状态',dataIndex:'sha',width:200},{title:'导入时间',dataIndex:'created',width:180},{title:'保留至',dataIndex:'expires',width:180},{title:'操作',key:'action',width:110}])
+watch(()=>[props.state,props.tasks],()=>{importing.value=props.state==='action'&&!props.tasks;testing.value=props.state==='action'&&!!props.tasks;detail.value=props.state==='detail';formError.value='';file.value=undefined},{immediate:true})
+function close(){importing.value=false;testing.value=false;detail.value=false;if(['action','detail'].includes(props.state))emit('state','data')}
+function upload(){if(!file.value){formError.value='请选择 PCAP 或 PCAPNG 文件。';return}if(!/\.(?:pcap|pcapng)$/i.test(file.value.name)||file.value.size<24||file.value.size>100*1024*1024){formError.value='选择 24 字节至 100 MiB 的 PCAP 或 PCAPNG 文件。';return}sampleRows.value.unshift({...sampleRows.value[0]!,id:`SAMPLE-LOCAL-${Date.now()}`,name:file.value.name,size:file.value.size,sha:'未读取文件，摘要待计算'});close();emit('state','data');message.success('样本信息保存在原型内存中，文件未读取或上传。')}
+function submit(){if(props.local&&mode.value==='package'){const problems=inspectRules(rule.value);if(problems.length){formError.value=`第 ${problems[0]!.line} 行：${problems[0]!.message}`;return}}taskRows.value.unshift({id:`REPLAY-LOCAL-${Date.now()}`,name:selected.value.name,sensor:props.local?'本机采集器':target.value,source:mode.value==='registered'?'登记规则快照':props.local?'本次输入规则':'平台规则包修订 1',status:'原生执行未接入',packets:'未获取',hits:'未获取',duration:'未获取',time:'2026-10-02 08:35:00'});close();emit('state','data');message.success('原型任务保存在内存中，未执行检测引擎。')}
+function goSamples(){if(props.local)emit('view','replay-samples');else void router.push('/page/rule-samples')}
+</script>
+<template>
+  <PageHeader v-if="!embedded" :title="tasks?'重放任务':'重放样本'" :description="tasks?'核对离线检测结果、规则来源与执行日志。':'导入 PCAP / PCAPNG，用于指定规则验证和采集故障定位。'">
+    <a-button v-if="tasks" @click="goSamples">重放样本</a-button><a-button type="primary" @click="formError='';tasks?testing=true:importing=true">{{tasks?'创建重放测试':'导入 PCAP'}}</a-button>
+  </PageHeader>
+  <div v-else class="panel-heading"><h2>{{tasks?'重放任务':'重放样本'}}</h2><a-button type="primary" @click="formError='';tasks?testing=true:importing=true">{{tasks?'创建重放测试':'导入 PCAP'}}</a-button></div>
+  <a-alert message="全部为合成示例。原型只保存文件信息和任务草稿，不读取 PCAP、不调用 Suricata。正式工程执行结果以探针回执为准。" type="info" show-icon class="page-notice"/>
+  <section class="panel table-panel"><div class="table-toolbar"><h2>{{tasks?'重放任务':'样本列表'}}</h2><span class="muted">{{tasks?'本地与平台来源分别标识':'默认保留 180 天 · 单文件上限 100 MiB'}}</span></div>
+    <StatePanel v-if="state==='loading'||state==='error'" :state="state" @action="emit('state','data')"/>
+    <StatePanel v-else-if="!items.length" state="empty" :title="tasks?'暂无重放任务':'暂无重放样本'" :description="tasks?'导入授权样本后选择规则，平台可指定探针执行。':'选择包含目标行为的授权样本。ZIP 压缩包不能直接用于重放。'" :action="tasks?'选择样本':'导入 PCAP'" @action="tasks?goSamples():importing=true"/>
+    <a-table v-else :columns="columns" :data-source="items" row-key="id" :pagination="{pageSize:8,showSizeChanger:false}" :scroll="{x:tasks?990:1070}" size="middle"><template #bodyCell="{column,record}"><template v-if="column.key==='name'"><button class="record-link" @click="tasks?(currentTask=record,detail=true):(selected=record,detail=true)">{{record.name}}</button><small class="row-id">{{record.id}}</small></template><template v-else-if="column.key==='size'">{{record.format}} · {{formatBytes(record.size)}}</template><StatusTag v-else-if="column.key==='status'" :value="record.status"/><a-button v-else-if="column.key==='action'" type="link" size="small" @click="tasks?(currentTask=record,detail=true):(selected=record,testing=true)">{{tasks?'查看':'重放测试'}}</a-button></template></a-table>
+  </section>
+  <a-modal :open="importing" title="导入 PCAP" ok-text="保存样本信息" @cancel="close" @ok="upload"><a-alert v-if="formError" type="error" show-icon :message="formError" class="modal-notice"/><a-form layout="vertical"><a-form-item label="授权样本文件" required><input type="file" accept=".pcap,.pcapng" aria-label="授权样本文件" @change="file=($event.target as HTMLInputElement).files?.[0];formError=''"/></a-form-item><p class="field-hint">原型仅记录文件名和大小。完整容器、包长度与 SHA-256 由正式工程校验。</p></a-form></a-modal>
+  <a-modal :open="testing" title="PCAP 重放测试" :width="780" ok-text="保存任务草稿" @cancel="close" @ok="submit"><a-alert v-if="formError" type="error" show-icon :message="formError" class="modal-notice"/><a-form layout="vertical"><a-form-item label="重放样本"><a-select :options="sampleRows.map(value=>({value:value.id,label:value.name}))" :value="selected.id" @change="(id:string)=>selected=sampleRows.find(row=>row.id===id)!"/></a-form-item><a-form-item v-if="!local" label="执行探针" required><a-select v-model:value="target" :options="['总部核心探针','研发核心探针','分支采集探针'].map(value=>({value,label:value}))"/></a-form-item><a-form-item label="规则来源" required><a-radio-group v-model:value="mode"><a-radio value="package">{{local?'指定规则':'指定规则包修订'}}</a-radio><a-radio value="registered">登记规则快照</a-radio></a-radio-group></a-form-item><a-form-item v-if="mode==='package'&&!local" label="规则包修订"><a-select value="工程验证规则包 · 修订 1" :options="[{value:'工程验证规则包 · 修订 1',label:'工程验证规则包 · 修订 1'}]"/></a-form-item><a-form-item v-if="mode==='package'&&local" label="本次输入规则" required><RuleEditor v-model="rule"/></a-form-item></a-form><a-alert message="离线重放不向真实网络发包。TLS 密文、缺包、重组深度和校验和会影响结果；未命中不能证明流量安全。" type="info" show-icon/></a-modal>
+  <a-modal :open="detail" :title="tasks?'重放任务详情':'重放样本详情'" :width="780" :footer="null" @cancel="close"><template v-if="tasks&&currentTask.status==='示例报告'"><a-alert message="合成报告：9 个包，1 次规则命中，耗时 227 ms。未执行真实检测。" type="info" show-icon class="modal-notice"/><a-descriptions bordered :column="1" size="small"><a-descriptions-item label="规则来源">{{local?'本次输入规则':'平台规则包修订 1'}}</a-descriptions-item><a-descriptions-item label="链路层 / MAC">Ethernet · 02:00:00:00:00:01 / 02:00:00:00:00:02</a-descriptions-item><a-descriptions-item label="首包 / 末包时间">2026-10-02 08:00:00.000 / 08:00:00.008（示例）</a-descriptions-item><a-descriptions-item label="完整性">示例截断包 0 · TCP 握手完整性未验证</a-descriptions-item><a-descriptions-item label="规则命中">SID 1000001 / rev 1 · 1 次（示例）</a-descriptions-item></a-descriptions><p class="field-hint">登记快照不保证正在实时进程中生效。原生装载检查与重放通过均不自动授予规则发布资格。</p></template><StatePanel v-else-if="tasks" state="empty" title="尚无原生执行结果" description="此草稿只保存在原型内存中，包数、命中、耗时与执行日志均未获取。" action="关闭" @action="close"/><a-descriptions v-else bordered :column="1" size="small"><a-descriptions-item label="样本名称">{{selected.name}}</a-descriptions-item><a-descriptions-item label="格式 / 大小">{{selected.format}} · {{formatBytes(selected.size)}}</a-descriptions-item><a-descriptions-item label="摘要状态">{{selected.sha}}</a-descriptions-item><a-descriptions-item label="导入时间">{{selected.created}}</a-descriptions-item><a-descriptions-item label="保留至">{{selected.expires}}</a-descriptions-item></a-descriptions></a-modal>
+</template>

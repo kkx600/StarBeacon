@@ -41,3 +41,14 @@ a,.record-link{text-underline-offset:3px}
 /* 表单字段保留控件高度，通过字段组间距提高工作台信息密度。 */
 .operation-form .ant-form-item,.record-form-modal .ant-form-item,.collector-form-body .ant-form-item,.node-inspector .ant-form-item{margin-bottom:var(--panel-inset)}
 @media(max-width:899px){:root{--page-inset:12px;--panel-inset:12px}}
+
+/* 技术字段与数值在各自容器内换行或滚动，不能扩宽工作区。 */
+.ant-modal .ant-modal-body {max-height:72vh;overflow:auto}
+.ant-btn:disabled,.ant-input:disabled,.ant-select-disabled .ant-select-selection-item {color:var(--muted)}
+.ant-table-cell {overflow-wrap:anywhere}
+.ant-alert-description,.ant-alert-message {overflow-wrap:anywhere}
+.metric-grid strong,.metric-item strong {min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ant-tabs-nav {min-width:0}
+.ant-tabs-tab-btn:focus-visible {outline:2px solid var(--primary);outline-offset:2px}
+
+@media(max-width:599px){.search-editor .panel-heading{flex-wrap:wrap;align-items:flex-start}.search-editor .panel-heading .ant-segmented{max-width:100%}}

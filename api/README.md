@@ -1,13 +1,13 @@
 # 星烽 StarBeacon 接口契约
 
-当前 HTTP 接口使用 OpenAPI 3.1：
+当前 HTTP 接口使用 OpenAPI 3.1，本目录 `openapi/` 是实际接口的权威契约。[接口与数据契约](../docs/接口与数据契约.md)描述完整目标范围，其中尚未实现的接口不能作为当前可调用入口：
 
 - [平台 API](openapi/platform.json)：身份、探针启停与心跳视图、告警检索、依赖／宿主健康、规则包、签名任务、重放样本、操作／登录审计游标。
 - [采集器 API](openapi/collector.json)：独立本地身份、宿主机健康、实际网卡、采集目标保存、独立本地重放及任务回执。
 
 两端使用各自的 HttpOnly Cookie。写请求及 `POST /alerts/search` 需要 `X-CSRF-Token`；登录由同源校验和限流保护。客户端只传业务筛选，不指定租户、ES 索引或任意 DSL。字符串长度限制在服务端按 UTF-8 字节校验。原始 EVE 仅向平台管理员返回；通信证据权限尚未细分。
 
-`/healthz`、`/readyz`、`/metrics` 是运维接口，HTTP 只监听回环。外部同源入口仅放行该端对应的 `/api/` 路由，监控接口另由受控管理入口访问。就绪检查代表当前依赖可用，不证明 Suricata 捕获质量、队列无积压或生产容量合格。
+`/healthz`、`/readyz`、`/metrics` 是运维接口，HTTP 只监听回环。外部同源入口仅放行该端对应的 `/api/` 路由，监控接口另由受控管理入口访问。Go 不内置前端静态页；同源代理须保留原始 Origin，并将该端 `SB_ALLOWED_ORIGIN` 配置为实际外部来源（无路径，生产为 HTTPS）。就绪检查代表当前依赖可用，不证明 Suricata 捕获质量、队列无积压或生产容量合格。
 
 [采集器 Protobuf](proto/starbeacon/sensor/v1/sensor.proto) 定义四种 RPC：`UploadEvents` 与 `GetRoute` 由接入进程提供，`Control` 与 `DownloadReplaySample` 由主平台提供。mTLS 证书唯一绑定租户、探针和注册代次；每个控制帧及样本流核验注册启用状态，不接受消息自报租户。
 

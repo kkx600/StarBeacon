@@ -21,7 +21,7 @@ export const workspaces:WorkspaceSpec[]=[
   {id:'sessions',title:'会话与 PCAP',group:'traffic',pages:['sessions','session-integrity','pcap-tasks']},
   {id:'capture-policy',title:'流量采集',group:'traffic',pages:['capture-policy','capture-scope','inspection-depth','capture-quality','protocols']},
   {id:'pipeline-latency',title:'处理性能',group:'traffic',pages:['pipeline-latency','capacity']},
-  {id:'rules',title:'检测规则',group:'detection',pages:['rules','correlation','sigma','application-rules','rule-tests']},
+  {id:'rules',title:'检测规则',group:'detection',pages:['rules','correlation','sigma','application-rules','rule-samples','rule-tests']},
   {id:'hunts',title:'威胁狩猎',group:'detection',pages:['hunts','behavior-baselines']},
   {id:'threat-scenarios',title:'威胁场景',group:'detection',pages:['threat-scenarios','attack-coverage']},
   {id:'file-analysis',title:'文件分析',group:'detection',pages:['file-analysis','samples','static-analysis','sandbox','sample-access','analysis-pools','analysis-reports']},

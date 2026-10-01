@@ -1,11 +1,13 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import {migrateLegacyHash} from '@starbeacon/shared/utils/history.ts'
 import { session } from './session'
-export const router = createRouter({history: createWebHashHistory(), routes: [
+migrateLegacyHash(import.meta.env.BASE_URL)
+export const router = createRouter({history: createWebHistory(import.meta.env.BASE_URL), scrollBehavior:()=>({top:0}), routes: [
   {path: '/', redirect: '/sensors'},
   {path: '/login', component: () => import('./views/LoginView.vue')},
   {path: '/sensors', component: () => import('./views/SensorsView.vue')},
   {path: '/rules', component: () => import('./views/RulesView.vue')},
   {path: '/alerts', component: () => import('./views/AlertsView.vue')},
-  {path: '/:pathMatch(.*)*', redirect: '/sensors'},
+  {path: '/:pathMatch(.*)*', component:()=>import('@starbeacon/shared/components/NotFound.vue'),props:{home:'/sensors'}},
 ]})
-router.beforeEach(async to => {if (to.path === '/login') return; try {await session.restore()} catch {return '/login'}; if (!session.current.value) return '/login'})
+router.beforeEach(async to => {if (to.path === '/login') return; try {await session.restore()} catch {return {path:'/login',query:{redirect:to.fullPath}}}; if (!session.current.value) return {path:'/login',query:{redirect:to.fullPath}}})

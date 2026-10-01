@@ -89,3 +89,12 @@ h2 {margin: 0; font-size: 16px; font-weight: 600}
     scroll-behavior: auto !important;
   }
 }
+
+/* 技术字段与数值在各自容器内换行或滚动，不能扩宽工作区。 */
+.ant-modal .ant-modal-body {max-height:72vh;overflow:auto}
+.ant-btn:disabled,.ant-input:disabled,.ant-select-disabled .ant-select-selection-item {color:var(--muted)}
+.ant-table-cell {overflow-wrap:anywhere}
+.ant-alert-description,.ant-alert-message {overflow-wrap:anywhere}
+.metric-grid strong,.metric-item strong {min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ant-tabs-nav {min-width:0}
+.ant-tabs-tab-btn:focus-visible {outline:2px solid var(--primary);outline-offset:2px}

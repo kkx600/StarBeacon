@@ -50,6 +50,9 @@ export const palette = {
   screenViolet: '#b298ff',
   screenAmber: '#ffd174',
   screenDanger: '#ffa0b2',
+  syntaxVariable: '#7434bb',
+  syntaxOption: '#8a4700',
+  syntaxNumber: '#b42340',
 } as const
 
 export const chartPalette = [palette.primary, palette.teal, palette.violet, palette.chartOrange, palette.chartNeutral]
@@ -79,7 +82,7 @@ export const appTheme = {
     colorInfoBgHover: palette.navSelected,
     colorInfoBorder: palette.line,
     colorSuccess: palette.success,
-    colorWarning: palette.warningDot,
+    colorWarning: palette.warning,
     colorError: palette.danger,
     colorText: palette.text,
     colorTextSecondary: palette.muted,

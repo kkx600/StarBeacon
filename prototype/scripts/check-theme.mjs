@@ -14,6 +14,7 @@ function contrast(foreground, background) {
 const textPairs = [
   ['surface', 'primary'],
   ...['surface', 'workspace', 'tableHeader', 'rowHover', 'navSelected', 'tabSelected', 'infoSurface'].flatMap(background => ['text', 'muted', 'link'].map(foreground => [foreground, background])),
+  ...['syntaxVariable','syntaxOption','syntaxNumber'].flatMap(foreground=>['surface','tableHeader'].map(background=>[foreground,background])),
   ['textPlaceholder', 'surface'], ['fieldLabel', 'tableHeader'], ['recordText', 'surface'],
   ['success', 'successSurface'], ['warning', 'warningSurface'], ['danger', 'dangerSurface'],
   ['infoText', 'infoSurface'], ['statusText', 'statusSurface'], ['selectionText', 'selectionSurface'],

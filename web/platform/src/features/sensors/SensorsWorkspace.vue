@@ -7,7 +7,11 @@ import SensorTable from './SensorTable.vue'
 import SensorDetail from './SensorDetail.vue'
 import TaskWorkspace from './TaskWorkspace.vue'
 import { useSensors } from './useSensors'
+import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
+import {useWorkspaceView} from '@starbeacon/shared/utils/useWorkspaceView.ts'
 import { session } from '../../session'
+const {view,change:changeView}=useWorkspaceView(session.current.value?.role==='admin'?['devices','tasks']:['devices'])
+const views=[{key:'devices',label:'探针列表'},{key:'tasks',label:'任务记录'}]
 const {items, pending, error, saving, refresh, toggle} = useSensors()
 const tasks = shallowRef<InstanceType<typeof TaskWorkspace>|null>(null)
 const selected = shallowRef<Sensor | null>(null)
@@ -15,11 +19,12 @@ async function change(sensor: Sensor) {try {await toggle(sensor); message.succes
 </script>
 <template>
   <header class="page-header"><div><h1>探针管理</h1><p class="page-description">查看连接、资源、版本和待传队列，管理当前租户的探针。</p></div><a-button :loading="pending" @click="refresh">刷新</a-button></header>
-  <section class="panel"><div class="panel-header"><h2>探针列表</h2><span>{{ items.length }} 台</span></div>
+  <WorkspaceTabs :active="view" :items="session.current.value?.role==='admin'?views:views.slice(0,1)" label="探针管理功能" @change="changeView" />
+  <section v-if="view==='devices'" class="panel"><div class="panel-header"><h2>探针列表</h2><span>{{ items.length }} 台</span></div>
     <StatePanel :loading="pending" :error="error" :empty="items.length === 0" description="暂无探针，请完成采集器身份登记后连接平台。" @retry="refresh">
       <SensorTable :items="items" :admin="session.current.value?.role === 'admin'" :saving="saving" @view="selected = $event" @toggle="change" />
     </StatePanel>
   </section>
-  <TaskWorkspace v-if="session.current.value?.role==='admin'" ref="tasks" />
-  <SensorDetail :sensor="selected" @close="selected = null" @submitted="tasks?.refresh()" />
+  <TaskWorkspace v-else ref="tasks" />
+  <SensorDetail :sensor="selected" @close="selected = null" @submitted="selected=null;changeView('tasks')" />
 </template>

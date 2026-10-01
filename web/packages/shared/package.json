@@ -3,6 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": {"./*": "./src/*"},
-  "dependencies": {"vue": "catalog:", "ant-design-vue": "catalog:", "@ant-design/icons-vue": "catalog:"}
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "catalog:",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/language": "6.12.4",
+    "@codemirror/lint": "6.9.7",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.13",
+    "@lezer/highlight": "1.2.5",
+    "ant-design-vue": "catalog:",
+    "vue": "catalog:",
+    "vue-router": "catalog:"
+  }
 }

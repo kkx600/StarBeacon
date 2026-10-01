@@ -179,6 +179,7 @@
         "correlation",
         "sigma",
         "application-rules",
+        "rule-samples",
         "rule-tests"
       ]
     },
@@ -6087,11 +6088,57 @@
       ]
     },
     {
-      "id": "rule-tests",
-      "title": "规则测试与回放",
+      "id": "rule-samples",
+      "title": "重放样本",
       "group": "detection",
       "kind": "table",
-      "description": "检查语法、正负样本、覆盖缺口和吞吐，测试结果与生产生效分开。",
+      "description": "导入 PCAP 与 PCAPNG 样本，选择目标探针与规则包进行离线验证。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/rule-samples?state=data",
+          "image": "rule-samples/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/rule-samples?state=empty",
+          "image": "rule-samples/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/rule-samples?state=detail",
+          "image": "rule-samples/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/rule-samples?state=action",
+          "image": "rule-samples/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/rule-samples?state=loading",
+          "image": "rule-samples/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/rule-samples?state=error",
+          "image": "rule-samples/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "rule-tests",
+      "title": "重放任务",
+      "group": "detection",
+      "kind": "table",
+      "description": "管理离线重放任务、执行探针与规则来源，核对包处理统计、命中和执行日志。",
       "requirements": [
         "SB-DET-002",
         "SB-AI-004"

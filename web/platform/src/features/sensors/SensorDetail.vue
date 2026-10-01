@@ -4,6 +4,7 @@ import { session } from '../../session'
 import { message, Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue'
 const ADescriptionsItem = ADescriptions.Item
 import type { Sensor } from '@starbeacon/shared/types.ts'
+import {formatBytes} from '@starbeacon/shared/utils/format.ts'
 import { formatTime, formatPercent, formatHealthErrors, taskNames } from '@starbeacon/shared/types.ts'
 const props=defineProps<{sensor: Sensor | null}>()
 const emit = defineEmits<{close: [];submitted:[]}>()
@@ -25,7 +26,7 @@ async function diagnostics(){if(!props.sensor)return;pending.value=true;if(keySe
         <a-descriptions-item label="最后观测时间">{{ formatTime(sensor.last_seen) }}</a-descriptions-item>
         <a-descriptions-item label="CPU / 内存 / 磁盘">{{ formatPercent(sensor.health.cpu_percent) }} / {{ formatPercent(sensor.health.memory_percent) }} / {{ formatPercent(sensor.health.disk_percent) }}</a-descriptions-item>
         <a-descriptions-item label="待传队列">{{ sensor.health.wal_pending ?? '未获取' }} 条</a-descriptions-item>
-        <a-descriptions-item label="累计收 / 发字节"><span class="technical">{{ sensor.health.rx_bytes ?? '未获取' }} / {{ sensor.health.tx_bytes ?? '未获取' }}</span></a-descriptions-item>
+        <a-descriptions-item label="累计接收 / 发送"><span class="technical">{{ formatBytes(sensor.health.rx_bytes) }} / {{ formatBytes(sensor.health.tx_bytes) }}</span></a-descriptions-item>
         <a-descriptions-item label="任务能力">{{ sensor.health.task_capabilities?.map(value=>(taskNames[value]??value)).join('、')||'尚未上报' }}</a-descriptions-item>
         <a-descriptions-item label="观测异常">{{ formatHealthErrors(sensor.health.errors) }}</a-descriptions-item>
       </a-descriptions>

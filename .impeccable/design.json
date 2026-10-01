@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-01T16:56:20Z",
+  "generatedAt": "2026-10-01T19:08:36Z",
   "title": "Design System: 星烽 StarBeacon",
   "extensions": {
     "colorMeta": {
@@ -480,6 +480,48 @@
           "oklch(95.00% 0.21889 295.90)"
         ]
       },
+      "syntax-variable": {
+        "displayName": "规则变量紫",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(15.00% 0.19943 300.70)",
+          "oklch(26.43% 0.19943 300.70)",
+          "oklch(37.86% 0.19943 300.70)",
+          "oklch(49.29% 0.19943 300.70)",
+          "oklch(60.71% 0.19943 300.70)",
+          "oklch(72.14% 0.19943 300.70)",
+          "oklch(83.57% 0.19943 300.70)",
+          "oklch(95.00% 0.19943 300.70)"
+        ]
+      },
+      "syntax-option": {
+        "displayName": "规则选项棕",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(15.00% 0.11461 56.65)",
+          "oklch(26.43% 0.11461 56.65)",
+          "oklch(37.86% 0.11461 56.65)",
+          "oklch(49.29% 0.11461 56.65)",
+          "oklch(60.71% 0.11461 56.65)",
+          "oklch(72.14% 0.11461 56.65)",
+          "oklch(83.57% 0.11461 56.65)",
+          "oklch(95.00% 0.11461 56.65)"
+        ]
+      },
+      "syntax-number": {
+        "displayName": "规则数字玫红",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(15.00% 0.17897 16.15)",
+          "oklch(26.43% 0.17897 16.15)",
+          "oklch(37.86% 0.17897 16.15)",
+          "oklch(49.29% 0.17897 16.15)",
+          "oklch(60.71% 0.17897 16.15)",
+          "oklch(72.14% 0.17897 16.15)",
+          "oklch(83.57% 0.17897 16.15)",
+          "oklch(95.00% 0.17897 16.15)"
+        ]
+      },
       "chart-orange": {
         "displayName": "图表橙",
         "role": "tertiary",
@@ -753,6 +795,10 @@
       "metric": {
         "displayName": "指标数值",
         "purpose": "普通指标；宽屏和紧凑视口存在局部字号变化。"
+      },
+      "rule-editor": {
+        "displayName": "规则编辑内容",
+        "purpose": "Suricata 规则编辑内容；13px 等宽字体、1.65 行高，不改变通用技术内容字号。"
       }
     },
     "shadows": [
@@ -932,6 +978,14 @@
       "description": "实际任务详情的默认折叠回执，等宽内容允许折行并保持内部滚动；片段中的空值为合成组件示例，不表示执行已经完成。",
       "html": "<details class=\"ds-execution-receipt\"><summary>执行回执</summary><pre class=\"ds-execution-receipt-data\" aria-label=\"合成执行回执示例\">{\n  \"replay\": \"not_run\",\n  \"packets_processed\": null,\n  \"alert_count\": null\n}</pre></details>",
       "css": ".ds-execution-receipt{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;font-size:14px;color:var(--text, #22334d)}.ds-execution-receipt summary:focus-visible{outline:2px solid var(--primary, #096bff);outline-offset:2px}.ds-execution-receipt-data{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--table-header, #fafafa);padding:var(--section-gap, 12px);border-radius:6px;max-height:320px;overflow:auto;font-size:12px;line-height:1.6;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "规则编辑器",
+      "kind": "custom",
+      "refersTo": "rule-editor",
+      "description": "CodeMirror 规则编辑器的独立静态 HTML/CSS 样式片段。内容为合成示例，不包含 Vue 运行时、编辑诊断或引擎验证行为。",
+      "html": "<div class=\"ds-rule-editor\"><div class=\"ds-rule-editor-input\" role=\"textbox\" aria-label=\"合成规则编辑器样式示例\" aria-readonly=\"true\" aria-multiline=\"true\" tabindex=\"0\"><pre class=\"ds-rule-editor-gutter\" aria-hidden=\"true\">1\n2</pre><pre class=\"ds-rule-editor-code\"><span class=\"ds-rule-comment\"># 合成规则样式示例</span>\n<span class=\"ds-rule-keyword\">alert tcp</span> <span class=\"ds-rule-variable\">$HOME_NET</span> any -&gt; <span class=\"ds-rule-variable\">$EXTERNAL_NET</span> <span class=\"ds-rule-number\">80</span> (<span class=\"ds-rule-option\">msg</span>:<span class=\"ds-rule-string\">\"HTTP 流量示例\"</span>; <span class=\"ds-rule-option\">sid</span>:<span class=\"ds-rule-number\">1000001</span>; <span class=\"ds-rule-option\">rev</span>:<span class=\"ds-rule-number\">1</span>;)</pre></div><div class=\"ds-rule-editor-status\"><span>合成规则内容</span><small>关键词、变量与引擎兼容性以目标探针的原生装载检查为准。</small></div></div>",
+      "css": ".ds-rule-editor { min-width: 0; overflow: hidden; border: 1px solid var(--control-border, #7b8fae); border-radius: 6px; background: var(--surface, #ffffff); color: var(--text, #22334d); } .ds-rule-editor:focus-within { outline: 2px solid var(--primary, #096bff); outline-offset: 2px; } .ds-rule-editor-input { display: grid; grid-template-columns: 30px minmax(0, 1fr); min-height: 180px; max-height: 340px; overflow: auto; outline: none; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; } .ds-rule-editor-gutter { margin: 0; padding: 8px 6px; border-right: 1px solid var(--line, #e8e8e8); background: var(--table-header, #fafafa); color: var(--muted, #526581); font: inherit; text-align: right; } .ds-rule-editor-code { min-width: 0; margin: 0; padding: 8px 4px; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; } .ds-rule-keyword { color: var(--link, #0759d5); font-weight: 600; } .ds-rule-string { color: var(--success, #087a43); } .ds-rule-variable { color: var(--syntax-variable, #7434bb); } .ds-rule-option { color: var(--syntax-option, #8a4700); } .ds-rule-number { color: var(--syntax-number, #b42340); } .ds-rule-comment { color: var(--muted, #526581); } .ds-rule-editor-status { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px; border-top: 1px solid var(--line, #e8e8e8); color: var(--muted, #526581); font: 12px/1.5 -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif; } .ds-rule-editor-status small { font-size: 12px; }"
     }
   ],
   "narrative": {
@@ -965,9 +1019,24 @@
         "section": "typography"
       },
       {
+        "name": "数值与缺测",
+        "body": "容量采用 SI 的 B、KB、MB、GB、TB 等单位，速率采用千进制 bit/s；显式 KiB 等二进制单位保留原义。64 位整数通过整数串与 BigInt 运算保留精度，混合单位按精确数值排序。缺测与真实零值分别展示，缺测写明原因，不填造为零。",
+        "section": "typography"
+      },
+      {
+        "name": "单一业务视图",
+        "body": "每个功能视图只呈现一个业务列表，不同对象通过功能页签或 view 查询参数切换；指标与说明服务于当前数据集。详情中的字段描述表属于对象说明，不计作第二个业务列表。",
+        "section": "layout"
+      },
+      {
         "name": "平面工作区",
         "body": "控制台面板依靠底色、细边框与间距区分；投影用于控件反馈与窄屏覆盖导航，不为每个内容面板制造浮起效果。",
         "section": "elevation"
+      },
+      {
+        "name": "规则诊断边界",
+        "body": "本地基础检查限定 900 KiB 的 alert 规则，核对七个头字段、引号、括号、末分号、SID 范围与重复及 rev；基础检查通过不等于完整语法、语义或引擎兼容通过。未知关键词、变量与兼容性必须由选定探针原生 Suricata -T 验证，原型候选与检测报告仍为固定合成示例。",
+        "section": "components"
       },
       {
         "name": "业务指标",
@@ -992,7 +1061,9 @@
       "**Do** 通过工作区页签与对象详情衔接相关任务，共用探针记录、健康口径与任务身份。",
       "**Do** 只展示适用的业务指标，静态边界说明使用低强调的信息提示，警示提示表达当前风险或限制。",
       "**Do** 将 180 天业务留存、旁路可见性、TLS 密文与合成数据说明作为用户理解当前结果所需的边界信息。",
-      "**Do** 在离线重放详情中先呈现检测结论、包数、命中数与耗时，任务身份、时间和原始回执使用折叠追溯区域。"
+      "**Do** 在离线重放详情中先呈现检测结论、包数、命中数与耗时，任务身份、时间和原始回执使用折叠追溯区域。",
+      "**Do** 保持一个视图一个业务列表，使用功能页签和可恢复的 view 地址衔接样本与任务。",
+      "**Do** 以整数串和 BigInt 保留大计数精度，容量与速率使用明确单位，缺测与零值分别说明。"
     ],
     "donts": [
       "**Don't** 用空状态、加载失败或权限不足替代彼此的业务含义。",
@@ -1003,7 +1074,8 @@
       "**Don't** 为控制台、认证入口、辅助区域或选中项使用浅蓝背景；蓝色保留在动作、链接、图表、文字和焦点等前景语义。",
       "**Don't** 传承未被现行界面采用的标题前装饰标签样式，或把登录入口的局部展示尺寸扩散为通用页面标题。",
       "**Don't** 把侧车合成色带、未独立采样的组件派生态或局部窄屏检查当作已经确认的全局 token 或完整验收。",
-      "**Don't** 将未命中视为流量安全、将登记规则快照视为必然正在运行的实时规则，或将装载和重放通过视为自动发布资格。"
+      "**Don't** 将未命中视为流量安全、将登记规则快照视为必然正在运行的实时规则，或将装载和重放通过视为自动发布资格。",
+      "**Don't** 将基础编辑诊断写成完整 Suricata 解析或发布资格，或将原型固定候选写成真实模型结果。"
     ]
   }
 }

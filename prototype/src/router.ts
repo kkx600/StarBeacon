@@ -1,8 +1,10 @@
 import {legacyPages} from './data/navigation'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import {migrateLegacyHash} from '../../web/packages/shared/src/utils/history'
 
+migrateLegacyHash(import.meta.env.BASE_URL)
 export const router=createRouter({
-  history:createWebHashHistory(),
+  history:createWebHistory(import.meta.env.BASE_URL),
   routes:[
     {path:'/',redirect:'/page/overview'},
     ...Object.entries(legacyPages).map(([legacy,id])=>({path:`/page/${legacy}`,redirect:(to:import('vue-router').RouteLocation)=>({path:`/page/${id}`,query:to.query,hash:to.hash})})),

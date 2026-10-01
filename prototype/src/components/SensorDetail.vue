@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {formatQuantity} from '../../../web/packages/shared/src/utils/format'
 import {computed} from 'vue'
 import type {BusinessRecord} from '../models'
 import {healthFor} from '../data/sensorHealth'
@@ -9,7 +10,7 @@ const props=defineProps<{record:BusinessRecord;tab:string}>()
 const health=computed(()=>healthFor(props.record,sensorThresholds))
 const observable=computed(()=>health.value!=='不可观测')
 const execution=computed(()=>props.record.role==='执行采集器')
-function metric(key:string,suffix=''){return observable.value&&props.record[key]!=null?`${props.record[key]}${suffix}`:'不可观测'}
+function metric(key:string,suffix=''){return observable.value&&props.record[key]!=null?key==='bps'?formatQuantity(props.record[key]):`${props.record[key]}${suffix}`:'不可观测'}
 </script>
 <template>
   <template v-if="tab==='基本信息'">

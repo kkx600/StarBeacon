@@ -3,6 +3,8 @@ import { computed,reactive,ref,watch } from 'vue'
 import { message } from 'ant-design-vue'
 import type {FormInstance} from 'ant-design-vue'
 import type {BusinessRecord,FieldSpec,PageSpec} from '../models'
+import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.vue'
+import {inspectRules} from '../../../web/packages/shared/src/utils/ruleSyntax'
 import {formValueFor} from '../composables/formValues'
 const props=defineProps<{open:boolean;page:PageSpec;record?:BusinessRecord}>()
 const emit=defineEmits<{close:[];save:[values:Record<string,unknown>]}>()
@@ -17,6 +19,7 @@ const title=computed(()=>exportMode.value?props.page.primary:props.record?`${pro
 watch(()=>props.open,open=>{if(open){Object.keys(values).forEach(k=>delete values[k]);fields.value.forEach(f=>values[f.key]=formValueFor(f,props.record));formRef.value?.clearValidate()}},{immediate:true})
 const rules=computed(()=>Object.fromEntries(fields.value.map(f=>[f.key,[...(f.required?[{required:true,message:`请${f.type==='select'?'选择':'填写'}${f.label}`}]:[])]])))
 function checkBusiness(){
+  if(props.page.family==='rule'||props.page.family==='rule-studio'){const problems=inspectRules(String(values.rule??''));if(problems.length)throw new Error(`第 ${problems[0]!.line} 行：${problems[0]!.message}`)}
   const ip=String(values.ip??values.target??'')
   if(ip&&!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip)&&!ip.includes(':'))throw new Error('请输入有效的 IPv4 或 IPv6 地址。')
   if(ip.includes('.')&&ip.split('.').some(v=>Number(v)>255))throw new Error('IP 地址中的数字不能超过 255。')
@@ -43,6 +46,7 @@ async function submit(){
           <a-select v-if="field.type==='select'" v-model:value="values[field.key]" :options="field.options?.map(value=>({value,label:value}))" :placeholder="`请选择${field.label}`"/>
           <a-input-number v-else-if="field.type==='number'" v-model:value="values[field.key]" :min="field.key==='confidence'?0:field.min??1" :max="field.key==='confidence'?1:field.max" :step="field.key==='confidence'?0.01:1" style="width:100%"/>
           <a-switch v-else-if="field.type==='switch'" v-model:checked="values[field.key]" checked-children="开启" un-checked-children="关闭"/>
+          <RuleEditor v-else-if="field.key==='rule'" :model-value="String(values[field.key]??'')" @update:model-value="values[field.key]=$event"/>
           <a-textarea v-else-if="field.type==='textarea'" v-model:value="values[field.key]" :rows="field.key==='rule'?5:3" :placeholder="`请输入${field.label}`"/>
           <a-input-password v-else-if="field.type==='password'" v-model:value="values[field.key]" autocomplete="new-password"/>
           <a-input v-else v-model:value="values[field.key]" :placeholder="`请输入${field.label}`"/>
