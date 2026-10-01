@@ -1,0 +1,6 @@
+{
+  "name": "@starbeacon/platform", "private": true, "version": "0.1.0", "type": "module",
+  "scripts": {"dev": "vite", "build": "vue-tsc --noEmit && vite build"},
+  "dependencies": {"@starbeacon/shared": "workspace:*", "vue": "catalog:", "vue-router": "catalog:", "ant-design-vue": "catalog:", "@ant-design/icons-vue": "catalog:"},
+  "devDependencies": {"vite": "catalog:", "@vitejs/plugin-vue": "catalog:", "typescript": "catalog:", "vue-tsc": "catalog:"}
+}

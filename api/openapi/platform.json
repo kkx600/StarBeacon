@@ -1,0 +1,1210 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "星烽 StarBeacon 平台 API",
+    "version": "0.1.0",
+    "description": "仅描述仓库当前实现的 HTTP 接口。开发端通过 Vite 同源代理访问，生产使用 HTTPS 同源入口。64 位标识和字节计数以字符串传输；接口请求不接受自报租户。"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "SessionCookie": []
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "登录",
+        "description": "同源校验；每个连接来源 IP 每分钟最多 10 次。Cookie 为 HttpOnly、SameSite=Strict；生产启用 Secure。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Principal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "summary": "读取当前身份",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Principal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "summary": "退出登录",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/sensors": {
+      "get": {
+        "summary": "列出租户探针",
+        "description": "当前上限 500 台，按登记时间倒序；35 秒内收到有效心跳为在线。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Sensor"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sensors/{id}": {
+      "patch": {
+        "summary": "设置探针启用状态",
+        "description": "状态与操作审计在一个 PG 事务中提交；存量 gRPC 连接后续消息同样核验该状态。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "探针不存在或不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "active"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/search": {
+      "post": {
+        "summary": "检索告警",
+        "description": "时间范围 [start,end)，最多 31 天；page*page_size 不超过 10000。租户索引范围与 tenant_id 过滤同时固定。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/health": {
+      "get": {
+        "summary": "读取平台依赖健康",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "postgresql": {
+                          "type": "string",
+                          "enum": [
+                            "ready",
+                            "unavailable"
+                          ]
+                        },
+                        "redis": {
+                          "type": "string",
+                          "enum": [
+                            "ready",
+                            "unavailable"
+                          ]
+                        },
+                        "elasticsearch": {
+                          "type": "string",
+                          "enum": [
+                            "ready",
+                            "unavailable"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "postgresql",
+                        "redis",
+                        "elasticsearch"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "observed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "services",
+                    "observed_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/audits/operations": {
+      "get": {
+        "summary": "读取操作日志",
+        "description": "当前租户最近 200 条，倒序；不代表实现完整审计筛选和生命周期作业。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OperationAudit"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "starbeacon_session"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "additionalProperties": false
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "Principal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "viewer"
+            ]
+          },
+          "csrf_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "username",
+          "role",
+          "csrf_token"
+        ],
+        "additionalProperties": false
+      },
+      "OK": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      },
+      "HostHealth": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cpu_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "memory_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "disk_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rx_bytes": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "tx_bytes": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "wal_pending": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wal_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capture_status": {
+            "type": "string",
+            "enum": [
+              "eve_reader_only"
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "hostname",
+          "observed_at",
+          "cpu_percent",
+          "memory_percent",
+          "disk_percent",
+          "rx_bytes",
+          "tx_bytes",
+          "wal_pending",
+          "wal_bytes",
+          "errors",
+          "capture_status"
+        ],
+        "additionalProperties": false
+      },
+      "Sensor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "registration_id": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "health": {
+            "type": "object",
+            "description": "未收到心跳时为 {}；收到心跳后字段见 HostHealth。",
+            "additionalProperties": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "disabled"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "registration_id",
+          "active",
+          "created_at",
+          "last_seen",
+          "health",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "Alert": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "sensor_id": {
+            "type": "string"
+          },
+          "sensor_registration_id": {
+            "type": "string"
+          },
+          "source_generation_id": {
+            "type": "string"
+          },
+          "source_offset": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "string"
+          },
+          "raw_sha256": {
+            "type": "string"
+          },
+          "@timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "dataset": {
+                "type": "string"
+              },
+              "original": {
+                "type": "string",
+                "description": "原始 EVE JSON。非管理员返回空字符串。"
+              }
+            },
+            "required": [
+              "kind",
+              "dataset",
+              "original"
+            ],
+            "additionalProperties": false
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "mac": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "destination": {
+            "type": "object",
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "mac": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "network": {
+            "type": "object",
+            "properties": {
+              "transport": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "rule": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "http": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string"
+              },
+              "hostname": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "suricata": {
+            "type": "object",
+            "properties": {
+              "flow_id": {
+                "type": "string",
+                "description": "保留 Suricata uint64 标识精度。"
+              },
+              "action": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "unknown"
+            ]
+          },
+          "evidence_status": {
+            "type": "string",
+            "enum": [
+              "not_linked"
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "event_id",
+          "tenant_id",
+          "sensor_id",
+          "sensor_registration_id",
+          "source_generation_id",
+          "source_offset",
+          "sequence",
+          "raw_sha256",
+          "@timestamp",
+          "observed_at",
+          "received_at",
+          "event",
+          "source",
+          "destination",
+          "network",
+          "rule",
+          "http",
+          "suricata",
+          "severity",
+          "evidence_status"
+        ],
+        "additionalProperties": false
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "keyword": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "source_ip": {
+            "type": "string",
+            "description": "完整 IPv4/IPv6 地址，空字符串不筛选。"
+          },
+          "destination_ip": {
+            "type": "string",
+            "description": "完整 IPv4/IPv6 地址，空字符串不筛选。"
+          },
+          "protocol": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "应用或传输层协议，忽略大小写。"
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 1024,
+            "description": "HTTP 路径前缀；不接受客户端提交任意 ES DSL。"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "",
+              "high",
+              "medium",
+              "low",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "additionalProperties": false
+      },
+      "OperationAudit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "object_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "action",
+          "object_id",
+          "request_id",
+          "created_at"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

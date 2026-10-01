@@ -4,7 +4,22 @@ StarBeacon — stellar early-warning for security posture.
 
 星烽 StarBeacon 面向单组织私有化、集团安全运营和多租户 SaaS，建立从网络检测、告警研判、流量取证到响应复盘的安全运营闭环。
 
-本仓库当前交付为产品与工程设计方案、Vue 交互原型及全页面原型图，尚未实现运行中的后端平台。调研基准日：2026-09-30。方案中的容量、性能、模型准确率门槛和工期均为待验证的设计目标；基础组件与检索语义的局部核验不代表平台已经通过验收。
+本仓库包含产品与工程设计、完整 Vue 交互原型，以及已经运行联调的 Go 平台、事件接入、索引 Worker、采集器和两个 Vue 管理端。当前工程覆盖身份、探针、持久上报与基础告警检索；完整产品范围按领域继续实施。调研基准日为 2026-09-30，工程记录见[工程实现与开发](docs/工程实现与开发.md)。容量、性能、模型准确率和完整生产验收仍以实际测试为准。
+
+## 工程启动
+
+采用一个 Go module 与一个前端 workspace：平台位于 `cmd/starbeacon` 和 `web/platform`，采集器位于 `cmd/starbeacon-agent` 和 `web/collector`，接入与索引分别位于 `cmd/starbeacon-ingest`、`cmd/starbeacon-worker`。真实数据链路为 EVE → bbolt WAL → mTLS gRPC → JetStream → Elasticsearch → 平台检索。
+
+需要 Go 1.26.8、Node 24.19.0、pnpm 12.6.0、Python 3 开发脚本及 Docker Compose。在仓库根目录执行：
+
+```sh
+make dev-setup GO=/绝对路径/go
+pnpm --dir web install --frozen-lockfile
+```
+
+随后分别启动 `make platform`、`make ingest`、`make worker`、`make collector`、`make web`、`make collector-web`。平台页面为 `http://127.0.0.1:5174/`，采集器页面为 `http://127.0.0.1:5175/`。随机账号凭据与开发证书位于 Git 忽略的 `.local/`，重跑初始化保留已有身份。`make sample` 追加明确标记的工程验收 EVE；它不代表实际抓包或攻击检测。
+
+模块、配置、接口、测试、留存实现边界和后续步骤见[工程实现与开发](docs/工程实现与开发.md)、[服务模块](internal/README.md)和[接口契约](api/README.md)。当前没有规则发布、设备阻断、PCAP、LLM 或通知的成功占位接口；对应设计范围仍完整保留。
 
 ## 页面原型
 
@@ -16,6 +31,7 @@ StarBeacon — stellar early-warning for security posture.
 
 | 文档 | 主要内容 |
 | --- | --- |
+| [工程实现与开发](docs/工程实现与开发.md) | 实际目录、运行角色、启动、持久投递与租户隔离、验证记录及后续领域 |
 | [产品设计](docs/产品设计.md) | 产品定位、用户角色、功能模块、告警研判、LLM 对话与报告、决策策略、MCP、界面与验收 |
 | [功能覆盖与验收矩阵](docs/功能覆盖与验收矩阵.md) | 107 项需求、页面与流程、数据依赖、内置／连接器／条件能力、交付阶段与验收责任 |
 | [页面原型设计](docs/页面原型设计.md) | 页面目录、六种页面状态、表格／弹窗交互、通信证据、原型验证范围与实现边界 |
@@ -67,7 +83,7 @@ StarBeacon — stellar early-warning for security posture.
 
 官方版本来源、完整依赖和兼容边界集中在[依赖版本与部署清单](docs/依赖版本与部署清单.md)。这是固定选型，实际生产资格还需项目构建、接口与容量验收。
 
-Go 开发和 CI 必须采用同一经过验收的 1.26.x 补丁；当前系统 PATH 实测仍为 1.25.6，不能将版本声明视为本机环境已就绪。原生取证复用独立 TShark，Go 层负责权限、任务、字段映射及结果呈现，不重复实现完整协议解析器。
+Go 开发和 CI 固定 1.26.8。系统 PATH 实测仍为 1.25.6，本工程通过 `GO=/绝对路径/go` 使用已安装的隔离官方 1.26.8，不改写系统配置。原生取证规划复用独立 TShark，Go 层负责权限、任务、字段映射及结果呈现，不重复实现完整协议解析器。
 
 ## 建议采用的主线
 

@@ -1,0 +1,746 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "星烽 StarBeacon 采集器 API",
+    "version": "0.1.0",
+    "description": "仅描述仓库当前实现的 HTTP 接口。开发端通过 Vite 同源代理访问，生产使用 HTTPS 同源入口。64 位标识和字节计数以字符串传输；接口请求不接受自报租户。"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "SessionCookie": []
+    }
+  ],
+  "paths": {
+    "/api/local/v1/auth/login": {
+      "post": {
+        "summary": "登录",
+        "description": "同源校验；每个连接来源 IP 每分钟最多 10 次。Cookie 为 HttpOnly、SameSite=Strict；生产启用 Secure。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Principal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/local/v1/auth/me": {
+      "get": {
+        "summary": "读取当前身份",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Principal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/local/v1/auth/logout": {
+      "post": {
+        "summary": "退出登录",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/api/local/v1/health": {
+      "get": {
+        "summary": "读取采集器健康",
+        "description": "宿主机 CPU、内存、状态目录磁盘和所有接口的累计计数，不等同于镜像捕获吞吐。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostHealth"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/api/local/v1/network/interfaces": {
+      "get": {
+        "summary": "列出实际网卡",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NetworkInterface"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/api/local/v1/capture-config": {
+      "get": {
+        "summary": "读取采集目标",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureConfig"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "put": {
+        "summary": "保存采集目标",
+        "description": "仅接受已启用的非回环接口。目标与审计原子写入本地状态；不修改系统网卡、不应用到 Suricata。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureConfig"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、权限不足或依赖不可用，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "interfaces": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "interfaces"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "starbeacon_collector_session"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "additionalProperties": false
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "Principal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "viewer"
+            ]
+          },
+          "csrf_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "username",
+          "role",
+          "csrf_token"
+        ],
+        "additionalProperties": false
+      },
+      "OK": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      },
+      "HostHealth": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cpu_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "memory_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "disk_percent": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rx_bytes": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "tx_bytes": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "wal_pending": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wal_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capture_status": {
+            "type": "string",
+            "enum": [
+              "eve_reader_only"
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "hostname",
+          "observed_at",
+          "cpu_percent",
+          "memory_percent",
+          "disk_percent",
+          "rx_bytes",
+          "tx_bytes",
+          "wal_pending",
+          "wal_bytes",
+          "errors",
+          "capture_status"
+        ],
+        "additionalProperties": false
+      },
+      "NetworkInterface": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "mac": {
+            "type": "string",
+            "description": "宿主机提供的 MAC，可能为空。"
+          },
+          "mtu": {
+            "type": "integer"
+          },
+          "up": {
+            "type": "boolean"
+          },
+          "loopback": {
+            "type": "boolean"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "index",
+          "mac",
+          "mtu",
+          "up",
+          "loopback",
+          "addresses"
+        ],
+        "additionalProperties": false
+      },
+      "CaptureConfig": {
+        "type": "object",
+        "properties": {
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_applied"
+            ]
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "interfaces",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

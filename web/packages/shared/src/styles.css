@@ -1,0 +1,91 @@
+:root {
+  --page-inset: 16px;
+  --section-gap: 12px;
+  --panel-inset: 16px;
+  --field-gap: 12px;
+  --related-gap: 8px;
+  --label-gap: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  background: var(--workspace);
+}
+* {box-sizing: border-box}
+body {margin: 0; min-width: 320px}
+button, input, textarea {font: inherit; caret-color: var(--primary)}
+::selection {background: var(--selection-surface); color: var(--selection-text)}
+:focus-visible {outline: 2px solid var(--primary); outline-offset: 2px}
+::-webkit-scrollbar {width: 8px; height: 8px}
+::-webkit-scrollbar-thumb {background: var(--control-border); border-radius: 4px}
+.app-shell {min-height: 100vh; background: var(--workspace)}
+.app-shell > .ant-layout-sider {border-right: 1px solid var(--line); position: sticky; top: 0; height: 100vh; overflow: auto}
+.app-shell > .ant-layout {min-width: 0; background: var(--workspace)}
+.brand {height: 88px; display: flex; align-items: center; gap: var(--related-gap); padding: var(--panel-inset); white-space: nowrap}
+.brand b {font-size: 14px}
+.brand small {display: block; margin-top: var(--label-gap); font-size: 12px; color: var(--muted)}
+.brand-symbol {font-size: 28px; color: var(--primary)}
+.app-header.ant-layout-header {display: flex; align-items: center; gap: var(--related-gap); height: 56px; line-height: normal; padding: 0 var(--panel-inset); background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10}
+.header-title {color: var(--muted)}
+.header-user {margin-left: auto; font-size: 13px}
+.app-content {padding: var(--page-inset); max-width: 1920px; width: 100%; margin: 0 auto}
+.page-header {display: flex; align-items: flex-start; justify-content: space-between; gap: var(--field-gap); margin-bottom: var(--section-gap)}
+h1 {margin: 0 0 var(--label-gap); font-size: 24px; line-height: 1.4; font-weight: 650}
+h2 {margin: 0; font-size: 16px; font-weight: 600}
+.page-description {margin: 0; color: var(--muted); line-height: 1.6; font-size: 13px; max-width: 72ch}
+.panel {background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; overflow: hidden; margin-bottom: var(--section-gap)}
+.panel-header {padding: var(--section-gap) var(--panel-inset); display: flex; align-items: center; justify-content: space-between; gap: var(--field-gap)}
+.panel-body {padding: 0 var(--panel-inset) var(--panel-inset)}
+.section-gap {margin-bottom: var(--section-gap)}
+.filter-form {padding: var(--section-gap) var(--panel-inset); display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0 var(--field-gap)}
+.filter-form .ant-form-item, .capture-form .ant-form-item, .login-panel .ant-form-item {margin-bottom: var(--panel-inset)}
+.filter-actions {display: flex; gap: var(--related-gap); align-items: center; flex-wrap: wrap}
+.filter-form .filter-actions {grid-column: 1 / -1}
+.table-wrap {overflow: auto}
+.table-wrap .ant-table-pagination {margin: var(--section-gap) var(--panel-inset)}
+.table-wrap .ant-table-cell {padding: 12px 14px; vertical-align: top}
+.record-id {display: block; margin-top: var(--label-gap); font-size: 11px; color: var(--muted)}
+.technical {font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; font-variant-numeric: tabular-nums}
+.link-button {border: 0; background: transparent; padding: 0; color: var(--link); cursor: pointer; text-align: left; line-height: 1.6}
+.link-button:hover {color: var(--primary-hover); text-decoration: underline; text-underline-offset: 3px}
+.state-panel {min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--related-gap); padding: var(--panel-inset); text-align: center; color: var(--muted)}
+.state-panel h3, .state-panel p {margin: 0; line-height: 1.6; max-width: 65ch}
+.detail-content {max-height: 68vh; overflow: auto; padding-right: var(--related-gap)}
+.detail-content .ant-descriptions {margin-bottom: var(--panel-inset)}
+.raw-data {white-space: pre-wrap; overflow-wrap: anywhere; background: var(--table-header); padding: var(--section-gap); border-radius: 6px; max-height: 320px; overflow: auto; font-size: 12px; line-height: 1.6}
+.status-online {color: var(--success); background: var(--success-surface)}
+.status-offline, .status-unknown, .status-disabled {color: var(--status-text); background: var(--status-surface)}
+.status-high {color: var(--danger); background: var(--danger-surface)}
+.status-medium {color: var(--warning); background: var(--warning-surface)}
+.status-low {color: var(--success); background: var(--success-surface)}
+.status {display: inline-block; border-radius: 4px; padding: 1px 7px; white-space: nowrap; font-size: 12px; line-height: 1.7}
+.metric-grid {display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: var(--section-gap) 0}
+.metric-grid > div {padding: 0 var(--panel-inset); border-right: 1px solid var(--line); min-width: 0}
+.metric-grid > div:last-child {border-right: 0}
+.metric-grid span {display: block; font-size: 12px; color: var(--muted)}
+.metric-grid strong {display: block; margin: var(--label-gap) 0; font-size: 24px; color: var(--link); font-variant-numeric: tabular-nums}
+.metric-grid small {color: var(--muted); font-size: 11px}
+.login-page {min-height: 100vh; display: grid; place-items: center; padding: var(--page-inset); background: var(--workspace)}
+.login-panel {width: 100%; max-width: 400px; border: 1px solid var(--line); border-radius: 8px; padding: 24px; background: var(--surface)}
+.login-panel .page-description {margin-bottom: var(--panel-inset)}
+.capture-form {padding-top: var(--section-gap); max-width: 680px}
+@media (max-width:899px) {
+  :root {--page-inset:12px; --panel-inset:12px}
+  .filter-form {grid-template-columns: repeat(2,minmax(0,1fr))}
+  .metric-grid {grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--section-gap) 0}
+  .metric-grid > div:nth-child(even) {border-right:0}
+}
+@media (max-width:550px) {
+  .app-shell > .ant-layout-sider {display:none}
+  .filter-form {grid-template-columns: minmax(0,1fr)}
+  .page-header {flex-direction:column}
+  h1 {font-size:22px}
+  .header-title {display:none}
+  .app-content {padding:var(--page-inset)}
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

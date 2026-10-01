@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package starbeacon.sensor.v1;
+option go_package = "github.com/kkx600/StarBeacon/api/sensor/v1;sensorv1";
+import "google/protobuf/timestamp.proto";
+
+service SensorService {
+  rpc UploadEvents(stream EventBatch) returns (stream IngestAck);
+  rpc Control(stream AgentMessage) returns (stream PlatformCommand);
+  rpc GetRoute(RouteRequest) returns (Route);
+}
+
+message EventRecord {
+  string event_id = 1;
+  uint64 sequence = 2;
+  string source_generation_id = 3;
+  uint64 source_offset = 4;
+  uint32 record_ordinal = 5;
+  google.protobuf.Timestamp event_time = 6;
+  google.protobuf.Timestamp observed_at = 7;
+  string event_type = 8;
+  reserved 9;
+  reserved "eve_json";
+  bytes raw_sha256 = 10;
+  string engine_run_id = 11;
+  bytes payload = 12;
+  string payload_schema = 13;
+  string content_type = 14;
+  bytes payload_sha256 = 15;
+}
+
+message EventBatch {
+  string batch_id = 1;
+  string sensor_id = 2;
+  string producer_epoch = 3;
+  string schema_version = 4;
+  string route_token = 5;
+  repeated EventRecord records = 6;
+  reserved 7;
+  reserved "resume_after_sequence";
+  string sensor_registration_id = 8;
+  string stream_id = 9;
+  bytes batch_sha256 = 10;
+}
+
+message SequenceRange { uint64 first = 1; uint64 last = 2; }
+enum AckStatus { ACK_STATUS_UNSPECIFIED = 0; ACK_STATUS_ACCEPTED = 1; }
+message IngestAck {
+  string batch_id = 1;
+  string producer_epoch = 2;
+  reserved 3, 5;
+  reserved "accepted_through", "missing_ranges";
+  repeated SequenceRange accepted_ranges = 4;
+  AckStatus status = 6;
+  uint32 retry_after_ms = 7;
+  string error_code = 8;
+  string sensor_registration_id = 9;
+  string stream_id = 10;
+  bytes batch_sha256 = 11;
+  repeated SequenceRange quarantined_ranges = 12;
+  repeated RejectedRecord rejected_records = 13;
+}
+message RejectedRecord { uint64 sequence = 1; string error_code = 2; bool retryable = 3; }
+
+enum AgentMessageKind { AGENT_MESSAGE_KIND_UNSPECIFIED = 0; AGENT_MESSAGE_KIND_HEARTBEAT = 1; }
+message AgentMessage {
+  string sensor_id = 1;
+  string message_id = 2;
+  AgentMessageKind kind = 3;
+  string command_id = 4;
+  string payload_schema = 5;
+  bytes payload_json = 6;
+  google.protobuf.Timestamp observed_at = 7;
+  string sensor_registration_id = 8;
+}
+enum CommandKind { COMMAND_KIND_UNSPECIFIED = 0; COMMAND_KIND_HEARTBEAT_ACK = 1; }
+message PlatformCommand {
+  string command_id = 1;
+  CommandKind kind = 2;
+  string payload_schema = 3;
+  bytes payload_json = 4;
+  bytes payload_sha256 = 5;
+  bytes signature = 6;
+  google.protobuf.Timestamp expires_at = 7;
+}
+message RouteRequest { string stream_id = 1; }
+message Route {
+  string token = 1;
+  string tenant_id = 2;
+  string partition = 3;
+  string stream_id = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}

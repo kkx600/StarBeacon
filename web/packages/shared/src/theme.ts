@@ -1,0 +1,113 @@
+// 颜色按业务语义集中管理，浅色控制台和态势大屏各自保持可读层次。
+export const palette = {
+  primary: '#096bff',
+  primaryHover: '#075de3',
+  primaryActive: '#074ab8',
+  link: '#0759d5',
+  surface: '#ffffff',
+  workspace: '#f7f7f7',
+  line: '#e8e8e8',
+  controlBorder: '#7b8fae',
+  text: '#22334d',
+  muted: '#526581',
+  textPlaceholder: '#596b84',
+  fieldLabel: '#496381',
+  recordText: '#344c70',
+  tableHeader: '#fafafa',
+  rowHover: '#fafafa',
+  navSelected: '#f0f0f0',
+  tabSelected: '#f3f3f3',
+  selectionSurface: '#e9e9e9',
+  selectionText: '#074ab8',
+  success: '#087a43',
+  successDot: '#079454',
+  warning: '#a65a00',
+  warningDot: '#cd7100',
+  danger: '#cc2640',
+  dangerDot: '#e83855',
+  statusSurface: '#f3f3f3',
+  statusText: '#526581',
+  successSurface: '#eff8f2',
+  warningSurface: '#fff7e9',
+  dangerSurface: '#fff0ef',
+  infoSurface: '#f4f4f4',
+  infoText: '#095ace',
+  teal: '#0095ad',
+  violet: '#8950e9',
+  chartOrange: '#d97900',
+  chartNeutral: '#6d83a5',
+  chartGrid: '#ededed',
+  screenWorkspace: '#181818',
+  screenPanel: '#222222',
+  screenMetric: '#262626',
+  screenLine: '#404040',
+  screenText: '#ecf6ff',
+  screenMuted: '#bddefa',
+  screenNumber: '#8ce6ff',
+  screenLink: '#70d0ff',
+  screenBlue: '#4cbcff',
+  screenTeal: '#3ee0ba',
+  screenViolet: '#b298ff',
+  screenAmber: '#ffd174',
+  screenDanger: '#ffa0b2',
+} as const
+
+export const chartPalette = [palette.primary, palette.teal, palette.violet, palette.chartOrange, palette.chartNeutral]
+export const screenChartPalette = [palette.screenBlue, palette.screenTeal, palette.screenViolet, palette.screenAmber]
+
+// 根级变量同样覆盖挂载到 body 的弹窗与通知，避免浮层脱离配色体系。
+export function applyPalette() {
+  for (const [key, value] of Object.entries(palette)) {
+    document.documentElement.style.setProperty('--' + key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()), value)
+  }
+}
+
+// 组件取值遵循项目固定的 Ant Design Vue 4.2.6 Token 接口。
+export const appTheme = {
+  token: {
+    colorPrimary: palette.primary,
+    colorPrimaryHover: palette.primaryHover,
+    colorPrimaryActive: palette.primaryActive,
+    // 选中行、下拉选项和信息提示采用纯灰底，避免由主色派生浅蓝背景。
+    colorPrimaryBg: palette.navSelected,
+    colorPrimaryBgHover: palette.selectionSurface,
+    colorLink: palette.link,
+    colorLinkHover: palette.primaryHover,
+    colorLinkActive: palette.primaryActive,
+    colorInfo: palette.primary,
+    colorInfoBg: palette.infoSurface,
+    colorInfoBgHover: palette.navSelected,
+    colorInfoBorder: palette.line,
+    colorSuccess: palette.success,
+    colorWarning: palette.warningDot,
+    colorError: palette.danger,
+    colorText: palette.text,
+    colorTextSecondary: palette.muted,
+    colorTextTertiary: palette.muted,
+    colorTextPlaceholder: palette.textPlaceholder,
+    colorBorder: palette.controlBorder,
+    colorBorderSecondary: palette.line,
+    colorBgContainer: palette.surface,
+    colorBgLayout: palette.workspace,
+    colorFillAlter: palette.tableHeader,
+    controlOutline: palette.primary,
+    borderRadius: 6,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+    fontSize: 14,
+    controlHeight: 34,
+  },
+  components: {
+    Menu: {
+      colorItemText: palette.recordText,
+      colorItemTextHover: palette.link,
+      colorItemTextSelected: palette.link,
+      colorItemBgHover: palette.rowHover,
+      colorItemBgSelected: palette.navSelected,
+      colorItemBgActive: palette.tabSelected,
+      colorSubItemBg: palette.surface,
+    },
+    Tabs: {colorText: palette.fieldLabel, colorPrimary: palette.link, colorPrimaryHover: palette.primaryHover},
+    Table: {colorFillAlter: palette.tableHeader, colorTextHeading: palette.fieldLabel},
+    Modal: {borderRadiusLG: 8},
+  },
+}

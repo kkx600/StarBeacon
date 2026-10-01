@@ -6,3 +6,12 @@ prototype/.capture-cache/
 .impeccable/*
 !.impeccable/design.json
 prototype/.impeccable/
+.tools/
+.local/
+bin/
+.env
+.env.*
+!.env.example
+coverage.out
+__pycache__/
+*.py[cod]

@@ -1,0 +1,51 @@
+name: 工程检查
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.8'
+          cache: true
+      - run: go mod verify
+      - run: make build test vet
+      - name: 检查格式
+        run: test -z "$(gofmt -l cmd internal migrations tests api/sensor)"
+      - name: Linux 编译
+        run: |
+          for arch in amd64 arm64; do
+            for name in starbeacon starbeacon-ingest starbeacon-worker starbeacon-agent starbeaconctl; do
+              GOOS=linux GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -o "/tmp/$name-$arch" "./cmd/$name"
+            done
+          done
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.19.0'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: '12.6.0'
+          run_install: false
+      - run: pnpm --dir web install --frozen-lockfile
+      - run: pnpm --dir web build

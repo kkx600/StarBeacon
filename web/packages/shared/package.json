@@ -1,0 +1,8 @@
+{
+  "name": "@starbeacon/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {"./*": "./src/*"},
+  "dependencies": {"vue": "catalog:", "ant-design-vue": "catalog:", "@ant-design/icons-vue": "catalog:"}
+}
