@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-01T04:55:18Z",
+  "generatedAt": "2026-10-01T08:49:48Z",
   "title": "Design System: 星烽 StarBeacon",
   "extensions": {
     "colorMeta": {
@@ -833,6 +833,14 @@
       {
         "name": "phone-max",
         "value": "550px"
+      },
+      {
+        "name": "gallery-compact-max",
+        "value": "1100px"
+      },
+      {
+        "name": "gallery-phone-max",
+        "value": "650px"
       }
     ]
   },
@@ -889,17 +897,17 @@
       "name": "内容面板",
       "kind": "card",
       "refersTo": "panel",
-      "description": "平面白色容器，使用细边框组织内容；标题和说明沿用各自局部内边距。",
+      "description": "平面白色容器，以细边框组织内容；标题和底部说明采用共享空间变量，窄屏横向内边距为12px。",
       "html": "<section class=\"ds-panel\"><header class=\"ds-panel-heading\"><h2 class=\"ds-panel-title\">告警记录</h2><span class=\"ds-panel-meta\">10 条记录</span></header><small class=\"ds-panel-footnote\">合成示例仅用于界面评审。</small></section>",
-      "css": ".ds-panel{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;background:#fff;border:1px solid var(--line, #e8e8e8);border-radius:8px;min-width:0;color:var(--text, #22334d)}.ds-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 19px 10px}.ds-panel-title{margin:0;font-size:15px;font-weight:600;line-height:1.5}.ds-panel-meta{font-size:11px;color:var(--muted, #526581)}.ds-panel-footnote{display:block;font-size:11px;color:var(--muted, #526581);margin:0 19px 15px}"
+      "css": ".ds-panel{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;background:#fff;border:1px solid var(--line, #e8e8e8);border-radius:8px;min-width:0;color:var(--text, #22334d)}.ds-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:var(--section-gap, 12px) var(--panel-inset, 16px) var(--related-gap, 8px)}.ds-panel-title{margin:0;font-size:15px;font-weight:600;line-height:1.5}.ds-panel-meta{font-size:11px;color:var(--muted, #526581)}.ds-panel-footnote{display:block;font-size:11px;color:var(--muted, #526581);margin:0 var(--panel-inset, 16px) var(--section-gap, 12px)}@media(max-width:899px){.ds-panel{--panel-inset:12px}}"
     },
     {
       "name": "证据范围摘要",
       "kind": "custom",
       "refersTo": "evidence-strip",
-      "description": "详情顶部并列说明当前记录的观测范围与证据边界，按现行断点转为两列或一列。",
+      "description": "详情顶部以12px内边距和区块间隔说明当前记录的观测范围与证据边界；列间10px、标签距离7px保留局部规则。",
       "html": "<div class=\"ds-evidence-strip\"><div><span class=\"ds-evidence-label\">租户范围</span><b class=\"ds-evidence-value\">总部安全中心</b></div><div><span class=\"ds-evidence-label\">捕获范围</span><b class=\"ds-evidence-value\">旁路镜像</b></div><div><span class=\"ds-evidence-label\">会话完整性</span><b class=\"ds-evidence-value\">证据不完整</b></div><div><span class=\"ds-evidence-label\">攻击结果</span><b class=\"ds-evidence-value\">无法判定</b></div></div>",
-      "css": ".ds-evidence-strip{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border:1px solid var(--line, #e8e8e8);border-radius:6px;padding:14px;margin-bottom:16px;color:var(--text, #22334d)}.ds-evidence-label{display:block;font-size:11px;color:var(--muted, #526581);margin-bottom:7px}.ds-evidence-value{font-size:12px;font-weight:500}@media(max-width:899px){.ds-evidence-strip{grid-template-columns:1fr 1fr}}@media(max-width:550px){.ds-evidence-strip{grid-template-columns:1fr}}"
+      "css": ".ds-evidence-strip{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border:1px solid var(--line, #e8e8e8);border-radius:6px;padding:var(--section-gap, 12px);margin-bottom:var(--section-gap, 12px);color:var(--text, #22334d)}.ds-evidence-label{display:block;font-size:11px;color:var(--muted, #526581);margin-bottom:7px}.ds-evidence-value{font-size:12px;font-weight:500}@media(max-width:899px){.ds-evidence-strip{grid-template-columns:1fr 1fr}}@media(max-width:550px){.ds-evidence-strip{grid-template-columns:1fr}}"
     },
     {
       "name": "原始字节选择",
@@ -913,9 +921,9 @@
       "name": "业务指标条",
       "kind": "custom",
       "refersTo": "metric",
-      "description": "白色指标栏以纵向分隔组织数据；风险、关注和健康通过文字、数值与说明表达。",
+      "description": "白色指标栏上下间距12px、横向内边距16px，数值与说明相隔4px；窄屏指标块内边距12px，状态含义由文字、数值与说明表达。",
       "html": "<div class=\"ds-metric-bar\"><div class=\"ds-metric-item\"><span class=\"ds-metric-label\">安全事件</span><strong class=\"ds-metric-value\">9</strong><small class=\"ds-metric-note\">合成示例</small></div><div class=\"ds-metric-item ds-metric-danger\"><span class=\"ds-metric-label\">高危与严重告警</span><strong class=\"ds-metric-value\">12</strong><small class=\"ds-metric-note\">合成告警示例</small></div><div class=\"ds-metric-item ds-metric-warning\"><span class=\"ds-metric-label\">探针需要关注</span><strong class=\"ds-metric-value\">2</strong><small class=\"ds-metric-note\">连接、资源与采集质量</small></div></div>",
-      "css": ".ds-metric-bar{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;display:flex;background:var(--surface, #ffffff);border:1px solid var(--line, #e8e8e8);border-radius:8px;margin-bottom:18px;padding:19px 0;min-width:0}.ds-metric-item{flex:1;min-width:0;padding:0 22px;border-right:1px solid var(--line, #e8e8e8);display:flex;flex-direction:column;gap:7px}.ds-metric-item:last-child{border-right:0}.ds-metric-label{font-size:12px;color:var(--muted, #526581)}.ds-metric-value{font-size:25px;font-weight:650;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--link, #0759d5);white-space:nowrap}.ds-metric-note{font-size:11px;color:var(--muted, #526581)}.ds-metric-danger .ds-metric-label,.ds-metric-danger .ds-metric-value,.ds-metric-danger .ds-metric-note{color:var(--danger, #cc2640)}.ds-metric-warning .ds-metric-label,.ds-metric-warning .ds-metric-value,.ds-metric-warning .ds-metric-note{color:var(--warning, #a65a00)}.ds-metric-success .ds-metric-label,.ds-metric-success .ds-metric-value,.ds-metric-success .ds-metric-note{color:var(--success, #087a43)}@media(min-width:1650px){.ds-metric-bar{padding:23px 0}.ds-metric-value{font-size:29px}}@media(max-width:1180px){.ds-metric-item{padding:0 16px}.ds-metric-value{font-size:23px}}@media(max-width:899px){.ds-metric-bar{flex-wrap:wrap;padding:0;margin-bottom:16px}.ds-metric-item{flex:1 1 50%;padding:16px;border-bottom:1px solid var(--line, #e8e8e8)}.ds-metric-item:nth-child(even){border-right:0}.ds-metric-item:last-child{border-bottom:0}.ds-metric-value{font-size:23px}}"
+      "css": ".ds-metric-bar{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;display:flex;background:var(--surface, #ffffff);border:1px solid var(--line, #e8e8e8);border-radius:8px;margin-bottom:var(--section-gap, 12px);padding:var(--section-gap, 12px) 0;min-width:0}.ds-metric-item{flex:1;min-width:0;padding:0 var(--panel-inset, 16px);border-right:1px solid var(--line, #e8e8e8);display:flex;flex-direction:column;gap:var(--label-gap, 4px)}.ds-metric-item:last-child{border-right:0}.ds-metric-label{font-size:12px;color:var(--muted, #526581)}.ds-metric-value{font-size:25px;font-weight:650;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--link, #0759d5);white-space:nowrap}.ds-metric-note{font-size:11px;color:var(--muted, #526581)}.ds-metric-danger .ds-metric-label,.ds-metric-danger .ds-metric-value,.ds-metric-danger .ds-metric-note{color:var(--danger, #cc2640)}.ds-metric-warning .ds-metric-label,.ds-metric-warning .ds-metric-value,.ds-metric-warning .ds-metric-note{color:var(--warning, #a65a00)}.ds-metric-success .ds-metric-label,.ds-metric-success .ds-metric-value,.ds-metric-success .ds-metric-note{color:var(--success, #087a43)}@media(min-width:1650px){.ds-metric-bar{padding:var(--section-gap, 12px) 0}.ds-metric-value{font-size:29px}}@media(max-width:1180px){.ds-metric-item{padding:0 var(--panel-inset, 16px)}.ds-metric-value{font-size:23px}}@media(max-width:899px){.ds-metric-bar{flex-wrap:wrap;padding:0;margin-bottom:var(--section-gap, 12px)}.ds-metric-item{flex:1 1 50%;padding:var(--section-gap, 12px);border-bottom:1px solid var(--line, #e8e8e8)}.ds-metric-item:nth-child(even){border-right:0}.ds-metric-item:last-child{border-bottom:0}.ds-metric-value{font-size:23px}}"
     }
   ],
   "narrative": {
