@@ -19,9 +19,12 @@ var ControlConnections = prometheus.NewGauge(prometheus.GaugeOpts{Name: "starbea
 var CommandDeliveries = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_command_deliveries_total", Help: "平台投递命令次数，包含重投。"}, []string{"kind"})
 var CommandDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{Name: "starbeacon_agent_command_seconds", Help: "采集器命令执行耗时，不包含排队或平台确认。", Buckets: []float64{.01, .05, .1, .25, .5, 1, 2, 5, 10, 30, 60, 120}}, []string{"kind"})
 var CommandResults = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_agent_command_results_total", Help: "采集器完成的命令次数，不包含重复投递。"}, []string{"kind", "state"})
+var HistoryDeleted = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_history_deleted_records_total", Help: "已提交的到期 PG 历史记录删除数，不代表磁盘空间即时释放。"}, []string{"table"})
+var HistoryRuns = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "starbeacon_history_cleanup_runs_total", Help: "历史清理轮次，失败可能包含已提交的其他租户批次。"}, []string{"state"})
+var HistoryDuration = prometheus.NewHistogram(prometheus.HistogramOpts{Name: "starbeacon_history_cleanup_seconds", Help: "单轮有界历史清理耗时。", Buckets: []float64{.01, .05, .1, .25, .5, 1, 2, 5, 10, 20}})
 
 func init() {
-	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes, ControlConnections, CommandDeliveries, CommandDuration, CommandResults)
+	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes, ControlConnections, CommandDeliveries, CommandDuration, CommandResults, HistoryDeleted, HistoryRuns, HistoryDuration)
 }
 func ObserveCommit(observed time.Time) {
 	d := time.Since(observed).Seconds()

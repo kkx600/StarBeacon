@@ -17,6 +17,7 @@ import (
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/normalize"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -24,11 +25,12 @@ import (
 var ErrRecordTooLarge = errors.New("EVE 记录超过允许上限，读取已暂停")
 
 type EVEReader struct {
-	WAL    *WAL
-	Path   string
-	file   *os.File
-	source Source
-	Route  func(context.Context, string) (string, error)
+	WAL       *WAL
+	Path      string
+	file      *os.File
+	source    Source
+	Route     func(context.Context, string) (string, error)
+	CanSwitch func(context.Context, string) (bool, error)
 }
 
 func fileID(i os.FileInfo) string {
@@ -180,14 +182,39 @@ func (r *EVEReader) Poll(ctx context.Context) error {
 					if len(line) > 0 {
 						return fmt.Errorf("轮转来源末尾有未完成记录，读取已暂停")
 					}
-					r.file.Close()
-					r.file = nil
-					r.source = Source{FileID: fileID(info), Generation: store.RandomID("src_")}
+					if r.CanSwitch != nil {
+						ready, err := r.CanSwitch(ctx, fileID(current))
+						if err != nil || !ready {
+							return err
+						}
+					}
 					f, se := os.Open(r.Path)
 					if se != nil {
 						return se
 					}
-					r.file = f
+					opened, se := f.Stat()
+					if se != nil || !opened.Mode().IsRegular() || fileID(opened) != fileID(info) {
+						f.Close()
+						return errors.New("轮转目标文件已经变化")
+					}
+					next := Source{FileID: fileID(opened), Generation: store.RandomID("src_")}
+					expected := r.source
+					if expected.Offset == 0 {
+						stored, err := r.WAL.Source()
+						if err != nil {
+							f.Close()
+							return err
+						}
+						if stored == (Source{}) {
+							expected = stored
+						}
+					}
+					if se = r.WAL.SwitchSource(expected, next); se != nil {
+						f.Close()
+						return se
+					}
+					r.file.Close()
+					r.file, r.source = f, next
 					return nil
 				}
 				return nil
@@ -219,7 +246,7 @@ func (r *EVEReader) Poll(ctx context.Context) error {
 		if e != nil {
 			return fail(e)
 		}
-		eventTime, e := time.Parse(time.RFC3339Nano, header.Timestamp)
+		eventTime, e := normalize.ParseTimestamp(header.Timestamp)
 		if e != nil {
 			eventTime = now
 		}

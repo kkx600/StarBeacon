@@ -9,6 +9,15 @@ service SensorService {
   rpc Control(stream AgentMessage) returns (stream PlatformCommand);
   rpc GetRoute(RouteRequest) returns (Route);
   rpc DownloadReplaySample(ReplaySampleRequest) returns (stream ReplaySampleChunk);
+  rpc UploadPacketArchive(stream PacketArchiveChunk) returns (PacketArchiveAck);
+}
+
+// 首个消息仅包含冻结目录，后续消息仅含连续存储偏移和有界原包归档字节。
+message PacketArchiveChunk { bytes manifest_json = 1; uint64 offset = 2; bytes data = 3; }
+message PacketArchiveAck {
+ string id = 1; string manifest_sha256 = 2; string raw_sha256 = 3;
+ string stored_sha256 = 4; uint64 stored_bytes = 5; string object_version = 6;
+ google.protobuf.Timestamp expires_at = 7;
 }
 
 message ReplaySampleRequest { string command_id = 1; string sample_id = 2; }

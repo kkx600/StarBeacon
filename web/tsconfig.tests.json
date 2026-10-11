@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {"@starbeacon/shared/*": ["./packages/shared/src/*"]},
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "vitest/globals", "node"]
+  },
+  "include": ["tests/**/*.ts", "platform/src/**/*.ts", "platform/src/**/*.vue", "collector/src/**/*.ts", "collector/src/**/*.vue", "packages/shared/src/**/*.ts", "packages/shared/src/**/*.vue", "vitest.config.ts"]
+}

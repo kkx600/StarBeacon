@@ -146,7 +146,8 @@
       "pages": [
         "sessions",
         "session-integrity",
-        "pcap-tasks"
+        "pcap-tasks",
+        "packet-archives"
       ]
     },
     {
@@ -240,7 +241,8 @@
       "title": "决策策略",
       "group": "response",
       "pages": [
-        "decision-policies"
+        "decision-policies",
+        "decision-evaluations"
       ]
     },
     {
@@ -329,7 +331,8 @@
       "title": "探针管理",
       "group": "sensors",
       "pages": [
-        "sensors"
+        "sensors",
+        "sensor-groups"
       ]
     },
     {
@@ -619,9 +622,10 @@
         "id": "collector-network",
         "title": "网络与采集",
         "group": "collector",
-        "description": "配置管理网络、选择镜像网卡，并核对捕获参数与检测边界。",
+        "description": "配置管理网络、选择镜像网卡，并核对捕获参数、原包归档和检测边界。",
         "requirements": [
           "SB-OPS-001",
+          "SB-NET-001",
           "SB-NET-002",
           "SB-NET-005",
           "SB-NET-006"
@@ -1245,10 +1249,10 @@
     },
     {
       "id": "incidents",
-      "title": "事件列表",
+      "title": "事件调查",
       "group": "incidents",
       "kind": "table",
-      "description": "创建、分派和分级安全事件，关联告警与调查证据。",
+      "description": "登记人工线索或关联告警，记录责任分派、调查修订、结案材料和重开依据。",
       "requirements": [
         "SB-INC-001"
       ],
@@ -2633,6 +2637,55 @@
           "title": "加载失败",
           "url": "/page/pcap-tasks?state=error",
           "image": "pcap-tasks/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "packet-archives",
+      "title": "原包归档",
+      "group": "traffic",
+      "kind": "table",
+      "description": "查看独立原包捕获的分段目录、捕获范围、压缩制品和持久确认。单段不代表完整会话。",
+      "requirements": [
+        "SB-NET-001",
+        "SB-SRH-007"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/packet-archives?state=data",
+          "image": "packet-archives/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/packet-archives?state=empty",
+          "image": "packet-archives/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/packet-archives?state=detail",
+          "image": "packet-archives/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/packet-archives?state=action",
+          "image": "packet-archives/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/packet-archives?state=loading",
+          "image": "packet-archives/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/packet-archives?state=error",
+          "image": "packet-archives/error.jpg"
         }
       ]
     },
@@ -4033,7 +4086,7 @@
       "title": "决策策略",
       "group": "response",
       "kind": "table",
-      "description": "配置影子、审批和自动模式，绑定校准版本与动作资格。",
+      "description": "配置判断表达式、分数阈值、材料时限和保护网段，复用本人研判验证策略。",
       "requirements": [
         "SB-RSP-001"
       ],
@@ -4657,7 +4710,7 @@
       "title": "MCP 服务",
       "group": "ai",
       "kind": "table",
-      "description": "向授权 Agent 提供查询工具，限制数据范围、输出和调用预算。",
+      "description": "登记其他 Agent 的 OAuth 主体与客户端，仅查询当前租户已授权的数据。",
       "requirements": [
         "SB-AI-006"
       ],
@@ -4750,10 +4803,10 @@
     },
     {
       "id": "sensors",
-      "title": "探针管理",
+      "title": "探针列表",
       "group": "sensors",
       "kind": "table",
-      "description": "统一查看探针连接、健康、资源与流量，管理接入配置和运行记录。",
+      "description": "统一查看探针连接、健康、资源与流量，按分组和站点维护部署信息。",
       "requirements": [
         "SB-OPS-001",
         "SB-OPS-002"
@@ -4794,6 +4847,54 @@
           "title": "加载失败",
           "url": "/page/sensors?state=error",
           "image": "sensors/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "sensor-groups",
+      "title": "探针分组",
+      "group": "sensors",
+      "kind": "table",
+      "description": "维护当前租户探针的部署分组，核对成员数量与管理修订。分组不改变采集或响应权限。",
+      "requirements": [
+        "SB-OPS-001"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/sensor-groups?state=data",
+          "image": "sensor-groups/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/sensor-groups?state=empty",
+          "image": "sensor-groups/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/sensor-groups?state=detail",
+          "image": "sensor-groups/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/sensor-groups?state=action",
+          "image": "sensor-groups/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/sensor-groups?state=loading",
+          "image": "sensor-groups/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/sensor-groups?state=error",
+          "image": "sensor-groups/error.jpg"
         }
       ]
     },
@@ -5902,6 +6003,55 @@
       ]
     },
     {
+      "id": "decision-evaluations",
+      "title": "评估记录",
+      "group": "response",
+      "kind": "table",
+      "description": "查看本人影子评估的不可变判断与策略快照。",
+      "requirements": [
+        "SB-RSP-001",
+        "SB-RSP-004"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/decision-evaluations?state=data",
+          "image": "decision-evaluations/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/decision-evaluations?state=empty",
+          "image": "decision-evaluations/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/decision-evaluations?state=detail",
+          "image": "decision-evaluations/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/decision-evaluations?state=action",
+          "image": "decision-evaluations/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/decision-evaluations?state=loading",
+          "image": "decision-evaluations/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/decision-evaluations?state=error",
+          "image": "decision-evaluations/error.jpg"
+        }
+      ]
+    },
+    {
       "id": "notification-routes",
       "title": "通知规则",
       "group": "notifications",
@@ -6046,7 +6196,7 @@
       "title": "应用识别规则",
       "group": "detection",
       "kind": "table",
-      "description": "管理产品特征、版本、域名、SNI 与冲突优先级。",
+      "description": "管理产品名称规则、不可变修订与可见元数据输入验证。",
       "requirements": [],
       "states": [
         {
@@ -6281,8 +6431,11 @@
       "title": "用户管理",
       "group": "system",
       "kind": "table",
-      "description": "维护组织用户、角色、状态和 MFA。",
-      "requirements": [],
+      "description": "维护本租户账号、角色与启用状态，权限变更同步撤销目标用户的既有会话。",
+      "requirements": [
+        "SB-GOV-001",
+        "SB-GOV-002"
+      ],
       "states": [
         {
           "state": "data",

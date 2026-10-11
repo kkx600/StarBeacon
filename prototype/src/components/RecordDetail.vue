@@ -11,13 +11,15 @@ import PacketWorkbench from './PacketWorkbench.vue'
 import StatePanel from './StatePanel.vue'
 import SensorDetail from './SensorDetail.vue'
 import PcapDetail from './PcapDetail.vue'
-const props=defineProps<{open:boolean;page:PageSpec;record?:BusinessRecord}>()
-const emit=defineEmits<{close:[];action:[]}>()
+import AlertTriage from './AlertTriage.vue'
+const props=defineProps<{open:boolean;page:PageSpec;record?:BusinessRecord;localArchive?:boolean}>()
+const emit=defineEmits<{close:[];action:[];respond:[]}>()
 const activeTab=ref('0');const completed=ref<string[]>([]);const note=ref('');const notes=ref<string[]>([])
-const tabs=computed(()=>props.page.detailTabs??['基本信息','依据与范围','处理记录'])
+const tabs=computed(()=>{const values=props.page.detailTabs??['基本信息','依据与范围','处理记录'];return props.page.family==='alert'&&!values.includes('模型研判')?[...values,'模型研判']:values})
 const evidence=computed(()=>evidenceFor(props.page,props.record))
 const response=computed(()=>responseFor(props.page,props.record))
 const summary=computed(()=>props.page.columns.map(c=>({label:c.title,value:formatCell(props.record?.[c.key],c)})))
+const archiveFields=[['sensor','捕获探针'],['registration','注册代次'],['run','捕获运行'],['interface','捕获网卡'],['interfaceMac','网卡 MAC'],['captureWindow','捕获窗口'],['packetWindow','实际包时间'],['packets','原始包数'],['rawSize','原始大小'],['storedSize','存储大小'],['codec','压缩方式'],['snapLength','捕获长度上限'],['bpf','BPF 筛选'],['kernelDrops','内核丢包'],['truncatedPackets','截断包数'],['vlanOffload','VLAN 卸载包数'],['objectVersion','对象版本'],['expires','平台留存到期']] as const
 const caseMode=computed(()=>['case','incident','timeline','review'].includes(props.page.family))
 watch(()=>props.open,open=>{if(open){activeTab.value='0';completed.value=[];notes.value=[];note.value=''}})
 function addNote(){if(note.value.trim()){notes.value.push(note.value.trim());note.value='';message.success('笔记已保存在本地示例中。')}}
@@ -28,8 +30,16 @@ function addNote(){if(note.value.trim()){notes.value.push(note.value.trim());not
       <div class="detail-heading"><div><div class="detail-id">{{record.id}}</div><h2>{{record.name}}</h2></div><StatusTag :value="record.status"/></div>
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane v-for="(tab,index) in tabs" :key="String(index)" :tab="tab">
-          <SensorDetail v-if="page.family==='sensor'" :record="record" :tab="tab"/>
+          <template v-if="page.family==='decision-evaluation'"><a-alert message="合成判断快照 · 未授权执行；不证明攻击成功或设备处置效果。" type="info" show-icon class="page-notice"/><a-descriptions v-if="tab==='判断快照'" bordered :column="1" size="small"><a-descriptions-item label="评估标识">{{record.name}}</a-descriptions-item><a-descriptions-item label="判断结果">{{record.status}}</a-descriptions-item><a-descriptions-item label="自报分数">{{record.confidence===null?'未参与评估':record.confidence}} · 未校准</a-descriptions-item><a-descriptions-item label="评估时间">{{record.time}}</a-descriptions-item><a-descriptions-item label="保留截止">{{record.expires}}</a-descriptions-item><a-descriptions-item label="执行授权">{{record.authorized}}</a-descriptions-item></a-descriptions><template v-else-if="tab==='策略快照'"><p>{{record.policy}} · 影子模式</p><pre class="mono">{{record.expression}}</pre><p>历史修订在当前策略变更后保持原判断，不重新计算。</p></template><a-descriptions v-else bordered :column="1" size="small"><a-descriptions-item label="研判作业">{{record.model}}</a-descriptions-item><a-descriptions-item label="档案摘要">{{record.digest}}</a-descriptions-item><a-descriptions-item label="材料边界">{{record.notes}}</a-descriptions-item></a-descriptions></template>
+          <SensorDetail v-else-if="page.family==='sensor'" :record="record" :tab="tab"/>
           <PcapDetail v-else-if="page.family==='pcap'" :record="record" :tab="tab"/>
+          <template v-else-if="page.family==='packet-archive'">
+            <a-alert v-if="record.packets==='待封存'" class="page-notice" type="info" show-icon message="原件尚未封存，目录只包含捕获开始时的身份。包数、首尾包时间和完整性计数尚未冻结；该记录不能下载，也不能作为完整通信证据。"/>
+            <a-alert v-if="localArchive&&record.status==='已归档'" class="page-notice" type="info" show-icon message="平台已持久确认，原件已从本机暂存回收。本机只保留确认摘要和捕获目录；完整压缩清单与原件请在主平台查看。"/>
+            <a-descriptions bordered :column="1" size="small"><a-descriptions-item v-for="[key,label] in archiveFields" :key="key" :label="label"><span :class="{mono:['registration','run','interfaceMac','packetWindow','objectVersion'].includes(key)}">{{record[key]??'不可观测'}}</span></a-descriptions-item><a-descriptions-item label="制品摘要">未提供实际原包；不生成虚构摘要</a-descriptions-item></a-descriptions>
+            <a-alert class="page-notice" type="info" show-icon message="单段归档只描述当前分段实际接收的报文。TCP 握手、双向载荷连续性和结束证据须单独核验；不可观测丢包不能视为零，网卡卸载字段不会补造到原包中。"/>
+          </template>
+          <AlertTriage v-else-if="tab==='模型研判'"/>
           <template v-else-if="index===0">
             <a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small"><a-descriptions-item v-for="item in summary" :key="item.label" :label="item.label"><StatusTag v-if="item.label.includes('状态')||item.label==='判定'" :value="item.value"/><span v-else>{{item.value}}</span></a-descriptions-item><a-descriptions-item label="所属租户">{{record.tenant??'当前租户'}}</a-descriptions-item><a-descriptions-item label="观测网络域">{{record.scope??record.zone??'未提供'}}</a-descriptions-item></a-descriptions>
             <div class="detail-section"><h3>{{['alert','assessment','action','incident','case'].includes(page.family)?'判断依据与边界':'配置与使用范围'}}</h3><div class="evidence-list"><div v-for="item in evidence" :key="item.title"><div><b>{{item.title}}</b><p>{{item.value}}</p></div><StatusTag v-if="item.status" :value="item.status"/></div></div></div>
@@ -48,7 +58,7 @@ function addNote(){if(note.value.trim()){notes.value.push(note.value.trim());not
           <template v-else><div class="evidence-list"><div v-for="item in evidence" :key="item.title"><div><b>{{item.title}}</b><p>{{item.value}}</p></div><StatusTag v-if="item.status" :value="item.status"/></div></div><a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small" style="margin-top:20px"><a-descriptions-item label="版本快照">demo-20260930</a-descriptions-item><a-descriptions-item label="访问范围">当前租户授权</a-descriptions-item><a-descriptions-item label="来源引用"><LinkOutlined/> {{record.snapshot??'未提供'}}</a-descriptions-item><a-descriptions-item label="保留期限">180 天／保全对象排除清理</a-descriptions-item></a-descriptions></template>
         </a-tab-pane>
       </a-tabs>
-      <div class="detail-footer"><span class="muted">合成示例 · 证据与执行状态分别核对</span><a-space><a-button @click="emit('close')">关闭</a-button><a-button v-if="!page.readOnly" type="primary" @click="emit('action')">{{page.rowAction}}</a-button></a-space></div>
+      <div class="detail-footer"><span class="muted">合成示例 · 证据与执行状态分别核对</span><a-space><a-button @click="emit('close')">关闭</a-button><a-button v-if="page.family==='decision-evaluation'&&record?.status==='策略命中'&&record?.action==='建议评估源 IP 封禁'" type="primary" @click="emit('respond')">处置确认</a-button><a-button v-if="!page.readOnly" type="primary" @click="emit('action')">{{page.rowAction}}</a-button></a-space></div>
     </template>
   </a-modal>
 </template>

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,7 +19,15 @@ import (
 	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
-type Postgres struct{ Pool *pgxpool.Pool }
+type Postgres struct {
+	Pool              *pgxpool.Pool
+	sampleSweepMu     sync.Mutex
+	sampleSweepAfter  string
+	historySweepMu    sync.Mutex
+	historySweepAfter string
+	packetSweepMu     sync.Mutex
+	packetSweepAfter  string
+}
 
 var ErrSensorInactive = errors.New("探针身份已停用或未注册")
 
@@ -53,7 +62,7 @@ func Open(ctx context.Context, dsn string) (*Postgres, error) {
 		p.Close()
 		return nil, e
 	}
-	return &Postgres{p}, nil
+	return &Postgres{Pool: p}, nil
 }
 func (p *Postgres) Close() { p.Pool.Close() }
 func (p *Postgres) TenantTx(ctx context.Context, tenant string, fn func(pgx.Tx) error) error {
@@ -75,19 +84,25 @@ func (p *Postgres) TenantTx(ctx context.Context, tenant string, fn func(pgx.Tx) 
 }
 func (p *Postgres) VerifyRuntimeRole(ctx context.Context) error {
 	var bad bool
-	e := p.Pool.QueryRow(ctx, `SELECT r.rolsuper OR r.rolbypassrls OR EXISTS(SELECT 1 FROM pg_tables t WHERE t.schemaname='public' AND t.tablename IN ('tenants','users','sessions','sensors','routes','retention_policies','operation_audits','login_audits','sensor_tasks','rule_packages') AND t.tableowner=current_user) FROM pg_roles r WHERE r.rolname=current_user`).Scan(&bad)
+	// 连接身份与有效角色都不能持有或切换到特权角色；检查整个业务 schema，避免漏掉后续迁移中的表。
+	e := p.Pool.QueryRow(ctx, `SELECT
+ EXISTS(SELECT 1 FROM pg_roles r WHERE (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication) AND
+  (r.rolname IN(current_user,session_user,$1) OR pg_has_role(session_user,r.oid,'SET') OR pg_has_role($1,r.oid,'SET')))
+ OR EXISTS(SELECT 1 FROM pg_tables t WHERE t.schemaname IN('public','starbeacon_jobs') AND
+  (pg_has_role(current_user,t.tableowner,'USAGE') OR pg_has_role(session_user,t.tableowner,'USAGE') OR pg_has_role($1,t.tableowner,'USAGE')
+   OR pg_has_role(session_user,t.tableowner,'SET') OR pg_has_role($1,t.tableowner,'SET')))`, p.Pool.Config().ConnConfig.User).Scan(&bad)
 	if e != nil {
 		return e
 	}
 	if bad {
-		return fmt.Errorf("运行账号不能是超级用户、BYPASSRLS 或业务表所有者")
+		return fmt.Errorf("运行账号不能持有管理角色、BYPASSRLS、复制或业务表所有者的直接、继承或可切换权限")
 	}
 	return nil
 }
 func (p *Postgres) Password(ctx context.Context, username string) (model.Principal, string, error) {
 	var u model.Principal
 	var hash string
-	e := p.Pool.QueryRow(ctx, `SELECT u.id,u.tenant_id,u.username,u.role,u.password_hash FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE u.username=$1 AND u.active AND t.active`, username).Scan(&u.ID, &u.TenantID, &u.Username, &u.Role, &hash)
+	e := p.Pool.QueryRow(ctx, `SELECT u.id,u.tenant_id,u.username,u.role,u.password_hash,u.revision FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE u.username=$1 AND u.active AND t.active`, username).Scan(&u.ID, &u.TenantID, &u.Username, &u.Role, &hash, &u.CredentialRevision)
 	if errors.Is(e, pgx.ErrNoRows) {
 		e = model.ErrUnauthenticated
 	}
@@ -95,12 +110,21 @@ func (p *Postgres) Password(ctx context.Context, username string) (model.Princip
 }
 func (p *Postgres) CreateSession(ctx context.Context, u model.Principal) (string, string, error) {
 	token, csrf := Token(), Token()
-	_, e := p.Pool.Exec(ctx, `INSERT INTO sessions(token_hash,user_id,csrf_token,expires_at) VALUES($1,$2,$3,now()+interval '8 hours')`, Hash(token), u.ID, csrf)
+	e := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
+		var accepted bool
+		if err := tx.QueryRow(ctx, `SELECT public.create_tenant_session($1,$2,$3,$4,$5)`, u.ID, u.Role, u.CredentialRevision, Hash(token), csrf).Scan(&accepted); err != nil {
+			return err
+		}
+		if !accepted {
+			return model.ErrUnauthenticated
+		}
+		return nil
+	})
 	return token, csrf, e
 }
 func (p *Postgres) Session(ctx context.Context, token string) (model.Principal, error) {
 	var u model.Principal
-	e := p.Pool.QueryRow(ctx, `SELECT u.id,u.tenant_id,u.username,u.role,s.csrf_token FROM sessions s JOIN users u ON u.id=s.user_id JOIN tenants t ON t.id=u.tenant_id WHERE s.token_hash=$1 AND s.expires_at>now() AND u.active AND t.active`, Hash(token)).Scan(&u.ID, &u.TenantID, &u.Username, &u.Role, &u.CSRF)
+	e := p.Pool.QueryRow(ctx, `SELECT u.id,u.tenant_id,u.username,u.role,s.csrf_token,u.revision FROM sessions s JOIN users u ON u.id=s.user_id JOIN tenants t ON t.id=u.tenant_id WHERE s.token_hash=$1 AND s.expires_at>now() AND u.active AND t.active`, Hash(token)).Scan(&u.ID, &u.TenantID, &u.Username, &u.Role, &u.CSRF, &u.CredentialRevision)
 	if errors.Is(e, pgx.ErrNoRows) {
 		e = model.ErrUnauthenticated
 	}
@@ -125,14 +149,14 @@ func (p *Postgres) LoginAudit(ctx context.Context, u model.Principal, success bo
 func (p *Postgres) Sensors(ctx context.Context, tenant string) ([]model.Sensor, error) {
 	out := make([]model.Sensor, 0)
 	e := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		rows, e := tx.Query(ctx, "SELECT id,name,registration_id,active,created_at,last_seen,health FROM sensors WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 500", tenant)
+		rows, e := tx.Query(ctx, "SELECT id,name,registration_id,active,created_at,last_seen,health,metadata_revision,COALESCE(group_id,''),site,description,metadata_updated_at FROM sensors WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 500", tenant)
 		if e != nil {
 			return e
 		}
 		defer rows.Close()
 		for rows.Next() {
 			var s model.Sensor
-			if e = rows.Scan(&s.ID, &s.Name, &s.RegistrationID, &s.Active, &s.CreatedAt, &s.LastSeen, &s.Health); e != nil {
+			if e = rows.Scan(&s.ID, &s.Name, &s.RegistrationID, &s.Active, &s.CreatedAt, &s.LastSeen, &s.Health, &s.MetadataRevision, &s.GroupID, &s.Site, &s.Description, &s.MetadataUpdatedAt); e != nil {
 				return e
 			}
 			s.Status = "offline"

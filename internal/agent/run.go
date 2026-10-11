@@ -82,6 +82,41 @@ func Run(ctx context.Context, c config.Config) error {
 		return e
 	}
 	engine := &Engine{Config: c, WAL: wal}
+	if c.ResponseConnectorsFile != "" {
+		engine.Response, e = NewResponseService(wal, c.ResponseConnectorsFile, c.PlatformAddr, c.IngestAddr)
+		if e != nil {
+			return e
+		}
+		defer engine.Response.Close()
+		wal.responseHealth = engine.Response.Health
+	}
+	var capture *CaptureSupervisor
+	var packets *PacketArchiveController
+	if c.CaptureManaged {
+		capture, e = NewCaptureSupervisor(engine)
+		if e != nil {
+			return e
+		}
+		defer func() {
+			stop, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+			defer cancel()
+			capture.Close(stop)
+		}()
+		if c.PacketCapture {
+			packets, e = NewPacketArchiveController(c, wal, capture)
+			if e != nil {
+				return e
+			}
+			wal.packetArchives = packets
+			packets.Start(ctx)
+			defer packets.Close()
+		}
+		start, stop := context.WithTimeout(ctx, 20*time.Second)
+		capture.Start(start)
+		stop()
+		c = engine.Config
+		wal.captureSnapshot = capture.Snapshot
+	}
 	recovery, recoveryStop := context.WithTimeout(ctx, 40*time.Second)
 	e = engine.Recover(recovery)
 	recoveryStop()
@@ -92,6 +127,7 @@ func Run(ctx context.Context, c config.Config) error {
 	if e != nil {
 		return e
 	}
+	tasks.RetentionDays = c.TaskRetentionDays
 	storage, e := replay.NewLocal(c.ReplayDir, c.ReplayBytes)
 	if e != nil {
 		return e
@@ -99,9 +135,12 @@ func Run(ctx context.Context, c config.Config) error {
 	samples := &ReplayService{WAL: wal, Storage: storage, Tasks: tasks, Engine: engine, RetentionDays: c.ReplayRetentionDays}
 	engine.LocalReplay = samples
 	tasks.Replay = samples
+	tasks.Capture = capture
 	wal.registeredRulesAvailable = c.SuricataRulesPath != ""
+	wal.registeredRulesPath = c.SuricataRulesPath
 	if len(publicKey) > 0 {
 		wal.taskCapabilities = engine.Capabilities()
+		wal.capabilities = engine.Capabilities
 		wal.commandSignerSHA256 = control.Digest(publicKey)
 	}
 	tlsConfig, e := transport.TLS(c.TLSCA, c.TLSCert, c.TLSKey, false)
@@ -118,6 +157,14 @@ func Run(ctx context.Context, c config.Config) error {
 		return e
 	}
 	defer controlConnection.Close()
+	var packetConnection *grpc.ClientConn
+	if packets != nil {
+		packetConnection, e = grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1024*1024)))
+		if e != nil {
+			return e
+		}
+		defer packetConnection.Close()
+	}
 	engine.ReplayClient = sensorv1.NewSensorServiceClient(controlConnection)
 	client := sensorv1.NewSensorServiceClient(data)
 	var routeMu sync.Mutex
@@ -141,6 +188,9 @@ func Run(ctx context.Context, c config.Config) error {
 		routes[stream] = r
 		return r.Token, nil
 	}}
+	if capture != nil {
+		reader.CanSwitch = capture.CanSwitchSource
+	}
 	defer reader.Close()
 	local, e := NewLocalIdentity(wal, c.LocalPassword)
 	if e != nil {
@@ -148,6 +198,15 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	auth := httpapi.NewAuth(local, nil, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 	group, run := errgroup.WithContext(ctx)
+	if engine.Response != nil {
+		group.Go(func() error { return engine.Response.Run(run) })
+	}
+	if packets != nil {
+		group.Go(func() error { return packets.Upload(run, sensorv1.NewSensorServiceClient(packetConnection)) })
+	}
+	if capture != nil {
+		group.Go(func() error { return capture.Run(run) })
+	}
 	group.Go(func() error {
 		last := ""
 		for run.Err() == nil {
@@ -174,6 +233,9 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	group.Go(func() error { return tasks.Run(run) })
 	group.Go(func() error {
+		return tasks.RunRetention(run)
+	})
+	group.Go(func() error {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for {
@@ -198,7 +260,7 @@ func Run(ctx context.Context, c config.Config) error {
 		if c.Mode == "production" {
 			cert, key = c.TLSCert, c.TLSKey
 		}
-		return httpapi.Serve(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key)
+		return httpapi.ServeWithClientIP(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key, c.HTTPClientIPs)
 	})
 	return group.Wait()
 }

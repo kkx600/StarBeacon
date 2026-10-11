@@ -1,0 +1,38 @@
+FROM public.ecr.aws/docker/library/golang:1.26.8-bookworm@sha256:a688600ca24f8a4d3ca77f95b0dd40704a9fc787c826660eb7ba0b641b8b175d AS toolchain
+
+FROM ghcr.io/jasonish/suricata:8.0.7@sha256:7ca2546f7f2735f621b981b6a5ec84fb962984636f7629a1a2fa6a324d4b6840
+ARG SB_ALMA_REPOSITORY=https://repo.almalinux.org/almalinux/9.8
+RUN --mount=type=cache,id=starbeacon-alma9-amd64,target=/var/cache/dnf,sharing=locked \
+    timeout 600 dnf -v --disablerepo='*' --enablerepo=baseos,appstream,crb \
+    --setopt=baseos.mirrorlist= --setopt=appstream.mirrorlist= --setopt=crb.mirrorlist= \
+    --setopt=baseos.baseurl=${SB_ALMA_REPOSITORY}/BaseOS/x86_64/os/ \
+    --setopt=appstream.baseurl=${SB_ALMA_REPOSITORY}/AppStream/x86_64/os/ \
+    --setopt=crb.baseurl=${SB_ALMA_REPOSITORY}/CRB/x86_64/os/ \
+    --setopt=gpgcheck=1 --setopt=timeout=20 --setopt=retries=2 --setopt=ip_resolve=4 install -y gcc glibc-devel libcap-devel meson ninja-build python3 xz
+RUN curl --http1.1 --fail --location --connect-timeout 15 --max-time 60 --retry 2 --retry-all-errors --output /tmp/bubblewrap.tar.xz https://github.com/containers/bubblewrap/releases/download/v0.13.0/bubblewrap-0.13.0.tar.xz && \
+    echo '4734237473c0e5d695e4e9034a34e43b2dbf5164655bd13fa59ae376b2b7a765  /tmp/bubblewrap.tar.xz' | sha256sum --check && \
+    tar -xJf /tmp/bubblewrap.tar.xz -C /tmp && \
+    meson setup /tmp/bubblewrap-build /tmp/bubblewrap-0.13.0 --prefix=/usr/local -Dman=disabled -Dtests=false -Dbash_completion=disabled -Dzsh_completion=disabled && \
+    meson compile -C /tmp/bubblewrap-build -j 4 && meson install -C /tmp/bubblewrap-build && \
+    test "$(bwrap --version)" = 'bubblewrap 0.13.0' && rm -rf /tmp/bubblewrap*
+RUN for name in suricata.yaml classification.config reference.config threshold.config; do \
+      if [ -f /etc/suricata/"$name" ]; then chmod 0644 /etc/suricata/"$name"; fi; \
+    done
+COPY --from=toolchain /usr/local/go /usr/local/go
+ENV PATH=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin GOTOOLCHAIN=local GOMAXPROCS=4 GOCACHE=/tmp/go-cache GOMODCACHE=/opt/gomod GOPATH=/tmp/gopath GOFLAGS="-mod=readonly -p=4"
+WORKDIR /source
+COPY go.mod go.sum ./
+ARG SB_GO_PROXY=https://proxy.golang.org,direct
+RUN GOPROXY=${SB_GO_PROXY} GODEBUG=http2client=0 timeout 300 go mod download && go mod verify
+COPY cmd ./cmd
+COPY internal ./internal
+COPY migrations ./migrations
+COPY api/sensor ./api/sensor
+COPY tests ./tests
+COPY scripts/check_go_coverage.py ./scripts/check_go_coverage.py
+RUN CGO_ENABLED=0 go build -trimpath -cover -covermode=atomic -coverpkg=./cmd/...,./internal/... -o /usr/local/bin/ ./cmd/...
+USER 65532:65532
+ARG SB_SOURCE_SHA256
+ARG SB_SOURCE_COMMIT
+LABEL org.opencontainers.image.revision=$SB_SOURCE_COMMIT io.starbeacon.acceptance.source=$SB_SOURCE_SHA256
+ENTRYPOINT ["python3", "/source/tests/acceptance/baseline.py"]

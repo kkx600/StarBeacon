@@ -66,7 +66,7 @@ func TestPersistentControlTaskReceiptReplayAndRLS(t *testing.T) {
 			clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			require(t, owner.TenantTx(clean, tenant, func(tx pgx.Tx) error {
-				for _, q := range []string{"DELETE FROM sensor_tasks WHERE tenant_id=$1", "DELETE FROM replay_samples WHERE tenant_id=$1", "DELETE FROM rule_packages WHERE tenant_id=$1", "DELETE FROM operation_audits WHERE tenant_id=$1", "DELETE FROM login_audits WHERE tenant_id=$1", "DELETE FROM retention_policies WHERE tenant_id=$1", "DELETE FROM routes WHERE tenant_id=$1", "DELETE FROM sensors WHERE tenant_id=$1", "DELETE FROM users WHERE tenant_id=$1", "DELETE FROM tenants WHERE id=$1"} {
+				for _, q := range []string{"DELETE FROM sensor_tasks WHERE tenant_id=$1", "DELETE FROM replay_samples WHERE tenant_id=$1", "DELETE FROM rule_packages WHERE tenant_id=$1", "DELETE FROM rule_sid_registry WHERE tenant_id=$1", "DELETE FROM rule_sid_state WHERE tenant_id=$1", "DELETE FROM operation_audits WHERE tenant_id=$1", "DELETE FROM login_audits WHERE tenant_id=$1", "DELETE FROM retention_policies WHERE tenant_id=$1", "DELETE FROM routes WHERE tenant_id=$1", "DELETE FROM sensors WHERE tenant_id=$1", "DELETE FROM users WHERE tenant_id=$1", "DELETE FROM tenants WHERE id=$1"} {
 					if _, e := tx.Exec(clean, q, tenant); e != nil {
 						return e
 					}

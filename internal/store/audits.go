@@ -26,6 +26,7 @@ type AuditRecord struct {
 	RequestID string    `json:"request_id"`
 	SourceIP  string    `json:"source_ip"`
 	UserAgent string    `json:"user_agent"`
+	Reason    string    `json:"reason,omitempty"`
 	Success   *bool     `json:"success,omitempty"`
 	Phase     string    `json:"phase,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
@@ -68,7 +69,7 @@ func (p *Postgres) Audits(ctx context.Context, tenant, category string, q AuditQ
 		var rows pgx.Rows
 		var e error
 		if category == "operations" {
-			rows, e = tx.Query(ctx, `SELECT a.id,a.user_id,COALESCE(u.username,a.user_id),a.action,a.object_id,a.request_id,a.source_ip,a.user_agent,a.created_at FROM operation_audits a LEFT JOIN users u ON u.id=a.user_id AND u.tenant_id=a.tenant_id WHERE a.tenant_id=$1 AND a.created_at>=$2 AND a.created_at<$3 AND a.expires_at>now() AND ($4=0 OR a.id<$4) AND ($5='' OR a.action=$5) AND ($6='' OR u.username=$6) ORDER BY a.id DESC LIMIT $7`, tenant, q.Start, q.End, cursor, q.Action, q.Username, q.Limit+1)
+			rows, e = tx.Query(ctx, `SELECT a.id,a.user_id,COALESCE(u.username,a.user_id),a.action,a.object_id,a.request_id,a.source_ip,a.user_agent,a.reason,a.created_at FROM operation_audits a LEFT JOIN users u ON u.id=a.user_id AND u.tenant_id=a.tenant_id WHERE a.tenant_id=$1 AND a.created_at>=$2 AND a.created_at<$3 AND a.expires_at>now() AND ($4=0 OR a.id<$4) AND ($5='' OR a.action=$5) AND ($6='' OR COALESCE(u.username,a.user_id)=$6) ORDER BY a.id DESC LIMIT $7`, tenant, q.Start, q.End, cursor, q.Action, q.Username, q.Limit+1)
 		} else {
 			rows, e = tx.Query(ctx, `SELECT id,username,success,request_id,source_ip,user_agent,phase,created_at FROM login_audits WHERE tenant_id=$1 AND created_at>=$2 AND created_at<$3 AND expires_at>now() AND ($4=0 OR id<$4) AND ($5='' OR username=$5) AND ($6::boolean IS NULL OR success=$6) ORDER BY id DESC LIMIT $7`, tenant, q.Start, q.End, cursor, q.Username, q.Success, q.Limit+1)
 		}
@@ -80,7 +81,7 @@ func (p *Postgres) Audits(ctx context.Context, tenant, category string, q AuditQ
 			var row AuditRecord
 			var id int64
 			if category == "operations" {
-				e = rows.Scan(&id, &row.UserID, &row.Username, &row.Action, &row.ObjectID, &row.RequestID, &row.SourceIP, &row.UserAgent, &row.CreatedAt)
+				e = rows.Scan(&id, &row.UserID, &row.Username, &row.Action, &row.ObjectID, &row.RequestID, &row.SourceIP, &row.UserAgent, &row.Reason, &row.CreatedAt)
 			} else {
 				e = rows.Scan(&id, &row.Username, &row.Success, &row.RequestID, &row.SourceIP, &row.UserAgent, &row.Phase, &row.CreatedAt)
 				row.Action = "auth.password_verification"

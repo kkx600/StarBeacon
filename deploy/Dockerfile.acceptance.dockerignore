@@ -1,0 +1,10 @@
+**
+!go.mod
+!go.sum
+!cmd/**
+!internal/**
+!migrations/**
+!api/sensor/**
+!tests/**
+!scripts/check_go_coverage.py
+!deploy/Dockerfile.acceptance

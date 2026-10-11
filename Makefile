@@ -8,6 +8,7 @@ LDFLAGS := -X github.com/kkx600/StarBeacon/internal/buildinfo.Version=$(VERSION)
 export GOTOOLCHAIN := local
 
 .PHONY: check-toolchain build test vet generate dev-init deps-up deps-stop db-init dev-cert dev-setup platform ingest worker collector web collector-web sample integration
+.PHONY: test-coverage
 check-toolchain:
 	@$(GO) version | awk '$$3 == "go1.26.8" {ok=1} END {if(!ok){print "需要 Go 1.26.8；通过 GO=/绝对路径/go 指定已安装工具链";exit 1}}'
 build: check-toolchain
@@ -15,6 +16,10 @@ build: check-toolchain
 	@for name in starbeacon starbeacon-ingest starbeacon-worker starbeacon-agent starbeaconctl; do $(GO) build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o bin/$$name ./cmd/$$name || exit 1; done
 test: check-toolchain
 	$(GO) test -race ./...
+test-coverage: check-toolchain
+	@mkdir -p .local/acceptance
+	$(GO) test -race -covermode=atomic -coverprofile=.local/acceptance/go.cover ./...
+	SB_GO_BINARY='$(GO)' python3 scripts/check_go_coverage.py .local/acceptance/go.cover --output .local/acceptance/go-coverage.json
 vet: check-toolchain
 	$(GO) vet ./...
 generate: check-toolchain

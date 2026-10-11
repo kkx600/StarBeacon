@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "module": "github.com/segmentio/asm",
+      "version": "v1.2.1",
+      "sum": "h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0=",
+      "identifier": "MIT-0",
+      "license": "LICENSE",
+      "sha256": "cca993712df289a5958bdef69031a5dac0f951ac15afeb313f9eeea55ed59443",
+      "source": "https://raw.githubusercontent.com/segmentio/asm/v1.2.1/LICENSE",
+      "reference": "https://spdx.org/licenses/MIT-0.html",
+      "reason": "固定版本的许可原文为 MIT No Attribution；分类器尚未识别此文本。仅对模块身份、版本、Go 校验和及原文摘要全部相符的依赖使用该标识。"
+    }
+  ]
+}

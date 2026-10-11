@@ -22,6 +22,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/shirou/gopsutil/v4/process"
+	"golang.org/x/sys/unix"
 )
 
 // 隔离环境不可用时拒绝重放，不降级为拥有采集器凭据访问权的普通子进程。
@@ -30,13 +31,35 @@ func (e *Engine) ReplayAvailable() bool {
 		return false
 	}
 	if runtime.GOOS == "darwin" {
-		return e.Config.Mode == "development" && executable("/usr/bin/sandbox-exec")
+		if e.Config.Mode != "development" || !executable("/usr/bin/sandbox-exec") {
+			return false
+		}
+	} else if runtime.GOOS == "linux" {
+		if _, err := exec.LookPath("bwrap"); err != nil {
+			return false
+		}
+	} else {
+		return false
 	}
-	if runtime.GOOS == "linux" {
-		_, err := exec.LookPath("bwrap")
-		return err == nil
-	}
-	return false
+	e.isolationOnce.Do(func() {
+		dir, err := os.MkdirTemp("", "sb-isolation-")
+		if err != nil {
+			return
+		}
+		defer os.RemoveAll(dir)
+		for _, name := range []string{"input", "output"} {
+			if os.Mkdir(filepath.Join(dir, name), 0700) != nil {
+				return
+			}
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		command, err := sandboxCommand(ctx, "/usr/bin/true", dir, filepath.Join(dir, "input"), filepath.Join(dir, "output"), nil)
+		if err == nil {
+			e.isolationAvailable = command.Run() == nil
+		}
+	})
+	return e.isolationAvailable
 }
 func executable(path string) bool {
 	i, e := os.Stat(path)
@@ -141,7 +164,8 @@ file-store:
 `
 
 func copyBounded(path, output string, max int64) (string, error) {
-	f, e := os.Open(path)
+	// 非阻塞打开先于类型检查，FIFO 和设备路径不能阻塞重放任务。
+	f, e := os.OpenFile(path, os.O_RDONLY|unix.O_NONBLOCK, 0)
 	if e != nil {
 		return "", e
 	}
@@ -232,82 +256,16 @@ func (e *Engine) Replay(ctx context.Context, c control.Command) (json.RawMessage
 	if err != nil {
 		return nil, "registered_rules_unavailable", err
 	}
-	cfg := filepath.Join(input, "suricata.yaml")
-	configSHA, err := copyBounded(e.Config.SuricataConfig, cfg, 2*1024*1024)
+	configSHA, profile, err := offlineConfig(e.Config.SuricataConfig, input)
 	if err != nil {
 		return nil, "engine_not_configured", err
 	}
-	profile := replayProfile
-	// 明确覆盖配置中的辅助文件路径，防止离线解析器读取作业目录之外的业务文件。
-	for _, item := range []struct{ name, key string }{{"classification.config", "classification-file"}, {"reference.config", "reference-config-file"}, {"threshold.config", "threshold-file"}} {
-		dest := filepath.Join(input, item.name)
-		source := filepath.Join(filepath.Dir(e.Config.SuricataConfig), item.name)
-		if _, err := os.Stat(source); errors.Is(err, os.ErrNotExist) {
-			if err = durableFile(dest, nil); err != nil {
-				return nil, "local_storage_unavailable", err
-			}
-		} else {
-			if _, err = copyBounded(source, dest, 1024*1024); err != nil {
-				return nil, "engine_not_configured", err
-			}
-		}
-		profile += item.key + ": " + quote(dest) + "\n"
+	args := []string{"-c", filepath.Join(input, "suricata.yaml"), "--include", filepath.Join(input, "replay.yaml"), "-S", rulesPath, "-r", samplePath, "--runmode", "single", "--init-errors-fatal", "--strict-rule-keywords=all", "-l", output}
+	log, duration, limit, err := executeBounded(ctx, e.Config.SuricataBinary, dir, input, output, args)
+	result := map[string]any{"engine_version": "8.0.7", "sample_id": p.SampleID, "sample_sha256": p.SampleSHA256, "sample_bytes": p.SampleSize, "rule_mode": p.RuleMode, "rules_sha256": ruleSHA, "config_sha256": configSHA, "profile": "offline-bounded-v1", "profile_sha256": control.Digest([]byte(profile)), "duration_ms": duration, "log": boundedReplayText(string(log.data), 8192), "log_truncated": log.truncated || len(log.data) > 8192, "replay": "failed", "handshake_status": "not_verified", "checksum_validation": true, "reassembly_depth_bytes": 1048576, "isolation": runtime.GOOS}
+	if p.Origin != nil {
+		result["sample_origin"] = p.Origin
 	}
-	overlay := filepath.Join(input, "replay.yaml")
-	if err = durableFile(overlay, []byte(profile)); err != nil {
-		return nil, "local_storage_unavailable", err
-	}
-	args := []string{"-c", cfg, "--include", overlay, "-S", rulesPath, "-r", samplePath, "--runmode", "single", "--init-errors-fatal", "--strict-rule-keywords=all", "-l", output}
-	call, cancel := context.WithCancel(ctx)
-	defer cancel()
-	cmd, err := sandboxCommand(call, e.Config.SuricataBinary, dir, input, output, args)
-	if err != nil {
-		return nil, "replay_isolation_unavailable", err
-	}
-	var log boundedLog
-	cmd.Stdout = &log
-	cmd.Stderr = &log
-	if err = cmd.Start(); err != nil {
-		return nil, "replay_engine_failed", err
-	}
-	done := make(chan error, 1)
-	go func() { done <- cmd.Wait() }()
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-	limit := ""
-	started := time.Now()
-	waiting := true
-	for waiting {
-		select {
-		case err = <-done:
-			waiting = false
-		case <-ticker.C:
-			proc, e := process.NewProcess(int32(cmd.Process.Pid))
-			if e == nil {
-				if processTreeRSS(call, proc) > 1536*1024*1024 {
-					limit = "memory"
-					cancel()
-				}
-			}
-			var total int64
-			_ = filepath.WalkDir(output, func(path string, d os.DirEntry, e error) error {
-				if e != nil {
-					return nil
-				}
-				if !d.IsDir() {
-					if i, e := d.Info(); e == nil {
-						total += i.Size()
-					}
-				}
-				return nil
-			})
-			if total > 64*1024*1024 {
-				limit = "output"
-				cancel()
-			}
-		}
-	}
-	result := map[string]any{"engine_version": "8.0.7", "sample_id": p.SampleID, "sample_sha256": p.SampleSHA256, "sample_bytes": p.SampleSize, "rule_mode": p.RuleMode, "rules_sha256": ruleSHA, "config_sha256": configSHA, "profile": "offline-bounded-v1", "profile_sha256": control.Digest([]byte(profile)), "duration_ms": time.Since(started).Milliseconds(), "log": boundedReplayText(string(log.data), 8192), "log_truncated": log.truncated || len(log.data) > 8192, "replay": "failed", "handshake_status": "not_verified", "checksum_validation": true, "reassembly_depth_bytes": 1048576, "isolation": runtime.GOOS}
 	if p.Package != nil {
 		result["package_id"] = p.Package.PackageID
 		result["revision"] = p.Package.Revision
@@ -327,12 +285,15 @@ func (e *Engine) Replay(ctx context.Context, c control.Command) (json.RawMessage
 	code := ""
 	if err != nil {
 		code = "replay_engine_failed"
-		if ctx.Err() != nil {
+		if ctx.Err() != nil || limit == "time" {
 			code = "replay_timeout"
 		}
-		if limit != "" {
+		if limit == "memory" || limit == "output" {
 			code = "replay_resource_limit"
 			result["resource_limit"] = limit
+		}
+		if limit == "isolation" {
+			code = "replay_isolation_unavailable"
 		}
 	} else if parseErr != nil {
 		err = parseErr
@@ -379,7 +340,7 @@ func (e *Engine) downloadSample(ctx context.Context, c control.Command, p contro
 		if err != nil {
 			return err
 		}
-		if sample.SHA256 != p.SampleSHA256 || sample.Size != p.SampleSize {
+		if sample.SHA256 != p.SampleSHA256 || sample.Size != p.SampleSize || !replay.SameOrigin(sample.Origin, p.Origin) {
 			return errors.New("样本摘要不匹配")
 		}
 		source, err := e.LocalReplay.Storage.Open(ctx, replay.Key(c.TenantID, p.SampleID))

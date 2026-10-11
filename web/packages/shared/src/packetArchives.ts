@@ -1,0 +1,57 @@
+export interface PacketCapture {
+  id:string;tenant_id:string;sensor_id:string;registration_id:string;run_id:string;interface:string;interface_mac:string;settings_sha256:string;bpf_filter:string;promiscuous:boolean;started_at:string;ended_at:string;first_packet_at:string|null;last_packet_at:string|null;packets:number;packet_bytes:number;truncated_packets:number;vlan_offload_packets:number;kernel_drops:string|null;counter_state:string;termination:string;format:string;source:string;snap_length:number
+}
+export interface PacketEncoding {schema:string;codec:'none'|'zstd';implementation:string;level:string;frame_bytes:number;raw_bytes:number;stored_bytes:number;raw_sha256:string;stored_sha256:string;frames:unknown[]}
+export interface PacketManifest {capture:PacketCapture;encoding:PacketEncoding}
+export interface PacketAcknowledgement {id:string;manifest_sha256:string;raw_sha256:string;stored_sha256:string;stored_bytes:number;object_version:string;expires_at:string}
+export interface PacketRecord {id:string;state:string;capture?:PacketCapture;manifest?:PacketManifest;codec?:string;raw_bytes?:number;stored_bytes?:number;reserved_bytes?:number;manifest_sha256?:string;code?:string;object_version?:string;created_at:string;expires_at?:string;acknowledgement?:PacketAcknowledgement}
+export interface PacketHealth {enabled:boolean;state:string;code?:string;codec:string;reserved_bytes:string;quota_bytes:string;last_confirmed_id?:string;last_confirmed_at?:string;observed_at:string;interfaces:{id:string;interface:string;state:string;packets:string;observed_at:string}[]}
+export interface PacketPage {items:PacketRecord[];available:boolean;next?:string;limit?:number;health?:PacketHealth}
+export interface SessionExportRequest {archive_ids:string[];mode:'full_session'|'snapshot';client_ip:string;client_port:number;server_ip:string;server_port:number;client_mac:string;server_mac:string;vlans:number[]}
+export interface SessionExportReport {schema:string;completeness:string;handshake_status:string;bidirectional_status:string;payload_coverage:string;payload_visibility:string;termination_status:string;checksum_validation:string;packets:number;packet_bytes:number;first_packet_at:string|null;last_packet_at:string|null;reasons:string[]}
+export const sessionReasons:Record<string,string>={capture_drop_counter_unavailable:'未获取可靠的内核丢包计数',capture_drops_observed:'捕获窗口内存在内核丢包',capture_truncation_observed:'原包切片包含截断报文',vlan_bytes_unavailable:'存在被网卡移除的 VLAN 头',overlapping_capture_windows:'捕获窗口重叠，来源关系需要核查',fragment_or_tunnel_scope_unsupported:'IP 分片或隧道范围尚未具备完整性资格',packet_decode_unconfirmed:'匹配报文未能完整解析',selected_packet_truncated:'匹配报文已截断',tuple_reuse_or_simultaneous_open:'存在端口复用或同时打开的身份歧义',tcp_fast_open_unqualified:'TCP Fast Open 尚未具备完整性资格',syn_ack_unconfirmed:'SYN-ACK 与连接发起序号不一致',handshake_not_verified:'没有核实真实的三次握手',connection_start_not_observed:'所选切片未包含连接建立阶段',sequence_space_unqualified:'TCP 序号跨度超出校验预算',acknowledgement_space_unqualified:'确认号跨度超出校验预算',fin_sequence_conflict:'关闭报文的序号存在冲突',payload_sequence_gap:'载荷序列存在缺口',payload_or_fin_sequence_gap:'载荷与关闭序号不连续',conflicting_retransmission:'重传区域包含不同字节',peer_acknowledges_missing_bytes:'对方确认了未捕获的字节',connection_end_not_verified:'未核实双向关闭及确认',reset_acceptance_unqualified:'RST 被观察到，但其接受条件未核实',payload_after_reset:'RST 后仍观察到载荷',no_matching_packets:'所选切片未包含匹配的通信报文'}
+export const packetStates:Record<string,string>={capturing:'捕获中',sealed:'等待编码',ready:'可下载',acknowledged:'平台已确认',confirmed:'平台已归档',quarantined:'原件待核查',uploading:'接收中',stored:'对象待提交',deleting:'到期回收中',waiting:'等待采集配置',stopped:'已停止',failed:'捕获异常'}
+export const packetCodes:Record<string,string>={packet_spool_full:'原包暂存额度已用尽，捕获已停止；未确认原件继续保留',packet_spool_unavailable:'原包暂存目录不可读取',packet_source_unavailable:'原包捕获网卡或过滤器不可用',packet_validation_failed:'原包或持久目录未通过校验，原件已保留供核查',capture_source_interrupted:'原包捕获中断，部分原件已保留',capture_record_invalid:'捕获记录元数据不完整，原件待核查',capture_write_unconfirmed:'原包写入结果未能确认，原件待核查',capture_interrupted:'进程中断时的原包尚未完整封存'}
+export const packetCapture=(row:PacketRecord)=>row.manifest?.capture??row.capture!
+export const canDownloadPacket=(row:PacketRecord)=>row.state==='ready'
+const unsealedTime='0001-01-01T00:00:00Z'
+// 本机活动目录持久保存开始时的身份；包数、结束时间和完整性计数在封存后才冻结。
+export const packetUnsealed=(row:PacketRecord)=>row.manifest===undefined&&['capturing','quarantined'].includes(row.state)&&row.capture?.ended_at===unsealedTime
+const id=(value:unknown):value is string=>typeof value==='string'&&/^[a-z0-9][a-z0-9_-]{0,63}$/.test(value)
+const time=(value:unknown)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
+const size=(value:unknown,maximum=64*1024*1024)=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0&&value<=maximum
+const counter=(value:unknown):value is string=>typeof value==='string'&&/^[0-9]{1,20}$/.test(value)&&BigInt(value)<=18446744073709551615n
+const object=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)
+export function validSessionReport(value:unknown):value is SessionExportReport{
+ if(!object(value))return false
+ const r=value as unknown as SessionExportReport
+ return r.schema==='packet.session.v1'&&['full_session','snapshot'].includes(r.completeness)&&['verified','not_observed'].includes(r.handshake_status)&&['observed','one_sided'].includes(r.bidirectional_status)&&['contiguous_verified','gap_detected','unknown'].includes(r.payload_coverage)&&r.payload_visibility==='unknown'&&['not_observed','fin_verified','rst_observed','active_at_cutoff'].includes(r.termination_status)&&r.checksum_validation==='not_checked'&&size(r.packets,1048576)&&size(r.packet_bytes)&&(r.first_packet_at===null||time(r.first_packet_at))&&(r.last_packet_at===null||time(r.last_packet_at))&&Array.isArray(r.reasons)&&r.reasons.length<=32&&r.reasons.every(v=>typeof v==='string'&&/^[a-z_]{1,80}$/.test(v))
+}
+function validHealth(health:PacketHealth){
+  return object(health)&&typeof health.enabled==='boolean'&&['waiting','capturing','stopped','failed'].includes(health.state)&&['none','zstd'].includes(health.codec)&&(counter(health.reserved_bytes)||health.reserved_bytes===''&&health.code==='packet_spool_unavailable')&&counter(health.quota_bytes)&&time(health.observed_at)&&(health.last_confirmed_id===undefined||id(health.last_confirmed_id))&&(health.last_confirmed_at===undefined||time(health.last_confirmed_at))&&Array.isArray(health.interfaces)&&health.interfaces.length<=16&&health.interfaces.every(row=>object(row)&&id(row.id)&&typeof row.interface==='string'&&row.interface.length>=1&&row.interface.length<=15&&!/[\/\\\s\x00]/.test(row.interface)&&['capturing','stopped'].includes(row.state)&&counter(row.packets)&&time(row.observed_at))
+}
+export function validPacketRecord(value:unknown,local=false,detail=false):value is PacketRecord{
+  if(!object(value))return false
+  const row=value as unknown as PacketRecord,capture=row.manifest?.capture??row.capture
+  if(row.manifest!==undefined&&(!object(row.manifest)||!object(row.manifest.capture)||!object(row.manifest.encoding)))return false
+  if(row.acknowledgement!==undefined){
+    const ack=row.acknowledgement
+    if(!object(ack)||ack.id!==row.id||![ack.manifest_sha256,ack.raw_sha256,ack.stored_sha256].every(value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value))||!size(ack.stored_bytes,128*1024*1024)||ack.stored_bytes<1||typeof ack.object_version!=='string'||ack.object_version.length<1||ack.object_version==='null'||ack.object_version.length>1024||/[\x00\r\n]/.test(ack.object_version)||!time(ack.expires_at)||ack.expires_at===unsealedTime)return false
+    if(row.manifest_sha256!==undefined&&ack.manifest_sha256!==row.manifest_sha256||row.stored_bytes!==undefined&&ack.stored_bytes!==row.stored_bytes||row.object_version!==undefined&&ack.object_version!==row.object_version)return false
+    if(row.manifest&&(ack.raw_sha256!==row.manifest.encoding.raw_sha256||ack.stored_sha256!==row.manifest.encoding.stored_sha256||ack.stored_bytes!==row.manifest.encoding.stored_bytes))return false
+  }
+  if(!id(row.id)||typeof row.state!=='string'||!(local?['capturing','sealed','ready','acknowledged','confirmed','quarantined']:['uploading','stored','ready','deleting']).includes(row.state)||!time(row.created_at)||row.created_at===unsealedTime||!capture||capture.id!==row.id||!id(capture.sensor_id)||!id(capture.tenant_id)||!id(capture.registration_id)||!id(capture.run_id)||!time(capture.started_at)||capture.started_at===unsealedTime||!size(capture.packets,1048576)||!size(capture.packet_bytes)||!size(capture.truncated_packets,capture.packets)||!size(capture.vlan_offload_packets,capture.packets)||typeof capture.interface!=='string'||capture.interface.length<1||capture.interface.length>15||/[\/\\\s\x00]/.test(capture.interface)||!/^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$/.test(capture.interface_mac)||!/^[a-f0-9]{64}$/.test(capture.settings_sha256)||typeof capture.bpf_filter!=='string'||capture.bpf_filter.length>2048||/[\x00\r\n]/.test(capture.bpf_filter)||typeof capture.promiscuous!=='boolean')return false
+  if(local&&packetUnsealed(row))return capture.format===''&&capture.source===''&&capture.snap_length===0&&capture.counter_state===''&&capture.kernel_drops===null&&capture.termination===''&&capture.packets===0&&capture.packet_bytes===0&&capture.truncated_packets===0&&capture.vlan_offload_packets===0&&capture.first_packet_at===null&&capture.last_packet_at===null&&size(row.reserved_bytes,3*64*1024*1024+512*1024)&&(row.reserved_bytes??0)>0&&row.acknowledgement===undefined&&row.manifest_sha256===undefined
+  if(row.state==='capturing')return false
+  if(capture.format!=='pcapng'||capture.source!=='AF_PACKET'||capture.snap_length!==262144||!time(capture.ended_at)||capture.ended_at===unsealedTime||Date.parse(capture.ended_at)<Date.parse(capture.started_at)||Date.parse(capture.ended_at)-Date.parse(capture.started_at)>3600000)return false
+  if(capture.counter_state==='observed'?!counter(capture.kernel_drops):capture.counter_state!=='unavailable'||capture.kernel_drops!==null)return false
+  if(capture.packets===0?(capture.first_packet_at!==null||capture.last_packet_at!==null||capture.packet_bytes!==0):(!time(capture.first_packet_at)||!time(capture.last_packet_at)||Date.parse(capture.last_packet_at!)<Date.parse(capture.first_packet_at!)||capture.packet_bytes===0))return false
+  if(!local&&(!time(row.expires_at)||!size(row.raw_bytes??row.manifest?.encoding?.raw_bytes)||(row.raw_bytes??row.manifest?.encoding?.raw_bytes??0)<24||!size(row.stored_bytes??row.manifest?.encoding?.stored_bytes,128*1024*1024)||(row.stored_bytes??row.manifest?.encoding?.stored_bytes??0)<1))return false
+  if(detail&&row.state==='ready'&&(!row.manifest||!row.manifest.encoding||!/^[a-f0-9]{64}$/.test(row.manifest.encoding.raw_sha256)||!/^[a-f0-9]{64}$/.test(row.manifest.encoding.stored_sha256)||!size(row.manifest.encoding.raw_bytes)||!Array.isArray(row.manifest.encoding.frames)||row.manifest.encoding.frames.length<1||row.manifest.encoding.frames.length>1024))return false
+  return true
+}
+export function validPacketPage(value:unknown,local=false):value is PacketPage{
+  if(!value||typeof value!=='object')return false
+  const page=value as PacketPage
+  return typeof page.available==='boolean'&&Array.isArray(page.items)&&page.items.length<=(local?200:50)&&page.items.every(row=>validPacketRecord(row,local))&&new Set(page.items.map(row=>row.id)).size===page.items.length&&(page.next===undefined||typeof page.next==='string'&&page.next.length<=1024)&&(page.health===undefined||page.health!==null&&validHealth(page.health))
+}

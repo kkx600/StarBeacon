@@ -3,6 +3,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -14,6 +15,8 @@ import (
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
@@ -30,6 +33,11 @@ type WAL struct {
 	taskCapabilities                          []string
 	commandSignerSHA256                       string
 	registeredRulesAvailable                  bool
+	registeredRulesPath                       string
+	captureSnapshot                           func() CaptureState
+	packetArchives                            *PacketArchiveController
+	capabilities                              func() []string
+	responseHealth                            func() []response.Health
 }
 type Source struct {
 	FileID       string `json:"file_id"`
@@ -101,15 +109,50 @@ func OpenWAL(path, tenant, sensor, registration string, maxBytes uint64) (*WAL, 
 }
 func (w *WAL) Close() error { return w.DB.Close() }
 func (w *WAL) Source() (Source, error) {
+	return w.sourceMetadata("source")
+}
+
+func (w *WAL) DrainedSource() (Source, error) {
+	return w.sourceMetadata("drained_source")
+}
+
+func (w *WAL) sourceMetadata(name string) (Source, error) {
 	var s Source
 	e := w.DB.View(func(tx *bolt.Tx) error {
-		raw := tx.Bucket([]byte("meta")).Get([]byte("source"))
+		raw := tx.Bucket([]byte("meta")).Get([]byte(name))
 		if raw == nil {
 			return nil
 		}
 		return json.Unmarshal(raw, &s)
 	})
 	return s, e
+}
+
+// 空的新文件也必须固化来源代次，才能在断电后安全回收已经排空的旧文件。
+func (w *WAL) SwitchSource(expected, next Source) error {
+	if (expected != (Source{}) && (expected.FileID == "" || expected.Generation == "")) || next.FileID == "" || next.Generation == "" || next.FileID == expected.FileID || next.Generation == expected.Generation || next.Offset != 0 || next.PrefixBytes != 0 || next.PrefixSHA256 != "" {
+		return errors.New("轮转检查点格式无效")
+	}
+	return w.DB.Update(func(tx *bolt.Tx) error {
+		meta := tx.Bucket([]byte("meta"))
+		var current Source
+		raw := meta.Get([]byte("source"))
+		if (len(raw) > 0 && json.Unmarshal(raw, &current) != nil) || current != expected {
+			return errors.New("EVE 来源检查点已经变化")
+		}
+		raw, err := json.Marshal(next)
+		if err != nil {
+			return err
+		}
+		drained, err := json.Marshal(expected)
+		if err != nil {
+			return err
+		}
+		if err = meta.Put([]byte("drained_source"), drained); err != nil {
+			return err
+		}
+		return meta.Put([]byte("source"), raw)
+	})
 }
 func (w *WAL) Append(source Source, stream, route string, r *sensorv1.EventRecord) error {
 	return w.AppendBatch(source, []Entry{{Stream: stream, Route: route, Record: r}})
@@ -237,6 +280,10 @@ func (w *WAL) Confirm(b *sensorv1.EventBatch, ack *sensorv1.IngestAck) error {
 			if p.Route != b.RouteToken || !bytes.Equal(want, p.Record) {
 				return fmt.Errorf("确认与本地记录不一致")
 			}
+			// 损坏的容量账目不能通过无符号下溢变成成功回收；保留事件供核对恢复。
+			if uint64(len(raw)) > n {
+				return fmt.Errorf("本地队列字节账目不一致")
+			}
 			n -= uint64(len(raw))
 			count := uintValue(m.Get([]byte("pending_count")))
 			if count == 0 {
@@ -273,11 +320,18 @@ func (w *WAL) LocalConfig() (json.RawMessage, error) {
 	return v, e
 }
 func (w *WAL) SaveLocalConfig(data []byte, username, requestID string) error {
+	return w.SaveLocalConfigWithContext(context.Background(), data, username, requestID)
+}
+func (w *WAL) SaveLocalConfigWithContext(ctx context.Context, data []byte, username, requestID string) error {
 	return w.DB.Update(func(tx *bolt.Tx) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if e := tx.Bucket([]byte("local_config")).Put([]byte("capture"), data); e != nil {
 			return e
 		}
-		return appendAudit(tx, LocalAudit{Username: username, Action: "capture.configure", RequestID: requestID, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().AddDate(0, 0, 180)})
+		meta := model.RequestMetadataFrom(ctx)
+		return appendAudit(tx, LocalAudit{Username: username, Action: "capture.configure", RequestID: requestID, SourceIP: meta.SourceIP, UserAgent: meta.UserAgent, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().AddDate(0, 0, 180)})
 	})
 }
 func (w *WAL) setFailure(code string, active bool) {

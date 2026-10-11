@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/response"
 )
 
 const Schema = "sensor.command.v1"
@@ -47,19 +48,98 @@ type Receipt struct {
 }
 
 type RulePackage struct {
-	PackageID     string `json:"package_id"`
-	Revision      int64  `json:"revision"`
-	EngineVersion string `json:"engine_version"`
-	Text          string `json:"text"`
-	SHA256        string `json:"sha256"`
+	PackageID     string             `json:"package_id"`
+	Revision      int64              `json:"revision"`
+	EngineVersion string             `json:"engine_version"`
+	Text          string             `json:"text"`
+	SHA256        string             `json:"sha256"`
+	Authorization *RuleAuthorization `json:"authorization,omitempty"`
+}
+
+// 发布授权绑定不可变回执、检测配置和写入前的规则状态；装载检查本身不能授权部署。
+type RuleAuthorization struct {
+	ValidationTaskID        string `json:"validation_task_id"`
+	PositiveReplayTaskID    string `json:"positive_replay_task_id"`
+	NegativeReplayTaskID    string `json:"negative_replay_task_id"`
+	ExpectedRulesSHA256     string `json:"expected_rules_sha256"`
+	ConfigSHA256            string `json:"config_sha256"`
+	ProfileSHA256           string `json:"profile_sha256"`
+	ValidationReceiptSHA256 string `json:"validation_receipt_sha256"`
+	PositiveReceiptSHA256   string `json:"positive_receipt_sha256"`
+	NegativeReceiptSHA256   string `json:"negative_receipt_sha256"`
+}
+
+func (a *RuleAuthorization) Validate() error {
+	if a == nil || !contract.ValidID(a.ValidationTaskID) || !contract.ValidID(a.PositiveReplayTaskID) || !contract.ValidID(a.NegativeReplayTaskID) || a.ValidationTaskID == a.PositiveReplayTaskID || a.ValidationTaskID == a.NegativeReplayTaskID || a.PositiveReplayTaskID == a.NegativeReplayTaskID {
+		return errors.New("规则发布缺少独立装载检查、命中与未命中回执")
+	}
+	for _, value := range []string{a.ExpectedRulesSHA256, a.ConfigSHA256, a.ProfileSHA256, a.ValidationReceiptSHA256, a.PositiveReceiptSHA256, a.NegativeReceiptSHA256} {
+		raw, err := hex.DecodeString(value)
+		if err != nil || len(raw) != sha256.Size || hex.EncodeToString(raw) != value {
+			return errors.New("规则发布证据或配置摘要无效")
+		}
+	}
+	return nil
 }
 
 type Replay struct {
-	SampleID     string       `json:"sample_id"`
-	SampleSHA256 string       `json:"sample_sha256"`
-	SampleSize   int64        `json:"sample_size"`
-	RuleMode     string       `json:"rule_mode"`
-	Package      *RulePackage `json:"package,omitempty"`
+	SampleID     string                 `json:"sample_id"`
+	SampleSHA256 string                 `json:"sample_sha256"`
+	SampleSize   int64                  `json:"sample_size"`
+	RuleMode     string                 `json:"rule_mode"`
+	Package      *RulePackage           `json:"package,omitempty"`
+	Origin       *contract.SampleOrigin `json:"origin,omitempty"`
+}
+
+// 核实任务只允许重新装载中断事务的当前文件，不允许下发新规则或任意路径。
+type RuleReconcile struct {
+	UnknownTaskID        string `json:"unknown_task_id"`
+	UnknownCommandSHA256 string `json:"unknown_command_sha256"`
+	ExpectedSHA256       string `json:"expected_sha256"`
+	TargetSHA256         string `json:"target_sha256"`
+	PreviousSHA256       string `json:"previous_sha256"`
+	ConfigSHA256         string `json:"config_sha256"`
+	ProfileSHA256        string `json:"profile_sha256"`
+}
+
+func (p RuleReconcile) Validate() error {
+	if !contract.ValidID(p.UnknownTaskID) {
+		return errors.New("待核实任务身份无效")
+	}
+	for _, value := range []string{p.UnknownCommandSHA256, p.ExpectedSHA256, p.TargetSHA256, p.PreviousSHA256, p.ConfigSHA256, p.ProfileSHA256} {
+		raw, err := hex.DecodeString(value)
+		if err != nil || len(raw) != sha256.Size || hex.EncodeToString(raw) != value {
+			return errors.New("规则核实摘要无效")
+		}
+	}
+	if p.ExpectedSHA256 != p.TargetSHA256 && p.ExpectedSHA256 != p.PreviousSHA256 {
+		return errors.New("当前文件不属于待核实规则事务")
+	}
+	return nil
+}
+
+type RuleReconcileResult struct {
+	Verified             bool            `json:"verified"`
+	UnknownTaskID        string          `json:"unknown_task_id"`
+	UnknownCommandSHA256 string          `json:"unknown_command_sha256"`
+	ActiveSHA256         string          `json:"active_sha256"`
+	ConfigSHA256         string          `json:"config_sha256"`
+	ProfileSHA256        string          `json:"profile_sha256"`
+	Stats                json.RawMessage `json:"ruleset_stats"`
+}
+
+func (r RuleReconcileResult) Validate(p RuleReconcile) error {
+	if p.Validate() != nil || !r.Verified || r.UnknownTaskID != p.UnknownTaskID || r.UnknownCommandSHA256 != p.UnknownCommandSHA256 || r.ActiveSHA256 != p.ExpectedSHA256 || r.ConfigSHA256 != p.ConfigSHA256 || r.ProfileSHA256 != p.ProfileSHA256 {
+		return errors.New("规则核实回执与原事务不一致")
+	}
+	var stats []struct {
+		Loaded *int `json:"rules_loaded"`
+		Failed *int `json:"rules_failed"`
+	}
+	if json.Unmarshal(r.Stats, &stats) != nil || len(stats) != 1 || stats[0].Loaded == nil || stats[0].Failed == nil || *stats[0].Loaded < 1 || *stats[0].Failed != 0 {
+		return errors.New("规则核实缺少完整原生装载回读")
+	}
+	return nil
 }
 
 func ReplayPayload(p Replay) (json.RawMessage, error) {
@@ -148,6 +228,26 @@ func Validate(c Command) error {
 		return errors.New("任务参数无效")
 	}
 	switch c.Kind {
+	case "response.block", "response.read", "response.revoke":
+		a, err := response.ReadAction(c.Payload)
+		if err != nil || a.OwnerSHA256 != response.Owner(c.TenantID, c.SensorID, c.RegistrationID, a.LeaseID) || c.Kind == "response.block" && a.LeaseID != c.ID {
+			return response.ErrInput
+		}
+		if c.Kind == "response.block" && (!a.RequestedAt.Equal(c.IssuedAt) || !c.ExpiresAt.Before(a.ExpiresAt)) {
+			return response.ErrInput
+		}
+		return nil
+	case "capture.configure":
+		_, err := ReadCaptureConfiguration(c.Payload)
+		return err
+	case "rules.reconcile":
+		var p RuleReconcile
+		d := json.NewDecoder(bytes.NewReader(c.Payload))
+		d.DisallowUnknownFields()
+		if d.Decode(&p) != nil || d.Decode(new(any)) != io.EOF {
+			return errors.New("规则核实参数无效")
+		}
+		return p.Validate()
 	case "rules.replay":
 		var p Replay
 		d := json.NewDecoder(bytes.NewReader(c.Payload))
@@ -156,7 +256,7 @@ func Validate(c Command) error {
 			return e
 		}
 		sha, e := hex.DecodeString(p.SampleSHA256)
-		if !contract.ValidID(p.SampleID) || e != nil || len(sha) != 32 || p.SampleSize < 24 || p.SampleSize > 100*1024*1024 {
+		if !contract.ValidID(p.SampleID) || e != nil || len(sha) != 32 || p.SampleSize < 24 || p.SampleSize > 100*1024*1024 || p.Origin != nil && !p.Origin.Valid() {
 			return errors.New("重放样本身份、摘要或大小无效")
 		}
 		if p.RuleMode == "registered" && p.Package == nil {
@@ -186,6 +286,12 @@ func Validate(c Command) error {
 		}
 		if !contract.ValidID(p.PackageID) || p.Revision < 1 || p.EngineVersion != "8.0.7" || len(p.Text) == 0 || len(p.Text) > 900*1024 || p.SHA256 != Digest([]byte(p.Text)) {
 			return errors.New("规则包身份、版本或摘要无效")
+		}
+		if c.Kind == "rules.apply" {
+			return p.Authorization.Validate()
+		}
+		if p.Authorization != nil {
+			return errors.New("装载检查不接受发布授权")
 		}
 	default:
 		return errors.New("设备不接受该任务类型")

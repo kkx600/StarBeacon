@@ -17,10 +17,13 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
     <a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small">
       <a-descriptions-item label="探针 ID">{{record.id}}</a-descriptions-item><a-descriptions-item label="连接状态"><StatusTag :value="record.status"/></a-descriptions-item>
       <a-descriptions-item label="所属租户">{{record.tenant}}</a-descriptions-item><a-descriptions-item label="站点">{{record.site??'未配置'}}</a-descriptions-item>
+      <a-descriptions-item label="探针分组">{{record.group??'未分组'}}</a-descriptions-item><a-descriptions-item label="管理修订">{{record.metadataRevision??'尚未记录'}}</a-descriptions-item>
+      <a-descriptions-item label="说明" :span="2">{{record.description??'未配置'}}</a-descriptions-item>
       <a-descriptions-item label="网络域">{{record.zone??'未配置'}}</a-descriptions-item><a-descriptions-item label="角色">{{record.role??'未配置'}}</a-descriptions-item>
       <a-descriptions-item label="最近心跳">{{record.lastSeen??'尚未上报'}}</a-descriptions-item><a-descriptions-item label="证书状态">{{record.certificate??'等待注册'}}</a-descriptions-item>
     </a-descriptions>
     <div class="sensor-health-summary"><StatusTag :value="health"/><span>资源、丢包和心跳按当前健康阈值判断。查看“运行状态”了解对应指标。</span></div>
+    <p class="field-hint">HTTP 联动由主控平台显式授权，设备目录与状态在采集器“网络与采集 → 联动设备”中核对。影子模型分数不授权封禁，设备回读不代表实际流量效果。</p><router-link to="/collector/network?view=responses&state=data">查看采集器联动设备</router-link>
   </template>
   <template v-else-if="tab==='运行状态'">
     <div class="sensor-runtime-heading"><h3>资源与采集质量</h3><StatusTag :value="health"/></div>

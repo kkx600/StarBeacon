@@ -1,0 +1,1351 @@
+{
+  "packets": [
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "d869ee7528cc90ecf8bca35ba7170094baa9bea3a643cc9196ce31a0087938bd",
+      "number": 1,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.123456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.dst",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "0"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "1000"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "0"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAACAgAAAAABCABFAAAoAAAAAEAGjn7AAAIKxjNkFJxAAFAAAAPoAAAAAFAC//8jGAAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "ece26a528733f1813cdc739a94c4789919494296788b472784a7d9d5454bda7a",
+      "number": 2,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.124456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.dst",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "1"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "5000"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "1001"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAABAgAAAAACCABFAAAoAAEAAEAGjn3GM2QUwAACCgBQnEAAABOIAAAD6VAS//8PfwAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "7d9f80939d07b9abd2248ce4b3c0a70cedd73802751a8d20e6fee8e8f2a4be47",
+      "number": 3,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.125456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.dst",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "2"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "1001"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "5001"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAACAgAAAAABCABFAAAoAAIAAEAGjnzAAAIKxjNkFJxAAFAAAAPpAAATiVAQ//8PgAAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "7c87f441dffaeba8e808f9c1559cc0f7bfb3bd4592b20b674b25bc17b6663a7f",
+      "number": 4,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.126456789Z",
+      "captured_length": 134,
+      "original_length": 134,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.dst",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "3"
+            },
+            {
+              "name": "ip.len",
+              "value": "120"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "1001"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "5001"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "name": "Payload",
+          "offset": 54,
+          "length": 80,
+          "fields": []
+        }
+      ],
+      "packet": "AgAAAAACAgAAAAABCABFAAB4AAMAAEAGjivAAAIKxjNkFJxAAFAAAAPpAAATiVAY//+hNgAAR0VUIC9zdGFyYmVhY29uL3ZhbGlkYXRpb24gSFRUUC8xLjENCkhvc3Q6IHJlcGxheS5leGFtcGxlDQpDb25uZWN0aW9uOiBjbG9zZQ0KDQo=",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "a5d71d5721a2e8010281bd1598f5431d921e8949102806489d09b678f8ab488e",
+      "number": 5,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.127456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.dst",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "4"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "5001"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "1081"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAABAgAAAAACCABFAAAoAAQAAEAGjnrGM2QUwAACCgBQnEAAABOJAAAEOVAQ//8PMAAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "626fd29d274faa5a4ccd26ea03fce57face9d2f37d5727561ff2a2ebbfdb3517",
+      "number": 6,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.128456789Z",
+      "captured_length": 113,
+      "original_length": 113,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.dst",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "5"
+            },
+            {
+              "name": "ip.len",
+              "value": "99"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "5001"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "1081"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "name": "Payload",
+          "offset": 54,
+          "length": 59,
+          "fields": []
+        }
+      ],
+      "packet": "AgAAAAABAgAAAAACCABFAABjAAUAAEAGjj7GM2QUwAACCgBQnEAAABOJAAAEOVAY//+gcwAASFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LUxlbmd0aDogMg0KQ29ubmVjdGlvbjogY2xvc2UNCg0KT0s=",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "636da0109ed3f19d5f2413e76f6f595675af82d9b27259bda1cd7946df80f5d8",
+      "number": 7,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.129456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.dst",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "6"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "1081"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "5060"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAACAgAAAAABCABFAAAoAAYAAEAGjnjAAAIKxjNkFJxAAFAAAAQ5AAATxFAR//8O9AAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "fb18181ea823efa1fbf6df160982c6067e721437a5d7857f0c2bce8c1bbb72ae",
+      "number": 8,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.130456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.dst",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "7"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "5060"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "1082"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAABAgAAAAACCABFAAAoAAcAAEAGjnfGM2QUwAACCgBQnEAAABPEAAAEOlAR//8O8wAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    },
+    {
+      "schema": "packet.inspect.v1",
+      "archive_id": "packet_example",
+      "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+      "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+      "packet_sha256": "948fd2e72a9f1a5f5a5aa0e9effba03b8040766f7bd066e49b21a2de7eb469d4",
+      "number": 9,
+      "total": 9,
+      "captured_at": "2026-09-30T01:42:00.131456789Z",
+      "captured_length": 60,
+      "original_length": 60,
+      "truncated": false,
+      "interface": "eth0",
+      "vlan_offload": false,
+      "decode_status": "parsed",
+      "layers": [
+        {
+          "name": "Ethernet",
+          "offset": 0,
+          "length": 14,
+          "fields": [
+            {
+              "name": "eth.src",
+              "value": "02:00:00:00:00:01"
+            },
+            {
+              "name": "eth.dst",
+              "value": "02:00:00:00:00:02"
+            },
+            {
+              "name": "eth.type",
+              "value": "0x800"
+            }
+          ]
+        },
+        {
+          "name": "IPv4",
+          "offset": 14,
+          "length": 20,
+          "fields": [
+            {
+              "name": "ip.src",
+              "value": "192.0.2.10"
+            },
+            {
+              "name": "ip.dst",
+              "value": "198.51.100.20"
+            },
+            {
+              "name": "ip.ttl",
+              "value": "64"
+            },
+            {
+              "name": "ip.id",
+              "value": "8"
+            },
+            {
+              "name": "ip.len",
+              "value": "40"
+            },
+            {
+              "name": "ip.proto",
+              "value": "6"
+            },
+            {
+              "name": "ip.frag_offset",
+              "value": "0"
+            },
+            {
+              "name": "ip.flags",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "name": "TCP",
+          "offset": 34,
+          "length": 20,
+          "fields": [
+            {
+              "name": "tcp.srcport",
+              "value": "40000"
+            },
+            {
+              "name": "tcp.dstport",
+              "value": "80"
+            },
+            {
+              "name": "tcp.seq",
+              "value": "1082"
+            },
+            {
+              "name": "tcp.ack",
+              "value": "5061"
+            },
+            {
+              "name": "tcp.window_size_value",
+              "value": "65535"
+            },
+            {
+              "name": "tcp.flags.syn",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ack",
+              "value": "true"
+            },
+            {
+              "name": "tcp.flags.fin",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.reset",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.push",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.urg",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ece",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.cwr",
+              "value": "false"
+            },
+            {
+              "name": "tcp.flags.ns",
+              "value": "false"
+            }
+          ]
+        }
+      ],
+      "packet": "AgAAAAACAgAAAAABCABFAAAoAAgAAEAGjnbAAAIKxjNkFJxAAFAAAAQ6AAATxVAQ//8O8wAAAAAAAAAA",
+      "checksum_validation": "not_checked",
+      "payload_visibility": "not_decoded"
+    }
+  ],
+  "record": {
+    "created_at": "2026-09-30T01:42:00.123456789Z",
+    "expires_at": "2027-03-29T01:42:00.123456789Z",
+    "id": "packet_example",
+    "manifest": {
+      "capture": {
+        "id": "packet_example",
+        "tenant_id": "tenant_example",
+        "sensor_id": "sensor_example",
+        "registration_id": "reg_example",
+        "run_id": "run_example",
+        "interface": "eth0",
+        "interface_mac": "02:00:00:00:00:01",
+        "settings_sha256": "b6e084b4593937ef8a525cbe5e75e4e1217fea392bdfbb5154422050edfa7529",
+        "bpf_filter": "",
+        "promiscuous": false,
+        "started_at": "2026-09-30T01:41:59.123456789Z",
+        "ended_at": "2026-09-30T01:42:01.123456789Z",
+        "first_packet_at": "2026-09-30T01:42:00.123456789Z",
+        "last_packet_at": "2026-09-30T01:42:00.131456789Z",
+        "packets": 9,
+        "packet_bytes": 667,
+        "truncated_packets": 0,
+        "vlan_offload_packets": 0,
+        "kernel_drops": "0",
+        "counter_state": "observed",
+        "termination": "rotation",
+        "format": "pcapng",
+        "source": "AF_PACKET",
+        "snap_length": 262144
+      },
+      "encoding": {
+        "schema": "packet.archive.v1",
+        "codec": "zstd",
+        "implementation": "klauspost/compress/v1.20.1",
+        "level": "SpeedFastest",
+        "frame_bytes": 262144,
+        "raw_bytes": 1416,
+        "stored_bytes": 686,
+        "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+        "stored_sha256": "40a39754e35b5f9165d916a4e2af6bb045703df3abd49481f3e394e2f1784dab",
+        "frames": [
+          {
+            "raw_offset": 0,
+            "raw_length": 1416,
+            "stored_offset": 0,
+            "stored_length": 686,
+            "raw_sha256": "e1f1116fa5825773cc1e3f40580484786ecb8b3f5d581a89dd511a0b235fdee4",
+            "stored_sha256": "40a39754e35b5f9165d916a4e2af6bb045703df3abd49481f3e394e2f1784dab"
+          }
+        ]
+      }
+    },
+    "manifest_sha256": "bdee5a436c858915ec4ad3a8320b3432b2ea01aaa15eec2fa569f7fdbd2d8a61",
+    "state": "ready"
+  },
+  "source": "synthetic_testpcap_http_gopacket_example"
+}

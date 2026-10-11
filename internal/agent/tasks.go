@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
 	bolt "go.etcd.io/bbolt"
@@ -18,12 +21,17 @@ type TaskRunner interface {
 	Execute(context.Context, control.Command) (json.RawMessage, string, error)
 }
 type LocalTask struct {
-	Origin       string          `json:"origin,omitempty"`
-	Command      control.Command `json:"command"`
-	SHA256       string          `json:"sha256"`
-	Receipt      control.Receipt `json:"receipt"`
-	Acknowledged bool            `json:"acknowledged"`
+	Origin         string          `json:"origin,omitempty"`
+	Command        control.Command `json:"command"`
+	SHA256         string          `json:"sha256"`
+	Receipt        control.Receipt `json:"receipt"`
+	Acknowledged   bool            `json:"acknowledged"`
+	RuleResolution json.RawMessage `json:"rule_resolution,omitempty"`
+	RetainUntil    time.Time       `json:"retain_until"`
 }
+
+var ErrLocalTaskNotFound = errors.New("本地任务不存在或已过留存期")
+
 type TaskManager struct {
 	WAL           *WAL
 	PublicKey     ed25519.PublicKey
@@ -33,6 +41,7 @@ type TaskManager struct {
 	MaxBytes      uint64
 	RetentionDays int
 	Replay        *ReplayService
+	Capture       *CaptureSupervisor
 }
 
 func NewTaskManager(w *WAL, publicKey ed25519.PublicKey, runner TaskRunner) (*TaskManager, error) {
@@ -56,6 +65,12 @@ func NewTaskManager(w *WAL, publicKey ed25519.PublicKey, runner TaskRunner) (*Ta
 			if e := json.Unmarshal(v, &task); e != nil {
 				return e
 			}
+			changed := false
+			if task.RetainUntil.IsZero() {
+				// 历史记录继承其接收时的默认期限，不由重启后的配置延长或缩短。
+				task.RetainUntil = localTaskRetention(task)
+				changed = true
+			}
 			// 崩溃后的执行阶段不能推断为成功，也不盲目重放有副作用的命令。
 			if task.Receipt.State == "running" {
 				now := time.Now().UTC()
@@ -63,6 +78,9 @@ func NewTaskManager(w *WAL, publicKey ed25519.PublicKey, runner TaskRunner) (*Ta
 				task.Receipt.Code = "execution_interrupted"
 				task.Receipt.FinishedAt = &now
 				task.Acknowledged = task.Origin == "local"
+				changed = true
+			}
+			if changed {
 				raw, e := json.Marshal(task)
 				if e != nil {
 					return e
@@ -120,7 +138,7 @@ func (m *TaskManager) accept(c control.Command, digest, origin string) error {
 			return errors.New("设备执行队列已满")
 		}
 		now := time.Now().UTC()
-		v := LocalTask{Origin: origin, Acknowledged: origin == "local", Command: c, SHA256: digest, Receipt: control.Receipt{CommandID: c.ID, CommandSHA256: digest, State: "running", StartedAt: now, Result: json.RawMessage(`{}`)}}
+		v := LocalTask{Origin: origin, Acknowledged: origin == "local", Command: c, SHA256: digest, RetainUntil: now.AddDate(0, 0, m.RetentionDays), Receipt: control.Receipt{CommandID: c.ID, CommandSHA256: digest, State: "running", StartedAt: now, Result: json.RawMessage(`{}`)}}
 		if !c.ExpiresAt.After(now) || c.IssuedAt.After(now.Add(time.Minute)) {
 			v.Receipt.State = "failed"
 			v.Receipt.Code = "command_expired"
@@ -189,6 +207,11 @@ func (m *TaskManager) Run(ctx context.Context) error {
 				if e := m.putTask(tx, v); e != nil {
 					return e
 				}
+				if c.Kind == "rules.reconcile" && state == "succeeded" {
+					if e := m.resolveRuleTask(tx, c, result); e != nil {
+						return e
+					}
+				}
 				if v.Origin != "local" {
 					if e = tx.Bucket([]byte("task_receipts")).Put([]byte(c.ID), []byte{1}); e != nil {
 						return e
@@ -246,7 +269,8 @@ func (m *TaskManager) Confirm(id string, receiptHash []byte) error {
 			return nil
 		}
 		v.Acknowledged = true
-		if v.Receipt.State != "running" {
+		// 中断的规则安装仍需原签名载荷核实，平台 ACK 不能销毁恢复依据。
+		if v.Receipt.State != "running" && !(v.Receipt.State == "unknown" && v.Command.Kind == "rules.apply") {
 			v.Command.Payload = nil
 		}
 		if e = m.putTask(tx, v); e != nil {
@@ -257,28 +281,110 @@ func (m *TaskManager) Confirm(id string, receiptHash []byte) error {
 }
 
 type LocalTaskSummary struct {
-	Origin       string          `json:"origin"`
-	ID           string          `json:"id"`
-	SensorID     string          `json:"sensor_id"`
-	Kind         string          `json:"kind"`
-	State        string          `json:"state"`
-	CreatedAt    time.Time       `json:"created_at"`
-	ExpiresAt    time.Time       `json:"expires_at"`
-	Acknowledged bool            `json:"acknowledged"`
-	Receipt      control.Receipt `json:"receipt"`
+	Origin             string          `json:"origin"`
+	ID                 string          `json:"id"`
+	SensorID           string          `json:"sensor_id"`
+	Kind               string          `json:"kind"`
+	State              string          `json:"state"`
+	CreatedAt          time.Time       `json:"created_at"`
+	ExpiresAt          time.Time       `json:"expires_at"`
+	Acknowledged       bool            `json:"acknowledged"`
+	Receipt            control.Receipt `json:"receipt"`
+	RuleResolution     json.RawMessage `json:"rule_resolution,omitempty"`
+	RetainUntil        time.Time       `json:"retain_until"`
+	RetentionProtected bool            `json:"retention_protected"`
+}
+
+func localTaskRetention(task LocalTask) time.Time {
+	if !task.RetainUntil.IsZero() {
+		return task.RetainUntil
+	}
+	return task.Receipt.StartedAt.AddDate(0, 0, 180)
+}
+
+func localTaskProtected(task LocalTask) bool {
+	return !task.Acknowledged || task.Receipt.State == "running" || task.Receipt.State == "unknown" && len(task.RuleResolution) == 0
+}
+
+func summarizeLocalTask(row LocalTask) LocalTaskSummary {
+	origin := row.Origin
+	if origin == "" {
+		origin = "platform"
+	}
+	return LocalTaskSummary{Origin: origin, ID: row.Command.ID, SensorID: row.Command.SensorID, Kind: row.Command.Kind, State: row.Receipt.State, CreatedAt: row.Command.IssuedAt, ExpiresAt: row.Command.ExpiresAt, Acknowledged: row.Acknowledged, Receipt: row.Receipt, RuleResolution: row.RuleResolution, RetainUntil: localTaskRetention(row), RetentionProtected: localTaskProtected(row)}
+}
+
+func (m *TaskManager) validateLocalTask(row LocalTask, id string) error {
+	digest, err := hex.DecodeString(row.SHA256)
+	if !contract.ValidID(id) || err != nil || len(digest) != 32 || hex.EncodeToString(digest) != row.SHA256 || row.Command.ID != id || row.Command.TenantID != m.WAL.TenantID || row.Command.SensorID != m.WAL.SensorID || row.Command.RegistrationID != m.WAL.RegistrationID || row.Receipt.CommandID != id || row.Receipt.CommandSHA256 != row.SHA256 || row.Receipt.StartedAt.IsZero() || row.Command.IssuedAt.IsZero() || !row.Command.ExpiresAt.After(row.Command.IssuedAt) || !localTaskRetention(row).After(row.Receipt.StartedAt) {
+		return errors.New("本地任务身份或回执绑定不一致")
+	}
+	if row.Origin != "" && row.Origin != "platform" && row.Origin != "local" || row.Origin == "local" && (row.Command.Kind != "rules.replay" || !strings.HasPrefix(id, "localtask_")) {
+		return errors.New("本地任务来源不一致")
+	}
+	switch row.Command.Kind {
+	case "diagnostics", "capture.configure", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke":
+	default:
+		return errors.New("本地任务类型无效")
+	}
+	switch row.Receipt.State {
+	case "running", "succeeded", "failed", "unknown":
+	default:
+		return errors.New("本地任务回执状态无效")
+	}
+	if row.Receipt.State != "running" && (row.Receipt.FinishedAt == nil || row.Receipt.FinishedAt.Before(row.Receipt.StartedAt)) {
+		return errors.New("本地任务结束回执不完整")
+	}
+	return nil
+}
+
+// Task 按主键读取已留存档案，不返回签名命令载荷，也不重新执行任务。
+func (m *TaskManager) Task(id string) (LocalTaskSummary, error) {
+	var out LocalTaskSummary
+	if !contract.ValidID(id) {
+		return out, ErrLocalTaskNotFound
+	}
+	err := m.WAL.DB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("sensor_tasks"))
+		if bucket == nil {
+			return errors.New("本地任务存储不可用")
+		}
+		raw := bucket.Get([]byte(id))
+		if raw == nil {
+			return ErrLocalTaskNotFound
+		}
+		var row LocalTask
+		if err := json.Unmarshal(raw, &row); err != nil {
+			return err
+		}
+		if err := m.validateLocalTask(row, id); err != nil {
+			return err
+		}
+		if !localTaskRetention(row).After(time.Now().UTC()) && !localTaskProtected(row) {
+			return ErrLocalTaskNotFound
+		}
+		out = summarizeLocalTask(row)
+		return nil
+	})
+	return out, err
 }
 
 func (m *TaskManager) List() ([]LocalTaskSummary, error) {
 	out := []LocalTaskSummary{}
 	e := m.WAL.DB.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte("task_history")).Cursor()
-		for k, id := c.Last(); k != nil && len(out) < 200; k, id = c.Prev() {
+		// 只读列表限制扫描预算；指定档案不受近期列表窗口影响。
+		scanned := 0
+		for k, id := c.Last(); k != nil && len(out) < 200 && scanned < 1000; k, id = c.Prev() {
+			scanned++
 			v := tx.Bucket([]byte("sensor_tasks")).Get(id)
 			var row LocalTask
 			if e := json.Unmarshal(v, &row); e != nil {
 				return e
 			}
-			out = append(out, LocalTaskSummary{Origin: row.Origin, ID: row.Command.ID, SensorID: row.Command.SensorID, Kind: row.Command.Kind, State: row.Receipt.State, CreatedAt: row.Command.IssuedAt, ExpiresAt: row.Command.ExpiresAt, Acknowledged: row.Acknowledged, Receipt: row.Receipt})
+			if localTaskRetention(row).After(time.Now().UTC()) || localTaskProtected(row) {
+				out = append(out, summarizeLocalTask(row))
+			}
 		}
 		return nil
 	})
@@ -328,42 +434,7 @@ func (m *TaskManager) putTask(tx *bolt.Tx, v LocalTask) error {
 	return meta.Put([]byte("task_bytes"), key(used+size))
 }
 func (m *TaskManager) prune(tx *bolt.Tx, now time.Time) error {
-	cutoff := now.AddDate(0, 0, -m.RetentionDays)
-	index := tx.Bucket([]byte("task_history"))
-	c := index.Cursor()
-	b := tx.Bucket([]byte("sensor_tasks"))
-	removed, scanned := 0, 0
-	for k, id := c.First(); k != nil && removed < 100 && scanned < 200; k, id = c.Next() {
-		scanned++
-		var v LocalTask
-		raw := b.Get(id)
-		if e := json.Unmarshal(raw, &v); e != nil {
-			return e
-		}
-		if v.Receipt.StartedAt.After(cutoff) {
-			break
-		}
-		if !v.Acknowledged || v.Receipt.State == "running" || v.Receipt.State == "unknown" {
-			continue
-		}
-		meta := tx.Bucket([]byte("meta"))
-		used := uintValue(meta.Get([]byte("task_bytes")))
-		size := taskSize(raw, v.Receipt.State)
-		if size > used {
-			return errors.New("任务容量账目不一致")
-		}
-		if e := meta.Put([]byte("task_bytes"), key(used-size)); e != nil {
-			return e
-		}
-		if e := b.Delete(id); e != nil {
-			return e
-		}
-		if e := c.Delete(); e != nil {
-			return e
-		}
-		removed++
-	}
-	return nil
+	return m.pruneWithContext(context.Background(), tx, now)
 }
 
 // SubmitLocal 仅由已经验证本地管理员会话的处理器调用，不绕过平台命令验签入口。

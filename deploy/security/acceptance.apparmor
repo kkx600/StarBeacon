@@ -1,0 +1,24 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+# 仅用于独立验收容器。名称由验收项目标识替换，不能替换宿主已有策略。
+profile STARBEACON_ACCEPTANCE_PROFILE flags=(attach_disconnected,mediate_deleted) {
+  file,
+  network,
+  capability,
+  mount,
+  umount,
+  pivot_root,
+  signal,
+  ptrace,
+  unix,
+  userns,
+  deny /proc/{bus,fs,irq,sys}/** wklx,
+  deny /proc/sysrq-trigger rwklx,
+  deny /proc/{acpi,asound,scsi}/** rwklx,
+  deny /proc/{kcore,keys,latency_stats,timer_list,timer_stats,sched_debug} rwklx,
+  deny /sys/** wklx,
+  deny /sys/kernel/security/** rwklx,
+  deny /sys/firmware/** rwklx,
+  deny /sys/devices/virtual/powercap/** rwklx,
+}

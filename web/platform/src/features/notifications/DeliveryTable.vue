@@ -1,0 +1,9 @@
+<script setup lang="ts">
+import {Table} from 'ant-design-vue'
+import {formatTime} from '@starbeacon/shared/types.ts'
+import {channelNames,deliveryNames,deliveryClass,streamNames,type Delivery} from './notifications'
+defineProps<{items:readonly Delivery[]}>()
+const emit=defineEmits<{view:[record:Delivery]}>()
+const columns=[{title:'投递时间',key:'created',width:180},{title:'渠道',dataIndex:'channel_name',key:'channel',width:200},{title:'类型',key:'kind',width:120},{title:'接收目标',dataIndex:'recipient',key:'recipient',width:200},{title:'状态',key:'state',width:130},{title:'日志类别',key:'stream',width:120},{title:'记录数',key:'count',width:80},{title:'尝试次数',dataIndex:'attempts',key:'attempts',width:90},{title:'操作',key:'actions',width:80,fixed:'right' as const}]
+</script>
+<template><div class="table-wrap"><Table :columns="columns" :data-source="[...items]" row-key="id" :pagination="false" :scroll="{x:1200}"><template #bodyCell="{column,record}"><template v-if="column.key==='created'">{{formatTime(record.created_at)}}</template><template v-else-if="column.key==='channel'">{{record.channel_name}}<small class="record-id">修订 {{record.channel_revision}}</small></template><template v-else-if="column.key==='kind'">{{channelNames[record.kind as keyof typeof channelNames]}}</template><template v-else-if="column.key==='recipient'"><span class="technical">{{record.recipient||'渠道目标'}}</span></template><template v-else-if="column.key==='state'"><span :class="['status',deliveryClass(record.state)]">{{deliveryNames[record.state as keyof typeof deliveryNames]}}</span></template><template v-else-if="column.key==='stream'">{{streamNames[record.stream as keyof typeof streamNames]??'安全告警'}}</template><template v-else-if="column.key==='count'">{{record.record_count??record.alert_count}}</template><template v-else-if="column.key==='actions'"><a-button type="link" size="small" @click="emit('view',record as Delivery)">查看</a-button></template></template></Table></div></template>

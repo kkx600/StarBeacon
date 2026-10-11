@@ -71,7 +71,7 @@ func Normalize(tenant, sensor, registration string, r *sensorv1.EventRecord, rec
 	if v.EventType == "" {
 		return out, fmt.Errorf("缺少事件类型")
 	}
-	ts, e := time.Parse(time.RFC3339Nano, v.Timestamp)
+	ts, e := ParseTimestamp(v.Timestamp)
 	if e != nil {
 		return out, fmt.Errorf("EVE 时间不合法")
 	}
@@ -96,7 +96,7 @@ func Normalize(tenant, sensor, registration string, r *sensorv1.EventRecord, rec
 	}{{v.SrcIP, &out.Source}, {v.DestIP, &out.Destination}} {
 		if p.raw != "" {
 			ip, e := netip.ParseAddr(p.raw)
-			if e != nil {
+			if e != nil || ip.Zone() != "" {
 				return out, fmt.Errorf("IP 地址不合法")
 			}
 			p.target.IP = ip.Unmap().String()
@@ -110,14 +110,22 @@ func Normalize(tenant, sensor, registration string, r *sensorv1.EventRecord, rec
 	}{{v.Ether.Src, &out.Source.MAC}, {v.Ether.Dest, &out.Destination.MAC}} {
 		if p.raw != "" {
 			mac, e := net.ParseMAC(p.raw)
-			if e != nil {
-				return out, fmt.Errorf("MAC 地址不合法")
+			if e != nil || len(mac) != 6 {
+				return out, fmt.Errorf("Ethernet MAC 地址必须为 6 字节")
 			}
 			*p.target = mac.String()
 		}
 	}
 	out.Network.Transport = strings.ToLower(v.Proto)
 	out.Network.Protocol = strings.ToLower(v.AppProto)
+	if out.Network.Protocol == "" {
+		// 协议事务日志可省略 app_proto；白名单事件类型本身来自对应协议解析器。
+		// flow、alert、文件与统计事件不具有这种语义，保持缺测。
+		switch v.EventType {
+		case "http", "http2", "dns", "tls", "quic", "ssh", "smtp", "ftp", "smb", "nfs", "dhcp", "rdp":
+			out.Network.Protocol = v.EventType
+		}
+	}
 	out.Rule.ID = v.Alert.SignatureID.String()
 	out.Rule.Revision = v.Alert.Rev.String()
 	out.Rule.Name = v.Alert.Signature

@@ -12480,6 +12480,166 @@
         "scrollWidth": 1280
       },
       "bytes": 95845
+    },
+    {
+      "file": "mcp/data.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=data&capture=1",
+      "title": "MCP 服务",
+      "state": "data",
+      "capturedAt": "2026-10-02T20:27:11.833Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 152853
+    },
+    {
+      "file": "mcp/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=empty&capture=1",
+      "title": "MCP 服务",
+      "state": "empty",
+      "capturedAt": "2026-10-02T20:27:17.252Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 86961
+    },
+    {
+      "file": "mcp/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=detail&capture=1",
+      "title": "MCP 服务",
+      "state": "detail",
+      "capturedAt": "2026-10-02T20:27:22.135Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 120211
+    },
+    {
+      "file": "mcp/action.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=action&capture=1",
+      "title": "MCP 服务",
+      "state": "action",
+      "capturedAt": "2026-10-02T20:27:26.820Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 129428
+    },
+    {
+      "file": "mcp/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=loading&capture=1",
+      "title": "MCP 服务",
+      "state": "loading",
+      "capturedAt": "2026-10-02T20:27:31.402Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 87356
+    },
+    {
+      "file": "mcp/error.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=error&capture=1",
+      "title": "MCP 服务",
+      "state": "error",
+      "capturedAt": "2026-10-02T20:27:37.153Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 86674
+    },
+    {
+      "file": "mcp/data.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=data&capture=1",
+      "title": "MCP 服务",
+      "state": "data",
+      "capturedAt": "2026-10-02T20:28:16.669Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 152674
+    },
+    {
+      "file": "mcp/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=empty&capture=1",
+      "title": "MCP 服务",
+      "state": "empty",
+      "capturedAt": "2026-10-02T20:28:18.139Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 86978
+    },
+    {
+      "file": "mcp/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=loading&capture=1",
+      "title": "MCP 服务",
+      "state": "loading",
+      "capturedAt": "2026-10-02T20:28:19.512Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 87395
+    },
+    {
+      "file": "mcp/error.jpg",
+      "url": "http://127.0.0.1:4173/page/mcp?state=error&capture=1",
+      "title": "MCP 服务",
+      "state": "error",
+      "capturedAt": "2026-10-02T20:28:21.036Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 800,
+        "scrollWidth": 1265,
+        "width": 1280
+      },
+      "bytes": 86693
     }
   ],
   "errors": []

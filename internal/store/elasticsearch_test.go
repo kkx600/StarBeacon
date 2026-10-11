@@ -79,7 +79,10 @@ func TestSearchPinsTenantAndSearchesTransport(t *testing.T) {
 		if protocol[1].(map[string]any)["term"].(map[string]any)["network.transport"] != "tcp" {
 			t.Error("TCP 无法按传输层协议筛选")
 		}
-		_, _ = w.Write([]byte(`{"hits":{"total":{"value":0},"hits":[]}}`))
+		if r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("ignore_unavailable") == "true" || body["timeout"] != "5s" {
+			t.Error("检索未拒绝部分结果或没有查询期限")
+		}
+		_, _ = w.Write([]byte(`{"timed_out":false,"_shards":{"total":0,"successful":0,"failed":0},"hits":{"total":{"value":0,"relation":"eq"},"hits":[]}}`))
 	}))
 	defer server.Close()
 	es, _ := OpenES(server.URL, "")

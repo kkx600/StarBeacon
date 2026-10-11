@@ -13,6 +13,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
@@ -26,12 +27,15 @@ import (
 
 type Server struct {
 	sensorv1.UnimplementedSensorServiceServer
-	DB           *store.Postgres
-	Bus          *bus.Bus
-	ControlOnly  bool
-	TasksEnabled bool
-	Wakeup       *control.Wakeup
-	Samples      replay.Storage
+	DB            *store.Postgres
+	Bus           *bus.Bus
+	ControlOnly   bool
+	TasksEnabled  bool
+	Wakeup        *control.Wakeup
+	Samples       replay.Storage
+	Packets       packetarchive.ObjectStorage
+	PacketStaging string
+	PacketQuota   int64
 }
 
 // 单进程最多四个样本传输，避免大文件读取挤占控制信号和事件接入。

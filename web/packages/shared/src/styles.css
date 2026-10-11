@@ -91,7 +91,14 @@ h2 {margin: 0; font-size: 16px; font-weight: 600}
 }
 
 /* 技术字段与数值在各自容器内换行或滚动，不能扩宽工作区。 */
-.ant-modal .ant-modal-body {max-height:72vh;overflow:auto}
+.ant-modal .ant-modal-content {display:flex;flex-direction:column;max-height:calc(100dvh - 128px)}
+.ant-modal .ant-modal-header,.ant-modal .ant-modal-footer {flex-shrink:0}
+.ant-modal .ant-modal-body {min-height:0;max-height:72vh;overflow:auto}
+/* 短屏保留标题和关闭入口，超长表单在内容区滚动。 */
+@media (max-height:700px) {
+  .ant-modal {top:20px}
+  .ant-modal .ant-modal-content {max-height:calc(100dvh - 48px)}
+}
 .ant-btn:disabled,.ant-input:disabled,.ant-select-disabled .ant-select-selection-item {color:var(--muted)}
 .ant-table-cell {overflow-wrap:anywhere}
 .ant-alert-description,.ant-alert-message {overflow-wrap:anywhere}

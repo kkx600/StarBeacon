@@ -6,27 +6,45 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/hosthealth"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
+	"github.com/kkx600/StarBeacon/internal/mcpserver"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/outbound"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/replay"
+	"github.com/kkx600/StarBeacon/internal/searchfilter"
+	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/redis/go-redis/v9"
+	"github.com/riverqueue/river"
+	"golang.org/x/sync/singleflight"
 )
 
 type API struct {
-	DB          *store.Postgres
-	ES          *store.Elasticsearch
-	Redis       *redis.Client
-	Auth        *httpapi.Auth
-	Signer      ed25519.PrivateKey
-	Wakeup      *control.Wakeup
-	Samples     replay.Storage
-	SampleQuota int64
+	DB             *store.Postgres
+	ES             *store.Elasticsearch
+	Redis          *redis.Client
+	Auth           *httpapi.Auth
+	Signer         ed25519.PrivateKey
+	Wakeup         *control.Wakeup
+	Samples        replay.Storage
+	Packets        packetarchive.ObjectStorage
+	PacketStaging  string
+	SampleQuota    int64
+	Vault          *secrets.Vault
+	Outbound       outbound.Policy
+	Jobs           *river.Client[pgx.Tx]
+	JobsReady      func() bool
+	MCP            *mcpserver.Server
+	overviewFlight singleflight.Group
+	exportMu       sync.Mutex
+	exportActive   map[string]bool
 }
 
 func (a *API) Handler() http.Handler {
@@ -35,30 +53,76 @@ func (a *API) Handler() http.Handler {
 	httpapi.Health(m, a.Ready)
 	m.HandleFunc("GET /api/v1/sensors", a.Auth.Require(false, a.sensors))
 	m.HandleFunc("PATCH /api/v1/sensors/{id}", a.Auth.Require(true, a.setSensor))
+	a.registerSensorManagement(m)
 	m.HandleFunc("POST /api/v1/alerts/search", a.Auth.Require(false, a.alerts))
+	a.registerSearchExports(m)
+	m.HandleFunc("POST /api/v1/overview", a.Auth.Require(false, a.overview))
+	m.HandleFunc("GET /api/v1/search/fields", a.Auth.Require(false, a.searchFields))
+	m.HandleFunc("POST /api/v1/search/validate", a.Auth.Require(false, a.validateFilter))
 	m.HandleFunc("GET /api/v1/platform/health", a.Auth.Require(true, a.health))
 	m.HandleFunc("GET /api/v1/audits/operations", a.Auth.Require(true, a.audits))
 	m.HandleFunc("GET /api/v1/audits/logins", a.Auth.Require(true, a.loginAudits))
 	a.registerTasks(m)
+	a.registerAlertAssessments(m)
+	a.registerAlertTriage(m)
+	a.registerIncidents(m)
+	a.registerUsers(m)
+	a.registerTraffic(m)
+	a.registerApplicationRules(m)
+	a.registerDecisionPolicies(m)
+	a.registerSavedSearches(m)
 	a.registerReplay(m)
+	a.registerPacketArchives(m)
+	a.registerInventory(m)
+	a.registerNotifications(m)
+	a.registerModels(m)
+	a.registerAnalysis(m)
+	a.registerRuleGeneration(m)
+	a.registerRetention(m)
+	a.registerMCP(m)
 	return m
 }
+func (a *API) searchFields(w http.ResponseWriter, r *http.Request) {
+	httpapi.JSON(w, 200, map[string]any{"version": searchfilter.Version, "dataset": "alerts", "fields": searchfilter.Catalog()})
+}
+func (a *API) validateFilter(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Filter string `json:"filter"`
+	}
+	if e := httpapi.Decode(w, r, &input); e != nil {
+		httpapi.Fail(w, r, 400, "invalid_request", "过滤表达式参数无效")
+		return
+	}
+	_, e := searchfilter.Compile(input.Filter)
+	if e != nil {
+		var detail *searchfilter.Error
+		if errors.As(e, &detail) {
+			httpapi.JSON(w, 400, map[string]any{"code": "invalid_filter", "message": detail.Error(), "line": detail.Line, "column": detail.Column, "request_id": httpapi.RequestID(r)})
+			return
+		}
+		httpapi.Fail(w, r, 400, "invalid_filter", e.Error())
+		return
+	}
+	httpapi.JSON(w, 200, map[string]any{"valid": true, "version": searchfilter.Version, "dataset": "alerts"})
+}
 func (a *API) Ready(ctx context.Context) error {
-	if e := a.DB.Pool.Ping(ctx); e != nil {
-		return e
-	}
-	if e := a.Redis.Ping(ctx).Err(); e != nil {
-		return e
-	}
-	return a.ES.Ping(ctx)
+	return errors.Join(checkDependencies(ctx, a.dependencyChecks())...)
 }
 func (a *API) sensors(w http.ResponseWriter, r *http.Request) {
-	items, e := a.DB.Sensors(r.Context(), httpapi.Principal(r).TenantID)
+	q, e := sensorQuery(r, false)
+	if e != nil {
+		sensorManagementFailure(w, r, e)
+		return
+	}
+	if !a.sensorManagementReady(w, r) {
+		return
+	}
+	result, e := a.DB.SensorDirectory(r.Context(), httpapi.Principal(r).TenantID, q)
 	if e != nil {
 		httpapi.Fail(w, r, 503, "storage_unavailable", "暂时无法读取探针")
 		return
 	}
-	httpapi.JSON(w, 200, map[string]any{"items": items})
+	httpapi.JSON(w, 200, result)
 }
 func (a *API) setSensor(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -90,30 +154,41 @@ func (a *API) alerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	u := httpapi.Principal(r)
-	v, e := a.ES.Search(r.Context(), u.TenantID, q)
+	v, e := a.SearchAlerts(r.Context(), u, q)
 	if e != nil {
 		httpapi.Fail(w, r, 503, "search_unavailable", "检索服务暂时不可用")
 		return
 	}
+	httpapi.JSON(w, 200, v)
+}
+
+func (a *API) SearchAlerts(ctx context.Context, u model.Principal, q model.SearchRequest) (model.SearchResult, error) {
+	if err := store.ValidateSearch(&q); err != nil {
+		return model.SearchResult{}, err
+	}
+	if a.ES == nil {
+		return model.SearchResult{}, errors.New("检索服务暂时不可用")
+	}
+	result, err := a.ES.Search(ctx, u.TenantID, q)
 	if u.Role != "admin" {
-		for i := range v.Items {
-			v.Items[i].Event.Original = ""
+		for i := range result.Items {
+			result.Items[i].Event.Original = ""
 		}
 	}
-	httpapi.JSON(w, 200, v)
+	return result, err
 }
 func (a *API) health(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	states := map[string]string{"postgresql": "ready", "redis": "ready", "elasticsearch": "ready"}
-	if a.DB.Pool.Ping(ctx) != nil {
-		states["postgresql"] = "unavailable"
+	// 资源读取和依赖探测共享观测窗口，单个存储超时不会使其他依赖误报。
+	runtime := hosthealth.Read(ctx)
+	results := checkDependencies(ctx, a.dependencyChecks())
+	states := map[string]string{}
+	for i, name := range []string{"postgresql", "redis", "elasticsearch"} {
+		states[name] = "ready"
+		if results[i] != nil {
+			states[name] = "unavailable"
+		}
 	}
-	if a.Redis.Ping(ctx).Err() != nil {
-		states["redis"] = "unavailable"
-	}
-	if a.ES.Ping(ctx) != nil {
-		states["elasticsearch"] = "unavailable"
-	}
-	httpapi.JSON(w, 200, map[string]any{"services": states, "observed_at": time.Now().UTC(), "runtime": hosthealth.Read(ctx)})
+	httpapi.JSON(w, 200, map[string]any{"services": states, "observed_at": time.Now().UTC(), "runtime": runtime})
 }

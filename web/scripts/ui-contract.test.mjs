@@ -36,7 +36,7 @@ test('两端与原型采用 History，API 与资源不会被 SPA 回退覆盖',a
  for(const path of ['../platform/src/router.ts','../collector/src/router.ts','../../prototype/src/router.ts']){
   const source=await readFile(new URL(path,import.meta.url),'utf8');assert.ok(source.includes('createWebHistory'));assert.ok(!source.includes('createWebHashHistory'))
  }
- for(const name of ['platform','collector']){const config=await readFile(new URL(`../../deploy/nginx/${name}.conf`,import.meta.url),'utf8');assert.ok(config.includes('location ^~ /api/'));assert.ok(config.includes('location ^~ /assets/'));assert.ok(config.includes('try_files $uri =404'));assert.ok(config.includes('try_files $uri $uri/ /index.html'))}
+ for(const name of ['platform','collector']){const config=await readFile(new URL(`../../deploy/nginx/${name}.conf`,import.meta.url),'utf8');assert.ok(config.includes('location ^~ /api/'));assert.ok(config.includes('location ^~ /assets/'));assert.ok(config.includes('try_files $uri =404'));assert.ok(config.includes('try_files $uri /index.html'));assert.ok(!config.includes('$uri/'));if(name==='platform')for(const path of ['/assets','/assets/'])assert.ok(config.includes(`location = ${path} {`))}
 })
 
 test('工程与原型语义色一致，语法文本在白灰底上可读',()=>{

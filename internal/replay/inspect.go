@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"net"
 	"os"
 	"time"
 
@@ -16,15 +17,17 @@ import (
 const MaxFrameBytes = 1024 * 1024
 
 type Metadata struct {
-	Packets          int64      `json:"packets"`
-	TruncatedPackets int64      `json:"truncated_packets"`
-	First            *time.Time `json:"first_packet_at,omitempty"`
-	Last             *time.Time `json:"last_packet_at,omitempty"`
-	LinkType         string     `json:"link_type"`
-	MACs             []string   `json:"mac_addresses"`
+	Packets          int64                `json:"packets"`
+	TruncatedPackets int64                `json:"truncated_packets"`
+	First            *time.Time           `json:"first_packet_at,omitempty"`
+	Last             *time.Time           `json:"last_packet_at,omitempty"`
+	LinkType         string               `json:"link_type"`
+	MACs             []string             `json:"mac_addresses"`
+	MACsLimited      bool                 `json:"mac_addresses_limited"`
+	TCPHandshake     HandshakeObservation `json:"tcp_handshake"`
 }
 type packetReader interface {
-	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
+	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 }
 
 // 库负责容器与协议解析。前置块边界检查限制 PCAPNG 头部声明导致的分配，不复制协议解析器。
@@ -109,7 +112,16 @@ func checkNG(ctx context.Context, f *os.File, size int64) error {
 	_, e := f.Seek(0, io.SeekStart)
 	return e
 }
+
+// CheckPCAPNGBounds 复用样本读取器的分配边界检查，随后仍由 pcapgo 解析正式容器语义。
+func CheckPCAPNGBounds(ctx context.Context, f *os.File, size int64) error {
+	return checkNG(ctx, f, size)
+}
 func Inspect(ctx context.Context, path string) (out Metadata, err error) {
+	return inspect(ctx, path, nil)
+}
+
+func inspect(ctx context.Context, path string, observe func(int64, []byte, layers.LinkType)) (out Metadata, err error) {
 	defer func() {
 		if recover() != nil {
 			out = Metadata{}
@@ -136,11 +148,12 @@ func Inspect(ctx context.Context, path string) (out Metadata, err error) {
 	}
 	var reader packetReader
 	var link layers.LinkType
+	handshakes := newHandshakeTracker()
 	if kind == "pcapng" {
 		if e = checkNG(ctx, f, info.Size()); e != nil {
 			return out, e
 		}
-		ng, e := pcapgo.NewNgReader(f, pcapgo.NgReaderOptions{ErrorOnMismatchingLinkType: true})
+		ng, e := pcapgo.NewNgReader(f, pcapgo.NgReaderOptions{ErrorOnMismatchingLinkType: true, SectionEndCallback: func([]pcapgo.NgInterface, pcapgo.NgSectionInfo) { handshakes.section++ }})
 		if e != nil {
 			return out, e
 		}
@@ -158,12 +171,32 @@ func Inspect(ctx context.Context, path string) (out Metadata, err error) {
 		link = pcap.LinkType()
 	}
 	out.LinkType = link.String()
-	seen := map[string]bool{}
+	seen := map[[6]byte]bool{}
+	mac := func(value net.HardwareAddr) {
+		if len(value) != 6 {
+			return
+		}
+		var key [6]byte
+		copy(key[:], value)
+		if seen[key] {
+			return
+		}
+		if len(seen) >= 32 {
+			out.MACsLimited = true
+			return
+		}
+		seen[key] = true
+		out.MACs = append(out.MACs, value.String())
+	}
+	var headers *headerInspector
+	if link == layers.LinkTypeEthernet {
+		headers = newHeaderInspector()
+	}
 	for {
 		if e = ctx.Err(); e != nil {
 			return out, e
 		}
-		data, ci, e := reader.ReadPacketData()
+		data, ci, e := reader.ZeroCopyReadPacketData()
 		if e == io.EOF {
 			break
 		}
@@ -177,31 +210,42 @@ func Inspect(ctx context.Context, path string) (out Metadata, err error) {
 		if ci.CaptureLength < ci.Length {
 			out.TruncatedPackets++
 		}
+		if observe != nil {
+			observe(out.Packets, data, link)
+		}
 		if !ci.Timestamp.IsZero() {
 			stamp := ci.Timestamp.UTC()
-			if out.First == nil || stamp.Before(*out.First) {
+			if out.First == nil {
 				v := stamp
 				out.First = &v
+			} else if stamp.Before(*out.First) {
+				*out.First = stamp
 			}
-			if out.Last == nil || stamp.After(*out.Last) {
+			if out.Last == nil {
 				v := stamp
 				out.Last = &v
+			} else if stamp.After(*out.Last) {
+				*out.Last = stamp
 			}
 		}
-		if link == layers.LinkTypeEthernet && len(seen) < 32 {
-			packet := gopacket.NewPacket(data, link, gopacket.DecodeOptions{Lazy: true, NoCopy: true})
+		// 常见无封装 TCP 帧复用官方解码器对象；复杂封装仍保留逐层解析边界。
+		if headers != nil && headers.observe(handshakes, data, ci) {
+			mac(headers.eth.SrcMAC)
+			mac(headers.eth.DstMAC)
+			continue
+		}
+		packet := gopacket.NewPacket(data, link, gopacket.DecodeOptions{Lazy: true, NoCopy: true})
+		handshakes.observe(packet, ci)
+		if link == layers.LinkTypeEthernet {
 			if eth, ok := packet.Layer(layers.LayerTypeEthernet).(*layers.Ethernet); ok {
-				for _, mac := range []string{eth.SrcMAC.String(), eth.DstMAC.String()} {
-					if !seen[mac] {
-						seen[mac] = true
-						out.MACs = append(out.MACs, mac)
-					}
-				}
+				mac(eth.SrcMAC)
+				mac(eth.DstMAC)
 			}
 		}
 	}
 	if out.Packets == 0 {
 		return out, errors.New("样本不包含数据包")
 	}
+	out.TCPHandshake = handshakes.result()
 	return out, nil
 }

@@ -43,7 +43,7 @@ a,.record-link{text-underline-offset:3px}
 @media(max-width:899px){:root{--page-inset:12px;--panel-inset:12px}}
 
 /* 技术字段与数值在各自容器内换行或滚动，不能扩宽工作区。 */
-.ant-modal .ant-modal-body {max-height:72vh;overflow:auto}
+.ant-modal .ant-modal-body {max-height:min(72vh,calc(100vh - 252px));overflow:auto}
 .ant-btn:disabled,.ant-input:disabled,.ant-select-disabled .ant-select-selection-item {color:var(--muted)}
 .ant-table-cell {overflow-wrap:anywhere}
 .ant-alert-description,.ant-alert-message {overflow-wrap:anywhere}

@@ -21,7 +21,7 @@ func TestNativeSuricataRuleValidation(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	engine := &Engine{Config: config.Config{SuricataBinary: binary, SuricataConfig: path, StatePath: filepath.Join(t.TempDir(), "state.db")}}
+	engine := &Engine{Config: config.Config{Mode: "development", SuricataBinary: binary, SuricataConfig: path, StatePath: filepath.Join(t.TempDir(), "state.db")}}
 	for _, tc := range []struct {
 		name, text string
 		valid      bool

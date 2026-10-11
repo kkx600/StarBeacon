@@ -39,12 +39,15 @@ function download(content: string, name: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url),1000)
 }
 export function exportCsv(page: PageSpec, records: BusinessRecord[]) {
+  if(records.length>10000)throw new Error('导出超过 10,000 条，请缩小范围')
   // 将可能被表格软件解释成公式的首字符作为文本，防止导出内容执行公式。
   const escape=(value: unknown) => {
-    const raw=String(value??'');const safe=/^[=+@\-\t\r]/.test(raw)?`'${raw}`:raw
+    const raw=String(value??''),visible=raw.replace(/^[\s\p{Cc}\ufeff]+/u,'');const safe=/^[=+@\-]/.test(visible)||/^\d{16,}$/.test(raw)?`'${raw}`:raw
     return `"${safe.replace(/"/g,'""')}"`
   }
   const text=[page.columns.map(c=>escape(c.title)).join(','),...records.map(r=>page.columns.map(c=>escape(formatCell(r[c.key],c))).join(','))].join('\r\n')
-  download(`\ufeff${text}`,`${page.id}-example.csv`,'text/csv;charset=utf-8')
+  const output=`\ufeff${text}`
+  if(new TextEncoder().encode(output).length>8*1024*1024)throw new Error('导出超过 8 MiB，请缩小范围')
+  download(output,`${page.id}-example.csv`,'text/csv;charset=utf-8')
 }
 export function exportJson(name: string, value: unknown) { download(JSON.stringify(value,null,2),`${name}-example.json`,'application/json') }

@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -22,9 +24,16 @@ import (
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/ingest"
+	"github.com/kkx600/StarBeacon/internal/jobs"
+	"github.com/kkx600/StarBeacon/internal/mcpserver"
+	"github.com/kkx600/StarBeacon/internal/notify"
+	"github.com/kkx600/StarBeacon/internal/outbound"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/replay"
+	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/telemetry"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"github.com/kkx600/StarBeacon/internal/worker"
 	"github.com/redis/go-redis/v9"
@@ -89,14 +98,36 @@ func Run(ctx context.Context, role string, c config.Config) error {
 	if role == "agent" {
 		return agent.Run(ctx, c)
 	}
+	var vault *secrets.Vault
+	if c.CredentialKey != "" {
+		var err error
+		vault, err = secrets.New(c.CredentialKey)
+		if err != nil {
+			return err
+		}
+	}
+	networks, e := outbound.ParseNetworks(c.OutboundNetworks)
+	if e != nil {
+		return e
+	}
+	roots, e := outbound.LoadRoots(c.OutboundCA)
+	if e != nil {
+		return e
+	}
+	policy := outbound.Policy{PrivateNetworks: networks, Development: c.Mode == "development", Roots: roots}
+	mcpConfig := mcpserver.Config{Origin: c.AllowedOrigin, Issuer: c.MCPIssuer, IntrospectionURL: c.MCPIntrospectionURL, ClientID: c.MCPClientID, ClientSecret: c.MCPClientSecret}
+	if role == "platform" && c.MCPIssuer != "" {
+		if err := mcpConfig.Validate(policy); err != nil {
+			return err
+		}
+	}
 	startup, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	var db *store.Postgres
 	var queue *bus.Bus
 	var es *store.Elasticsearch
 	var redisClient *redis.Client
-	var e error
-	if role == "platform" || role == "ingest" {
+	if role == "platform" || role == "ingest" || role == "worker" {
 		db, e = store.Open(startup, c.DatabaseURL)
 		if e != nil {
 			return e
@@ -159,7 +190,94 @@ func Run(ctx context.Context, role string, c config.Config) error {
 				}
 			}
 		}
-		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes}
+		var packets packetarchive.ObjectStorage
+		packetStaging := filepath.Join(c.PacketDir, "validation")
+		if c.PacketBackend != "" {
+			if e = os.MkdirAll(packetStaging, 0700); e != nil {
+				return e
+			}
+			if c.PacketBackend == "s3" {
+				packets, e = packetarchive.NewS3Objects(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure)
+			} else {
+				packets, e = packetarchive.NewLocalObjects(filepath.Join(c.PacketDir, "objects"))
+			}
+			if e != nil {
+				return e
+			}
+		}
+		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes, Vault: vault, Outbound: policy, Packets: packets, PacketStaging: packetStaging}
+		if packets != nil {
+			group.Go(func() error {
+				ticker := time.NewTicker(time.Minute)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-run.Done():
+						return nil
+					case <-ticker.C:
+						call, cancel := context.WithTimeout(run, 20*time.Second)
+						err := db.SweepPacketArchives(call, packets)
+						cancel()
+						if err != nil && run.Err() == nil {
+							slog.Warn("原包到期回收未完成")
+						}
+					}
+				}
+			})
+		}
+		group.Go(func() error {
+			timer := time.NewTicker(time.Minute)
+			defer timer.Stop()
+			for {
+				select {
+				case <-run.Done():
+					return nil
+				case <-timer.C:
+					started := time.Now()
+					report, err := db.SweepHistory(run)
+					telemetry.HistoryDuration.Observe(time.Since(started).Seconds())
+					for table, count := range report.ByTable {
+						if count > 0 {
+							telemetry.HistoryDeleted.WithLabelValues(table).Add(float64(count))
+						}
+					}
+					state := "succeeded"
+					if err != nil {
+						state = "failed"
+						if run.Err() == nil {
+							slog.Warn("历史记录清理未完成")
+						}
+					}
+					telemetry.HistoryRuns.WithLabelValues(state).Inc()
+				}
+			}
+		})
+		{
+			analysisQueue, err := jobs.NewAnalysisWithTriage(db, vault, policy, es, api.Overview)
+			if err != nil {
+				return err
+			}
+			var available atomic.Bool
+			api.Jobs, api.JobsReady = analysisQueue, available.Load
+			group.Go(func() error {
+				// 平台生命周期统一发起取消，避免将父级截止时间直接传入队列监听与重连循环。
+				queueContext, queueStop := context.WithCancel(context.WithoutCancel(run))
+				defer queueStop()
+				if err := analysisQueue.Start(queueContext); err != nil {
+					slog.Warn("报告计划与模型分析执行服务不可用，平台统计与采集继续运行")
+					return nil
+				}
+				available.Store(true)
+				<-run.Done()
+				available.Store(false)
+				stop, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				if err := analysisQueue.StopAndCancel(stop); err != nil {
+					slog.Warn("模型分析执行服务退出未完成")
+				}
+				return nil
+			})
+		}
 		if samples != nil {
 			group.Go(func() error {
 				timer := time.NewTicker(time.Minute)
@@ -183,8 +301,20 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			})
 		}
 		handler = api.Handler()
+		if c.MCPIssuer != "" {
+			service, err := mcpserver.New(mcpConfig, api, policy)
+			if err != nil {
+				return err
+			}
+			defer service.Close()
+			api.MCP = service
+			m.Handle("/mcp", service.Handler)
+			m.Handle("GET /.well-known/oauth-protected-resource/mcp", service.Metadata)
+			m.Handle("/", api.Handler())
+			handler = m
+		}
 		group.Go(func() error {
-			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples})
+			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketQuota: c.PacketStorageBytes})
 		})
 	case "ingest":
 		httpapi.Health(m, func(ctx context.Context) error {
@@ -196,13 +326,20 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		group.Go(func() error { return serveGRPC(run, c, &ingest.Server{DB: db, Bus: queue}) })
 	case "worker":
 		httpapi.Health(m, func(ctx context.Context) error {
+			if e := db.Pool.Ping(ctx); e != nil {
+				return e
+			}
 			if e := queue.NC.FlushWithContext(ctx); e != nil {
 				return e
 			}
 			return es.Ping(ctx)
 		})
-		indexer := &worker.Indexer{Bus: queue, ES: es}
+		indexer := &worker.Indexer{Bus: queue, ES: es, DB: db}
 		group.Go(func() error { return indexer.Run(run) })
+		if vault != nil {
+			notifier := &worker.Notifier{Bus: queue, DB: db, Vault: vault, Sender: notify.Sender{Policy: policy}}
+			group.Go(func() error { return notifier.Run(run) })
+		}
 	default:
 		return fmt.Errorf("未知运行角色")
 	}
@@ -211,7 +348,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		if c.Mode == "production" {
 			cert, key = c.TLSCert, c.TLSKey
 		}
-		return httpapi.Serve(run, c.HTTPAddr, handler, cert, key)
+		return httpapi.ServeWithClientIP(run, c.HTTPAddr, handler, cert, key, c.HTTPClientIPs)
 	})
 	slog.Info("服务启动", "role", role, "http", c.HTTPAddr, "version", buildinfo.Version)
 	return group.Wait()

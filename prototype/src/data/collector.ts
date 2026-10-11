@@ -1,6 +1,6 @@
 export const collectorPages = [
   {id:'overview',title:'运行状态',description:'查看本机资源、采集链路、平台连接和待执行任务。',requirements:['SB-OPS-002'],primary:'服务维护'},
-  {id:'network',title:'网络与采集',description:'配置管理网络、选择镜像网卡，并核对捕获参数与检测边界。',requirements:['SB-OPS-001','SB-NET-002','SB-NET-005','SB-NET-006'],primary:'配置管理网络'},
+  {id:'network',title:'网络与采集',description:'配置管理网络、选择镜像网卡，并核对捕获参数、原包归档和检测边界。',requirements:['SB-OPS-001','SB-NET-001','SB-NET-002','SB-NET-005','SB-NET-006'],primary:'配置管理网络'},
   {id:'connection',title:'平台接入',description:'管理主控平台地址、注册凭据、设备证书与数据上报。',requirements:['SB-OPS-001'],primary:'配置平台接入'},
   {id:'updates',title:'规则与升级',description:'核对目标与实际版本，跟踪规则同步、系统升级和回滚。',requirements:['SB-OPS-003'],primary:'同步规则'},
   {id:'maintenance',title:'系统维护',description:'管理时间、缓冲与服务，查看维护任务和本地操作日志。',requirements:['SB-OPS-002','SB-OPS-003','SB-NET-001'],primary:'配置时间与存储'},

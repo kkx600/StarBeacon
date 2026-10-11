@@ -6,6 +6,10 @@ func development(t *testing.T) {
 	t.Helper()
 	for _, key := range []string{"MODE", "HTTP_ADDR", "GRPC_ADDR", "DATABASE_URL", "NATS_URL", "REDIS_URL", "ES_URL", "ES_API_KEY", "TLS_CA", "TLS_CERT", "TLS_KEY", "ALLOWED_ORIGIN", "TENANT_ID", "SENSOR_ID", "REGISTRATION_ID", "LOCAL_PASSWORD", "STREAM_BYTES", "NATS_REPLICAS"} {
 		t.Setenv("SB_"+key, "")
+		t.Setenv("SB_"+key+"_FILE", "")
+	}
+	for _, key := range []string{"REPLAY_S3_ACCESS_KEY", "REPLAY_S3_SECRET_KEY"} {
+		t.Setenv("SB_"+key+"_FILE", "")
 	}
 	t.Setenv("SB_MODE", "development")
 	t.Setenv("SB_NATS_REPLICAS", "1")

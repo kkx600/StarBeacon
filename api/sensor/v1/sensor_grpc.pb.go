@@ -23,6 +23,7 @@ const (
 	SensorService_Control_FullMethodName              = "/starbeacon.sensor.v1.SensorService/Control"
 	SensorService_GetRoute_FullMethodName             = "/starbeacon.sensor.v1.SensorService/GetRoute"
 	SensorService_DownloadReplaySample_FullMethodName = "/starbeacon.sensor.v1.SensorService/DownloadReplaySample"
+	SensorService_UploadPacketArchive_FullMethodName  = "/starbeacon.sensor.v1.SensorService/UploadPacketArchive"
 )
 
 // SensorServiceClient is the client API for SensorService service.
@@ -33,6 +34,7 @@ type SensorServiceClient interface {
 	Control(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[AgentMessage, PlatformCommand], error)
 	GetRoute(ctx context.Context, in *RouteRequest, opts ...grpc.CallOption) (*Route, error)
 	DownloadReplaySample(ctx context.Context, in *ReplaySampleRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ReplaySampleChunk], error)
+	UploadPacketArchive(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PacketArchiveChunk, PacketArchiveAck], error)
 }
 
 type sensorServiceClient struct {
@@ -98,6 +100,19 @@ func (c *sensorServiceClient) DownloadReplaySample(ctx context.Context, in *Repl
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SensorService_DownloadReplaySampleClient = grpc.ServerStreamingClient[ReplaySampleChunk]
 
+func (c *sensorServiceClient) UploadPacketArchive(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PacketArchiveChunk, PacketArchiveAck], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &SensorService_ServiceDesc.Streams[3], SensorService_UploadPacketArchive_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[PacketArchiveChunk, PacketArchiveAck]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SensorService_UploadPacketArchiveClient = grpc.ClientStreamingClient[PacketArchiveChunk, PacketArchiveAck]
+
 // SensorServiceServer is the server API for SensorService service.
 // All implementations must embed UnimplementedSensorServiceServer
 // for forward compatibility.
@@ -106,6 +121,7 @@ type SensorServiceServer interface {
 	Control(grpc.BidiStreamingServer[AgentMessage, PlatformCommand]) error
 	GetRoute(context.Context, *RouteRequest) (*Route, error)
 	DownloadReplaySample(*ReplaySampleRequest, grpc.ServerStreamingServer[ReplaySampleChunk]) error
+	UploadPacketArchive(grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]) error
 	mustEmbedUnimplementedSensorServiceServer()
 }
 
@@ -127,6 +143,9 @@ func (UnimplementedSensorServiceServer) GetRoute(context.Context, *RouteRequest)
 }
 func (UnimplementedSensorServiceServer) DownloadReplaySample(*ReplaySampleRequest, grpc.ServerStreamingServer[ReplaySampleChunk]) error {
 	return status.Error(codes.Unimplemented, "method DownloadReplaySample not implemented")
+}
+func (UnimplementedSensorServiceServer) UploadPacketArchive(grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]) error {
+	return status.Error(codes.Unimplemented, "method UploadPacketArchive not implemented")
 }
 func (UnimplementedSensorServiceServer) mustEmbedUnimplementedSensorServiceServer() {}
 func (UnimplementedSensorServiceServer) testEmbeddedByValue()                       {}
@@ -192,6 +211,13 @@ func _SensorService_DownloadReplaySample_Handler(srv interface{}, stream grpc.Se
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SensorService_DownloadReplaySampleServer = grpc.ServerStreamingServer[ReplaySampleChunk]
 
+func _SensorService_UploadPacketArchive_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SensorServiceServer).UploadPacketArchive(&grpc.GenericServerStream[PacketArchiveChunk, PacketArchiveAck]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SensorService_UploadPacketArchiveServer = grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]
+
 // SensorService_ServiceDesc is the grpc.ServiceDesc for SensorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -221,6 +247,11 @@ var SensorService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "DownloadReplaySample",
 			Handler:       _SensorService_DownloadReplaySample_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadPacketArchive",
+			Handler:       _SensorService_UploadPacketArchive_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "starbeacon/sensor/v1/sensor.proto",

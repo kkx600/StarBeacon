@@ -3,12 +3,15 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -73,19 +76,12 @@ func (l *LocalIdentity) DeleteSession(ctx context.Context, token string) error {
 }
 func (l *LocalIdentity) LoginAudit(ctx context.Context, u model.Principal, success bool) error {
 	return l.WAL.DB.Update(func(tx *bolt.Tx) error {
-		return appendAudit(tx, LocalAudit{Username: u.Username, Success: &success, Action: "login", CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().AddDate(0, 0, 180)})
+		meta := model.RequestMetadataFrom(ctx)
+		return appendAudit(tx, LocalAudit{Username: u.Username, Success: &success, Action: "login", RequestID: meta.RequestID, SourceIP: meta.SourceIP, UserAgent: meta.UserAgent, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().AddDate(0, 0, 180)})
 	})
 }
 
-type NetworkInterface struct {
-	Name      string   `json:"name"`
-	Index     int      `json:"index"`
-	MAC       string   `json:"mac"`
-	MTU       int      `json:"mtu"`
-	Up        bool     `json:"up"`
-	Loopback  bool     `json:"loopback"`
-	Addresses []string `json:"addresses"`
-}
+type NetworkInterface = model.NetworkInterface
 
 func Interfaces() ([]NetworkInterface, error) {
 	native, e := net.Interfaces()
@@ -108,8 +104,10 @@ func Interfaces() ([]NetworkInterface, error) {
 }
 func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*TaskManager) http.Handler {
 	m := http.NewServeMux()
+	var capture *CaptureSupervisor
 	auth.Register(m, "/api/local/v1")
 	if len(managers) > 0 && managers[0] != nil {
+		capture = managers[0].Capture
 		if managers[0].Replay != nil {
 			managers[0].Replay.Register(m, auth)
 		}
@@ -121,8 +119,23 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 			}
 			httpapi.JSON(w, 200, map[string]any{"items": items})
 		}))
+		m.HandleFunc("GET /api/local/v1/tasks/{id}", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+			if !contract.ValidID(r.PathValue("id")) || r.URL.RawQuery != "" {
+				httpapi.Fail(w, r, 400, "invalid_task_request", "任务标识无效，详情查询不接受额外条件")
+				return
+			}
+			item, err := managers[0].Task(r.PathValue("id"))
+			if errors.Is(err, ErrLocalTaskNotFound) {
+				httpapi.Fail(w, r, 404, "not_found", "本地任务不存在或已过留存期")
+			} else if err != nil {
+				httpapi.Fail(w, r, 503, "storage_unavailable", "无法读取本地任务，请核对设备存储")
+			} else {
+				httpapi.JSON(w, 200, item)
+			}
+		}))
 	}
 	httpapi.Health(m, func(ctx context.Context) error { _, _, e := wal.Stats(); return e })
+	registerLocalPackets(m, wal, auth)
 	m.HandleFunc("GET /api/local/v1/health", auth.Require(true, func(w http.ResponseWriter, r *http.Request) { httpapi.JSON(w, 200, wal.Health(r.Context(), statePath)) }))
 	m.HandleFunc("GET /api/local/v1/network/interfaces", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		v, e := Interfaces()
@@ -133,6 +146,10 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 		httpapi.JSON(w, 200, map[string]any{"items": v})
 	}))
 	m.HandleFunc("GET /api/local/v1/capture-config", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+		if capture != nil {
+			httpapi.JSON(w, 200, capture.Snapshot())
+			return
+		}
 		v, e := wal.LocalConfig()
 		if e != nil {
 			httpapi.Fail(w, r, 503, "storage_unavailable", "无法读取采集配置")
@@ -141,11 +158,22 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 		httpapi.JSON(w, 200, v)
 	}))
 	m.HandleFunc("PUT /api/local/v1/capture-config", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
-		var input struct {
-			Interfaces []string `json:"interfaces"`
-		}
-		if e := httpapi.Decode(w, r, &input); e != nil || input.Interfaces == nil || len(input.Interfaces) > 16 {
+		var input CaptureSettings
+		if e := httpapi.Decode(w, r, &input); e != nil || input.Interfaces == nil || len(input.Interfaces) > 16 || input.Threads < 0 || input.Threads > 64 || len(input.BPFFilter) > 2048 || strings.ContainsAny(input.BPFFilter, "\x00\r\n") {
 			httpapi.Fail(w, r, 400, "invalid_config", "采集配置格式无效")
+			return
+		}
+		if capture != nil {
+			call, cancel := context.WithTimeout(r.Context(), 25*time.Second)
+			defer cancel()
+			value, e := capture.Configure(call, input, httpapi.Principal(r).Username, httpapi.RequestID(r))
+			if errors.Is(e, ErrCaptureBusy) {
+				httpapi.Fail(w, r, 409, "capture_operation_in_progress", "采集配置正在应用，请稍后刷新状态")
+			} else if e != nil {
+				httpapi.Fail(w, r, 503, "capture_configuration_failed", "采集配置未保存，请核对网卡与本地存储")
+			} else {
+				httpapi.JSON(w, 200, value)
+			}
 			return
 		}
 		interfaces, e := Interfaces()
@@ -165,8 +193,8 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 			}
 			seen[name] = true
 		}
-		v, _ := json.Marshal(map[string]any{"interfaces": input.Interfaces, "status": "not_applied", "updated_at": time.Now().UTC()})
-		if e = wal.SaveLocalConfig(v, httpapi.Principal(r).Username, httpapi.RequestID(r)); e != nil {
+		v, _ := json.Marshal(map[string]any{"interfaces": input.Interfaces, "threads": input.Threads, "bpf_filter": input.BPFFilter, "promiscuous": input.Promiscuous, "managed": false, "status": "not_applied", "updated_at": time.Now().UTC()})
+		if e = wal.SaveLocalConfigWithContext(r.Context(), v, httpapi.Principal(r).Username, httpapi.RequestID(r)); e != nil {
 			httpapi.Fail(w, r, 503, "storage_unavailable", "无法保存采集配置")
 			return
 		}

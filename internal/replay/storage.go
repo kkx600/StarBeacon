@@ -36,6 +36,7 @@ type Sample struct {
 	Format    string    `json:"format"`
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
+	Origin    *Origin   `json:"origin,omitempty"`
 }
 type Storage interface {
 	Put(context.Context, string, io.Reader, int64) (string, string, error)

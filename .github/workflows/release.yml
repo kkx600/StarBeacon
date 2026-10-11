@@ -1,0 +1,143 @@
+name: Linux 版本发布
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 语义版本，例如 v0.1.0
+        required: true
+        type: string
+      acceptance_run_id:
+        description: 同一提交的完整验收工作流运行 ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: starbeacon-linux-release
+  cancel-in-progress: false
+jobs:
+  qualification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: 验收运行身份
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACCEPTANCE_RUN_ID: ${{ inputs.acceptance_run_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re, subprocess
+          run_id = os.environ['ACCEPTANCE_RUN_ID']
+          if not re.fullmatch(r'[1-9][0-9]{0,19}', run_id):
+              raise SystemExit('验收运行 ID 无效')
+          data = json.loads(subprocess.check_output(['gh','api',f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}"],text=True))
+          if (data.get('head_sha') != os.environ['GITHUB_SHA'] or data.get('head_branch') != 'main'
+              or data.get('conclusion') != 'success' or data.get('event') not in ('push','workflow_dispatch')
+              or data.get('path') != '.github/workflows/acceptance.yml'
+              or data.get('head_repository',{}).get('full_name') != os.environ['GITHUB_REPOSITORY']):
+              raise SystemExit('必须提供本仓库 main 同一提交的成功完整验收运行')
+          pathlib.Path('.local/acceptance').mkdir(parents=True,exist_ok=True)
+          pathlib.Path('.local/acceptance/run.json').write_text(json.dumps(data))
+          PY
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: starbeacon-acceptance
+          path: .local/acceptance/report
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.acceptance_run_id }}
+      - name: 功能、覆盖率与远程部署门禁
+        run: python3 scripts/check_acceptance.py .local/acceptance/report/acceptance.json --commit "$GITHUB_SHA"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.8'
+      - run: go mod verify
+      - run: make test vet
+  package:
+    needs: qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.19.0'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: '12.6.0'
+          run_install: false
+      - run: pnpm --dir web install --frozen-lockfile
+      - run: pnpm --dir web test:coverage
+      - run: pnpm --dir web build
+      - name: Linux amd64 ZIP 与 UPX 核验
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p .local/release
+          git cat-file commit "$GITHUB_SHA" > .local/release/source.commit
+          docker build --platform linux/amd64 -f deploy/Dockerfile.release -t starbeacon-release-builder .
+          docker run --rm --platform linux/amd64 --read-only --network none --cap-drop ALL --security-opt no-new-privileges --memory 6g --cpus 2 --tmpfs /tmp:rw,size=2g \
+            -e GOCACHE=/tmp/go-cache \
+            --mount "type=bind,src=$PWD/web,dst=/web,readonly" \
+            --mount "type=bind,src=$PWD/.local/release,dst=/output" \
+            starbeacon-release-builder --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" \
+            --source-commit-file /output/source.commit \
+            --web-root /web --output /output --epoch "$(git show -s --format=%ct HEAD)"
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: starbeacon-acceptance
+          path: .local/acceptance/report
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.acceptance_run_id }}
+      - name: 压缩发行包端到端验收身份
+        run: python3 scripts/check_package_acceptance.py .local/acceptance/report/acceptance.json .local/release/checksums.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: starbeacon-linux-release
+          path: |
+            .local/release/*.zip
+            .local/release/checksums.json
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    needs: [qualification, package]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: starbeacon-linux-release
+          path: .local/release
+      - name: 发布主控平台与采集器
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          version = os.environ['RELEASE_VERSION']
+          if not re.fullmatch(r'v\d+\.\d+\.\d+(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?', version):
+              raise SystemExit('版本无效')
+          root = pathlib.Path('.local/release')
+          info = json.loads((root/'checksums.json').read_text())
+          expected = {f'starbeacon-{kind}-{version}-linux-amd64.zip' for kind in ('platform','collector')}
+          if info['commit'] != os.environ['GITHUB_SHA'] or info['version'] != version or {item['name'] for item in info['archives']} != expected:
+              raise SystemExit('发行包来源不一致')
+          for item in info['archives']:
+              if hashlib.sha256((root/item['name']).read_bytes()).hexdigest() != item['sha256']:
+                  raise SystemExit('发行包校验失败')
+          notes = root/'notes.md'
+          notes.write_text('主控平台与采集器分别提供 Linux amd64 ZIP，Go 二进制采用 UPX 压缩。\n\n来源提交：'+info['commit']+'\n\nSHA-256：\n\n'+'\n'.join(f"- `{item['name']}`：`{item['sha256']}`" for item in info['archives'])+'\n')
+          subprocess.run(['gh','release','create',version,*[str(root/name) for name in sorted(expected)],'--target',os.environ['GITHUB_SHA'],'--title',f'StarBeacon {version}','--notes-file',str(notes)],check=True)
+          PY

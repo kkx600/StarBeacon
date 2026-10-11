@@ -11,6 +11,11 @@ import (
 )
 
 func HTTP(ng bool) ([]byte, error) {
+	return HTTPPath(ng, "/starbeacon/validation")
+}
+
+// 正反样本共享相同通信过程，由标准协议序列化重新计算长度、序号和校验和。
+func HTTPPath(ng bool, path string) ([]byte, error) {
 	var output bytes.Buffer
 	var write func(gopacket.CaptureInfo, []byte) error
 	var flush func() error
@@ -29,7 +34,7 @@ func HTTP(ng bool) ([]byte, error) {
 		write = w.WritePacket
 		flush = func() error { return nil }
 	}
-	request := []byte("GET /starbeacon/validation HTTP/1.1\r\nHost: replay.example\r\nConnection: close\r\n\r\n")
+	request := []byte("GET " + path + " HTTP/1.1\r\nHost: replay.example\r\nConnection: close\r\n\r\n")
 	response := []byte("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK")
 	type frame struct {
 		server                 bool

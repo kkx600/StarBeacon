@@ -10,12 +10,16 @@ import MetricBar from '../components/MetricBar.vue'
 import StatePanel from '../components/StatePanel.vue'
 import StatusTag from '../components/StatusTag.vue'
 import ReplayPreview from '../components/ReplayPreview.vue'
+import TableWorkspace from '../components/TableWorkspace.vue'
+import {pageById} from '../data/catalog'
 import {formatQuantity} from '../../../web/packages/shared/src/utils/format'
 import CollectorForm from '../components/CollectorForm.vue'
+import CollectorResponsesPreview from '../components/CollectorResponsesPreview.vue'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview();const {state:collector,device}=useCollector()
 const page=computed(()=>collectorPages.find(item=>item.id===route.params.id))
 const detailOpen=ref(false);const actionOpen=ref(false);const selected=ref<CollectorInterface|CollectorTask>();const action=ref<CollectorAction>('network');const localTab=ref('interfaces');const keyword=ref('');const statusFilter=ref('全部状态')
-const pageTabs:Record<string,string[]>={network:['interfaces','capture','replay-samples','replay-tasks'],updates:['rules','system'],maintenance:['services','audits']}
+const archivePage={...pageById.get('packet-archives')!,readOnly:true,primary:'刷新归档'}
+const pageTabs:Record<string,string[]>={network:['interfaces','capture','archives','replay-samples','replay-tasks','responses'],updates:['rules','system'],maintenance:['services','audits']}
 watch(()=>[page.value?.id,route.query.view],()=>{const tabs=pageTabs[page.value?.id??'']??['interfaces'];const value=route.query.view;localTab.value=typeof value==='string'&&tabs.includes(value)?value:tabs[0]!},{immediate:true})
 function changeTab(value:string|number){const next=String(value);const tabs=pageTabs[page.value?.id??'']??[];if(!tabs.includes(next)||next===localTab.value)return;void router.push({query:{...route.query,view:next===tabs[0]?undefined:next}})}
 const serviceId=ref('suricata')
@@ -32,7 +36,7 @@ const hasFilters=computed(()=>!!keyword.value.trim()||statusFilter.value!=='全�
 const selectedNic=computed(()=>selected.value&&'mac' in selected.value?selected.value:undefined)
 const selectedTask=computed(()=>selected.value&&'steps' in selected.value?selected.value:undefined)
 const metrics=computed(()=>[{label:'CPU 使用率',value:'22',suffix:'%',note:'同一设备遥测快照'},{label:'内存使用率',value:'35',suffix:'%',note:'16 GiB 总内存'},{label:'磁盘使用率',value:'48',suffix:'%',note:'示例可分配缓冲 300 GiB'},{label:'镜像流量',value:'482',suffix:'Mbit/s',note:'eth0 · 丢包率 0.00%'}])
-watch(()=>[page.value?.id,state.value,localTab.value],()=>{detailOpen.value=state.value==='detail';actionOpen.value=state.value==='action';action.value=primaryAction.value;selected.value=page.value?.id==='network'?collector.interfaces[0]:page.value?.id==='updates'?collector.tasks[1]:undefined;keyword.value='';statusFilter.value='全部状态'},{immediate:true})
+watch(()=>[page.value?.id,state.value,localTab.value],()=>{detailOpen.value=state.value==='detail'&&localTab.value!=='archives'&&localTab.value!=='responses';actionOpen.value=state.value==='action'&&localTab.value!=='archives'&&localTab.value!=='responses';action.value=primaryAction.value;selected.value=page.value?.id==='network'?collector.interfaces[0]:page.value?.id==='updates'?collector.tasks[1]:undefined;keyword.value='';statusFilter.value='全部状态'},{immediate:true})
 function openAction(value:CollectorAction,service='suricata'){action.value=value;serviceId.value=service;actionOpen.value=true}
 function showDetail(item?:CollectorInterface|CollectorTask){selected.value=item;detailOpen.value=true}
 function closeDetail(){detailOpen.value=false;if(state.value==='detail')setState('data')}
@@ -42,10 +46,12 @@ function clearFilters(){keyword.value='';statusFilter.value='全部状态'}
 </script>
 <template>
   <div v-if="page" class="page-surface" :data-page-id="`collector-${page.id}`" :data-page-state="state">
-    <PageHeader :title="page.title" :description="page.description"><a-button v-if="!localTab.startsWith('replay-')" @click="showDetail()">{{page.id==='network'?'查看配置':page.id==='updates'?'版本明细':'查看详情'}}</a-button><a-button v-if="!localTab.startsWith('replay-')" type="primary" @click="openAction(primaryAction)">{{primaryLabel}}</a-button></PageHeader>
+    <PageHeader :title="page.title" :description="page.description"><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" @click="showDetail()">{{page.id==='network'?'查看配置':page.id==='updates'?'版本明细':'查看详情'}}</a-button><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" type="primary" @click="openAction(primaryAction)">{{primaryLabel}}</a-button></PageHeader>
     <div class="collector-context"><span><b>{{device.name}}</b> · {{device.id}}</span><span>{{device.zone}} · 快照 {{device.snapshot}}</span></div>
-    <nav v-if="page.id==='network'" class="workspace-views" aria-label="网络与采集功能"><a-tabs :active-key="localTab" @change="changeTab"><a-tab-pane key="interfaces" tab="网卡与地址"/><a-tab-pane key="capture" tab="采集配置"/><a-tab-pane key="replay-samples" tab="重放样本"/><a-tab-pane key="replay-tasks" tab="重放任务"/></a-tabs></nav>
+    <nav v-if="page.id==='network'" class="workspace-views" aria-label="网络与采集功能"><a-tabs :active-key="localTab" @change="changeTab"><a-tab-pane key="interfaces" tab="网卡与地址"/><a-tab-pane key="capture" tab="采集配置"/><a-tab-pane key="archives" tab="原包归档"/><a-tab-pane key="replay-samples" tab="重放样本"/><a-tab-pane key="replay-tasks" tab="重放任务"/><a-tab-pane key="responses" tab="联动设备"/></a-tabs></nav>
     <ReplayPreview v-if="page.id==='network'&&localTab.startsWith('replay-')" local embedded :tasks="localTab==='replay-tasks'" :state="state" @state="setState" @view="changeTab"/>
+    <TableWorkspace v-else-if="page.id==='network'&&localTab==='archives'" :page="archivePage" :state="state" embedded local-archives @state="setState"/>
+    <CollectorResponsesPreview v-else-if="page.id==='network'&&localTab==='responses'" :state="state" @state="setState"/>
     <StatePanel v-else-if="state==='loading'||state==='error'" :state="state" :title="state==='error'?'采集器数据暂时无法加载':undefined" :description="state==='error'?'本地管理服务未返回数据。当前配置与执行结果未知，请重试或检查管理服务。':undefined" @action="setState('data')"/>
     <StatePanel v-else-if="state==='empty'" state="empty" :title="({overview:'尚未完成采集器初始化',network:'尚未配置采集网络',connection:'尚未注册主控平台',updates:'暂无同步或升级任务',maintenance:'暂无本地维护记录'})[page.id]" :description="({overview:'完成管理网络、镜像网卡和平台接入后，查看本机运行状态。',network:'选择管理口与镜像采集口，设置地址并校验配置。',connection:'配置主控平台地址和受信 CA，使用平台签发的注册密钥注册设备。',updates:'设备注册后可接收平台任务；离线环境可通过签名制品包执行升级。',maintenance:'时间、缓冲和服务维护操作会在此形成审计记录。'})[page.id]" :action="page.id==='overview'?'配置管理网络':page.primary" @action="openAction(page.id==='overview'?'network':defaultActions[page.id]!)"/>
     <template v-else>

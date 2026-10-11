@@ -9,9 +9,17 @@ echarts.use([BarChart,LineChart,PieChart,GraphChart,HeatmapChart,TooltipComponen
 const props=withDefaults(defineProps<{option:EChartsCoreOption;height?:number;label:string;dark?:boolean}>(),{height:250})
 const emit=defineEmits<{select:[name:string]}>()
 const element=ref<HTMLDivElement>();let chart:echarts.ECharts|undefined;let observer:ResizeObserver|undefined
-function render(){chart?.setOption({animation:false,aria:{enabled:true},...props.option},true)}
+function render(){
+  const tooltip=props.option.tooltip
+  // 提示框保留在图表区域，容器缩放期间不扩展页面宽度。
+  const confinedTooltip=tooltip===undefined?undefined:Array.isArray(tooltip)?tooltip.map(item=>({...item,confine:true})):{...(typeof tooltip==='object'?tooltip:{}),confine:true}
+  chart?.setOption({animation:false,aria:{enabled:true},...props.option,tooltip:confinedTooltip},true)
+}
 onMounted(()=>{if(element.value){chart=echarts.init(element.value,undefined,{renderer:'svg'});render();chart.on('click',params=>emit('select',params.name));observer=new ResizeObserver(()=>chart?.resize());observer.observe(element.value)}})
 watch(()=>props.option,render,{deep:true})
 onBeforeUnmount(()=>{observer?.disconnect();chart?.dispose()})
 </script>
 <template><div ref="element" class="chart-canvas" :style="{height:`${height}px`}" role="img" :aria-label="label"/></template>
+<style scoped>
+.chart-canvas{min-width:0;overflow:hidden}
+</style>

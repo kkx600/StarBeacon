@@ -11,13 +11,13 @@ import (
 	"io"
 	"log/slog"
 	"mime"
-	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
@@ -86,16 +86,16 @@ func Decode(w http.ResponseWriter, r *http.Request, target any) error {
 	return nil
 }
 func Middleware(next http.Handler) http.Handler {
+	return MiddlewareWithClientIP(next, clientip.Policy{})
+}
+func MiddlewareWithClientIP(next http.Handler, policy clientip.Policy) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := store.RandomID("req_")
 		w.Header().Set("X-Request-ID", id)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Referrer-Policy", "same-origin")
-		peer, _, _ := net.SplitHostPort(r.RemoteAddr)
-		if net.ParseIP(peer) == nil {
-			peer = ""
-		}
+		peer := policy.Resolve(r)
 		ua := strings.ToValidUTF8(r.UserAgent(), "�")
 		if len(ua) > 512 {
 			ua = ua[:512]
@@ -151,9 +151,9 @@ func (a *Auth) Require(admin bool, next http.HandlerFunc) http.HandlerFunc {
 const rateScript = `local n=redis.call('INCR',KEYS[1]);if n==1 then redis.call('EXPIRE',KEYS[1],60) end;return n`
 
 func (a *Auth) allowLogin(r *http.Request) (bool, error) {
-	ip, _, e := net.SplitHostPort(r.RemoteAddr)
-	if e != nil {
-		ip = r.RemoteAddr
+	ip := model.RequestMetadataFrom(r.Context()).SourceIP
+	if ip == "" {
+		ip = (clientip.Policy{}).Resolve(r)
 	}
 	key := store.Hash(ip)
 	if a.Redis != nil {
@@ -224,6 +224,10 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	token, csrf, e := a.Store.CreateSession(r.Context(), u)
 	if e != nil {
+		if errors.Is(e, model.ErrUnauthenticated) {
+			Fail(w, r, 401, "credentials_changed", "账号信息已变化，请重新登录")
+			return
+		}
 		Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
 		return
 	}
@@ -259,7 +263,10 @@ func Health(mux *http.ServeMux, ready func(context.Context) error) {
 	mux.Handle("GET /metrics", promhttp.HandlerFor(telemetry.Registry, promhttp.HandlerOpts{}))
 }
 func Serve(ctx context.Context, addr string, handler http.Handler, tlsCert, tlsKey string) error {
-	s := &http.Server{Addr: addr, Handler: Middleware(handler), TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13}, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
+	return ServeWithClientIP(ctx, addr, handler, tlsCert, tlsKey, clientip.Policy{})
+}
+func ServeWithClientIP(ctx context.Context, addr string, handler http.Handler, tlsCert, tlsKey string, policy clientip.Policy) error {
+	s := &http.Server{Addr: addr, Handler: MiddlewareWithClientIP(handler, policy), TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13}, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
 	done := make(chan struct{})
 	go func() {
 		select {

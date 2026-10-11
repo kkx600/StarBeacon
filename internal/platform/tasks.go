@@ -13,11 +13,15 @@ import (
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/rulegen"
+	"github.com/kkx600/StarBeacon/internal/rulerelease"
 	"github.com/kkx600/StarBeacon/internal/store"
 )
 
 func (a *API) registerTasks(m *http.ServeMux) {
+	m.HandleFunc("POST /api/v1/sensors/{id}/response-tasks", a.Auth.Require(true, a.createResponseTask))
 	m.HandleFunc("GET /api/v1/tasks", a.Auth.Require(true, a.tasks))
+	m.HandleFunc("GET /api/v1/tasks/{id}", a.Auth.Require(true, a.task))
 	m.HandleFunc("POST /api/v1/sensors/{id}/tasks", a.Auth.Require(true, a.createTask))
 	m.HandleFunc("POST /api/v1/tasks/{id}/cancel", a.Auth.Require(true, a.cancelTask))
 	m.HandleFunc("GET /api/v1/rule-packages", a.Auth.Require(true, a.rulePackages))
@@ -26,6 +30,12 @@ func (a *API) registerTasks(m *http.ServeMux) {
 }
 func operationError(w http.ResponseWriter, r *http.Request, e error) {
 	switch {
+	case errors.Is(e, store.ErrCaptureState):
+		httpapi.Fail(w, r, 409, "capture_state_unavailable", "探针不在线或采集配置已变化，请刷新并核对实际网卡与配置修订")
+	case errors.Is(e, rulerelease.ErrReconciliation):
+		httpapi.Fail(w, r, 409, "rule_reconciliation_unavailable", e.Error())
+	case errors.Is(e, rulerelease.ErrQualification):
+		httpapi.Fail(w, r, 409, "release_validation_required", e.Error())
 	case errors.Is(e, store.ErrConflict):
 		httpapi.Fail(w, r, 409, "resource_conflict", "资源修订或在途任务冲突，请刷新后核对")
 	case errors.Is(e, pgx.ErrNoRows):
@@ -42,6 +52,18 @@ func (a *API) tasks(w http.ResponseWriter, r *http.Request) {
 	}
 	httpapi.JSON(w, 200, map[string]any{"items": v})
 }
+func (a *API) task(w http.ResponseWriter, r *http.Request) {
+	if !contract.ValidID(r.PathValue("id")) || r.URL.RawQuery != "" {
+		httpapi.Fail(w, r, 400, "invalid_task_request", "任务标识无效，详情查询不接受额外条件")
+		return
+	}
+	v, err := a.DB.Task(r.Context(), httpapi.Principal(r).TenantID, r.PathValue("id"))
+	if err != nil {
+		operationError(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, v)
+}
 func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 	if len(a.Signer) == 0 {
 		httpapi.Fail(w, r, 503, "signer_unavailable", "平台任务签名密钥未配置")
@@ -53,11 +75,17 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Kind      string `json:"kind"`
-		PackageID string `json:"package_id"`
-		Revision  int64  `json:"revision"`
-		SampleID  string `json:"sample_id"`
-		RuleMode  string `json:"rule_mode"`
+		Kind                 string                        `json:"kind"`
+		PackageID            string                        `json:"package_id"`
+		Revision             int64                         `json:"revision"`
+		SampleID             string                        `json:"sample_id"`
+		RuleMode             string                        `json:"rule_mode"`
+		ValidationTaskID     string                        `json:"validation_task_id"`
+		PositiveReplayTaskID string                        `json:"positive_replay_task_id"`
+		NegativeReplayTaskID string                        `json:"negative_replay_task_id"`
+		ExpectedRulesSHA256  string                        `json:"expected_rules_sha256"`
+		UnknownTaskID        string                        `json:"unknown_task_id"`
+		CaptureConfiguration *control.CaptureConfiguration `json:"capture_configuration"`
 	}
 	if e := httpapi.Decode(w, r, &input); e != nil {
 		httpapi.Fail(w, r, 400, "invalid_request", "任务参数无效")
@@ -67,20 +95,25 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 400, "invalid_request", "该任务不接受重放参数")
 		return
 	}
+	if (input.Kind == "capture.configure") != (input.CaptureConfiguration != nil) {
+		httpapi.Fail(w, r, 400, "invalid_request", "采集配置任务需要完整的期望修订和网卡配置")
+		return
+	}
+	if input.Kind != "rules.apply" && (input.ValidationTaskID != "" || input.PositiveReplayTaskID != "" || input.NegativeReplayTaskID != "") || input.Kind != "rules.apply" && input.Kind != "rules.reconcile" && input.ExpectedRulesSHA256 != "" {
+		httpapi.Fail(w, r, 400, "invalid_request", "该任务不接受规则发布证据")
+		return
+	}
+	if input.Kind != "rules.reconcile" && input.UnknownTaskID != "" {
+		httpapi.Fail(w, r, 400, "invalid_request", "该任务不接受规则核实参数")
+		return
+	}
 	u := httpapi.Principal(r)
-	sensors, e := a.DB.Sensors(r.Context(), u.TenantID)
+	target, e := a.DB.Sensor(r.Context(), u.TenantID, r.PathValue("id"))
 	if e != nil {
 		operationError(w, r, e)
 		return
 	}
-	var target *model.Sensor
-	for i := range sensors {
-		if sensors[i].ID == r.PathValue("id") && sensors[i].Active {
-			target = &sensors[i]
-			break
-		}
-	}
-	if target == nil {
+	if !target.Active {
 		operationError(w, r, pgx.ErrNoRows)
 		return
 	}
@@ -101,6 +134,26 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 	}
 	payload := json.RawMessage(`{}`)
 	switch input.Kind {
+	case "capture.configure":
+		if input.PackageID != "" || input.Revision != 0 || input.CaptureConfiguration.Validate() != nil {
+			httpapi.Fail(w, r, 400, "invalid_capture_configuration", "采集配置参数无效，不能混用规则包参数")
+			return
+		}
+		payload, e = json.Marshal(input.CaptureConfiguration)
+		if e != nil {
+			httpapi.Fail(w, r, 400, "invalid_capture_configuration", "采集配置参数无效")
+			return
+		}
+	case "rules.reconcile":
+		if !contract.ValidID(input.UnknownTaskID) || input.PackageID != "" || input.Revision != 0 {
+			httpapi.Fail(w, r, 400, "invalid_request", "请选择待核实规则任务，核实任务不接受规则包参数")
+			return
+		}
+		payload, e = json.Marshal(control.RuleReconcile{UnknownTaskID: input.UnknownTaskID, ExpectedSHA256: input.ExpectedRulesSHA256})
+		if e != nil {
+			httpapi.Fail(w, r, 400, "invalid_request", "规则核实参数无效")
+			return
+		}
 	case "rules.replay":
 		if input.RuleMode == "registered" && !health.RegisteredRulesAvailable {
 			httpapi.Fail(w, r, 409, "capability_unavailable", "设备未登记规则快照，请选择指定规则包修订")
@@ -115,7 +168,7 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 			operationError(w, r, e)
 			return
 		}
-		p := control.Replay{SampleID: sample.ID, SampleSHA256: sample.SHA256, SampleSize: sample.Size, RuleMode: input.RuleMode}
+		p := control.Replay{SampleID: sample.ID, SampleSHA256: sample.SHA256, SampleSize: sample.Size, RuleMode: input.RuleMode, Origin: sample.Origin}
 		if input.RuleMode == "package" {
 			rules, e := a.DB.RulePackage(r.Context(), u.TenantID, input.PackageID, input.Revision)
 			if e != nil {
@@ -143,11 +196,11 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 			operationError(w, r, e)
 			return
 		}
+		value := control.RulePackage{PackageID: p.ID, Revision: p.Revision, EngineVersion: p.EngineVersion, Text: p.Text, SHA256: p.SHA256}
 		if input.Kind == "rules.apply" {
-			httpapi.Fail(w, r, 409, "release_validation_required", "规则发布需要样本回放与完整包验收，装载检查不能单独授予发布资格")
-			return
+			value.Authorization = &control.RuleAuthorization{ValidationTaskID: input.ValidationTaskID, PositiveReplayTaskID: input.PositiveReplayTaskID, NegativeReplayTaskID: input.NegativeReplayTaskID, ExpectedRulesSHA256: input.ExpectedRulesSHA256}
 		}
-		payload, e = control.RulePayload(control.RulePackage{PackageID: p.ID, Revision: p.Revision, EngineVersion: p.EngineVersion, Text: p.Text, SHA256: p.SHA256})
+		payload, e = control.RulePayload(value)
 		if e != nil {
 			httpapi.Fail(w, r, 400, "package_too_large", e.Error())
 			return
@@ -221,6 +274,10 @@ func (a *API) saveRulePackage(w http.ResponseWriter, r *http.Request) {
 	}
 	v, e := a.DB.SaveRulePackage(r.Context(), httpapi.Principal(r), input.ID, input.Name, input.Text, input.ExpectedRevision, httpapi.RequestID(r))
 	if e != nil {
+		if errors.Is(e, store.ErrRuleSIDConflict) || errors.Is(e, rulegen.ErrOutput) {
+			generationFailure(w, r, e)
+			return
+		}
 		operationError(w, r, e)
 		return
 	}

@@ -7,8 +7,10 @@ const names: Record<string,string[]> = {
   alert: ['HTTP 可疑管理路径访问','DNS 异常外连查询','疑似凭据暴力尝试','TLS 异常证书链','SMB 横向访问线索','HTTP 可疑命令参数','异常文件下载','新出现的外部目的地','可疑 RDP 连接','高频端口探测'],
   asset: ['业务 API 节点','订单数据库','研发构建节点','办公终端 A','文件服务节点','边界网关','身份服务','业务代理','办公终端 B','备份服务'],
   application: ['百度网盘','爱奇艺','企业微信','飞书','钉钉','Microsoft 365','腾讯会议','GitHub','通用 HTTPS','未识别应用'],
+  'application-rule':['业务文件服务名称规则（示例）','在线视频名称规则（示例）','协作平台名称规则（示例）','内部研发名称规则（示例）'],
   rule: ['HTTP 管理路径探测','DNS 可疑域名访问','SMB 异常会话','TLS 证书异常','HTTP 可疑下载','RDP 暴力尝试','SSH 高频登录','Web 命令注入线索','异常代理请求','FTP 异常登录'],
   model: ['本地安全研判','通用总结服务','Jev 决策适配','Laya 决策适配','本地嵌入服务','备用分析路由'],
+  'sensor-group': ['总部探针组','研发探针组','分支探针组','核心业务探针组','办公出口探针组','云边界探针组','备用探针组','灾备探针组'],
   sensor: ['总部核心探针','总部边界探针','研发核心探针','总部执行探针','分支采集探针','分支执行探针','研发边界探针','分支核心探针'],
   device: ['总部边界防火墙','总部终端 EDR','研发边界防火墙','分支边界防火墙'],
   channel: ['值班邮件','企业微信值班群','钉钉安全通知','飞书事件通知','工单 Webhook'],
@@ -17,6 +19,7 @@ const names: Record<string,string[]> = {
   action: ['封禁可疑源 IP','隔离待核验终端','到期解除封禁','恢复终端连接','撤销重复租约','配置读回核验'],
   platform: ['业务 API','gRPC 接入','Elasticsearch','PostgreSQL','NATS JetStream','对象存储','Redis','分析 Worker','通知 Worker','执行调度器'],
   retention: ['全量 PCAP','告警数据','协议明细','操作日志','登录日志','通知记录','文件样本','安全报告','统计历史','导出记录'],
+  'packet-archive': ['eth0 原包分段','eth0 封存分段','eth0 待核查分段','eth0 原包分段','eth0 活动分段','eth0 已确认分段'],
   protocol: ['HTTP/1.1','HTTP/2','HTTP/3 / QUIC','TLS','DNS','SMB','SSH','RDP','SMTP','Modbus/TCP'],
   field: ['ip.src','ip.dst','eth.src','eth.dst','http.request.method','http.request.uri','tcp.flags.syn','tcp.stream','frame.time','tls.handshake.extensions_server_name'],
   report: ['总部安全运营日报','研发安全运营周报','集团安全态势月报','分支安全运营日报','高危事件专项报告','文件分析周报'],
@@ -37,7 +40,8 @@ const names: Record<string,string[]> = {
   static: ['PDF 静态扫描','二进制静态扫描','脚本特征检查','压缩包有界检查','库文件静态扫描'],
   sandbox: ['二进制动态分析','PDF 动态分析','脚本动态分析','沙箱复核任务','离线样本分析'],
   'file-report': ['PDF 分析报告','二进制分析报告','脚本分析报告','样本复核报告','重复分析比较'],
-  decision: ['Web 攻击审批策略','暴力尝试影子策略','高危外连自动策略','敏感资产人工策略','文件分析复核策略'],
+  'decision-evaluation':['evaluation_example_1','evaluation_example_2','evaluation_example_3','evaluation_example_4','evaluation_example_5'],
+  decision: ['Web 攻击影子策略','暴力尝试影子策略','高危外连影子策略','敏感资产影子策略','文件分析影子策略'],
   assessment: ['管理路径告警研判','DNS 外连线索研判','凭据尝试研判','TLS 元数据研判','文件样本研判'],
   latency: ['捕获 → 引擎检测','检测 → 持久接收','接收 → ES 可检索','告警 → 通知接受','审批 → 执行采集器','采集器 → 设备接受','设备接受 → 配置读回','配置读回 → 效果观察'],
   metric: ['Web 攻击场景','暴力登录场景','外连异常场景','文件异步分析场景','手动审批场景'],
@@ -101,6 +105,8 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
     // 配置字段的可选值由所属业务对象约束，不能套用其他对象的通用分类。
     for(const field of page.fields){if(field.type==='select'&&field.options?.length&&!['name','status'].includes(field.key))record[field.key]=field.options[i%field.options.length]!}
     if(typeof record.validity==='string')record.expires=expiryFromDuration(record.validity,'2026-09-30T09:45:00Z')??record.expires
+    if (family==='mcp') {record.subject=`subject-example-${i+1}`;record.clientId=`investigation-agent-${i+1}`;record.scope='当前租户';record.transport='HTTPS / HTTP POST';record.tools=['告警与态势统计','资产详情','探针状态','协议流量检索'][i%4]!;record.quota='60 次／分钟'}
+    if(family==='user'){record.name=`analyst_demo_${i+1}`;record.active=record.status==='启用';record.role=i===0?'管理员':'只读用户';delete record.password}
     if(family==='role')record.permissions=examplePermissionCounts[String(record.permissionTemplate)]??record.permissions
     if(page.id==='api-keys')record.used=record.time
     if(family==='platform')record.role=({'业务 API':'业务请求与授权','gRPC 接入':'探针接入与任务下发','Elasticsearch':'告警与证据检索','PostgreSQL':'配置与业务对象','NATS JetStream':'持久消息缓冲','对象存储':'PCAP、样本与报告','Redis':'运行缓存与限流','分析 Worker':'异步研判与任务','通知 Worker':'通知投递与重试','执行调度器':'执行路由与租约'} as Record<string,string>)[name]??'平台服务'
@@ -113,9 +119,23 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
       record.expires=record.status==='权限已到期'?'2026-09-30 08:00:00':'2026-10-01 09:45:00'
       record.exportObject=null;record.digest=null
     }
+    if(family==='packet-archive'){
+      const unsealed=record.status==='捕获中'||i%6===2
+      record.sensor='总部核心探针';record.interface='eth0';record.interfaceMac='02:00:00:20:01:0f'
+      record.captureWindow=`2026-09-30 09:${String(42-i).padStart(2,'0')}:00 — ${unsealed?'尚未封存':'30'}`
+      record.packets=unsealed?'待封存':12480+i*35
+      record.rawSize=unsealed?'尚未封存':'16 MiB';record.storedSize=unsealed?'尚未封存':['11.2 MiB','14.8 MiB','15.9 MiB'][i%3]!
+      record.codec='Zstandard 独立帧';record.bpf='tcp port 80';record.snapLength=262144;record.registration='registration-demo-hq';record.run='packet-run-demo-hq'
+      record.packetWindow=unsealed?'尚未冻结':'2026-09-30T01:42:00.128456789Z — 2026-09-30T01:42:29.998765432Z'
+      record.kernelDrops=unsealed?'尚未冻结':i%3===1?'不可观测':'0（示例计数）';record.truncatedPackets=unsealed?'尚未冻结':i%3===2?1:0;record.vlanOffload=unsealed?'尚未冻结':i%4===0?8:0
+      record.objectVersion=record.status==='已归档'?'version-demo-owned-segment':'尚未持久确认';record.expires=record.status==='已归档'?'2027-03-29 09:42:30':'尚未持久确认'
+      record.rawDigest=null;record.storedDigest=null;record.manifestDigest=null;record.source='AF_PACKET 原字节';record.handshake='单段尚未核验完整连接';record.continuity='单段尚未核验双向序号连续性'
+    }
     if (family==='channel') record.type=['邮件','企业微信','钉钉','飞书','Webhook'][i%5]!
+    if(family==='sensor-group'){record.active=i<6;record.status=record.active?'启用':'停用';record.memberCount=record.active?12+i:0;record.description='部署位置分组（合成示例）'}
     if (family==='sensor') {
       const prefix=name.startsWith('总部')?'总部':name.startsWith('研发')?'研发':'分支'
+      record.group=`${prefix}探针组`;record.description='旁路镜像采集（合成示例）';record.metadataRevision=1
       record.site=prefix==='研发'?'研发中心':prefix==='分支'?'分支机构':'总部'
       record.scope=record.zone=`${prefix}网络域`
       record.role=name.includes('执行')?'执行采集器':'采集与检测'
@@ -134,6 +154,7 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
       record.resources=i===4?'不可观测':`${record.cpu}% / ${record.memory}% / ${record.disk}%`
     }
     if (family==='device') {record.type=name.includes('EDR')?'EDR':'防火墙';record.scope=name.startsWith('研发')?'研发网络域':name.startsWith('分支')?'分支网络域':'总部网络域';record.zone=record.scope;record.sensor=name.startsWith('分支')?'分支执行探针':'总部执行探针'}
+    if(family==='application-rule'){record.product=['业务文件服务（示例）','视频服务（示例）','协作服务（示例）','研发服务（示例）'][i%4]!;record.category=['云存储','在线视频','办公协作','研发工具'][i%4]!;record.protocol='HTTP / TLS';record.revision=1;record.status=i<6?'启用':'停用';record.notes='可见名称规则用于输入验证，不能证明真实会话产品。'}
     if (family==='login-log') record.method='OIDC＋MFA'
     if (family==='data-security') record.egress='需授权'
     if (family==='inspection') record.file='32 MiB'
@@ -148,7 +169,8 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
     if (family==='tls') {record.version=i%2?'TLS 1.3':'TLS 1.2';record.sni=i%3===1?'不可观测（ECH）':'service.example.test';record.fingerprint='未提供真实指纹';record.visibility=record.status==='授权明文'?'授权离线明文':'握手元数据';record.plaintextSource=record.status==='授权明文'?`授权离线样例 KEY-DEMO-${i+1}`:'未提供'}
     if (family==='report') {record.type=name.includes('日报')?'日报':name.includes('月报')?'月报':'周报';record.window=record.type==='日报'?'2026-09-29':record.type==='周报'?'2026-09-21 — 2026-09-27':'2026-09';record.status=['待审核','已审核','生成中','证据不足'][i%4]!}
     if (family==='retention') {record.status='继承默认';record.storage=({'全量 PCAP':'S3 对象存储','文件样本':'S3 对象存储＋PG 元数据','安全报告':'S3 正文＋PG 元数据','导出记录':'PG 任务＋S3 导出对象'} as Record<string,string>)[name]??'ES 数据流'}
-    if (family==='decision') {record.mode=name.includes('影子')?'影子':name.includes('自动')?'自动':'审批';record.calibration='eval-web-202609';record.ttl=30}
+    if(family==='decision-evaluation'){record.name='evaluation_example_'+(i+1);record.policy='攻击尝试策略 / 1';record.model='triage_example_'+i;record.confidence=record.status==='不参与决策'?null:0.87;record.expression=record.status==='策略未命中'?'confidence >= 0.95':'confidence >= threshold && verdict == \"confirmed\"';record.action=['策略命中','保护网段排除'].includes(record.status)?'建议评估源 IP 封禁':'继续调查';record.source='192.0.2.10';record.authorized='未授权执行';record.expires='2027-03-29 09:42:16';record.digest='未提供实际档案；不生成虚构摘要';record.notes='只包含判断及策略元数据，不复制原始载荷和提供方凭据。'}
+    if (family==='decision') {record.mode='影子';record.model='triage_example_'+i;record.confidence=0.8;record.age=3600;record.expression='confidence >= threshold && verdict == "confirmed"';record.scope=i%2?'2001:db8::/32':'192.0.2.0/24'}
     if (family==='action') {
       const waiting=record.status==='等待审批';const unknown=record.status==='结果未知';const revoked=record.status==='已撤销';const executing=record.status==='执行中'
       record.accepted=waiting?'未派发':unknown?'尚未确认':executing?'执行中':'已接受'
@@ -213,6 +235,7 @@ export function evidenceFor(page:PageSpec,record?:BusinessRecord):EvidenceFact[]
     retention:[{title:'当前期限',value:`${record?.retention??180} 天；租户与类别可单独配置`,status:record?.status??'未提供'},{title:'保全对象',value:'活动案件与授权保全排除自动清理',status:'受保护'},{title:'存储位置',value:String(record?.storage??'未提供')},{title:'压缩预算',value:'无压缩为容量基准，压缩率需实际测量',status:'待实测'}],
     rule:[{title:'规则状态',value:`SID ${record?.sid??'未提供'} / rev ${record?.revision??'未提供'}`,status:record?.status??'未提供'},{title:'目标引擎',value:'Suricata 8.0.7；真实引擎尚未接入',status:'合成示例'},{title:'生产生效',value:'当前仅有状态样例，真实签名发布与探针回执未接入',status:'未验收'}],
     pcap:[{title:'真实握手',value:String(record?.handshake??'未提供'),status:String(record?.handshake??'').includes('缺少')?'完整性不足':'合成完整性记录'},{title:'双向连续性',value:String(record?.continuity??'未提供'),status:String(record?.continuity??'').includes('缺口')?'完整性不足':'合成完整性记录'},{title:'连接结束',value:String(record?.closure??'未提供'),status:record?.status??'未提供'}],
+    'packet-archive':[{title:'捕获来源',value:`${record?.source??'未提供'} · ${record?.interface??'网卡未提供'} · ${record?.interfaceMac??'MAC 未提供'}`},{title:'实际观测边界',value:`内核丢包：${record?.kernelDrops??'不可观测'}；截断 ${record?.truncatedPackets??'未提供'} 包；VLAN 卸载 ${record?.vlanOffload??'未提供'} 包，不补造缺失链路头`,status:'合成示例'},{title:'完整连接',value:'分段范围、实际握手、双向连续性和连接结束必须分别核对；未完成核验不标记完整。',status:'尚未核验'}],
     tls:[{title:'载荷可见性',value:String(record?.visibility??'未提供'),status:record?.status??'未提供'},{title:'元数据范围',value:`${record?.version??'版本未提供'} / SNI ${record?.sni??'不可观测'}；ECH 可能隐藏 SNI`,status:'条件能力'},{title:'明文来源',value:String(record?.plaintextSource??'未提供'),status:record?.status==='授权明文'?'授权样例':'未提供'}],
   }
   const family=page.family

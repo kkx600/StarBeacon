@@ -1,42 +1,52 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { Table as ATable, Modal as AModal, Descriptions as ADescriptions, Popconfirm as APopconfirm } from 'ant-design-vue'
-import type { SensorTask } from '../types'
+import { Table as ATable, Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue'
+import type { SensorTask,TaskDetailState } from '../types'
 import { formatTime, taskNames, taskStates, taskCodes } from '../types'
 import ReplayResult from './ReplayResult.vue'
+import CaptureResult from './CaptureResult.vue'
+import StatePanel from './StatePanel.vue'
+import TaskActions from './TaskActions.vue'
+import {responseStates} from '../response'
 const ADescriptionsItem = ADescriptions.Item
-const props = defineProps<{items:readonly SensorTask[];cancellable?:boolean;saving?:boolean;local?:boolean}>()
-const emit = defineEmits<{cancel:[task:SensorTask]}>()
+const props = defineProps<{items:readonly SensorTask[];cancellable?:boolean;reconcilable?:boolean;saving?:boolean;local?:boolean;responseable?:boolean;detail?:TaskDetailState}>()
+const emit = defineEmits<{cancel:[task:SensorTask];reconcile:[task:SensorTask];response:[task:SensorTask,kind:'response.read'|'response.revoke'];view:[task:SensorTask];close:[];refreshDetail:[]}>()
 const selectedID = shallowRef('')
-const selected=computed(()=>props.items.find(row=>row.id===selectedID.value)??null)
+const selected=computed(()=>props.detail?props.detail.item:props.items.find(row=>row.id===selectedID.value)??null)
 const rows = computed(()=>[...props.items])
-const columns = computed(()=>[{title:'任务',key:'kind',width:200},{title:'探针',dataIndex:'sensor_id',width:190},{title:'状态',key:'state',width:110},{title:'提交时间',key:'time',width:190},props.local?{title:'平台确认',key:'ack',width:100}:{title:'投递次数',dataIndex:'delivery_count',width:100},{title:'操作',key:'action',width:150}])
+const columns = computed(()=>[{title:'任务',key:'kind',width:200},{title:'探针',dataIndex:'sensor_id',width:190},{title:'状态',key:'state',width:110},{title:'提交时间',key:'time',width:190},props.local?{title:'平台确认',key:'ack',width:100}:{title:'投递次数',dataIndex:'delivery_count',width:100},{title:'操作',key:'action',width:180}])
 function find(id:string){return props.items.find(row=>row.id===id)}
-function view(id:string){selectedID.value=id}
-function cancel(id:string){const row=find(id);if(row)emit('cancel',row)}
+function view(id:string){if(props.detail){const row=find(id);if(row)emit('view',row)}else selectedID.value=id}
+function close(){if(props.detail)emit('close');else selectedID.value=''}
 const statusClass=(state:string)=>state==='succeeded'?'status-online':state==='failed'?'status-high':state==='unknown'?'status-medium':'status-unknown'
 </script>
 <template>
-  <div class="table-wrap"><a-table :columns="columns" :data-source="rows" row-key="id" size="small" :pagination="{pageSize:10,showSizeChanger:false,hideOnSinglePage:true}" :scroll="{x:940}">
+  <div class="table-wrap"><a-table :columns="columns" :data-source="rows" row-key="id" size="small" :pagination="{pageSize:10,showSizeChanger:false,hideOnSinglePage:true}" :scroll="{x:970}">
     <template #bodyCell="{column,record}">
       <template v-if="column.key==='kind'"><button class="link-button" @click="view(record.id)">{{ taskNames[record.kind]??record.kind }}</button><small class="record-id technical">{{ record.id }}</small></template>
-      <span v-else-if="column.key==='state'" class="status" :class="statusClass(record.state)">{{ taskStates[record.state]??record.state }}</span>
+      <span v-else-if="column.key==='state'" class="status" :class="record.rule_resolution?'status-online':statusClass(record.state)">{{ record.rule_resolution?'已核实':taskStates[record.state]??record.state }}</span>
       <template v-else-if="column.key==='time'">{{ formatTime(record.created_at) }}</template>
       <template v-else-if="column.key==='ack'">{{ record.origin==='local'?'本地任务':record.acknowledged?'已确认':'等待确认' }}</template>
-      <template v-else-if="column.key==='action'"><a-space><a-button type="link" @click="view(record.id)">查看</a-button><a-popconfirm v-if="cancellable&&record.state==='queued'&&record.delivery_count===0" title="取消尚未投递的任务？已投递任务需等待设备回执。" @confirm="cancel(record.id)"><a-button type="link" :disabled="saving">取消</a-button></a-popconfirm></a-space></template>
+      <template v-else-if="column.key==='action'"><a-space><a-button type="link" @click="view(record.id)">查看</a-button><TaskActions v-if="find(record.id)" :task="find(record.id)!" :cancellable="cancellable" :reconcilable="reconcilable" :responseable="responseable" :saving="saving" :local="local" @cancel="emit('cancel',$event)" @reconcile="emit('reconcile',$event)" @response="(task,kind)=>emit('response',task,kind)" /></a-space></template>
     </template>
   </a-table></div>
-  <a-modal title="任务详情" :open="selected!==null" :footer="null" :width="780" @cancel="selectedID=''">
-    <div v-if="selected" class="detail-content">
-      <a-alert v-if="selected.state==='unknown'" type="warning" show-icon message="执行结果待核实，请核对设备当前状态后处理，避免重复执行。" class="section-gap" />
-      <a-alert v-if="selected.receipt.result?.syntax==='passed'&&selected.receipt.result?.replay==='not_run'" type="info" show-icon message="规则装载检查通过；样本回放尚未完成，该结果不授予发布资格。" class="section-gap" />
+  <a-modal title="任务详情" :open="detail?detail.open:selected!==null" :footer="null" :width="780" @cancel="close">
+    <StatePanel v-if="detail&&(detail.pending||detail.error)" :loading="detail.pending" :error="detail.error" @retry="emit('refreshDetail')" />
+    <div v-if="selected&&!detail?.pending&&!detail?.error" class="detail-content">
+      <a-alert v-if="local&&selected.retention_protected" type="info" show-icon message="任务记录受执行确认保护" description="未获平台确认、仍在执行或结果待核实的记录暂不清理。保留截止是原计划期限，不代表任务结果已经核实。" class="section-gap" />
+      <a-alert v-if="selected.rule_resolution" type="success" show-icon message="规则核实任务已完成，原中断回执保留供审计追溯。" class="section-gap"><template #description>核实任务 <span class="technical">{{selected.rule_resolution.task_id}}</span> · {{formatTime(selected.rule_resolution.confirmed_at)}}<br>核实时规则摘要 <span class="technical" style="overflow-wrap:anywhere">{{selected.rule_resolution.result.active_sha256}}</span></template></a-alert>
+      <a-alert v-else-if="selected.state==='unknown'" type="warning" show-icon message="执行结果待核实，请核对设备当前状态后处理，避免重复执行。" class="section-gap" />
+      <a-alert v-if="selected.receipt.result?.syntax==='passed'&&selected.receipt.result?.replay==='not_run'" type="info" show-icon message="规则装载检查通过；该回执仅证明规则可加载，不授予发布资格。发布前仍需独立正、反样本验证。" class="section-gap" />
       <ReplayResult v-if="selected.kind==='rules.replay'&&selected.receipt.result?.replay" :result="selected.receipt.result" :local="selected.origin==='local'" />
+      <CaptureResult v-if="selected.kind==='capture.configure'&&selected.receipt.result?.managed" :result="selected.receipt.result" />
+      <template v-if="selected.response_action"><a-alert type="info" show-icon message="以下为此任务结束时的设备配置回读快照。到期及后续变更需再次回读；实际流量阻断效果尚未观测。" class="section-gap"/><a-descriptions bordered :column="1" size="small"><a-descriptions-item label="设备 / 连接器">{{selected.response_action.device_id}} / {{selected.response_action.connector_id}}</a-descriptions-item><a-descriptions-item label="原租约">{{selected.response_action.lease_id}}</a-descriptions-item><a-descriptions-item label="目标 IP">{{selected.response_action.target_ip}}</a-descriptions-item><a-descriptions-item label="封禁到期时间">{{formatTime(selected.response_action.expires_at)}}</a-descriptions-item><a-descriptions-item label="操作依据">{{selected.response_action.reason}}</a-descriptions-item><a-descriptions-item label="配置回读快照">{{responseStates[String((selected.receipt.result?.observation as Record<string,unknown>|undefined)?.state??'unknown')]??'状态待核查'}}</a-descriptions-item><a-descriptions-item label="回读时间">{{formatTime((selected.receipt.result?.observation as Record<string,unknown>|undefined)?.observed_at as string|undefined)}}</a-descriptions-item></a-descriptions></template>
       <details :open="selected.kind!=='rules.replay'" class="section-gap"><summary>任务追溯</summary>
       <a-descriptions bordered :column="1" size="small">
         <a-descriptions-item label="任务标识"><span class="technical">{{ selected.id }}</span></a-descriptions-item>
         <a-descriptions-item label="任务 / 状态">{{ taskNames[selected.kind]??selected.kind }} / {{ taskStates[selected.state]??selected.state }}</a-descriptions-item>
         <a-descriptions-item label="探针标识"><span class="technical">{{ selected.sensor_id }}</span></a-descriptions-item>
-        <a-descriptions-item label="提交 / 到期时间">{{ formatTime(selected.created_at) }} / {{ formatTime(selected.expires_at) }}</a-descriptions-item>
+        <a-descriptions-item label="提交 / 执行截止">{{ formatTime(selected.created_at) }} / {{ formatTime(selected.expires_at) }}</a-descriptions-item>
+        <a-descriptions-item v-if="selected.retain_until" label="记录保留截止">{{formatTime(selected.retain_until)}}</a-descriptions-item>
         <a-descriptions-item label="开始 / 结束时间">{{ formatTime(selected.receipt.started_at) }} / {{ formatTime(selected.receipt.finished_at) }}</a-descriptions-item>
         <a-descriptions-item label="结果说明">{{ selected.receipt.code?(taskCodes[selected.receipt.code]??selected.receipt.code):selected.state==='failed'?'执行失败，请核对执行回执':selected.receipt.state?'无执行异常':'等待设备回执' }}</a-descriptions-item>
       </a-descriptions>
@@ -44,5 +54,6 @@ const statusClass=(state:string)=>state==='succeeded'?'status-online':state==='f
 
       <details><summary>执行回执</summary><pre class="raw-data technical">{{ JSON.stringify(selected.receipt.result??{},null,2) }}</pre></details>
     </div>
+    <div v-if="detail" class="filter-actions section-gap"><TaskActions v-if="selected&&!detail.pending&&!detail.error" :task="selected" :cancellable="cancellable" :reconcilable="reconcilable" :responseable="responseable" :saving="saving" :local="local" @cancel="emit('cancel',$event)" @reconcile="emit('reconcile',$event)" @response="(task,kind)=>emit('response',task,kind)" /><a-button :loading="detail.pending" @click="emit('refreshDetail')">刷新详情</a-button><a-button @click="close">关闭</a-button></div>
   </a-modal>
 </template>

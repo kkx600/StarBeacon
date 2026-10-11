@@ -9,21 +9,29 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	"github.com/elastic/go-elasticsearch/v9/esapi"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/searchfilter"
+	"golang.org/x/sync/singleflight"
 )
 
 type Elasticsearch struct {
-	API     *esapi.API
-	client  *elastictransport.Client
-	mu      sync.Mutex
-	indices map[string]bool
+	API           *esapi.API
+	client        *elastictransport.Client
+	mu            sync.Mutex
+	indices       map[string]bool
+	policies      map[int]bool
+	indexFlight   singleflight.Group
+	templateReady bool
 }
 type IndexItemError struct{ Status int }
 
@@ -41,7 +49,7 @@ func OpenES(address, key string) (*Elasticsearch, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &Elasticsearch{API: esapi.New(c), client: c, indices: map[string]bool{}}, nil
+	return &Elasticsearch{API: esapi.New(c), client: c, indices: map[string]bool{}, policies: map[int]bool{}}, nil
 }
 func (s *Elasticsearch) Ping(ctx context.Context) error {
 	res, e := s.API.Info(s.API.Info.WithContext(ctx))
@@ -69,8 +77,62 @@ func response(res *esapi.Response, err error, target any) error {
 	return json.NewDecoder(io.LimitReader(res.Body, 16*1024*1024)).Decode(target)
 }
 func (s *Elasticsearch) EnsurePolicy(ctx context.Context) error {
-	res, e := s.API.ILM.PutLifecycle(strings.NewReader(`{"policy":{"phases":{"delete":{"min_age":"180d","actions":{"delete":{}}}}}}`), "sb-default-180d", s.API.ILM.PutLifecycle.WithContext(ctx))
-	return response(res, e, nil)
+	if err := s.EnsureEventTemplate(ctx); err != nil {
+		return err
+	}
+	return s.ensureRetentionPolicy(ctx, 180)
+}
+func retentionPolicyName(days int) string {
+	if days == 180 {
+		return "sb-default-180d"
+	}
+	return fmt.Sprintf("sb-retention-%dd", days)
+}
+func (s *Elasticsearch) ensureRetentionPolicy(ctx context.Context, days int) error {
+	if days < 1 || days > 3650 {
+		return fmt.Errorf("索引保留期必须为 1–3650 天")
+	}
+	s.mu.Lock()
+	known := s.policies[days]
+	s.mu.Unlock()
+	if known {
+		return nil
+	}
+	_, err, _ := s.indexFlight.Do("policy/"+retentionPolicyName(days), func() (any, error) {
+		s.mu.Lock()
+		known := s.policies[days]
+		s.mu.Unlock()
+		if known {
+			return nil, nil
+		}
+		exists, err := s.retentionPolicyExists(ctx, days)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			body := fmt.Sprintf(`{"policy":{"phases":{"delete":{"min_age":"%dd","actions":{"delete":{}}}}}}`, days)
+			res, err := s.API.ILM.PutLifecycle(strings.NewReader(body), retentionPolicyName(days), s.API.ILM.PutLifecycle.WithContext(ctx))
+			if err = response(res, err, nil); err != nil {
+				return nil, err
+			}
+			if ready, err := s.retentionPolicyExists(ctx, days); err != nil || !ready {
+				if err != nil {
+					return nil, err
+				}
+				return nil, fmt.Errorf("索引生命周期创建结果未确认")
+			}
+		}
+		s.mu.Lock()
+		s.policies[days] = true
+		s.mu.Unlock()
+		return nil, nil
+	})
+	return err
+}
+func (s *Elasticsearch) IndexKnown(index string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.indices[index]
 }
 
 const mapping = `{"dynamic":"strict","properties":{
@@ -81,37 +143,66 @@ const mapping = `{"dynamic":"strict","properties":{
 "http":{"properties":{"method":{"type":"keyword"},"hostname":{"type":"keyword"},"path":{"type":"wildcard"}}},"suricata":{"properties":{"flow_id":{"type":"keyword"},"action":{"type":"keyword"}}},"severity":{"type":"keyword"},"evidence_status":{"type":"keyword"}}}`
 
 func (s *Elasticsearch) EnsureIndex(ctx context.Context, index, partition string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.indices[index] {
-		return nil
+	return s.EnsureIndexRetention(ctx, index, partition, 180)
+}
+func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partition string, days int) error {
+	if days < 1 || days > 3650 {
+		return fmt.Errorf("索引保留期必须为 1–3650 天")
 	}
 	d, e := time.Parse("2006-01-02", partition)
 	if e != nil {
 		return e
 	}
-	body := fmt.Sprintf(`{"settings":{"number_of_shards":1,"number_of_replicas":1,"index.lifecycle.name":"sb-default-180d","index.lifecycle.origination_date":%d},"mappings":%s}`, d.UnixMilli(), mapping)
-	res, e := s.API.Indices.Create(index, s.API.Indices.Create.WithBody(strings.NewReader(body)), s.API.Indices.Create.WithContext(ctx))
-	if e != nil {
-		return e
+	stream := "alerts"
+	prefix := "sb-alerts-"
+	if strings.HasPrefix(index, "sb-context-") {
+		stream = "context"
+		prefix = "sb-context-"
 	}
-	defer res.Body.Close()
-	if res.IsError() {
-		var failure struct {
-			Error struct {
-				Type string `json:"type"`
-			} `json:"error"`
+	tenant := strings.TrimSuffix(strings.TrimPrefix(index, prefix), "-"+strings.ReplaceAll(partition, "-", "."))
+	expected, err := contract.IndexName(tenant, stream, partition)
+	if err != nil || expected != index {
+		return fmt.Errorf("索引身份与日期分区不一致")
+	}
+	if s.IndexKnown(index) {
+		return nil
+	}
+	_, err, _ = s.indexFlight.Do("index/"+index, func() (any, error) {
+		if s.IndexKnown(index) {
+			return nil, nil
 		}
-		_ = json.NewDecoder(io.LimitReader(res.Body, 65536)).Decode(&failure)
-		if failure.Error.Type != "resource_already_exists_exception" {
-			return fmt.Errorf("创建索引失败: %d", res.StatusCode)
+		if err := s.EnsureEventTemplate(ctx); err != nil {
+			return nil, err
 		}
-	}
-	if len(s.indices) > 1024 {
-		s.indices = map[string]bool{}
-	}
-	s.indices[index] = true
-	return nil
+		if err := s.ensureRetentionPolicy(ctx, days); err != nil {
+			return nil, err
+		}
+		body := fmt.Sprintf(`{"settings":{"number_of_shards":1,"number_of_replicas":1,"index.lifecycle.name":%q,"index.lifecycle.origination_date":%d},"mappings":%s}`, retentionPolicyName(days), d.UnixMilli(), mapping)
+		res, e := s.API.Indices.Create(index, s.API.Indices.Create.WithBody(strings.NewReader(body)), s.API.Indices.Create.WithContext(ctx))
+		if e != nil {
+			return nil, e
+		}
+		defer res.Body.Close()
+		if res.IsError() {
+			var failure struct {
+				Error struct {
+					Type string `json:"type"`
+				} `json:"error"`
+			}
+			_ = json.NewDecoder(io.LimitReader(res.Body, 65536)).Decode(&failure)
+			if failure.Error.Type != "resource_already_exists_exception" {
+				return nil, fmt.Errorf("创建索引失败: %d", res.StatusCode)
+			}
+		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if len(s.indices) > 1024 {
+			s.indices = map[string]bool{}
+		}
+		s.indices[index] = true
+		return nil, nil
+	})
+	return err
 }
 func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Alert) []error {
 	out := make([]error, len(items))
@@ -140,6 +231,11 @@ func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Al
 		} `json:"items"`
 	}
 	res, e := s.API.Bulk(&b, s.API.Bulk.WithIndex(index), s.API.Bulk.WithContext(ctx))
+	if res != nil && res.StatusCode == 404 {
+		s.mu.Lock()
+		delete(s.indices, index)
+		s.mu.Unlock()
+	}
 	if e = response(res, e, &result); e != nil {
 		for i := range out {
 			out[i] = e
@@ -163,6 +259,11 @@ func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Al
 		case 409:
 			out[i] = s.verifyDuplicate(ctx, index, items[i])
 		default:
+			if status == 404 {
+				s.mu.Lock()
+				delete(s.indices, index)
+				s.mu.Unlock()
+			}
 			out[i] = &IndexItemError{Status: status}
 		}
 	}
@@ -182,7 +283,7 @@ func (s *Elasticsearch) verifyDuplicate(ctx context.Context, index string, want 
 	return nil
 }
 func ValidateSearch(q *model.SearchRequest) error {
-	if q.Start.IsZero() || q.End.IsZero() || !q.End.After(q.Start) || q.End.Sub(q.Start) > 31*24*time.Hour {
+	if q.Start.IsZero() || q.End.IsZero() || q.Start.Year() < 1 || q.End.Year() > 9999 || !q.End.After(q.Start) || q.End.Sub(q.Start) > 31*24*time.Hour {
 		return fmt.Errorf("检索时间范围必须在 31 天内")
 	}
 	if q.Page == 0 {
@@ -194,11 +295,18 @@ func ValidateSearch(q *model.SearchRequest) error {
 	if q.Page < 1 || q.PageSize < 1 || q.PageSize > 100 || q.Page > 10000/q.PageSize {
 		return fmt.Errorf("分页超出支持范围")
 	}
-	for _, ip := range []string{q.SourceIP, q.DestinationIP} {
-		if ip != "" {
-			if _, e := netip.ParseAddr(ip); e != nil {
+	for _, ip := range []*string{&q.SourceIP, &q.DestinationIP} {
+		if *ip != "" {
+			address, e := netip.ParseAddr(*ip)
+			if e != nil || address.Zone() != "" {
 				return fmt.Errorf("检索 IP 地址不合法")
 			}
+			*ip = address.Unmap().String()
+		}
+	}
+	for _, text := range []string{q.Keyword, q.Path, q.Protocol, q.Method} {
+		if !utf8.ValidString(text) || strings.IndexFunc(text, unicode.IsControl) != -1 {
+			return fmt.Errorf("检索条件不能包含无效编码或控制字符")
 		}
 	}
 	if len(q.Keyword) > 256 || len(q.Path) > 1024 || len(q.Protocol) > 32 || len(q.Method) > 16 {
@@ -207,9 +315,76 @@ func ValidateSearch(q *model.SearchRequest) error {
 	if q.Severity != "" && q.Severity != "high" && q.Severity != "medium" && q.Severity != "low" && q.Severity != "unknown" {
 		return fmt.Errorf("严重级别不合法")
 	}
+	if _, e := searchfilter.Compile(q.Filter); e != nil {
+		return e
+	}
 	return nil
 }
 func (s *Elasticsearch) Search(ctx context.Context, tenant string, q model.SearchRequest) (model.SearchResult, error) {
+	return s.searchEvents(ctx, tenant, q, "alerts", []string{"alert"}, nil)
+}
+
+var trafficKinds = []string{"flow", "http", "http2", "dns", "tls", "quic", "ssh", "smtp", "ftp", "smb", "nfs", "dhcp", "rdp", "anomaly", "fileinfo"}
+
+func ValidateTrafficSearch(q *model.TrafficSearchRequest) error {
+	if err := ValidateSearch(&q.SearchRequest); err != nil {
+		return err
+	}
+	if _, err := searchfilter.CompileForDataset(q.Filter, "context"); err != nil {
+		return err
+	}
+	if q.Keyword != "" || q.Severity != "" {
+		return fmt.Errorf("流量检索不支持告警名称或告警级别条件")
+	}
+	if q.EventKind != "" {
+		found := false
+		for _, kind := range trafficKinds {
+			found = found || kind == q.EventKind
+		}
+		if !found {
+			return fmt.Errorf("流量记录类型不受支持")
+		}
+	}
+	for _, id := range []string{q.SensorID, q.RegistrationID, q.GenerationID} {
+		if id != "" && !contract.ValidID(id) {
+			return fmt.Errorf("流量来源标识无效")
+		}
+	}
+	if (q.RegistrationID != "" && q.SensorID == "") || (q.GenerationID != "" && (q.SensorID == "" || q.RegistrationID == "")) {
+		return fmt.Errorf("来源代次检索需要同时指定探针和注册代次")
+	}
+	if q.FlowID != "" {
+		flow, err := strconv.ParseUint(q.FlowID, 10, 64)
+		if err != nil || strconv.FormatUint(flow, 10) != q.FlowID {
+			return fmt.Errorf("流标识必须为规范的 64 位无符号十进制整数")
+		}
+	}
+	return nil
+}
+
+func (s *Elasticsearch) SearchTraffic(ctx context.Context, tenant string, q model.TrafficSearchRequest) (model.SearchResult, error) {
+	if err := ValidateTrafficSearch(&q); err != nil {
+		return model.SearchResult{}, err
+	}
+	kinds, filters := trafficScope(q)
+	return s.searchEvents(ctx, tenant, q.SearchRequest, "context", kinds, filters)
+}
+
+func trafficScope(q model.TrafficSearchRequest) ([]string, []any) {
+	kinds := trafficKinds
+	if q.EventKind != "" {
+		kinds = []string{q.EventKind}
+	}
+	filters := []any{}
+	for _, pair := range []struct{ field, value string }{{"sensor_id", q.SensorID}, {"sensor_registration_id", q.RegistrationID}, {"source_generation_id", q.GenerationID}, {"suricata.flow_id", q.FlowID}} {
+		if pair.value != "" {
+			filters = append(filters, map[string]any{"term": map[string]string{pair.field: pair.value}})
+		}
+	}
+	return kinds, filters
+}
+
+func (s *Elasticsearch) searchEvents(ctx context.Context, tenant string, q model.SearchRequest, stream string, kinds []string, extra []any) (model.SearchResult, error) {
 	result := model.SearchResult{Items: []model.Alert{}, Page: q.Page, PageSize: q.PageSize}
 	if !contract.ValidID(tenant) {
 		return result, fmt.Errorf("租户标识不合法")
@@ -219,6 +394,18 @@ func (s *Elasticsearch) Search(ctx context.Context, tenant string, q model.Searc
 	}
 	result.Page = q.Page
 	result.PageSize = q.PageSize
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	boolQuery, e := eventQuery(tenant, q, kinds, extra)
+	if e != nil {
+		return result, e
+	}
+	body, _ := json.Marshal(map[string]any{"from": (q.Page - 1) * q.PageSize, "size": q.PageSize, "track_total_hits": true, "timeout": "5s", "query": map[string]any{"bool": boolQuery}, "sort": []any{map[string]string{"@timestamp": "desc"}, map[string]string{"event_id": "asc"}}})
+	return s.readEventPage(ctx, tenant, q, stream, kinds, body)
+}
+
+// 列表与快照导出使用同一过滤条件，防止导出扩大查询范围。
+func eventQuery(tenant string, q model.SearchRequest, kinds []string, extra []any) (map[string]any, error) {
 	filter := []any{map[string]any{"term": map[string]string{"tenant_id": tenant}}, map[string]any{"range": map[string]any{"@timestamp": map[string]any{"gte": q.Start, "lt": q.End}}}}
 	for _, pair := range []struct{ field, value string }{{"source.ip", q.SourceIP}, {"destination.ip", q.DestinationIP}, {"http.method", strings.ToUpper(q.Method)}, {"severity", q.Severity}} {
 		if pair.value != "" {
@@ -233,27 +420,78 @@ func (s *Elasticsearch) Search(ctx context.Context, tenant string, q model.Searc
 		filter = append(filter, map[string]any{"prefix": map[string]string{"http.path": q.Path}})
 	}
 	boolQuery := map[string]any{"filter": filter}
+	if q.Filter != "" {
+		advanced, e := searchfilter.Compile(q.Filter)
+		if e != nil {
+			return nil, e
+		}
+		if advanced != nil {
+			filter = append(filter, advanced)
+			boolQuery["filter"] = filter
+		}
+	}
 	if q.Keyword != "" {
 		boolQuery["must"] = []any{map[string]any{"match_phrase": map[string]string{"rule.name": q.Keyword}}}
 	}
-	body, _ := json.Marshal(map[string]any{"from": (q.Page - 1) * q.PageSize, "size": q.PageSize, "track_total_hits": true, "query": map[string]any{"bool": boolQuery}, "sort": []any{map[string]string{"@timestamp": "desc"}, map[string]string{"event_id": "asc"}}})
+	if len(kinds) == 1 {
+		filter = append(filter, map[string]any{"term": map[string]string{"event.kind": kinds[0]}})
+	} else {
+		filter = append(filter, map[string]any{"terms": map[string][]string{"event.kind": kinds}})
+	}
+	filter = append(filter, extra...)
+	boolQuery["filter"] = filter
+	return boolQuery, nil
+}
+
+func (s *Elasticsearch) readEventPage(ctx context.Context, tenant string, q model.SearchRequest, stream string, kinds []string, body []byte) (model.SearchResult, error) {
+	result := model.SearchResult{Items: []model.Alert{}, Page: q.Page, PageSize: q.PageSize}
 	var decoded struct {
+		TimedOut *bool `json:"timed_out"`
+		Shards   struct {
+			Total      *int `json:"total"`
+			Successful *int `json:"successful"`
+			Failed     *int `json:"failed"`
+		} `json:"_shards"`
 		Hits struct {
 			Total struct {
-				Value int64 `json:"value"`
+				Value    *int64 `json:"value"`
+				Relation string `json:"relation"`
 			} `json:"total"`
 			Hits []struct {
+				ID     string      `json:"_id"`
+				Index  string      `json:"_index"`
 				Source model.Alert `json:"_source"`
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	res, e := s.API.Search(s.API.Search.WithIndex("sb-alerts-"+tenant+"-*"), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(true), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
+	prefix := "sb-" + stream + "-" + tenant + "-"
+	res, e := s.API.Search(s.API.Search.WithIndex(prefix+"*"), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
 	if e = response(res, e, &decoded); e != nil {
 		return result, e
 	}
-	result.Total = decoded.Hits.Total.Value
+	// HTTP 成功不代表检索完整；无匹配索引与不可用索引须分别处理。
+	if decoded.TimedOut == nil || *decoded.TimedOut || decoded.Shards.Total == nil || *decoded.Shards.Total < 0 || decoded.Shards.Successful == nil || *decoded.Shards.Successful != *decoded.Shards.Total || decoded.Shards.Failed == nil || *decoded.Shards.Failed != 0 || decoded.Hits.Total.Value == nil || *decoded.Hits.Total.Value < 0 || decoded.Hits.Total.Relation != "eq" || decoded.Hits.Hits == nil {
+		return result, fmt.Errorf("事件检索结果不完整，不能确认命中数量")
+	}
+	total := *decoded.Hits.Total.Value
+	expected := min(int64(q.PageSize), max(total-int64((q.Page-1)*q.PageSize), 0))
+	if int64(len(decoded.Hits.Hits)) != expected {
+		return result, fmt.Errorf("事件检索分页结果与精确计数不一致")
+	}
+	seen := make(map[string]bool, len(decoded.Hits.Hits))
 	for _, h := range decoded.Hits.Hits {
+		date, dateErr := time.Parse("2006.01.02", strings.TrimPrefix(h.Index, prefix))
+		index, indexErr := contract.IndexName(tenant, stream, date.Format("2006-01-02"))
+		allowed := false
+		for _, kind := range kinds {
+			allowed = allowed || kind == h.Source.Event.Kind
+		}
+		if dateErr != nil || indexErr != nil || h.Index != index || !contract.ValidID(h.ID) || h.ID != h.Source.EventID || h.Source.TenantID != tenant || !allowed || h.Source.Timestamp.Before(q.Start) || !h.Source.Timestamp.Before(q.End) || seen[h.ID] {
+			return model.SearchResult{Items: []model.Alert{}, Page: q.Page, PageSize: q.PageSize}, fmt.Errorf("事件检索记录不符合来源、时间或唯一性约束")
+		}
+		seen[h.ID] = true
 		result.Items = append(result.Items, h.Source)
 	}
+	result.Total = total
 	return result, nil
 }

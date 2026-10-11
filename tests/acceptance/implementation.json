@@ -1,0 +1,2572 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-11",
+  "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
+  "capabilities": [
+    {
+      "id": "identity",
+      "name": "身份与会话",
+      "code": [
+        "internal/httpapi/server.go",
+        "internal/store/postgres.go",
+        "internal/agent/localapi.go",
+        "internal/transport/tls.go",
+        "internal/clientip/clientip.go"
+      ],
+      "pages": [
+        "platform:/login",
+        "collector:/login"
+      ],
+      "tests": [
+        "internal/httpapi/server_test.go",
+        "internal/transport/tls_test.go",
+        "web/tests/api.test.ts",
+        "web/tests/application.test.ts",
+        "tests/integration/pipeline_test.go",
+        "tests/integration/runtime_role_test.go",
+        "tests/integration/platform_management_test.go",
+        "internal/httpapi/failures_test.go",
+        "internal/config/boundaries_test.go",
+        "tests/integration/bootstrap_failures_test.go",
+        "tests/integration/http_failures_test.go",
+        "internal/clientip/clientip_test.go",
+        "internal/httpapi/clientip_test.go",
+        "tests/integration/proxy_auth_test.go"
+      ],
+      "boundary": "本地 bcrypt、会话、CSRF、admin/viewer 与租户 RLS；运行角色拒绝直接、继承和可切换的管理及业务表所有者权限，覆盖后续业务表与隐藏的连接身份。租户用户管理见独立能力；不含 OIDC、MFA 或资产级授权。 可信代理由部署 CIDR 明确配置，默认不信任转发头；单层代理覆盖 X-Real-IP，登录预算与审计使用相同客户端地址，不解析任意转发链。"
+    },
+    {
+      "id": "sensors",
+      "name": "探针与本机采集管理",
+      "code": [
+        "internal/platform/api.go",
+        "internal/agent/health.go",
+        "internal/hosthealth/health.go",
+        "internal/agent/localapi.go",
+        "internal/admin/pki.go",
+        "internal/agent/capture.go",
+        "internal/agent/capture_filter.go",
+        "internal/agent/capture_rotation.go",
+        "web/packages/shared/src/components/CaptureForm.vue",
+        "web/platform/src/features/sensors/SensorDetail.vue",
+        "internal/control/capture.go",
+        "internal/store/capture_tasks.go",
+        "web/platform/src/features/sensors/CaptureDialog.vue",
+        "web/packages/shared/src/components/CaptureResult.vue",
+        "internal/agent/audit.go",
+        "internal/sensormanagement/catalog.go",
+        "internal/store/sensor_management.go",
+        "internal/platform/sensor_management.go",
+        "migrations/00031_sensor_groups.sql",
+        "web/platform/src/features/sensors/ManagementForm.vue",
+        "web/packages/shared/src/sensors.ts"
+      ],
+      "pages": [
+        "platform:/sensors",
+        "platform:/sensors?view=groups",
+        "collector:/network",
+        "collector:/network?view=capture"
+      ],
+      "tests": [
+        "internal/admin/pki_test.go",
+        "internal/platform/health_test.go",
+        "internal/agent/localapi_test.go",
+        "tests/integration/pipeline_test.go",
+        "tests/integration/control_test.go",
+        "web/tests/workspaces.test.ts",
+        "tests/integration/platform_management_test.go",
+        "internal/admin/pki_failures_test.go",
+        "internal/agent/startup_failures_test.go",
+        "tests/integration/control_failures_test.go",
+        "internal/agent/capture_test.go",
+        "internal/agent/capture_rotation_test.go",
+        "internal/agent/capture_process_linux_test.go",
+        "tests/integration/capture_live_test.go",
+        "web/tests/capture.test.ts",
+        "internal/control/capture_test.go",
+        "internal/agent/capture_remote_test.go",
+        "tests/integration/capture_tasks_test.go",
+        "web/tests/capture-configuration.test.ts",
+        "internal/agent/audit_metadata_test.go",
+        "internal/sensormanagement/catalog_test.go",
+        "internal/platform/sensor_management_test.go",
+        "tests/integration/sensor_management_test.go",
+        "web/tests/sensor-management.test.ts",
+        "internal/agent/capture_spool_recovery_test.go"
+      ],
+      "boundary": "设备证书和注册代次隔离；CPU、内存、磁盘、网络接口、版本、WAL 与托管引擎实际状态上报。本机和平台均可配置 AF_PACKET 网卡、线程、混杂模式与 BPF；平台签名任务在数据库事务和设备配置事务中核对冻结修订及摘要，成功回执必须包含生效参数和原生进程状态。实时捕获与手动规则发布具备真实链路；升级、规则订阅自动同步、自动灰度及具体设备兼容验收仍未完成；通用 HTTP 联动工程由 response_http 提供。 独立原包捕获和目录见原包捕获与归档能力，完整验收仍待完成。 管理目录支持有界分页、分组与站点筛选；分组和管理信息通过注册代次、CAS、租户权限、原请求回执与原子审计维护，分组不改变采集或执行范围。 任务目标按租户与探针主键查询，不受目录上限影响；有界 MCP 列表不用于设备授权或任务选择。 EVE 容量保护停机后保留原始来源，只有写端标记消失、同一文件核对及 WAL 持久排空后回收；来源丢失仍拒绝推进检查点。该恢复路径的本地回归通过，最新远程资格仍待核验。"
+    },
+    {
+      "id": "pipeline",
+      "name": "持久事件链路",
+      "code": [
+        "internal/agent/eve.go",
+        "internal/agent/wal.go",
+        "internal/ingest/server.go",
+        "internal/bus/jetstream.go",
+        "internal/normalize/eve.go",
+        "internal/store/elasticsearch.go",
+        "internal/worker/indexer.go",
+        "internal/agent/capture_rotation.go"
+      ],
+      "pages": [],
+      "tests": [
+        "internal/agent/wal_test.go",
+        "internal/agent/engine_test.go",
+        "internal/normalize/eve_test.go",
+        "internal/normalize/timestamp_test.go",
+        "internal/store/elasticsearch_test.go",
+        "tests/integration/pipeline_test.go",
+        "tests/integration/processes_test.go",
+        "internal/agent/eve_boundaries_test.go",
+        "internal/agent/wal_boundaries_test.go",
+        "internal/agent/stream_failures_test.go",
+        "internal/store/elasticsearch_failures_test.go",
+        "internal/agent/capture_rotation_test.go",
+        "tests/integration/capture_live_test.go",
+        "internal/worker/indexer_test.go",
+        "tests/integration/indexer_startup_test.go"
+      ],
+      "boundary": "实际捕获或已有 EVE 文件进入 WAL、mTLS、持久队列、幂等 ES 与隔离记录。托管模式使用私有 EVE 和持久轮转记录，核对实际写端关闭、旧来源全部进入持久队列及后继断点提交后才回收；异常和暂存超额时停止检测，不清空待传队列。连续 PCAP 原包归档通过独立传输链路实现，详见原包捕获与归档；尚无多源接入或检测覆盖推断。 两个消费者都准备完成后才开始取数，第二条流启动失败不遗留第一条流的后台消费。"
+    },
+    {
+      "id": "search",
+      "name": "告警与流量检索",
+      "code": [
+        "internal/searchfilter/filter.go",
+        "internal/platform/api.go",
+        "internal/store/elasticsearch.go",
+        "web/platform/src/features/alerts/AdvancedFilter.vue",
+        "internal/platform/traffic.go",
+        "internal/traffic/details.go",
+        "web/platform/src/features/traffic/TrafficWorkspace.vue",
+        "web/platform/src/features/traffic/useTraffic.ts"
+      ],
+      "pages": [
+        "platform:/alerts",
+        "platform:/traffic"
+      ],
+      "tests": [
+        "internal/searchfilter/filter_test.go",
+        "internal/store/elasticsearch_test.go",
+        "tests/integration/inventory_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/composables.test.ts",
+        "web/tests/workspaces.test.ts",
+        "internal/store/elasticsearch_failures_test.go",
+        "tests/integration/http_failures_test.go",
+        "internal/store/search_integrity_test.go",
+        "internal/store/traffic_test.go",
+        "internal/traffic/details_test.go",
+        "tests/integration/search_integrity_test.go",
+        "tests/integration/traffic_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/traffic.test.ts"
+      ],
+      "boundary": "告警和协议事件使用独立数据集、固定租户与事件类型、有界分页及完整回执检查；高级表达式只编译实际映射字段。协议记录支持精确探针／注册／来源代次和 uint64 流标识条件；从实际 EVE 提取会话时间、双向计数、MAC 集合、TLS 与 DNS 白名单展示，原始 EVE 仅管理员可读。不包含原生逐包、完整会话重组、应用品牌识别、PCAP 导出或 TLS 解密。"
+    },
+    {
+      "id": "bytes",
+      "name": "EVE 载荷字节视图",
+      "code": [
+        "web/packages/shared/src/evidence.ts",
+        "web/packages/shared/src/components/ByteViewer.vue",
+        "web/platform/src/features/alerts/AlertDetail.vue"
+      ],
+      "pages": [
+        "platform:/alerts"
+      ],
+      "tests": [
+        "web/tests/evidence.test.ts",
+        "web/tests/shared-components.test.ts"
+      ],
+      "boundary": "仅显示 EVE 实际提供且解码后不超过 1 MiB 的合法 base64 载荷：HEX、严格 UTF-8、偏移分页、复制及 HEX/UTF-8 查找与命中高亮。查找词最多 512 字节、结果最多 1000 个，支持重叠命中并注明结果上限。未提供解压派生、协议树或完整 PCAP。"
+    },
+    {
+      "id": "tasks",
+      "name": "签名任务与独立本地执行",
+      "code": [
+        "internal/control/command.go",
+        "internal/platform/tasks.go",
+        "internal/agent/control.go",
+        "internal/agent/tasks.go",
+        "internal/store/tasks.go",
+        "internal/agent/task_reconciliation.go",
+        "web/platform/src/features/sensors/useTaskDetail.ts",
+        "web/packages/shared/src/components/TaskActions.vue",
+        "migrations/00038_task_history_indexes.sql",
+        "internal/agent/localapi.go",
+        "web/packages/shared/src/useTaskDetail.ts"
+      ],
+      "pages": [
+        "platform:/sensors?view=tasks",
+        "platform:/rules?view=tasks",
+        "collector:/network?view=tasks"
+      ],
+      "tests": [
+        "internal/control/command_test.go",
+        "internal/agent/tasks_test.go",
+        "tests/integration/control_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/replay-components.test.ts",
+        "tests/integration/platform_management_test.go",
+        "tests/integration/replay_lease_migration_test.go",
+        "internal/agent/task_failures_test.go",
+        "internal/agent/stream_failures_test.go",
+        "internal/control/command_boundaries_test.go",
+        "tests/integration/control_failures_test.go",
+        "tests/integration/download_failures_test.go",
+        "tests/integration/task_input_boundaries_test.go",
+        "internal/platform/task_lookup_test.go",
+        "tests/integration/task_lookup_test.go",
+        "web/tests/task-detail.test.ts",
+        "internal/store/task_lookup_test.go",
+        "internal/agent/task_lookup_test.go",
+        "web/tests/local-task-detail.test.ts"
+      ],
+      "boundary": "诊断、rules.validate、rules.replay 有真实执行和精确回执；rules.apply 和 rules.reconcile 实现签名、设备与配置绑定，发布链路真实远程验收待完成。未投递任务可取消；中断规则任务需取得独立原生核实依据后才能继续发布。限时通用 HTTP 联动由 response_http 提供；没有系统升级、剧本或已执行任务的强制停止。 管理员可通过 task 查询参数独立读取本租户留存期内任务，不受最近 200 条列表上限影响；执行与记录期限分别呈现，关闭保留其它路由条件，身份变化取消旧读取。 列表使用租户和单探针时间顺序索引，升级需执行第 38 项迁移。 采集器本地管理员可通过独立任务主键和链接读取留存档案；新任务在接收时冻结本地保留截止，默认 180 天，SB_TASK_RETENTION_DAYS 只影响后续任务。未确认、执行中和未核实记录受清理保护；本地读取不取得平台任务授权。"
+    },
+    {
+      "id": "rules",
+      "name": "规则管理与原生发布",
+      "code": [
+        "internal/store/rules.go",
+        "internal/platform/tasks.go",
+        "internal/agent/engine.go",
+        "web/packages/shared/src/utils/ruleSyntax.ts",
+        "web/packages/shared/src/components/RuleEditor.vue",
+        "internal/rulerelease/qualification.go",
+        "internal/store/rule_release.go",
+        "internal/store/rule_reconciliation.go",
+        "internal/agent/engine_reconciliation.go",
+        "web/platform/src/features/rules/RuleReleaseDialog.vue"
+      ],
+      "pages": [
+        "platform:/rules"
+      ],
+      "tests": [
+        "internal/store/rules_test.go",
+        "internal/agent/engine_test.go",
+        "tests/integration/control_test.go",
+        "web/tests/rules-components.test.ts",
+        "tests/integration/platform_management_test.go",
+        "internal/agent/engine_recovery_test.go",
+        "internal/agent/engine_protocol_failures_test.go",
+        "internal/agent/replay_preflight_test.go",
+        "internal/control/command_boundaries_test.go",
+        "internal/rulerelease/qualification_test.go",
+        "internal/control/rule_reconciliation_test.go",
+        "internal/agent/engine_reconciliation_test.go",
+        "internal/agent/rule_digest_test.go",
+        "web/tests/rule-release.test.ts",
+        "web/tests/rule-reconciliation.test.ts",
+        "tests/integration/rule_release_test.go"
+      ],
+      "boundary": "不可变修订、CodeMirror 高亮和基础结构诊断、Suricata 8.0.7 -T。手动单探针发布核对同设备、注册代次、完整包、检测配置、一天内装载与独立正反样本回执；签名命令绑定当前文件摘要，原生重载、完整包数量和文件回读，失败恢复保留 journal。历史修订以新的授权任务部署；独立 rules.reconcile 回读当前事务规则并保存依据，原中断回执保持不变。该链路正在执行真实远程验收；不含自动灰度编排、来源管理、AI 生成或 TUF 分发。"
+    },
+    {
+      "id": "replay",
+      "name": "PCAP 样本与隔离重放",
+      "code": [
+        "internal/replay/inspect.go",
+        "internal/replay/normalize.go",
+        "internal/replay/storage.go",
+        "internal/agent/replay.go",
+        "internal/agent/sandbox.go",
+        "internal/platform/replay.go",
+        "internal/replay/handshake.go"
+      ],
+      "pages": [
+        "platform:/rules?view=samples",
+        "platform:/rules?view=tasks",
+        "collector:/network?view=samples",
+        "collector:/network?view=tasks"
+      ],
+      "tests": [
+        "internal/agent/replay_test.go",
+        "internal/agent/local_replay_test.go",
+        "internal/agent/replay_samples_test.go",
+        "internal/replay/storage_test.go",
+        "internal/replay/s3_test.go",
+        "tests/integration/control_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/replay-components.test.ts",
+        "internal/replay/handshake_test.go",
+        "tests/integration/replay_cleanup_test.go",
+        "tests/integration/platform_management_test.go",
+        "tests/integration/replay_lease_migration_test.go",
+        "internal/replay/storage_failures_test.go",
+        "internal/replay/inspect_boundaries_test.go",
+        "internal/replay/handshake_boundaries_test.go",
+        "internal/agent/replay_preflight_test.go",
+        "internal/agent/replay_http_boundaries_test.go",
+        "tests/integration/download_failures_test.go"
+      ],
+      "boundary": "PCAP/PCAPNG 导入、选探针、指定规则、真实离线 -r、Linux bwrap 隔离、结果和限制；本地样本索引原子预留最多 10,000 个，失败导入回收与可恢复清理每轮最多 100 个，磁盘等待不持有 WAL 写事务。平台清理每轮最多扫描 32 个租户、处理 100 个样本，提交待删除状态后释放数据库连接再删除对象；单个失败不阻断后续对象，幂等恢复前继续占用额度。有效重放样本引用单独保存并索引，不在回收查询中解析规则正文。按观测域及 TCP 方向／序号检查握手，限制 32,768 个流并显示缺测，不证明全会话载荷完整。S3 使用受控协议测试服务；未验收真实 AIStor/MinIO HA 或生产抓包。"
+    },
+    {
+      "id": "inventory",
+      "name": "资产、资产组与网段",
+      "code": [
+        "internal/inventory/inventory.go",
+        "internal/store/inventory.go",
+        "internal/platform/inventory.go",
+        "migrations/00006_inventory.sql"
+      ],
+      "pages": [
+        "platform:/assets",
+        "platform:/assets?view=groups",
+        "platform:/assets?view=networks"
+      ],
+      "tests": [
+        "internal/inventory/inventory_test.go",
+        "tests/integration/inventory_test.go",
+        "web/tests/inventory-components.test.ts",
+        "tests/integration/storage_failures_test.go",
+        "tests/integration/http_failures_test.go"
+      ],
+      "boundary": "人工登记、显式使用状态、多接口/IP/6 字节 MAC、CIDR、不可变修订、CAS 和历史查询；没有自动发现、地址租约、业务拓扑或被监测账号身份关联。"
+    },
+    {
+      "id": "operations",
+      "name": "运行状态与审计",
+      "code": [
+        "internal/platform/health.go",
+        "internal/platform/audits.go",
+        "internal/store/audits.go",
+        "internal/telemetry/metrics.go"
+      ],
+      "pages": [
+        "platform:/operations",
+        "platform:/operations?view=operations",
+        "platform:/operations?view=logins"
+      ],
+      "tests": [
+        "internal/platform/health_test.go",
+        "tests/integration/control_test.go",
+        "tests/integration/inventory_test.go",
+        "web/tests/operations.test.ts",
+        "tests/integration/platform_management_test.go",
+        "tests/integration/http_failures_test.go",
+        "tests/integration/startup_failures_test.go"
+      ],
+      "boundary": "真实宿主与依赖可用性、Prometheus、操作/登录稳定游标。登录审计仅证明凭据验证；没有统一追踪、完整查询导出决策审计或不可篡改审计归档。"
+    },
+    {
+      "id": "notifications",
+      "name": "通知与出站 Syslog",
+      "code": [
+        "internal/notify/channel.go",
+        "internal/notify/sender.go",
+        "internal/worker/notifier.go",
+        "internal/store/notifications.go",
+        "internal/platform/notifications.go",
+        "migrations/00007_notifications.sql",
+        "internal/notify/audit.go",
+        "migrations/00030_syslog_audit_outbox.sql"
+      ],
+      "pages": [
+        "platform:/notifications",
+        "platform:/notifications?view=deliveries"
+      ],
+      "tests": [
+        "internal/notify/channel_test.go",
+        "internal/notify/sender_test.go",
+        "internal/store/notifications_test.go",
+        "tests/integration/notifications_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/notifications.test.ts",
+        "internal/notify/sender_failures_test.go",
+        "tests/integration/storage_failures_test.go",
+        "internal/notify/audit_test.go",
+        "tests/integration/syslog_audits_test.go"
+      ],
+      "boundary": "邮件、企业微信、钉钉、飞书、Webhook、Syslog TLS/开发 TCP，摘要 outbox、逐接收人回执和人工重试。Syslog 可明确订阅告警、租户操作与登录审计；源审计和脱敏材料同事务提交，冻结渠道修订、白名单、来源标识、记录计数及默认 180 天留存。未归属租户的登录失败不外发。历史渠道仅告警；不外发操作原因、正文或凭据。真实协议测试不等同办公租户送达；无原始 EVE/进程日志全集、历史补发与外部落盘契约。"
+    },
+    {
+      "id": "models",
+      "name": "模型配置与连接验证",
+      "code": [
+        "internal/llm/provider.go",
+        "internal/store/models.go",
+        "internal/platform/models.go",
+        "internal/outbound/client.go",
+        "internal/secrets/vault.go",
+        "migrations/00008_models.sql"
+      ],
+      "pages": [
+        "platform:/models"
+      ],
+      "tests": [
+        "internal/llm/provider_test.go",
+        "internal/outbound/client_test.go",
+        "internal/secrets/vault_test.go",
+        "tests/integration/models_test.go",
+        "web/tests/models.test.ts",
+        "tests/integration/storage_failures_test.go",
+        "tests/integration/startup_failures_test.go"
+      ],
+      "boundary": "官方 OpenAI Go SDK 的 Responses/Chat 兼容接口、加密配置、有限连接验证、幂等、共享 UTC 日提交预算与跨实例并发。统计型助手及手动报告由独立分析业务模块调用；真实模型服务、领域决策、规则生成及 Jev/Laya 尚未验收。MCP 接入由独立协议与服务身份模块实现。"
+    },
+    {
+      "id": "retention",
+      "name": "分类留存策略与分区期限",
+      "code": [
+        "internal/admin/bootstrap.go",
+        "internal/store/replay.go",
+        "internal/store/inventory.go",
+        "internal/store/models.go",
+        "migrations/00001_control_plane.sql",
+        "migrations/00007_notifications.sql",
+        "migrations/00008_models.sql",
+        "migrations/00009_retention_categories.sql",
+        "internal/retention/policy.go",
+        "internal/platform/retention.go",
+        "internal/store/retention.go",
+        "internal/store/index_template.go",
+        "internal/store/lifecycle.go",
+        "migrations/00011_retention_policies.sql",
+        "internal/store/history_cleanup.go",
+        "migrations/00015_history_cleanup.sql"
+      ],
+      "pages": [
+        "platform:/retention"
+      ],
+      "tests": [
+        "tests/integration/inventory_test.go",
+        "tests/integration/notifications_test.go",
+        "tests/integration/models_test.go",
+        "internal/replay/storage_test.go",
+        "tests/integration/retention_test.go",
+        "internal/retention/policy_test.go",
+        "internal/store/retention_index_test.go",
+        "tests/integration/retention_policy_test.go",
+        "web/tests/retention.test.ts",
+        "tests/integration/history_cleanup_test.go",
+        "tests/integration/storage_failures_test.go"
+      ],
+      "boundary": "十一类策略默认 180 天，管理员预览、CAS／幂等发布与审计；仅影响未来对象，既有分区不调整。PG 历史与运行对象按固化期限有界回收，分类进度与删除同事务提交；当前版本、活动任务、未决规则安装与引用版本受保护。匿名登录审计使用独立维护作用域。文件流水线、规则历史清理、全域保全、存量重算、物理分区和备份销毁仍缺失。测试入口不代表新回收路径已验收，实际远程结果见工程实现与开发。"
+    },
+    {
+      "id": "delivery",
+      "name": "依赖锁定与交付门禁",
+      "code": [
+        "go.mod",
+        "go.sum",
+        "web/pnpm-lock.yaml",
+        "Makefile",
+        "scripts/check_acceptance.py",
+        "scripts/check_go_coverage.py",
+        "scripts/check_package_acceptance.py",
+        "scripts/package_linux.py",
+        "scripts/remote_acceptance.py",
+        ".github/workflows/ci.yml",
+        ".github/workflows/release.yml",
+        "tests/acceptance/combine_backend.py",
+        "web/scripts/complete-licenses.mjs",
+        "web/licenses/sources.json",
+        "scripts/package_go_dependencies.py",
+        "licenses/go/exceptions.json",
+        "licenses/go/report.tpl"
+      ],
+      "pages": [],
+      "tests": [
+        "tests/quality/test_release_gates.py",
+        "tests/integration/management_test.go",
+        "internal/config/boundaries_test.go",
+        "internal/app/startup_failures_test.go",
+        "tests/integration/startup_failures_test.go",
+        "tests/integration/bootstrap_failures_test.go",
+        "tests/quality/test_backend_evidence.py",
+        "web/scripts/complete-licenses.test.mjs",
+        "tests/quality/test_go_dependencies.py"
+      ],
+      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。后续代码须重新核验；生产同源 TLS 部署、完整产品验收工作流、干净候选提交与正式发布仍未完成。"
+    },
+    {
+      "id": "overview",
+      "name": "态势统计与大屏",
+      "code": [
+        "internal/analytics/overview.go",
+        "internal/store/overview.go",
+        "internal/platform/overview.go",
+        "web/platform/src/features/overview/OverviewWorkspace.vue",
+        "web/platform/src/features/overview/useOverview.ts"
+      ],
+      "pages": [
+        "platform:/overview",
+        "platform:/screen"
+      ],
+      "tests": [
+        "internal/analytics/overview_test.go",
+        "internal/platform/overview_test.go",
+        "tests/integration/overview_test.go",
+        "web/tests/overview.test.ts"
+      ],
+      "boundary": "授权租户内告警趋势、级别、协议、规则、探针分布与登记资产/探针状态；真实 ES 聚合、PG 读取、Redis 缓存/跨实例锁/预算。全屏展示、隐藏页面停止自动刷新、失败保留明确标记的历史观测。没有风险/处置/应用推断、投屏令牌、模板或离线报告；真实 PG/Redis/ES 验证了窗口、租户、缓存、额度和异常结果。"
+    },
+    {
+      "id": "analysis",
+      "name": "智能助手与周期报告",
+      "code": [
+        "internal/assistant/analysis.go",
+        "internal/assistant/report.go",
+        "internal/jobs/analysis.go",
+        "internal/store/analysis.go",
+        "internal/platform/analysis.go",
+        "migrations/00010_analysis.sql",
+        "web/platform/src/features/analysis/AssistantWorkspace.vue",
+        "web/platform/src/features/analysis/ReportsWorkspace.vue",
+        "internal/assistant/plans.go",
+        "internal/store/report_plans.go",
+        "internal/jobs/report_plans.go",
+        "internal/platform/report_plans.go",
+        "migrations/00017_report_plans.sql",
+        "web/platform/src/features/analysis/ReportPlansWorkspace.vue",
+        "web/platform/src/features/analysis/ReportPlanForm.vue",
+        "migrations/00018_report_plan_owner.sql"
+      ],
+      "pages": [
+        "platform:/assistant",
+        "platform:/reports",
+        "platform:/reports?view=plans"
+      ],
+      "tests": [
+        "internal/assistant/analysis_test.go",
+        "tests/integration/analysis_test.go",
+        "web/tests/analysis.test.ts",
+        "web/tests/api.test.ts",
+        "tests/integration/analysis_boundaries_test.go",
+        "tests/integration/storage_failures_test.go",
+        "internal/assistant/plans_test.go",
+        "tests/integration/report_plans_test.go",
+        "tests/integration/report_plan_boundaries_test.go",
+        "web/tests/report-plans.test.ts",
+        "tests/integration/report_plan_failures_test.go"
+      ],
+      "boundary": "实际统计驱动的私有对话、自然日/完整周/月报告、冻结快照、校验引用、统计降级与 HTML 导出；River 社区核心持久作业、共享额度、幂等、取消与未知结果。报告计划按固定时区、时间与模型修订持久调度，停止及权限变化阻止未提交周期，停机恢复只生成最近完整周期并记录错过范围；对应真实依赖测试及原生 UI 验收正在执行。受控模型 TLS 协议不代表真实模型领域效果、自然语言检索/SSE、发布/PDF、知识库或自动研判已经完成。"
+    },
+    {
+      "id": "mcp",
+      "name": "MCP 有界只读数据分析",
+      "code": [
+        "internal/mcpaccess/access.go",
+        "internal/mcpserver/server.go",
+        "internal/mcpserver/tools.go",
+        "internal/store/mcp.go",
+        "internal/platform/mcp.go",
+        "migrations/00012_mcp.sql",
+        "web/platform/src/features/mcp/MCPWorkspace.vue",
+        "web/platform/src/features/mcp/BindingForm.vue",
+        "internal/searchfilter/filter.go",
+        "internal/platform/traffic.go",
+        "internal/traffic/details.go"
+      ],
+      "pages": [
+        "platform:/models?view=mcp"
+      ],
+      "tests": [
+        "internal/mcpaccess/access_test.go",
+        "internal/mcpserver/server_test.go",
+        "tests/integration/mcp_test.go",
+        "web/tests/mcp.test.ts",
+        "tests/integration/storage_failures_test.go",
+        "tests/integration/http_failures_test.go",
+        "internal/mcpserver/search_tools_test.go",
+        "internal/searchfilter/datasets_test.go",
+        "internal/store/traffic_test.go"
+      ],
+      "boundary": "官方 Go SDK 1.8.0 的无会话 HTTP POST、TLS/OAuth 资源发现和可信内省；身份三元组绑定、强制 RLS、修订、停用/删除/到期、所属账号停用、调用预算、审计及 256 KiB 结构化输出上限。发布九个有界只读工具：告警检索/统计、告警字段/表达式校验、资产、探针，以及独立 traffic:read 的协议检索/字段/表达式校验。浏览器和 MCP 共用数据集目录及编译器，返回可见 TLS/DNS、MAC 和会话计数，保留累计计数和方向限制，不返回原始载荷或注册标识；收费分析/报告/规则和响应动作工具、资源下载、真实企业授权方及客户兼容矩阵尚未验收。 协议查询和数据集表达式的本地官方客户端回归已通过；工程远程资格以对应源码的独立原始报告为准。"
+    },
+    {
+      "id": "assessment",
+      "name": "告警人工研判与协作",
+      "code": [
+        "internal/assessment/assessment.go",
+        "internal/platform/alert_assessments.go",
+        "internal/store/alert_assessments.go",
+        "internal/store/alert_identity.go",
+        "migrations/00019_alert_assessments.sql",
+        "web/platform/src/features/alerts/AlertAssessment.vue",
+        "web/platform/src/features/alerts/useAssessment.ts"
+      ],
+      "pages": [
+        "platform:/alerts"
+      ],
+      "tests": [
+        "internal/assessment/assessment_test.go",
+        "internal/store/alert_identity_test.go",
+        "tests/integration/alert_assessments_test.go",
+        "web/tests/assessment.test.ts"
+      ],
+      "boundary": "原始告警身份核验、管理员人工误报或威胁判断、攻击结果、依据、认领、关闭与重开；PG 当前记录与不可改写历史、审计、CAS、幂等、默认 180 天和有界清理。交互和来源定向测试通过，真实依赖及原生 UI 验收仍在执行。结论不改写 ES 事实、不抑制规则、不撤回通知或自动执行封禁；按状态检索投影、聚合、批量分派、案件、模型研判和置信度决策仍未交付。"
+    },
+    {
+      "id": "rule_generation",
+      "name": "AI 规则生成与 HTTP Raw 验证",
+      "code": [
+        "internal/rulegen/generation.go",
+        "internal/replay/httpraw.go",
+        "internal/replay/context.go",
+        "internal/store/rule_generation.go",
+        "internal/jobs/rule_generation.go",
+        "internal/platform/rule_generation.go",
+        "migrations/00021_replay_http_origin.sql",
+        "migrations/00022_rule_generation.sql",
+        "web/platform/src/features/rules/RuleGenerationWorkspace.vue",
+        "web/platform/src/features/rules/useRuleGeneration.ts",
+        "web/platform/src/features/rules/generation.ts"
+      ],
+      "pages": [
+        "platform:/rules?view=generation",
+        "platform:/rules?view=samples",
+        "collector:/network?view=samples"
+      ],
+      "tests": [
+        "internal/rulegen/generation_test.go",
+        "internal/replay/httpraw_test.go",
+        "internal/llm/structured_test.go",
+        "tests/integration/rule_generation_test.go",
+        "tests/integration/rule_generation_failures_test.go",
+        "tests/integration/rule_generation_native_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/rule-generation.test.ts",
+        "tests/integration/rule_generation_workers_test.go",
+        "tests/integration/rule_generation_capacity_test.go"
+      ],
+      "boundary": "管理员所有者隔离、冻结材料、模型修订和 SID；自然语言/PCAP/原字节 HTTP Raw 候选及人工采纳，实际发布沿用独立探针装载和正反样本资格。HTTP Raw 握手与时间为合成；受控 HTTPS 模型协议测试不代表真实外部模型质量。"
+    },
+    {
+      "id": "triage",
+      "name": "告警模型研判",
+      "code": [
+        "internal/triage/triage.go",
+        "internal/store/alert_triage.go",
+        "internal/platform/alert_triage.go",
+        "internal/jobs/alert_triage.go",
+        "migrations/00023_alert_triage.sql",
+        "web/platform/src/features/alerts/AlertTriage.vue",
+        "web/platform/src/features/alerts/useAlertTriage.ts",
+        "web/platform/src/features/alerts/triage.ts"
+      ],
+      "pages": [
+        "platform:/alerts"
+      ],
+      "tests": [
+        "internal/triage/triage_test.go",
+        "internal/contract/json_test.go",
+        "tests/integration/alert_triage_test.go",
+        "tests/integration/alert_triage_failures_test.go",
+        "tests/integration/processes_test.go",
+        "internal/store/alert_identity_test.go",
+        "web/tests/triage.test.ts",
+        "tests/integration/alert_triage_guards_test.go"
+      ],
+      "boundary": "管理员所有者隔离，冻结模型修订和告警白名单字段；实际来源回读、严格引用与结构校验、共享额度、持久队列、取消及未知结果。详情页历史、输入许可、自报分数、材料限制与有限轮询；仅保存待复核建议，不改写人工研判或授权封禁。受控 HTTPS 模型协议测试不代表真实模型领域效果；同源码远程和页面验收仍需完成。"
+    },
+    {
+      "id": "packet_archive",
+      "name": "原包捕获与归档",
+      "code": [
+        "internal/packetarchive/capture.go",
+        "internal/packetarchive/source_linux.go",
+        "internal/packetarchive/codec.go",
+        "internal/packetarchive/manifest.go",
+        "internal/packetarchive/recorder.go",
+        "internal/packetarchive/spool.go",
+        "internal/packetarchive/validate.go",
+        "internal/packetarchive/object.go",
+        "internal/packetarchive/object_s3.go",
+        "internal/agent/packet_archives.go",
+        "internal/agent/packet_localapi.go",
+        "internal/ingest/packet_archives.go",
+        "internal/store/packet_archives.go",
+        "internal/platform/packet_archives.go",
+        "migrations/00024_packet_archives.sql",
+        "migrations/00025_packet_sensor_lock.sql",
+        "web/packages/shared/src/components/PacketArchiveWorkspace.vue",
+        "web/packages/shared/src/components/PacketArchiveDetail.vue",
+        "web/packages/shared/src/packetArchives.ts",
+        "web/packages/shared/src/usePacketArchives.ts",
+        "internal/packetarchive/session.go",
+        "web/packages/shared/src/components/SessionExportDialog.vue",
+        "internal/packetarchive/inspect.go",
+        "internal/platform/packet_inspection.go",
+        "web/packages/shared/src/packetInspection.ts",
+        "web/packages/shared/src/components/PacketInspector.vue"
+      ],
+      "pages": [
+        "platform:/traffic?view=archives",
+        "collector:/network?view=archives"
+      ],
+      "tests": [
+        "internal/packetarchive/codec_test.go",
+        "internal/packetarchive/recorder_test.go",
+        "internal/packetarchive/spool_test.go",
+        "internal/packetarchive/capture_test.go",
+        "internal/packetarchive/validate_test.go",
+        "internal/packetarchive/object_test.go",
+        "internal/packetarchive/object_s3_test.go",
+        "internal/agent/packet_archives_test.go",
+        "tests/integration/packet_archives_test.go",
+        "tests/integration/packet_capture_native_test.go",
+        "web/tests/packet-archives.test.ts",
+        "internal/packetarchive/session_test.go",
+        "internal/packetarchive/session_boundaries_test.go",
+        "internal/packetarchive/inspect_test.go",
+        "internal/platform/packet_archives_test.go",
+        "web/tests/packet-inspection.test.ts"
+      ],
+      "boundary": "独立 AF_PACKET 原包捕获、无损 Zstandard 独立帧、精确摘要与 mTLS、不可变对象版本、私有暂存及租户容量、默认 180 天或自定义期限、确认后回收。本机与平台原包目录、详情、核验下载和访问审计。两端按实际捕获序号查看单个 Ethernet 帧：每次先完整核验归档，再由维护中的 gopacket 有界解码最多 16 层；显示实际 MAC/IP/端口/TCP 标志与序号、VLAN/ARP/ICMP/IPv6 分片字段、纳秒捕获时间、原始 HEX／UTF-8 与截断／卸载边界。发送前复核会话与管理员资格，审计失败不返回原字节。平台有界多切片会话导出：固定双方 IP/端口/MAC/VLAN，同注册/进程/配置，原始帧、纳秒时间和逐包来源映射；普通 TCP 握手、双向序号/冲突重传/FIN 核对，严格不足返回原因，快照须明确选择。不含完整协议索引、随机包索引、应用流重组、TLS 解密、校验和确认、分卷、TFO/同时打开/RST 接受资格、保全、生产对象存储、HA 和海量吞吐资格。官方 S3 SDK 的受控协议测试不代替真实存储验收，不授予发布资格。"
+    },
+    {
+      "id": "incidents",
+      "name": "事件调查",
+      "code": [
+        "internal/incident/incident.go",
+        "internal/store/incidents.go",
+        "internal/platform/incidents.go",
+        "migrations/00026_incidents.sql",
+        "web/platform/src/features/incidents/IncidentsWorkspace.vue"
+      ],
+      "pages": [
+        "platform:/incidents"
+      ],
+      "tests": [
+        "internal/incident/incident_test.go",
+        "internal/platform/incidents_test.go",
+        "tests/integration/incidents_test.go",
+        "web/tests/incidents.test.ts"
+      ],
+      "boundary": "管理员租户内手工线索、唯一告警关联、责任分派、版本调查、结构化结案、重开、分页时间线、同事务审计和分类期限。既有功能测试不授予自动分派、设备动作、附件协作、SLA 或攻击成功判定能力；同源码远程及七档交互验收待完成。 源码 ed596083 的事件调查定向远程用例通过，覆盖真实 PG/ES 的创建、分派、结案、重开、隔离、幂等、清理与故障回滚；不代替同源码全量和浏览器验收。"
+    },
+    {
+      "id": "users",
+      "name": "租户用户管理",
+      "code": [
+        "internal/accounts/account.go",
+        "internal/store/users.go",
+        "internal/platform/users.go",
+        "migrations/00027_user_management.sql",
+        "web/platform/src/features/users/UsersWorkspace.vue",
+        "web/platform/src/features/users/UserForm.vue",
+        "internal/store/passwords.go",
+        "internal/platform/passwords.go",
+        "migrations/00028_password_management.sql",
+        "web/platform/src/features/users/PasswordDialog.vue",
+        "web/platform/src/features/users/PasswordForm.vue",
+        "web/platform/src/features/users/usePasswordChange.ts",
+        "internal/admin/recovery.go",
+        "migrations/00029_recovery_audit.sql"
+      ],
+      "pages": [
+        "platform:/users"
+      ],
+      "tests": [
+        "internal/accounts/account_test.go",
+        "internal/platform/users_test.go",
+        "tests/integration/users_test.go",
+        "web/tests/users.test.ts",
+        "tests/integration/users_disconnect_test.go",
+        "internal/accounts/password_test.go",
+        "internal/platform/passwords_test.go",
+        "tests/integration/passwords_test.go",
+        "web/tests/passwords.test.ts",
+        "internal/admin/recovery_test.go",
+        "tests/integration/recovery_test.go"
+      ],
+      "boundary": "管理员可维护本租户 admin/viewer 与启用状态；停用和角色变更原子撤销旧会话，重新启用不会复活会话。当前账号受保护，串行化并重验操作者防止并发降权丢失最后一名管理员。身份表保持仅登录所需的读取例外，运行角色通过固定安全函数写入，不直接获得写表权限。回执不存密码或可快速穷举的密码指纹；默认按操作数据 180 天保留，支持配置。单租户 500 用户、日 1000 次变更。账号删除、重命名、OIDC、MFA 和细粒度角色未实现；真实验收仍待完成。 当前用户可修改自身密码，管理员可重置其他成员密码；验证操作者原密码、固定账号修订、持久验证预算、原子撤销全部旧会话。登录验证修订与会话创建在固定受控函数核对，不接受旧验证结果。密码回执仅包含公开记录，首次写入前不接受原密码重复设置。 管理 CLI 支持指定有效管理员的公开核对与离线密码恢复，要求实际数据库所有者权限、冻结修订、原因和同一请求确认；凭据只由环境或私有文件输入，密码、全部旧会话、审计和无凭据回执在同一事务提交。停用租户／管理员与只读用户不属于恢复范围；不创建或提升账号。"
+    },
+    {
+      "id": "saved-searches",
+      "name": "保存查询与检索复用",
+      "code": [
+        "internal/savedsearch/query.go",
+        "internal/store/saved_searches.go",
+        "internal/platform/saved_searches.go",
+        "migrations/00032_saved_searches.sql",
+        "web/platform/src/features/search/SavedSearchTools.vue",
+        "web/platform/src/features/search/SaveQueryForm.vue",
+        "web/platform/src/features/search/useSavedSearches.ts"
+      ],
+      "pages": [
+        "platform:/alerts",
+        "platform:/traffic"
+      ],
+      "tests": [
+        "internal/savedsearch/query_test.go",
+        "internal/store/saved_searches_test.go",
+        "internal/platform/saved_searches_test.go",
+        "tests/integration/saved_searches_test.go",
+        "web/tests/saved-searches.test.ts"
+      ],
+      "boundary": "保存告警或协议记录查询，支持个人／团队目录、有界游标、相对或固定窗口、当前检索校验器、实例与修订绑定、原输入回执和原子审计。团队仅共享定义，不授予数据权限；停用配置与回执按操作策略留存，默认 180 天。启用配置不按业务历史自动到期。不含参数化模板、定时狩猎、服务身份、异步查询、PIT 或结果导出；同源码远程验收仍待完成。"
+    },
+    {
+      "id": "search_export",
+      "name": "检索元数据导出",
+      "code": [
+        "internal/store/search_snapshot.go",
+        "internal/searchsnapshot/csv.go",
+        "internal/platform/search_exports.go",
+        "internal/store/search_export_audits.go",
+        "web/packages/shared/src/api.ts",
+        "web/packages/shared/src/utils/instant.ts",
+        "web/platform/src/features/search/SearchExportButton.vue"
+      ],
+      "pages": [
+        "platform:/alerts",
+        "platform:/traffic"
+      ],
+      "tests": [
+        "internal/store/search_snapshot_test.go",
+        "internal/searchsnapshot/csv_test.go",
+        "internal/platform/search_exports_test.go",
+        "tests/integration/search_exports_test.go",
+        "web/tests/search-exports.test.ts"
+      ],
+      "boundary": "告警与协议记录沿用已提交条件，固定租户 PIT、最新 PIT 身份、精确 search_after 和完整分片；有界 10000 条／8 MiB 全量元数据 CSV，空结果提供表头、超限失败。CSV 防公式注入及长整数文本；逐批回读会话、同租户 Redis 额度、准备审计、浏览器长度与 SHA-256／纳秒时间范围核验。没有原文／载荷／PCAP、异步大导出、列表持久游标或资产级授权。准备审计不证明下载送达；跨节点集群容量与完整复合需求仍待验收。"
+    },
+    {
+      "id": "application_rules",
+      "name": "应用识别规则与输入验证",
+      "code": [
+        "internal/application/rules.go",
+        "internal/store/application_rules.go",
+        "internal/platform/application_rules.go",
+        "migrations/00033_application_rules.sql",
+        "web/platform/src/features/applications/ApplicationRulesWorkspace.vue",
+        "web/platform/src/features/applications/ApplicationRuleForm.vue",
+        "web/platform/src/features/applications/ApplicationRuleTest.vue",
+        "web/platform/src/features/applications/applicationRules.ts",
+        "web/platform/src/features/applications/useApplicationRules.ts"
+      ],
+      "pages": [
+        "platform:/rules?view=applications"
+      ],
+      "tests": [
+        "internal/application/rules_test.go",
+        "internal/platform/application_rules_test.go",
+        "tests/integration/application_rules_test.go",
+        "web/tests/application-rules.test.ts"
+      ],
+      "boundary": "租户规则目录、不可变修订、CAS、原提交回执与原子审计，默认 180 天历史清理及当前版本保护。受限 AND/OR/排除条件对用户提供的 HTTP Host、可见 SNI/ALPN、DNS 查询、HTTP 方法/路径/UA 进行输入验证；IDNA 和 label 边界、公共后缀/地址拒绝、产品冲突与输出限制。只形成规则候选，不写入真实流量归因或字节计量，不执行封禁；采集器规则包分发、活跃流计量、应用排行/趋势/大屏及产品样本矩阵仍未实现。远程与页面验收以对应源码的独立记录为准。"
+    },
+    {
+      "id": "decision_policies",
+      "name": "决策策略与持久影子评估",
+      "code": [
+        "internal/decision/policy.go",
+        "internal/store/decision_policies.go",
+        "internal/platform/decision_policies.go",
+        "migrations/00034_decision_policies.sql",
+        "web/platform/src/features/decisions/DecisionPoliciesWorkspace.vue",
+        "web/platform/src/features/decisions/DecisionPolicyForm.vue",
+        "web/platform/src/features/decisions/DecisionPolicyEvaluation.vue",
+        "internal/decision/evaluation.go",
+        "internal/store/decision_evaluations.go",
+        "internal/platform/decision_evaluations.go",
+        "migrations/00035_decision_evaluations.sql",
+        "web/platform/src/features/decisions/DecisionEvaluationsWorkspace.vue"
+      ],
+      "pages": [
+        "platform:/models?view=policies",
+        "platform:/models?view=evaluations"
+      ],
+      "tests": [
+        "internal/decision/policy_test.go",
+        "internal/platform/decision_policies_test.go",
+        "tests/integration/decision_policies_test.go",
+        "tests/integration/decision_http_test.go",
+        "tests/integration/alert_triage_test.go",
+        "web/tests/decision-policies.test.ts",
+        "internal/decision/evaluation_test.go",
+        "internal/platform/decision_evaluations_test.go",
+        "tests/integration/decision_evaluations_test.go",
+        "web/tests/decision-evaluations.test.ts"
+      ],
+      "boundary": "64 个租户策略、CAS 与不可变修订、幂等提交、180 天历史与当前引用保护；CEL 标量有界语法和按需影子评估，实时账号与本人研判绑定。冻结材料摘要、观测时限、保护网段与自报分数必须核对；结果始终无执行授权。评估结果、策略快照、原请求回执和操作审计同事务，本人目录与详情重新核对来源摘要；不可变档案独立留存，默认 operations 180 天，当前材料回收或策略修改不重算历史。独立人工处置确认由 decision_response 提供；仍无持续决策任务、多级审批、领域校准或真实流量效果资格。此来源远程验收以独立记录为准。"
+    },
+    {
+      "id": "response_http",
+      "name": "采集器 HTTP 联动与限时封禁",
+      "code": [
+        "internal/response/contract.go",
+        "internal/response/client.go",
+        "internal/agent/response.go",
+        "internal/store/response_tasks.go",
+        "internal/platform/response_tasks.go",
+        "migrations/00036_response_tasks.sql",
+        "web/platform/src/features/sensors/ResponseDialog.vue",
+        "web/packages/shared/src/components/ResponseConnectors.vue",
+        "web/platform/src/features/sensors/TaskWorkspace.vue"
+      ],
+      "pages": [
+        "platform:/sensors",
+        "platform:/sensors?view=tasks",
+        "collector:/network?view=responses"
+      ],
+      "tests": [
+        "internal/response/client_test.go",
+        "internal/agent/response_test.go",
+        "internal/control/response_test.go",
+        "internal/platform/response_tasks_test.go",
+        "tests/integration/response_tasks_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/response.test.ts"
+      ],
+      "boundary": "管理员显式提交，绑定采集器注册代次与签名信任；本地私有文件中的固定 HTTPS 管理 IP、CA 与 Bearer 引用，允许/保护网段及本机与平台管理通道保护。独立租约、绝对 TTL、条件解除、超时原键确认和单次写后 GET 核对；副作用前本地落盘，重启只回读，原执行回执不可改写。任务和本地租约历史默认 180 天，可配置；本地最多 1024 条历史，租户滚动 24 小时最多 1024 项。设备须提供原生到期和独立租约协议。受控 Docker HTTPS 端点只验证协议行为，不能证明商业设备或真实流量阻断；尚无自动决策执行、设备品牌适配、浏览器认证插件、MFA 或 HA。远程验收按当前源码的独立执行记录核对。"
+    },
+    {
+      "id": "decision_response",
+      "name": "研判处置确认",
+      "code": [
+        "internal/decision/response.go",
+        "internal/store/decision_responses.go",
+        "internal/platform/decision_responses.go",
+        "migrations/00037_decision_responses.sql",
+        "web/platform/src/features/decisions/DecisionResponseDialog.vue",
+        "web/platform/src/features/decisions/decisionResponses.ts"
+      ],
+      "pages": [
+        "platform:/models?view=evaluations"
+      ],
+      "tests": [
+        "internal/decision/response_test.go",
+        "internal/platform/decision_responses_test.go",
+        "tests/integration/decision_responses_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/decision-responses.test.ts"
+      ],
+      "boundary": "管理员独立确认本人匹配的 block_source 评估；目标只能从原档案派生，当前策略修订、实际告警白名单、本人研判和判断结果重新核对。探针注册、签名与连接器资格沿用限时响应约束；同一评估只授权一次，原键确认不重发、不重算或延长期限。独立授权、签名任务和两份审计同事务，授权档案默认 operations 180 天、可配置、不可更新及有界清理；原影子档案保持 execution_authorized=false。页面提供单弹窗、完整摘要校验、未知结果锁定、账号切换取消及已有授权只读查看。当前为明确人工确认，尚无持续自动执行、多级审批、领域校准或真实设备流量效果资格。远程与交互验收以当前来源独立记录为准。"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "SB-DAT-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "sensors",
+        "pipeline"
+      ],
+      "implemented": [
+        "探针身份由证书和注册代次绑定",
+        "启停与审计"
+      ],
+      "remaining": [
+        "通用数据源中心与移交",
+        "每源 EPS/字节配额",
+        "多类型来源接入"
+      ]
+    },
+    {
+      "id": "SB-DAT-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "入站 Syslog 监听/身份绑定/时区推定/持久缓冲",
+        "UDP 丢失与 NAT 来源边界"
+      ]
+    },
+    {
+      "id": "SB-DAT-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "replay"
+      ],
+      "implemented": [
+        "EVE 文件来源代次/偏移与原子检查点",
+        "PCAP 样本导入和摘要"
+      ],
+      "remaining": [
+        "通用 API 分页导入",
+        "多对象/多文件断点续传与导入批次管理"
+      ]
+    },
+    {
+      "id": "SB-DAT-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "终端/身份/云/应用来源适配",
+        "标准化日志工作台与逐来源样本验收"
+      ]
+    },
+    {
+      "id": "SB-DAT-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "NetFlow/IPFIX/sFlow 解码、模板生命周期与采样口径",
+        "流量概览和来源质量"
+      ]
+    },
+    {
+      "id": "SB-DAT-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline"
+      ],
+      "implemented": [
+        "固定 EVE 解析和严格 ES 映射",
+        "异常持久隔离"
+      ],
+      "remaining": [
+        "可管理的解析器版本",
+        "映射预览/灰度/回退",
+        "隔离样本管理与重解析修订"
+      ]
+    },
+    {
+      "id": "SB-DAT-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "operations"
+      ],
+      "implemented": [
+        "来源序号/摘要/偏移核验和幂等索引",
+        "时间异常与隔离记录"
+      ],
+      "remaining": [
+        "字段缺失率/迟到/乱序/漂移统计",
+        "源与镜像缺口视图",
+        "按观测域标注时钟可信等级"
+      ]
+    },
+    {
+      "id": "SB-DAT-008",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "replay",
+        "tasks"
+      ],
+      "implemented": [
+        "选探针和规则修订进行隔离离线 PCAP 重放",
+        "结果不进入生产告警/通知"
+      ],
+      "remaining": [
+        "日志解析回溯",
+        "按源时段影子重分析",
+        "业务结果授权变更"
+      ]
+    },
+    {
+      "id": "SB-AST-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "inventory"
+      ],
+      "implemented": [
+        "人工登记、启停、编辑和不可变历史"
+      ],
+      "remaining": [
+        "被动发现/外源导入幂等",
+        "认领/维护/退役/恢复完整状态机",
+        "保全依赖检查"
+      ]
+    },
+    {
+      "id": "SB-AST-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "inventory",
+        "pipeline"
+      ],
+      "implemented": [
+        "人工多网卡/IP/6 字节 MAC",
+        "资产修订历史和 EVE 实测地址"
+      ],
+      "remaining": [
+        "自动地址冲突时间线",
+        "观测域和有效时间关联",
+        "路由网关/随机 MAC 归属质量"
+      ]
+    },
+    {
+      "id": "SB-AST-003",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "DHCP/ARP/NDP/交换机租约与时段关联",
+        "地址复用/候选归属"
+      ]
+    },
+    {
+      "id": "SB-AST-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "NAT 端口映射/可信代理链",
+        "原端点回溯与共享 IP 响应约束"
+      ]
+    },
+    {
+      "id": "SB-AST-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "被监测账号/目录域/认证会话模型",
+        "共享终端和多用户歧义"
+      ]
+    },
+    {
+      "id": "SB-AST-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "inventory"
+      ],
+      "implemented": [
+        "静态资产组、责任人、重要性和网络域",
+        "CIDR 网段与历史修订"
+      ],
+      "remaining": [
+        "动态组/组织业务关联",
+        "历史与当前归属检索",
+        "大组计算水位与响应范围约束"
+      ]
+    },
+    {
+      "id": "SB-AST-007",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "服务/证书/DNS/API 暴露面投影",
+        "来源覆盖、发现与变更"
+      ]
+    },
+    {
+      "id": "SB-AST-008",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "关系模型/有界图查询/证据下钻",
+        "资产、账号与业务路径页面"
+      ]
+    },
+    {
+      "id": "SB-EXP-001",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "扫描结果/软件清单连接器",
+        "资产级风险和证据分级"
+      ]
+    },
+    {
+      "id": "SB-EXP-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "扫描授权/禁扫/预览/调度/取消/回收",
+        "真实扫描器验收"
+      ]
+    },
+    {
+      "id": "SB-EXP-003",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "CVE/CVSS/KEV/EPSS 来源与版本",
+        "可解释业务优先级和未知分量"
+      ]
+    },
+    {
+      "id": "SB-EXP-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "整改分派/豁免/期限/复测/关闭/重开",
+        "外部验证闭环"
+      ]
+    },
+    {
+      "id": "SB-EXP-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "配置/弱口令风险接入",
+        "标准与范围、认领和修复工作流"
+      ]
+    },
+    {
+      "id": "SB-EXP-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "外部暴露认领/变更与外连审批",
+        "共享公网资源的归属证据"
+      ]
+    },
+    {
+      "id": "SB-EXP-007",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "漏洞与攻击独立证据关联",
+        "风险态势及可下钻详情"
+      ]
+    },
+    {
+      "id": "SB-DET-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "search",
+        "bytes",
+        "assessment"
+      ],
+      "implemented": [
+        "原始告警入 ES",
+        "可视/高级筛选和详情",
+        "人工研判、认领、误报记录、关闭与重开及不可改写历史"
+      ],
+      "remaining": [
+        "按研判状态检索投影",
+        "聚合与批量分派",
+        "与案件和授权响应衔接",
+        "一致导出"
+      ]
+    },
+    {
+      "id": "SB-DET-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "rules",
+        "tasks",
+        "replay",
+        "rule_generation"
+      ],
+      "implemented": [
+        "规则包不可变修订",
+        "高亮、结构诊断、原生 -T 与指定规则重放",
+        "同设备完整包正反样本资格、签名发布、固定历史修订回滚与中断核实代码",
+        "AI 候选生成、材料来源引用、SID 防冲突和人工采纳；正式发布保留独立验证资格"
+      ],
+      "remaining": [
+        "来源管理/TUF/自动灰度与多探针编排",
+        "发布与回滚的同版本远程验收",
+        "例外/阈值/到期"
+      ]
+    },
+    {
+      "id": "SB-DET-003",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "关联规则/状态窗口/重投去重/迟到修订",
+        "状态空间与租户活跃键配额"
+      ]
+    },
+    {
+      "id": "SB-DET-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "Sigma 受限导入/字段映射/正负夹具",
+        "不支持语义阻止发布"
+      ]
+    },
+    {
+      "id": "SB-DET-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "saved-searches"
+      ],
+      "implemented": [
+        "保存并复用告警／协议记录查询条件；个人和团队共享隔离，固定／相对窗口、实例／修订和当前权限在应用时核对"
+      ],
+      "remaining": [
+        "狩猎假设、参数化模板和定时狩猎任务",
+        "服务身份与有界异步查询"
+      ]
+    },
+    {
+      "id": "SB-DET-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "基线训练/冷启动/缺口/漂移/停用",
+        "首次、周期与同组偏离"
+      ]
+    },
+    {
+      "id": "SB-DET-007",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "威胁场景包",
+        "扫描/爆破/C2/外传/横向正负样本和检测盲区"
+      ]
+    },
+    {
+      "id": "SB-DET-008",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "攻击链关联边/技术版本",
+        "可解释检测策略与固定覆盖分母"
+      ]
+    },
+    {
+      "id": "SB-DET-009",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "文件提取与专项模型",
+        "邮件/勒索/云/工业来源与隔离动态分析"
+      ]
+    },
+    {
+      "id": "SB-TI-001",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "情报源/STIX/TAXII/MISP/API 适配",
+        "试导入/同步/暂停/撤回"
+      ]
+    },
+    {
+      "id": "SB-TI-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "指标身份/多源断言/冲突/版本",
+        "知识对象与检测模式区分"
+      ]
+    },
+    {
+      "id": "SB-TI-003",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "情报到期/撤回/衰减/误报复核",
+        "历史命中绑定原版本"
+      ]
+    },
+    {
+      "id": "SB-TI-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "实时 IOC 命中/历史任务/资产案件关联",
+        "百万指标限额回溯"
+      ]
+    },
+    {
+      "id": "SB-TI-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "带期限和范围的白名单/提醒清单",
+        "范围预览与受控发布"
+      ]
+    },
+    {
+      "id": "SB-TI-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "逐对象分享/传播许可/TLP",
+        "含来源修订的授权导出"
+      ]
+    },
+    {
+      "id": "SB-SRH-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "search"
+      ],
+      "implemented": [
+        "32 个类型化值字段、24 个协议存在条件",
+        "and/or/not、比较、contains、in 和错误定位"
+      ],
+      "remaining": [
+        "覆盖其他主流 Wireshark 运算",
+        "自动完成与语法帮助完整联动",
+        "逐包原生模式与统一转换验收"
+      ]
+    },
+    {
+      "id": "SB-SRH-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "search"
+      ],
+      "implemented": [
+        "服务端字段目录与类型",
+        "仅编译受支持字段，协议存在性独立"
+      ],
+      "remaining": [
+        "字段实例和索引能力浏览",
+        "未采集/未索引/无权限状态",
+        "按版本与数据集冻结完整目录"
+      ]
+    },
+    {
+      "id": "SB-SRH-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "packet_archive"
+      ],
+      "implemented": [
+        "平台与采集器按切片实际捕获顺序查看一个原始帧及纳秒捕获时间",
+        "gopacket 解码 Ethernet/VLAN/IPv4/IPv6/TCP/UDP/ARP/ICMP 与 IPv6 分片，最多 16 层",
+        "协议层实际字节范围、HEX／UTF-8、原字节摘要及截断／卸载状态",
+        "完整归档核验、当前管理员权限、发送前会话复核与独立访问审计"
+      ],
+      "remaining": [
+        "主流应用层与完整封装协议的逐项资格",
+        "非 Ethernet linktype 与完整内外层观测语义",
+        "随机包索引、批量筛选、应用流重组及海量数据真实验收"
+      ]
+    },
+    {
+      "id": "SB-SRH-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "search"
+      ],
+      "implemented": [
+        "保留 EVE 源时间、采集器观察时间、接入时间与 ES 时间",
+        "支持原生 +HHMM 时区",
+        "会话摘要展示实际 flow.start/flow.end，缺测不补零"
+      ],
+      "remaining": [
+        "逐包捕获/方向首末包时间",
+        "入站/出站观测契约",
+        "跨点误差与流匹配质量"
+      ]
+    },
+    {
+      "id": "SB-SRH-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "search",
+        "pipeline"
+      ],
+      "implemented": [
+        "独立协议事件与会话摘要检索",
+        "实际会话开始／结束、双向精确计数及 MAC 集合展示",
+        "按探针、注册／来源代次、流标识和协议条件筛选"
+      ],
+      "remaining": [
+        "完整双向会话关联、HTTP/2 多路复用与事务重组",
+        "重传／乱序／缺口、单会话预算及跨点匹配质量",
+        "PCAP 原包证据关联与完整会话导出"
+      ]
+    },
+    {
+      "id": "SB-SRH-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "bytes"
+      ],
+      "implemented": [
+        "合法 base64 载荷 HEX/严格 UTF-8/偏移分页/复制",
+        "缺字节与无效编码状态",
+        "有界 HEX/UTF-8 字节查找、重叠命中、跨页高亮与定位"
+      ],
+      "remaining": [
+        "协议层映射",
+        "有界解压/脱敏派生文件和变换记录"
+      ]
+    },
+    {
+      "id": "SB-SRH-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "packet_archive"
+      ],
+      "implemented": [
+        "按租户与探针游标列出原包分段及冻结目录",
+        "管理员下载前核验对象版本、原字节摘要、捕获目录与当前权限",
+        "完整发送前记录原包访问审计；浏览器接收后核验长度和 SHA-256",
+        "采集器本机待确认制品详情与有界下载",
+        "有界多切片普通 TCP 会话导出：原始三次握手、双向序号连续性及 FIN 核验，缺口明确拒绝",
+        "两端单个原包实际序号定位及协议／字节查看"
+      ],
+      "remaining": [
+        "异步取证任务、ZIP 制品、任务取消、下载授权与保全流程",
+        "TFO／同时打开／RST 等 TCP 边界的完整资格",
+        "跨探针与海量数据真实验收"
+      ]
+    },
+    {
+      "id": "SB-SRH-008",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "search_export"
+      ],
+      "implemented": [
+        "告警与协议记录同条件 PIT/search_after 固定快照元数据 CSV",
+        "CSV 防公式注入、长整数文本、完整性／超限拒绝和当前会话复核",
+        "导出准备审计、分布式租户额度及浏览器摘要／范围核验"
+      ],
+      "remaining": [
+        "列表与导出统一持久查询快照及深分页游标",
+        "原生包／完整会话统一查询和异步大数据导出",
+        "资产范围细粒度授权及完整同源码端到端验收"
+      ]
+    },
+    {
+      "id": "SB-INC-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "incidents"
+      ],
+      "implemented": [
+        "事件对象、分类严重度、人工线索、实际告警标识与摘要关联、责任分派",
+        "同告警唯一事件、幂等回执、乐观修订和同事务审计"
+      ],
+      "remaining": [
+        "完整同源码端到端及七档 PC 交互验收",
+        "自动升级与分派、资产范围和更多调查角色"
+      ]
+    },
+    {
+      "id": "SB-INC-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "案件任务/笔记/附件/可观测对象",
+        "私密共享和附件访问"
+      ]
+    },
+    {
+      "id": "SB-INC-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "incidents"
+      ],
+      "implemented": [
+        "不可变人工调查修订、真实来源标识与摘要、责任人与记录时间、分页时间线"
+      ],
+      "remaining": [
+        "自动活动、案件任务及更多证据类型的统一时间线",
+        "端到端和保留期限回收验收"
+      ]
+    },
+    {
+      "id": "SB-INC-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "incidents"
+      ],
+      "implemented": [
+        "关闭案件重开为调查中、历史结案材料保留"
+      ],
+      "remaining": [
+        "案件合并、拆分、互相关联、私密共享和大案件证据分页"
+      ]
+    },
+    {
+      "id": "SB-INC-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "值班/SLA/接单升级/暂停超时",
+        "工作日历与真实响应起点"
+      ]
+    },
+    {
+      "id": "SB-INC-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "外部工单双向适配",
+        "映射、回环抑制、写超时核对和附件权限"
+      ]
+    },
+    {
+      "id": "SB-INC-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "incidents"
+      ],
+      "implemented": [
+        "结案根因、影响、修复、复测材料和证据引用",
+        "关闭记录到期不可重开，活动事件及历史受保护"
+      ],
+      "remaining": [
+        "遗留任务、复盘与脱敏知识审核",
+        "真实端到端材料访问、期限回收和 PC 交互验收"
+      ]
+    },
+    {
+      "id": "SB-RSP-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "decision_policies",
+        "decision_response"
+      ],
+      "implemented": [
+        "租户策略目录与不可变修订、CAS、原提交确认及保护网段",
+        "CEL 表达式类型检查与本人冻结研判的按需影子评估；不授权执行",
+        "持久评估结果、策略快照、本人历史目录与原提交确认",
+        "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键"
+      ],
+      "remaining": [
+        "持续决策任务与历史业务关联",
+        "持续自动执行、多级审批与真实流量效果资格",
+        "领域评测、置信度校准和漂移停用",
+        "真实端到端、故障与 PC 交互验收"
+      ]
+    },
+    {
+      "id": "SB-RSP-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "设备能力中心/采集器绑定/网络域",
+        "范围校验与执行器排他接管"
+      ]
+    },
+    {
+      "id": "SB-RSP-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "response_http"
+      ],
+      "implemented": [
+        "采集器侧固定 HTTPS 通用连接器、私有 CA/Bearer 文件引用、身份与原生 TTL 核验、单次写后独立回读及结果未知保护"
+      ],
+      "remaining": [
+        "真实设备 API 适配与验收",
+        "浏览器认证插件、Cookie 缓存/续期/MFA/熔断",
+        "设备 HA 与真实链路故障验收"
+      ]
+    },
+    {
+      "id": "SB-RSP-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "response_http",
+        "decision_response"
+      ],
+      "implemented": [
+        "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
+        "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键"
+      ],
+      "remaining": [
+        "真实设备到期撤销与真实流量效果验收",
+        "EDR 隔离/恢复及跨设备冲突处理",
+        "自动决策到设备动作的授权、校准、审批与整体验收"
+      ]
+    },
+    {
+      "id": "SB-RSP-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "剧本 DAG/凭据引用/版本/验证/发布",
+        "副作用统一授权"
+      ]
+    },
+    {
+      "id": "SB-RSP-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "剧本执行状态/审批/等待/取消/恢复/补偿",
+        "并发与故障幂等"
+      ]
+    },
+    {
+      "id": "SB-RSP-007",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "应急停止调度/全部撤销水位",
+        "设备层 fencing 与安全故障接管"
+      ]
+    },
+    {
+      "id": "SB-AI-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "models",
+        "analysis"
+      ],
+      "implemented": [
+        "提供方配置/不可变修订/加密凭据",
+        "固定连接验证/幂等/UTC 日请求预算/并发限制",
+        "连接验证与统计业务作业共享提交额度和跨实例并发门控"
+      ],
+      "remaining": [
+        "真实模型服务验收",
+        "能力目录与领域评测",
+        "模型路由/价格计量/研判预算和决策适配器"
+      ]
+    },
+    {
+      "id": "SB-AI-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "triage"
+      ],
+      "implemented": [
+        "单一告警身份核验和白名单材料",
+        "模型严格结构化建议、实际字段引用、反证与缺失信息",
+        "自报分数标识、人工复核边界、持久作业和取消",
+        "告警详情模型研判、事实引用、冻结材料、所有者历史、未知提交确认和活动作业有限轮询"
+      ],
+      "remaining": [
+        "同源码远程及原生页面验收",
+        "自动触发策略与补证任务",
+        "真实模型领域评测、校准和漂移停用"
+      ]
+    },
+    {
+      "id": "SB-AI-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "analysis"
+      ],
+      "implemented": [
+        "管理员私有对话、完整统计窗口、冻结来源与最近成功问答上下文",
+        "持久作业、幂等确认、取消和来源引用校验"
+      ],
+      "remaining": [
+        "受权限约束的自然语言查询、逐事件证据解释、SSE",
+        "完整授权版本撤回、真实模型质量、工具审批与评测"
+      ]
+    },
+    {
+      "id": "SB-AI-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "rule_generation",
+        "rules",
+        "replay"
+      ],
+      "implemented": [
+        "自然语言、PCAP 和 HTTP Raw 的有界材料、严格 JSON 候选、来源引用与单次调用预算",
+        "租户 SID 注册、事务队列与审计、排队取消及运行未知结果恢复",
+        "模型候选人工采纳为不可变规则包，保留独立原生检查与正反回放发布资格",
+        "前端历史、候选高亮、未知提交确认与合成样本来源提示"
+      ],
+      "remaining": [
+        "同源码远程原生和页面全链路验收",
+        "外部真实模型质量评测及不同提供方的严格输出兼容验收"
+      ]
+    },
+    {
+      "id": "SB-AI-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "analysis"
+      ],
+      "implemented": [
+        "实际告警统计驱动的周期报告、模型失败保留统计",
+        "严格叙述/引用校验、窗口与快照摘要、HTML 自动转义导出"
+      ],
+      "remaining": [
+        "知识接入/版本/授权/索引撤回与引用",
+        "真实模型质量、统计水位、历史业务状态与完整报告验收"
+      ]
+    },
+    {
+      "id": "SB-AI-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "tasks",
+        "search",
+        "mcp"
+      ],
+      "implemented": [
+        "平台会话授权 HTTP API",
+        "有界查询与受控异步探针任务",
+        "官方 MCP 协议、TLS/OAuth 资源发现、服务身份三元绑定、修订与撤销",
+        "九个只读工具：告警/协议检索、字段目录、表达式校验、统计、资产和探针；独立协议权限、共享业务授权、预算、输出上限与查询审计"
+      ],
+      "remaining": [
+        "资源读取/下载授权",
+        "收费分析/规则/报告工具及费用越权验收",
+        "真实企业授权方与实际客户 Agent 兼容矩阵"
+      ]
+    },
+    {
+      "id": "SB-VIS-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "overview"
+      ],
+      "implemented": [
+        "已索引告警趋势/级别/协议/规则/探针分布",
+        "登记资产与在线/离线/停用探针统计；告警下钻继承固定窗口",
+        "整数精度、Top 尾部/误差上界、完整响应校验"
+      ],
+      "remaining": [
+        "风险/威胁/处置/监测覆盖闭环与统计水位",
+        "所有指标按范围下钻、集团授权聚合与完整质量验收"
+      ]
+    },
+    {
+      "id": "SB-VIS-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "站点/网络拓扑/地理来源",
+        "未知位置与证据关系"
+      ]
+    },
+    {
+      "id": "SB-VIS-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "application_rules"
+      ],
+      "implemented": [
+        "应用识别规则目录、不可变修订、权限/CAS/原请求确认、原子审计和默认 180 天历史清理",
+        "可见名称与 HTTP 字段组合的材料验证、严格域名边界、缺测/冲突、快照摘要和独立单表弹窗页面"
+      ],
+      "remaining": [
+        "采集器签名规则包分发、真实流量归因、周期活跃流计量、跨探针计量域与去重",
+        "应用流量趋势/Top/未知/大屏、真实产品正负样本矩阵与性能验收"
+      ]
+    },
+    {
+      "id": "SB-VIS-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "时段/外联/异常行为视图",
+        "加密流量能力边界与设备限速适配"
+      ]
+    },
+    {
+      "id": "SB-VIS-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "处置漏斗/SLA/统一响应速度",
+        "分位数、样本量、失败与未知"
+      ]
+    },
+    {
+      "id": "SB-VIS-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "analysis"
+      ],
+      "implemented": [
+        "自然日/完整周/月手动报告、IANA 时区与夏令时",
+        "不可变统计快照、独立运行修订、模型降级和 HTML 导出",
+        "持久日/周/月计划、固定模型修订与持续授权、停机错过范围、运行记录和停止；真实依赖验收待完成"
+      ],
+      "remaining": [
+        "审批/发布/PDF/通知分发与专题报告",
+        "迟到补偿、统计水位、历史业务状态、计划实际恢复及完整质量验收"
+      ]
+    },
+    {
+      "id": "SB-VIS-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "overview"
+      ],
+      "implemented": [
+        "实际数据全屏展示",
+        "隐藏页面停止自动刷新；共享窗口、15 秒缓存、跨实例锁及每分钟预算"
+      ],
+      "remaining": [
+        "屏幕模板/只读投屏 token/权限撤销",
+        "离线报告与真实多屏/七档 PC 验收"
+      ]
+    },
+    {
+      "id": "SB-OPS-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "sensors",
+        "identity"
+      ],
+      "implemented": [
+        "受控 CLI 注册代次与证书",
+        "探针启停和存量连接拒绝",
+        "租户探针分组、名称/站点/说明维护、注册代次与 CAS、原请求回执和审计",
+        "探针和分组有界分页、筛选、空分组停用与恢复；只读目录"
+      ],
+      "remaining": [
+        "注册/租户迁移/退役完整页面",
+        "证书续签/撤销",
+        "有效动作撤销依赖"
+      ]
+    },
+    {
+      "id": "SB-OPS-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "sensors",
+        "operations"
+      ],
+      "implemented": [
+        "CPU/内存/磁盘/接口计数/版本/队列",
+        "缺测非零与最后观察时间",
+        "采集器本机 Suricata 实际进程、配置摘要、捕获统计、观察时间和暂存占用",
+        "平台设备心跳及探针详情展示捕获状态、有效规则摘要和配置修订；离线明确为历史观测"
+      ],
+      "remaining": [
+        "镜像缺失/丢包/旁路健康与站点告警衔接",
+        "统计复位、水位和多网卡质量矩阵验收"
+      ]
+    },
+    {
+      "id": "SB-OPS-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "tasks",
+        "rules",
+        "replay",
+        "sensors"
+      ],
+      "implemented": [
+        "签名任务/诊断/规则装载检查",
+        "不可变规则修订/独立回执",
+        "采集器规则事务恢复核对摘要、当前文件与实际引擎；隔离验证历史内容，并保留失败恢复依据",
+        "本机托管捕获配置实际应用，保留失败前进程并回读运行/停止",
+        "完整验证资格绑定的手动单探针规则发布与独立中断核实；历史修订部署",
+        "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执"
+      ],
+      "remaining": [
+        "多探针配置编排与规则订阅自动同步",
+        "系统/插件升级与灰度/自动回滚编排",
+        "全场景同版本远程及页面验收"
+      ]
+    },
+    {
+      "id": "SB-OPS-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "operations",
+        "pipeline",
+        "models",
+        "notifications"
+      ],
+      "implemented": [
+        "运行状态页面/真实依赖检查/进程指标",
+        "模型验证有界，通知独立消费"
+      ],
+      "remaining": [
+        "模型/连接器业务健康",
+        "统一追踪",
+        "高负载控制和撤销保底容量验收"
+      ]
+    },
+    {
+      "id": "SB-OPS-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "notifications"
+      ],
+      "implemented": [
+        "五类办公推送/逐接收人 outbox/静默抑制/推送日志",
+        "受理/失败/未知分态和人工重试"
+      ],
+      "remaining": [
+        "真实邮件与办公租户验收",
+        "告警升级与复发策略",
+        "通知高负载/容量与全链路恢复演练"
+      ]
+    },
+    {
+      "id": "SB-OPS-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "notifications"
+      ],
+      "implemented": [
+        "摘要 Syslog RFC 5424/RFC 5425 TLS 与开发 TCP RFC 6587 发送",
+        "完整写入帧和未知结果边界",
+        "明确类别订阅的租户操作/登录审计事务 outbox；冻结渠道修订、来源标识、脱敏白名单、推送类别和记录数量"
+      ],
+      "remaining": [
+        "全部原始日志流式归档",
+        "水位/补发/缺口核对",
+        "外部存储落盘契约与大流量验收"
+      ]
+    },
+    {
+      "id": "SB-OPS-007",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "PG/ES/对象/密钥备份与恢复",
+        "生产 HA、灾备演练与动作恢复"
+      ]
+    },
+    {
+      "id": "SB-OPS-008",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "连接器/许可证清单和版本资格",
+        "凭据失效影响与诊断"
+      ]
+    },
+    {
+      "id": "SB-GOV-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "users"
+      ],
+      "implemented": [
+        "本地 bcrypt、独立平台/采集器会话、HttpOnly/CSRF/同源/限流",
+        "租户用户目录／创建／admin-viewer 角色与停用／CAS／幂等确认／旧会话原子撤销／当前及最后管理员保护",
+        "当前用户密码修改／管理员成员重置／操作者密码验证／CAS／持久验证预算／原子会话撤销与审计／登录验证修订绑定",
+        "离线有效管理员核对／管理角色密码恢复／CAS／同一请求确认／审计原因／原子会话撤销",
+        "可信单层代理客户端地址解析／审计与登录限流一致／伪造转发头拒绝"
+      ],
+      "remaining": [
+        "OIDC/统一身份/MFA",
+        "外部组授权同步"
+      ]
+    },
+    {
+      "id": "SB-GOV-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "inventory",
+        "search",
+        "users"
+      ],
+      "implemented": [
+        "admin/viewer",
+        "PG FORCE RLS/ES 强制租户范围",
+        "资产与模型/通知跨租户测试",
+        "用户管理 API 与页面仅允许当前有效租户管理员，身份写入采用固定受控函数"
+      ],
+      "remaining": [
+        "自定义角色/资产范围/字段/动作权限",
+        "聚合/图/报表/导出/MCP 全路径越权验收"
+      ]
+    },
+    {
+      "id": "SB-GOV-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "pipeline"
+      ],
+      "implemented": [
+        "证书/注册/事务隔离的租户基础"
+      ],
+      "remaining": [
+        "租户/组织生命周期与母子委托",
+        "委托撤回",
+        "数据单元调度与迁移水位"
+      ]
+    },
+    {
+      "id": "SB-GOV-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "sensors",
+        "models",
+        "notifications",
+        "mcp"
+      ],
+      "implemented": [
+        "探针 mTLS 与独立命令签名",
+        "连接器/模型凭据加密只写",
+        "MCP OAuth 服务绑定、请求时身份校验、九个只读工具及独立协议范围和禁用即时撤销"
+      ],
+      "remaining": [
+        "API key 与设备连接器服务身份",
+        "统一轮换／撤销审计与能力授权",
+        "MCP 企业授权方与真实客户端矩阵验收"
+      ]
+    },
+    {
+      "id": "SB-GOV-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "identity",
+        "bytes",
+        "models",
+        "notifications"
+      ],
+      "implemented": [
+        "原始 EVE 管理员限定",
+        "通知仅用摘要",
+        "连接验证不带业务事实",
+        "加密凭据和受控出站"
+      ],
+      "remaining": [
+        "字段与载荷分级",
+        "原始/脱敏派生",
+        "模型证据白名单",
+        "高级匹配计数与导出泄漏防护"
+      ]
+    },
+    {
+      "id": "SB-GOV-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "retention"
+      ],
+      "implemented": [
+        "十一类策略默认 180 天；事件调查当前状态及未关闭历史受保护",
+        "管理员分类策略页／影响预览／CAS／幂等发布与审计",
+        "按租户新建日期分区固定 ES ILM／既有分区不变",
+        "已接入类别新记录的到期字段／重放样本回收",
+        "已固化期限的 PG 历史回收、持久分类进度、RLS 删除期限与当前／活动／引用保护"
+      ],
+      "remaining": [
+        "未接入的 PG 规则历史、物理分区及高容量回收验收",
+        "存量重算／全域保全／销毁／备份不复活",
+        "连续 PCAP 与文件流水线的生命周期验收"
+      ]
+    },
+    {
+      "id": "SB-GOV-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "operations",
+        "identity",
+        "users"
+      ],
+      "implemented": [
+        "关键业务写与审计同事务",
+        "登录验证记录和稳定游标页面",
+        "凭据不回显",
+        "用户角色与停用变更、会话撤销、操作审计和幂等回执原子提交"
+      ],
+      "remaining": [
+        "查询/导出/研判/动作全过程审计",
+        "专门审计权限",
+        "不可篡改归档/保全/清理"
+      ]
+    },
+    {
+      "id": "SB-GOV-008",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "search",
+        "models",
+        "notifications"
+      ],
+      "implemented": [
+        "WAL/批次/查询/样本预算",
+        "模型验证与分析共享 UTC 日额度和跨实例并发",
+        "通知渠道数与公平领取"
+      ],
+      "remaining": [
+        "全面用量对账",
+        "租户存储/采集/查询/动作配额",
+        "已有动作撤销保底"
+      ]
+    },
+    {
+      "id": "SB-GOV-009",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "delivery",
+        "rules",
+        "tasks"
+      ],
+      "implemented": [
+        "精确 Go/pnpm 锁文件",
+        "规则修订/摘要和任务签名",
+        "ZIP/UPX 门禁脚本",
+        "工程候选实际 Linux UPX ZIP 运行链路",
+        "逐程序 Go SBOM、许可原文及所需编译源码入包"
+      ],
+      "remaining": [
+        "TUF 内容更新/权重来源",
+        "完整验收工作流与发布",
+        "干净候选提交及全部发布门禁的同源制品核验"
+      ]
+    },
+    {
+      "id": "SB-GOV-010",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "控制项/证据/任务/例外/周期检查",
+        "标准适用范围与缺证据状态"
+      ]
+    },
+    {
+      "id": "SB-NET-001",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "packet_archive"
+      ],
+      "implemented": [
+        "独立 AF_PACKET 原字节捕获、私有有界暂存与轮转",
+        "Zstandard 独立帧目录和原始／存储摘要",
+        "mTLS 上报、对象版本冻结与持久确认后回收",
+        "容量预占与默认 180 天／自定义留存、失败恢复",
+        "原包捕获状态与分段目录",
+        "有界多切片普通 TCP 会话原字节导出与逐包协议查看"
+      ],
+      "remaining": [
+        "真实生产 S3 版本存储与全链路验收",
+        "保全、冷热分层与生命周期协同",
+        "随机包索引、完整协议／TCP 特殊边界资格",
+        "海量数据容量、丢包及压缩性能验收"
+      ]
+    },
+    {
+      "id": "SB-NET-002",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "sensors"
+      ],
+      "implemented": [
+        "实际 Ethernet 网卡/MAC/IP/MTU 和捕获选择；线程/BPF/混杂设置",
+        "Linux 托管 Suricata AF_PACKET 实际进程、私有配置、启动轮询确认；配置失败保留与停止回读",
+        "实际计数及观察时间；EVE 轮转与持久排空保护"
+      ],
+      "remaining": [
+        "多网卡双向镜像/fanout/观测域矩阵验收",
+        "上游镜像缺失、丢包与多带宽质量证明",
+        "连续 PCAP 归档和完整会话导出"
+      ]
+    },
+    {
+      "id": "SB-NET-003",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "replay",
+        "packet_archive"
+      ],
+      "implemented": [
+        "导入样本的 TCP 三次握手按观测域、方向、SEQ／ACK 校验",
+        "32,768 个流的分析上限与缺测状态；不宣称完整字节连续性",
+        "多切片普通 TCP 双向字节与 FIN 闭合核验；回绕、重传与复用限制"
+      ],
+      "remaining": [
+        "TFO／同时打开／RST接受与分片、隧道、异常终止资格",
+        "真实复杂网络黄金流量及高吞吐完整性验收"
+      ]
+    },
+    {
+      "id": "SB-NET-004",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "packet_archive"
+      ],
+      "implemented": [
+        "平台多切片普通 TCP 严格完整会话与显式快照导出",
+        "真实握手、双向字节连续性／冲突重传／FIN 校验；原始帧、纳秒时间、接口、对象摘要和逐包映射",
+        "管理员租户隔离、指定对象版本、读取共享锁、预算、取消和访问审计"
+      ],
+      "remaining": [
+        "精确包索引、告警关联定位、命中片段与大流量分卷",
+        "TFO、同时打开、IP 分片／隧道、多 linktype、RST 接受与闭合资格",
+        "存储侧保护、保全与生产容量；同源码远程和七档交互验收"
+      ]
+    },
+    {
+      "id": "SB-NET-005",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "rules",
+        "replay"
+      ],
+      "implemented": [
+        "原生 Suricata 装载检查和有界离线重放"
+      ],
+      "remaining": [
+        "大帧/分片/跨包/重组/长流/压缩正文限额矩阵",
+        "边界与内存压力检测质量验收"
+      ]
+    },
+    {
+      "id": "SB-NET-006",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "operations"
+      ],
+      "implemented": [
+        "原始 EVE 持久接入/索引",
+        "异常隔离/积压计数/缺测分态"
+      ],
+      "remaining": [
+        "引擎抑制/旁路/事件溢出/统计复位",
+        "窗口缺口与观测覆盖归因"
+      ]
+    },
+    {
+      "id": "SB-NET-007",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline"
+      ],
+      "implemented": [
+        "只保留 EVE 实际原文与字段",
+        "不生成明文、出站或攻击成功结论"
+      ],
+      "remaining": [
+        "TLS/QUIC 可见元数据目录",
+        "授权密钥和离线解密",
+        "ECH/HTTP3 正反样本与版本验收"
+      ]
+    },
+    {
+      "id": "SB-NET-008",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "站点/版本六层协议能力目录",
+        "正反例与非标准端口验收"
+      ]
+    },
+    {
+      "id": "SB-NET-009",
+      "state": "partial",
+      "acceptance": "pending",
+      "capabilities": [
+        "pipeline",
+        "notifications",
+        "operations"
+      ],
+      "implemented": [
+        "观察到 ES 提交年龄直方图",
+        "离线真实链路至 HTTPS 渠道受理测试"
+      ],
+      "remaining": [
+        "首包/证据齐备/refresh 可检索/渠道实测统一追踪",
+        "P50/P95/P99 与失败年龄",
+        "实时与重放分开统计"
+      ]
+    },
+    {
+      "id": "SB-NET-010",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "1–200+ 探针全链路压力/小包/jumbo/大流/告警风暴/断网恢复",
+        "吞吐、尾延迟与压缩成本实测"
+      ]
+    },
+    {
+      "id": "SB-FIL-001",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "真实协议文件提取/来源/范围/完整性",
+        "缺包/偏移/分段不拼造完整文件"
+      ]
+    },
+    {
+      "id": "SB-FIL-002",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "YARA-X/ClamAV 静态分析和库状态",
+        "安全样本正负/超限/损坏/崩溃测试"
+      ]
+    },
+    {
+      "id": "SB-FIL-003",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "动态沙箱配置/提交/对账/查询/取消",
+        "实际 guest 停止和未知结果"
+      ]
+    },
+    {
+      "id": "SB-FIL-004",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "样本隔离/外送/下载/恶意报告",
+        "跨租户存在性与管理网访问"
+      ]
+    },
+    {
+      "id": "SB-FIL-005",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "文件分析公平排队/配额/解包预算/降级",
+        "任务总资源与吞吐实测"
+      ]
+    },
+    {
+      "id": "SB-FIL-006",
+      "state": "missing",
+      "acceptance": "pending",
+      "capabilities": [],
+      "implemented": [],
+      "remaining": [
+        "结果修订/关联/复核",
+        "迟到重投幂等及受控采集器响应"
+      ]
+    }
+  ],
+  "release_blockers": [
+    "107 项复合需求均未完整验收，具体缺口见逐项 remaining。",
+    "Go 全量语句覆盖率与前端语句、分支、函数、行覆盖率必须按实际源码快照达到 90%；执行指标见工程实现与开发。覆盖率达标仅证明已有代码，不授予完整产品发布资格。",
+    "持续 PCAP 捕获、独立帧压缩及有界普通 TCP 完整会话导出已有实际工程流程和远程功能测试；历史同源码全量覆盖率达到 90%；仍需对后续源码重新验收。精确包索引、规则来源、自动灰度和在线检测质量矩阵未完成。",
+    "置信度校准、具体防火墙／EDR 的实际封禁效果及插件式认证未验收；通用 HTTP 限时租约链路单独核验。",
+    "统计对话、周期报告、告警模型研判、AI 规则生成及 MCP 有界只读工具已有工程实现；同源码端到端、真实模型领域效果、自动化策略、自然语言检索、知识库、MCP 扩展、应用识别、事件调查完整协作/情报/风险及文件沙箱仍有缺口。",
+    "生产 TLS/R3 队列/HA/备份恢复、真实办公渠道/模型/对象存储/设备/沙箱验收、1–200+ 探针容量和七档 PC 全路由交互验收未完成。",
+    "完整验收工作流 .github/workflows/acceptance.yml 未交付；两个实际 Linux UPX ZIP 已通过远程构建与实时网卡核心链路验证，完整生产验收仍待完成；当前没有可发布的新版本或正式升级部署。"
+  ]
+}

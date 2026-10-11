@@ -10090,126 +10090,126 @@
       "url": "http://127.0.0.1:4173/page/mcp?state=data&capture=1",
       "title": "MCP 服务",
       "state": "data",
-      "capturedAt": "2026-10-01T17:52:11.978Z",
+      "capturedAt": "2026-10-02T20:28:16.669Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1265,
+        "width": 1280
       },
-      "bytes": 134241,
+      "bytes": 152674,
       "image": {
         "width": 1280,
-        "height": 1080
+        "height": 1102
       },
-      "sha256": "044ac9dd7bc99bdd84c579e1f77e29b9da040ed454ac277f9b5e85738eb96384"
+      "sha256": "885c1912127807e788fd59f318ec45f5c8b62a971d5c57f74d60f1820042cab6"
     },
     {
       "file": "mcp/empty.jpg",
       "url": "http://127.0.0.1:4173/page/mcp?state=empty&capture=1",
       "title": "MCP 服务",
       "state": "empty",
-      "capturedAt": "2026-10-01T17:52:12.483Z",
+      "capturedAt": "2026-10-02T20:28:18.139Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1265,
+        "width": 1280
       },
-      "bytes": 81180,
+      "bytes": 86978,
       "image": {
         "width": 1280,
-        "height": 800
+        "height": 804
       },
-      "sha256": "6dd13b75d7f9ff0990789aef72ac233f9b317955cd42896188e99d8871e92718"
+      "sha256": "b2aa7d6f334abb579cebe9cf6a8932c43ab8d90545dee17c57313d50721f67f9"
     },
     {
       "file": "mcp/detail.jpg",
       "url": "http://127.0.0.1:4173/page/mcp?state=detail&capture=1",
       "title": "MCP 服务",
       "state": "detail",
-      "capturedAt": "2026-10-01T17:52:13.672Z",
+      "capturedAt": "2026-10-02T20:27:22.135Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
-      "bytes": 105072,
+      "bytes": 120211,
       "image": {
         "width": 1280,
-        "height": 1080
+        "height": 1117
       },
-      "sha256": "3b1e9411052da2589c48456486c65f36b926e877a797b216b7eceecf8ed6d4cd"
+      "sha256": "6ca466afe7a616378942c5d0c9a376892626b80ca480a76882c203bd3b795460"
     },
     {
       "file": "mcp/action.jpg",
       "url": "http://127.0.0.1:4173/page/mcp?state=action&capture=1",
       "title": "MCP 服务",
       "state": "action",
-      "capturedAt": "2026-10-01T17:52:13.719Z",
+      "capturedAt": "2026-10-02T20:27:26.820Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
-      "bytes": 109829,
+      "bytes": 129428,
       "image": {
         "width": 1280,
-        "height": 1080
+        "height": 1117
       },
-      "sha256": "247e72c8110aba05f88f3422d44b7aee9c91f68fa9734e4e4fb5f5f57932d6a8"
+      "sha256": "fbab1b04f496c1fd549ae9ae5f65bd57ad084cbc7f74fbb176b0f6fea1de7080"
     },
     {
       "file": "mcp/loading.jpg",
       "url": "http://127.0.0.1:4173/page/mcp?state=loading&capture=1",
       "title": "MCP 服务",
       "state": "loading",
-      "capturedAt": "2026-10-01T17:52:15.295Z",
+      "capturedAt": "2026-10-02T20:28:19.512Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1265,
+        "width": 1280
       },
-      "bytes": 80412,
+      "bytes": 87395,
       "image": {
         "width": 1280,
-        "height": 919
+        "height": 941
       },
-      "sha256": "10de6f40e64a30b2a806c44cf83523a391468b5220583af010401e67bf01d473"
+      "sha256": "d0af55e6c213af0fc79051a0f711e314acf3bd43a66a7fe7d1c251080acd1e70"
     },
     {
       "file": "mcp/error.jpg",
       "url": "http://127.0.0.1:4173/page/mcp?state=error&capture=1",
       "title": "MCP 服务",
       "state": "error",
-      "capturedAt": "2026-10-01T17:52:15.295Z",
+      "capturedAt": "2026-10-02T20:28:21.036Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
         "height": 800,
-        "scrollWidth": 1280
+        "scrollWidth": 1265,
+        "width": 1280
       },
-      "bytes": 79619,
+      "bytes": 86693,
       "image": {
         "width": 1280,
-        "height": 814
+        "height": 836
       },
-      "sha256": "2df27313f8fa23ac5c2e0bf52917281f63fac4acc19f43540ef60b60c369af79"
+      "sha256": "7d5adfb5388db86803829bf41b3ecb4af7309edcadb0ec79e5cefbf3fb41f5d1"
     },
     {
       "file": "reports/data.jpg",

@@ -17,5 +17,6 @@
     "ant-design-vue": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:"
-  }
+  },
+  "license": "Apache-2.0"
 }

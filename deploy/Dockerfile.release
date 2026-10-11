@@ -1,0 +1,22 @@
+FROM public.ecr.aws/docker/library/golang:1.26.8-bookworm@sha256:a688600ca24f8a4d3ca77f95b0dd40704a9fc787c826660eb7ba0b641b8b175d
+RUN apt-get update && apt-get install -y --no-install-recommends python3 xz-utils && rm -rf /var/lib/apt/lists/*
+RUN curl --fail --location --retry 2 --output /tmp/upx.tar.xz https://github.com/upx/upx/releases/download/v5.2.1/upx-5.2.1-amd64_linux.tar.xz && \
+    echo '402162aad30af47e60dbd767fb2e64ca394ace9727ba1f40283641f1d1b91657  /tmp/upx.tar.xz' | sha256sum --check && \
+    tar -xJf /tmp/upx.tar.xz -C /tmp && \
+    install -m 0755 /tmp/upx-5.2.1-amd64_linux/upx /usr/local/bin/upx && rm -rf /tmp/upx*
+WORKDIR /source
+ENV GOTOOLCHAIN=local
+COPY go.mod go.sum ./
+COPY LICENSE ./LICENSE
+RUN go mod download
+RUN go install github.com/google/go-licenses/v2@v2.0.1 && \
+    go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+COPY cmd ./cmd
+COPY internal ./internal
+COPY migrations ./migrations
+COPY api/sensor ./api/sensor
+COPY deploy/nginx ./deploy/nginx
+COPY scripts/package_linux.py ./scripts/package_linux.py
+COPY scripts/package_go_dependencies.py ./scripts/package_go_dependencies.py
+COPY licenses/go ./licenses/go
+ENTRYPOINT ["python3", "/source/scripts/package_linux.py"]

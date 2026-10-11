@@ -128,8 +128,11 @@ func TestNativeReplay(t *testing.T) {
 
 }
 func TestReplaySandboxDeniesCredentials(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip("macOS 开发隔离验收")
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		t.Skip("操作系统没有受支持的离线重放隔离实现")
+	}
+	if runtime.GOOS == "linux" && os.Getenv("SB_TEST_SURICATA_BINARY") == "" {
+		t.Skip("Linux 原生隔离在独立容器验收中执行")
 	}
 	dir := t.TempDir()
 	input, output := filepath.Join(dir, "input"), filepath.Join(dir, "output")
@@ -150,8 +153,11 @@ func TestReplaySandboxDeniesCredentials(t *testing.T) {
 }
 
 func TestReplaySandboxDeniesNetwork(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip("macOS 开发隔离验收")
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		t.Skip("操作系统没有受支持的离线重放隔离实现")
+	}
+	if runtime.GOOS == "linux" && os.Getenv("SB_TEST_SURICATA_BINARY") == "" {
+		t.Skip("Linux 原生隔离在独立容器验收中执行")
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("replay-network-marker")) }))
 	defer server.Close()

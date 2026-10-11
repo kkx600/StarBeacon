@@ -3,16 +3,19 @@ import type {PageSpec} from '../models'
 const byFamily:Record<string,string[]>={
   alert:['待研判','研判中','已关联事件','误报'],assessment:['待复核','已完成','证据不足','排队中'],
   rule:['已生效','待测试','灰度中','草稿','已停用'],action:['配置已核验','结果未知','已撤销','执行中','等待审批'],
+  'application-rule':['启用','停用'],
+  'decision-evaluation':['策略命中','策略未命中','保护网段排除','不参与决策','策略命中'],
   decision:['启用','启用','待验证','启用','停用'],model:['能力已验证','待评测','未接入','未接入','已验证'],
   integrity:['完整会话','缺少握手','单向观测','完整会话','字节缺口','活动快照'],tls:['不可解密','不可解密','授权明文','证据不足'],
   channel:['已验证','已验证','待验证','已验证','已验证'],device:['已连接','已连接','结果未知','认证过期'],
   protocol:['明文可见','明文可见','条件能力','仅元数据','明文可见','部分支持','仅元数据','部分支持','条件能力','部分支持'],
   pcap:['可下载','完整性不足','生成中','可下载','权限已到期'],
+  'packet-archive':['已归档','等待上传','原件待核查','已归档','捕获中','确认待回收'],
   retention:['继承默认'],incident:['调查中','待接单','待验证','已关闭'],case:['调查中','待接单','待验证','已关闭'],
   delivery:['供应商已接受','等待重试','已送达','回执不可观测','发送失败'],sandbox:['运行中','报告已返回','结果未知','排队中','已取消'],
   sensor:['在线','在线','在线','在线','离线','降级'],
   platform:['正常','正常','正常','正常','积压告警','正常'],audit:['成功','成功','成功','成功','拒绝','成功'],
-  'login-log':['成功','成功','MFA 失败','成功','凭据错误','成功'],tenant:['启用','启用','停用','启用'],user:['启用','启用','停用','待验证'],
+  'login-log':['成功','成功','MFA 失败','成功','凭据错误','成功'],tenant:['启用','启用','停用','启用'],user:['启用','启用','停用','启用'],
   role:['启用','启用','停用'],network:['启用','启用','停用'],account:['已配置','继承默认','待验证'],
   asset:['在线','在线','待确认','离线'],interface:['已观测','已观测','待确认'],address:['已观测','历史观察','待确认'],
   identity:['已关联','待复核','证据不足'],session:['已结束','活动中','观测不足'],vulnerability:['待修复','修复中','待复测','已关闭'],
@@ -31,6 +34,6 @@ export function statusesFor(page:Pick<PageSpec,'family'|'actionMode'>):string[]{
   return byFamily[page.family]??(page.actionMode==='task'?['排队中','运行中','已完成','失败']:['启用','待验证','停用'])
 }
 export function initialStatusFor(page:PageSpec):string{
-  const initial:Record<string,string>={action:'等待审批',rule:'草稿',decision:'待验证',model:'未接入',channel:'待验证',device:'待验证',sensor:'未注册',tenant:'启用',user:'待验证',case:'待接单',incident:'待接单',report:'待审核'}
+  const initial:Record<string,string>={action:'等待审批',rule:'草稿',decision:'待验证',model:'未接入',channel:'待验证',device:'待验证',sensor:'未注册',tenant:'启用',user:'启用',case:'待接单',incident:'待接单',report:'待审核'}
   return initial[page.family]??(page.actionMode==='task'?'排队中':'待验证')
 }

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -45,6 +46,16 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	}
 	h.RXBytes = strconv.FormatUint(rx, 10)
 	h.TXBytes = strconv.FormatUint(tx, 10)
+	if interfaces, err := Interfaces(); err == nil {
+		encoded, err := json.Marshal(interfaces)
+		if err == nil && len(interfaces) <= 128 && len(encoded) <= 24*1024 {
+			h.NetworkInterfaces = interfaces
+		} else {
+			h.Errors = append(h.Errors, "network_inventory_unavailable")
+		}
+	} else {
+		h.Errors = append(h.Errors, "network_inventory_unavailable")
+	}
 	n, b, e := w.Stats()
 	if e == nil {
 		h.WALPending = n
@@ -58,11 +69,38 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	h.TaskCapabilities = append([]string(nil), w.taskCapabilities...)
 	h.CommandSignerSHA256 = w.commandSignerSHA256
 	h.RegisteredRulesAvailable = w.registeredRulesAvailable
+	rulesPath := w.registeredRulesPath
+	captureSnapshot, capabilities := w.captureSnapshot, w.capabilities
 	for code, active := range w.failures {
 		if active {
 			h.Errors = append(h.Errors, code)
 		}
 	}
 	w.mu.RUnlock()
+	if captureSnapshot != nil {
+		state := captureSnapshot()
+		h.CaptureStatus = state.Status
+		h.Capture, _ = json.Marshal(state)
+		if state.ErrorCode != "" {
+			h.Errors = append(h.Errors, state.ErrorCode)
+		}
+	}
+	if w.packetArchives != nil {
+		h.PacketArchive = w.packetArchives.JSON()
+	}
+	if capabilities != nil {
+		h.TaskCapabilities = capabilities()
+	}
+	if w.responseHealth != nil {
+		h.ResponseConnectors = w.responseHealth()
+	}
+	if rulesPath != "" {
+		if hash, err := ruleFileDigest(rulesPath, 64*1024*1024); err == nil {
+			h.RegisteredRulesSHA256 = hash
+		} else {
+			h.RegisteredRulesAvailable = false
+			h.Errors = append(h.Errors, "registered_rules_unavailable")
+		}
+	}
 	return h
 }

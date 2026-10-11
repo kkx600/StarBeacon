@@ -413,8 +413,8 @@
         "x-required-role": "admin"
       },
       "put": {
-        "summary": "保存采集目标",
-        "description": "仅接受已启用的非回环接口。目标与审计原子写入本地状态；不修改系统网卡、不应用到 Suricata。",
+        "summary": "配置网络采集",
+        "description": "接口仅接受已启用的非回环网卡，单网卡 1–64 个线程，总数不超过 128。外部 EVE 模式只登记目标；托管模式持久保存期望配置后，先执行原生装载及 BPF 编译检查，再启动或恢复专属 Suricata 进程。status、applied_revision、applied_settings 为实际回读；HTTP 200 不等于启动成功。空接口停止采集。并发配置返回 409；不修改管理地址、路由或防火墙。",
         "responses": {
           "200": {
             "description": "请求成功",
@@ -465,6 +465,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "采集配置正在应用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "x-required-role": "admin",
@@ -486,21 +496,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "interfaces": {
-                    "type": "array",
-                    "maxItems": 16,
-                    "uniqueItems": true,
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                },
-                "required": [
-                  "interfaces"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/CaptureSettings"
               }
             }
           }
@@ -510,7 +506,7 @@
     "/api/local/v1/tasks": {
       "get": {
         "summary": "读取任务记录",
-        "description": "最多最近 200 条。投递、执行回执与平台确认是不同状态。",
+        "description": "按时间倒序最多返回最近 200 条；每次只读查询最多扫描 1000 条索引记录。到期且已确认的终态不再展示；执行中、待确认或未核实记录受清理保护。投递、执行回执与平台确认是不同状态。",
         "x-required-role": "admin",
         "responses": {
           "200": {
@@ -965,6 +961,664 @@
           }
         }
       }
+    },
+    "/api/local/v1/replay/samples/http": {
+      "post": {
+        "summary": "导入 HTTP Raw 重放样本",
+        "description": "管理员按原始字节上传 HTTP 请求文件，1 字节至 2 MiB。只接受 application/octet-stream、准确 Content-Length 与无路径的编码文件名，不接受 Content-Encoding。保留 CRLF、二进制与重复字段，不修复协议内容；封装为合成 TCP 样本并保存 origin。沿用样本存储、配额、180 天默认保留策略与执行前完整性校验。",
+        "x-required-role": "admin",
+        "responses": {
+          "201": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaySample"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "导入内容、长度或存储状态不满足约束。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Filename",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "UTF-8 文件名经过 encodeURIComponent 编码，不能含路径分隔符。"
+          },
+          {
+            "name": "Content-Length",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2097152
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/local/v1/packet-archives": {
+      "get": {
+        "summary": "读取原包归档目录",
+        "x-required-role": "admin",
+        "responses": {
+          "400": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketArchivePage"
+                }
+              }
+            }
+          }
+        },
+        "description": "平台以创建时间与 ID 游标每页最多 50 条；本机仅列出最近 200 条重试记录，正式留存由平台管理。存储未配置单独返回 available=false，不表示已产生归档。"
+      }
+    },
+    "/api/local/v1/packet-archives/{id}": {
+      "get": {
+        "summary": "读取原包归档详情",
+        "x-required-role": "admin",
+        "responses": {
+          "400": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalPacketArchiveRecord"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/local/v1/packet-archives/{id}/download": {
+      "get": {
+        "summary": "下载原包归档分段",
+        "x-required-role": "admin",
+        "responses": {
+          "400": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "完成原包字节核验后开始发送；收到响应头不证明客户端完整接收。",
+            "headers": {
+              "X-Content-SHA256": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "Content-Length": {
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "minimum": 24,
+                  "maximum": 67108864
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-pcapng": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          }
+        ],
+        "description": "只发送解码并完整核验后的原始 PCAPNG 字节，最多 64 MiB；校验对象版本、冻结摘要、捕获目录和当前权限，发送前保存访问审计。本机仅可下载 ready 状态待确认制品，已确认数据由平台读取。单段不能保证完整 TCP 会话，禁止凭载荷补造握手。平台并发 4、最长 90 秒，本机并发 2、最长 30 秒。"
+      }
+    },
+    "/api/local/v1/packet-archives/{id}/packets/{number}": {
+      "get": {
+        "summary": "查看原包协议字段与原始字节",
+        "x-required-role": "admin",
+        "description": "按所选切片的实际捕获顺序指定包序号，禁止查询参数。每次核验整个不超过 64 MiB 的归档后读取一个包，最多解码 16 层；不代表报文校验和、TLS 解密或应用正文重组已完成。与下载共享并发额度：平台 4／90 秒，采集器 2／30 秒。本机已确认上传且回收原件的记录只能在主平台查看。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "description": "规范十进制整数，不接受前导零或正负号。",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1048576
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "核验冻结对象完整性、当前管理员会话并保存访问审计后，返回一个实际捕获帧。",
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketInspection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/local/v1/tasks/{id}": {
+      "get": {
+        "summary": "读取指定任务档案",
+        "description": "独立于最近任务列表，按本机任务主键读取已留存详情。执行截止不等于记录保留截止；读取不重放任务，不返回命令、规则原文或凭据，不接受额外查询参数。不存在或到期且可清理的档案返回 404；身份与回执绑定损坏、数据库关闭等错误返回 503。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensorTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1114,7 +1768,14 @@
           "capture_status": {
             "type": "string",
             "enum": [
-              "eve_reader_only"
+              "eve_reader_only",
+              "not_applied",
+              "pending",
+              "starting",
+              "running",
+              "stopped",
+              "degraded",
+              "failed"
             ]
           },
           "task_capabilities": {
@@ -1129,6 +1790,32 @@
           "registered_rules_available": {
             "type": "boolean",
             "description": "探针是否登记规则快照路径；不代表已加载到实时引擎"
+          },
+          "registered_rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "登记规则文件的实际摘要；不单独证明运行引擎已经生效。"
+          },
+          "capture": {
+            "$ref": "#/components/schemas/CaptureConfig"
+          },
+          "network_interfaces": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "$ref": "#/components/schemas/NetworkInterface"
+            },
+            "description": "设备所在网络命名空间的完整网卡观测；编码超过 24 KiB 时省略并上报 network_inventory_unavailable。"
+          },
+          "packet_archive": {
+            "$ref": "#/components/schemas/PacketArchiveHealth"
+          },
+          "response_connectors": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ResponseConnector"
+            }
           }
         },
         "required": [
@@ -1194,17 +1881,106 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "threads": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64,
+            "default": 1
+          },
+          "bpf_filter": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "libpcap BPF 捕获过滤器；留空不过滤。不能含 NUL 或换行，影响检测可见范围。"
+          },
+          "promiscuous": {
+            "type": "boolean",
+            "nullable": true,
+            "default": true
           },
           "status": {
             "type": "string",
             "enum": [
-              "not_applied"
+              "not_applied",
+              "pending",
+              "starting",
+              "running",
+              "stopped",
+              "degraded",
+              "failed"
             ]
+          },
+          "managed": {
+            "type": "boolean"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "applied_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "applied_settings": {
+            "$ref": "#/components/schemas/CaptureSettings"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "pid": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "counters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          "spool_bytes": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "实际观测的十进制整数；未观测时省略。"
+          },
+          "spool_budget": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "实际观测的十进制整数；未观测时省略。"
+          },
+          "rotations": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "实际观测的十进制整数；未观测时省略。"
+          },
+          "rotation_pending": {
+            "type": "boolean",
+            "description": "存在尚未持久排空的轮转来源，缓冲文件仍保留。"
+          },
+          "counters_observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "实际从检测进程读取计数的时间；没有观测时省略。"
+          },
+          "settings_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "设备计算的期望参数摘要，远程配置直接绑定该观测，客户端无需自行编码摘要。"
           }
         },
         "required": [
@@ -1245,6 +2021,9 @@
           "expires_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/SampleOrigin"
           }
         },
         "required": [
@@ -1312,9 +2091,14 @@
           "kind": {
             "enum": [
               "diagnostics",
+              "capture.configure",
               "rules.validate",
               "rules.replay",
-              "rules.apply"
+              "rules.apply",
+              "rules.reconcile",
+              "response.block",
+              "response.read",
+              "response.revoke"
             ]
           },
           "state": {
@@ -1350,6 +2134,18 @@
               "platform",
               ""
             ]
+          },
+          "rule_resolution": {
+            "$ref": "#/components/schemas/RuleResolution"
+          },
+          "retain_until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "接收时冻结的计划记录保留截止；无历史字段的记录继承原默认 180 天。"
+          },
+          "retention_protected": {
+            "type": "boolean",
+            "description": "未获平台确认、仍在执行或未取得独立核实结果的记录暂不清理。"
           }
         },
         "required": [
@@ -1359,9 +2155,988 @@
           "state",
           "created_at",
           "expires_at",
-          "receipt"
+          "receipt",
+          "acknowledged",
+          "origin",
+          "retain_until",
+          "retention_protected"
         ],
         "additionalProperties": false
+      },
+      "RuleResolution": {
+        "type": "object",
+        "description": "独立设备核实依据；原中断回执和 unknown 状态保持不变。",
+        "required": [
+          "task_id",
+          "confirmed_at",
+          "result"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "confirmed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "object",
+            "required": [
+              "verified",
+              "active_sha256",
+              "unknown_task_id",
+              "unknown_command_sha256",
+              "config_sha256",
+              "profile_sha256",
+              "ruleset_stats"
+            ],
+            "properties": {
+              "verified": {
+                "type": "boolean"
+              },
+              "unknown_task_id": {
+                "type": "string"
+              },
+              "ruleset_stats": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "active_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "unknown_command_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "config_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "profile_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        }
+      },
+      "CaptureSettings": {
+        "type": "object",
+        "properties": {
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "threads": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64,
+            "default": 1
+          },
+          "bpf_filter": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "libpcap BPF 捕获过滤器；最多 2048 个 UTF-8 字节，不能含 NUL 或换行。留空不过滤，影响检测可见范围。"
+          },
+          "promiscuous": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": true
+          }
+        },
+        "required": [
+          "interfaces"
+        ],
+        "additionalProperties": false
+      },
+      "SampleOrigin": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "http_raw"
+          },
+          "synthetic": {
+            "const": true
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "raw_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2097152
+          },
+          "encoder": {
+            "const": "http-raw-tcp/1"
+          },
+          "segment_bytes": {
+            "const": 1460
+          }
+        },
+        "required": [
+          "kind",
+          "synthetic",
+          "raw_sha256",
+          "raw_bytes",
+          "encoder",
+          "segment_bytes"
+        ],
+        "description": "HTTP Raw 原始字节按 1460 字节载荷分段封装为离线 Ethernet/IPv4/TCP PCAP。文档地址、MAC、握手和时间均为合成；不补造 HTTP 响应，不代表真实捕获证据。原始请求 SHA-256 与 PCAP SHA-256 分别保存。"
+      },
+      "PacketCapture": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "run_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "interface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15
+          },
+          "interface_mac": {
+            "type": "string",
+            "pattern": "^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$"
+          },
+          "settings_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "bpf_filter": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "promiscuous": {
+            "type": "boolean"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "first_packet_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_packet_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "packets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "packet_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "truncated_packets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "vlan_offload_packets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "kernel_drops": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]+$",
+            "description": "实际内核计数，字符串保留 uint64 精度；不可观测时为 null，不能解释为零。"
+          },
+          "counter_state": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "unavailable"
+            ]
+          },
+          "termination": {
+            "type": "string",
+            "enum": [
+              "rotation",
+              "configuration",
+              "shutdown",
+              ""
+            ]
+          },
+          "format": {
+            "type": "string",
+            "const": "pcapng"
+          },
+          "source": {
+            "type": "string",
+            "const": "AF_PACKET"
+          },
+          "snap_length": {
+            "type": "integer",
+            "const": 262144
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "sensor_id",
+          "registration_id",
+          "run_id",
+          "interface",
+          "interface_mac",
+          "settings_sha256",
+          "bpf_filter",
+          "promiscuous",
+          "started_at",
+          "ended_at",
+          "first_packet_at",
+          "last_packet_at",
+          "packets",
+          "packet_bytes",
+          "truncated_packets",
+          "vlan_offload_packets",
+          "kernel_drops",
+          "counter_state",
+          "termination",
+          "format",
+          "source",
+          "snap_length"
+        ],
+        "additionalProperties": false,
+        "description": "原始链路帧的独立捕获观测。封存持续不超过一小时；本机尚在捕获的记录可有零 ended_at。镜像漏包、网卡卸载与完整连接不可据此推断。"
+      },
+      "PacketArchiveFrame": {
+        "type": "object",
+        "properties": {
+          "raw_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "raw_length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "stored_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 134217728
+          },
+          "stored_length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2097152
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stored_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "raw_offset",
+          "raw_length",
+          "stored_offset",
+          "stored_length",
+          "raw_sha256",
+          "stored_sha256"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveEncoding": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "packet.archive.v1"
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "zstd",
+              "none"
+            ]
+          },
+          "implementation": {
+            "type": "string",
+            "enum": [
+              "klauspost/compress/v1.20.1",
+              "identity"
+            ]
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "SpeedFastest",
+              "none"
+            ]
+          },
+          "frame_bytes": {
+            "type": "integer",
+            "enum": [
+              65536,
+              131072,
+              262144,
+              524288,
+              1048576
+            ]
+          },
+          "raw_bytes": {
+            "type": "integer",
+            "minimum": 24,
+            "maximum": 67108864
+          },
+          "stored_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 134217728
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stored_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "frames": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1024,
+            "items": {
+              "$ref": "#/components/schemas/PacketArchiveFrame"
+            }
+          }
+        },
+        "required": [
+          "schema",
+          "codec",
+          "implementation",
+          "level",
+          "frame_bytes",
+          "raw_bytes",
+          "stored_bytes",
+          "raw_sha256",
+          "stored_sha256",
+          "frames"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveManifest": {
+        "type": "object",
+        "properties": {
+          "capture": {
+            "$ref": "#/components/schemas/PacketCapture"
+          },
+          "encoding": {
+            "$ref": "#/components/schemas/PacketArchiveEncoding"
+          }
+        },
+        "required": [
+          "capture",
+          "encoding"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveAcknowledgement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stored_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stored_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 134217728
+          },
+          "object_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "manifest_sha256",
+          "raw_sha256",
+          "stored_sha256",
+          "stored_bytes",
+          "object_version",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "stored",
+              "ready",
+              "deleting"
+            ]
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/PacketArchiveManifest"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "object_version": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "manifest",
+          "manifest_sha256",
+          "object_version",
+          "created_at",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "stored",
+              "ready",
+              "deleting"
+            ]
+          },
+          "capture": {
+            "$ref": "#/components/schemas/PacketCapture"
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "zstd",
+              "none"
+            ]
+          },
+          "raw_bytes": {
+            "type": "integer",
+            "minimum": 24,
+            "maximum": 67108864
+          },
+          "stored_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 134217728
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "capture",
+          "codec",
+          "raw_bytes",
+          "stored_bytes",
+          "manifest_sha256",
+          "created_at",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "LocalPacketArchiveRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "capturing",
+              "sealed",
+              "ready",
+              "quarantined",
+              "acknowledged",
+              "confirmed"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "capture": {
+            "$ref": "#/components/schemas/PacketCapture"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/PacketArchiveManifest"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "reserved_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "acknowledgement": {
+            "$ref": "#/components/schemas/PacketArchiveAcknowledgement"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "capture",
+          "reserved_bytes",
+          "created_at",
+          "sequence"
+        ],
+        "additionalProperties": false
+      },
+      "PacketCaptureProgress": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "interface": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "packets": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "interface",
+          "state",
+          "packets",
+          "observed_at"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchiveHealth": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "capturing",
+              "stopped",
+              "failed"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "zstd",
+              "none"
+            ]
+          },
+          "reserved_bytes": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "quota_bytes": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "interfaces": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/PacketCaptureProgress"
+            }
+          },
+          "last_confirmed_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "last_confirmed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "enabled",
+          "state",
+          "codec",
+          "reserved_bytes",
+          "quota_bytes",
+          "interfaces",
+          "observed_at"
+        ],
+        "additionalProperties": false
+      },
+      "PacketArchivePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/LocalPacketArchiveRecord"
+            }
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "health": {
+            "$ref": "#/components/schemas/PacketArchiveHealth"
+          },
+          "limit": {
+            "type": "integer",
+            "const": 200
+          }
+        },
+        "required": [
+          "items",
+          "available"
+        ],
+        "additionalProperties": false
+      },
+      "PacketInspectionField": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.]{1,64}$"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 768
+          }
+        }
+      },
+      "PacketInspectionLayer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "offset",
+          "length",
+          "fields"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 262144,
+            "description": "仅当层字节与捕获帧实际位置一致时返回偏移；未确认时为 null。"
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 262144
+          },
+          "fields": {
+            "type": "array",
+            "maxItems": 24,
+            "items": {
+              "$ref": "#/components/schemas/PacketInspectionField"
+            }
+          }
+        }
+      },
+      "PacketInspection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "archive_id",
+          "manifest_sha256",
+          "raw_sha256",
+          "packet_sha256",
+          "number",
+          "total",
+          "captured_at",
+          "captured_length",
+          "original_length",
+          "truncated",
+          "interface",
+          "vlan_offload",
+          "decode_status",
+          "layers",
+          "packet",
+          "checksum_validation",
+          "payload_visibility"
+        ],
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "packet.inspect.v1"
+          },
+          "archive_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "packet_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "实际网卡捕获时间，UTC，保留最多九位小数；不推断双向入站或出站时间。"
+          },
+          "captured_length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 262144
+          },
+          "original_length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "interface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "vlan_offload": {
+            "type": "boolean",
+            "description": "原生包注释记录 VLAN 卸载；未向原字节重建标签。"
+          },
+          "decode_status": {
+            "type": "string",
+            "enum": [
+              "parsed",
+              "partial",
+              "limited"
+            ]
+          },
+          "layers": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/PacketInspectionLayer"
+            }
+          },
+          "packet": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 349528,
+            "description": "所选原始捕获帧的 Base64 字节；客户端核验长度及 packet_sha256。"
+          },
+          "checksum_validation": {
+            "type": "string",
+            "const": "not_checked"
+          },
+          "payload_visibility": {
+            "type": "string",
+            "const": "not_decoded"
+          }
+        }
+      },
+      "ResponseConnector": {
+        "type": "object",
+        "properties": {
+          "connector_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "device_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "status": {
+            "enum": [
+              "unverified",
+              "unavailable",
+              "ready"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "max_ttl_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "connector_id",
+          "config_sha256",
+          "device_id",
+          "version",
+          "status",
+          "observed_at",
+          "max_ttl_seconds"
+        ],
+        "additionalProperties": false,
+        "description": "采集器本地私有配置的只读设备目录；没有凭据、管理地址和可执行脚本。ready 仅代表协议身份与原生 TTL 能力核验，超过 35 秒须刷新。"
       }
     }
   }

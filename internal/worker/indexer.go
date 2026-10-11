@@ -14,6 +14,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/normalize"
+	"github.com/kkx600/StarBeacon/internal/notify"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
 	"github.com/nats-io/nats.go/jetstream"
@@ -24,6 +25,7 @@ import (
 type Indexer struct {
 	Bus *bus.Bus
 	ES  *store.Elasticsearch
+	DB  *store.Postgres
 }
 
 func (w *Indexer) Process(ctx context.Context, data []byte) error {
@@ -44,7 +46,14 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	if e != nil {
 		return e
 	}
-	if e = w.ES.EnsureIndex(ctx, index, envelope.Partition); e != nil {
+	days := 180
+	if w.DB != nil && !w.ES.IndexKnown(index) {
+		days, e = w.DB.EventRetention(ctx, envelope.TenantID, batch.StreamId)
+		if e != nil {
+			return e
+		}
+	}
+	if e = w.ES.EnsureIndexRetention(ctx, index, envelope.Partition, days); e != nil {
 		return e
 	}
 	docs := make([]model.Alert, 0, len(batch.Records))
@@ -92,18 +101,24 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	}
 	telemetry.Indexed.WithLabelValues(batch.StreamId).Add(float64(len(docs)))
 	telemetry.Quarantined.Add(float64(quarantined))
-	return w.Bus.Publish(ctx, "sb.indexed", batch.BatchId, map[string]any{"tenant_id": envelope.TenantID, "batch_id": batch.BatchId, "index": index, "event_ids": ids, "quarantined": quarantined, "indexed_at": time.Now().UTC()})
+	return w.Bus.Publish(ctx, "sb.indexed", batch.BatchId, map[string]any{"tenant_id": envelope.TenantID, "batch_id": batch.BatchId, "index": index, "event_ids": ids, "alerts": notify.Summaries(docs), "quarantined": quarantined, "indexed_at": time.Now().UTC()})
 }
 func (w *Indexer) Run(ctx context.Context) error {
 	if e := w.ES.EnsurePolicy(ctx); e != nil {
 		return e
 	}
-	group, ctx := errgroup.WithContext(ctx)
+	// 所有持久消费者就绪后才启动取数，避免后续流不可用时遗留后台消费。
+	consumers := make([]jetstream.Consumer, 0, 2)
 	for _, name := range []string{bus.Alerts, bus.Context} {
 		consumer, e := w.Bus.Consumer(ctx, name)
 		if e != nil {
 			return e
 		}
+		consumers = append(consumers, consumer)
+	}
+	group, ctx := errgroup.WithContext(ctx)
+	for i, name := range []string{bus.Alerts, bus.Context} {
+		consumer := consumers[i]
 		group.Go(func() error {
 			for ctx.Err() == nil {
 				messages, e := consumer.Fetch(1, jetstream.FetchMaxWait(time.Second))
