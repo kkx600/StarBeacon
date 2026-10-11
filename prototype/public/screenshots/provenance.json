@@ -2,7 +2,7 @@
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "renderer": "Codex in-app browser",
-  "baseStateCount": 737,
+  "baseStateCount": 755,
   "supplementalCount": 43,
   "entries": [
     {
@@ -4792,6 +4792,132 @@
         "height": 863
       },
       "sha256": "a1a76724569c73296bdcf08e4009b445982735205923904eb53ced6133a3eb68"
+    },
+    {
+      "file": "packet-archives/data.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=data&capture=1",
+      "title": "原包归档",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:12:23.834Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 150854,
+      "image": {
+        "width": 1280,
+        "height": 1129
+      },
+      "sha256": "38d253e87d74077152a80f184f594c88200b9bc1db68b042aaf2f63bc9a7265b"
+    },
+    {
+      "file": "packet-archives/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=empty&capture=1",
+      "title": "原包归档",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:13:03.797Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 90917,
+      "image": {
+        "width": 1280,
+        "height": 852
+      },
+      "sha256": "a98ea3d26dcc4d6feb312614aaa317032ddf5ce59e0b147c02dcb14319f0e79b"
+    },
+    {
+      "file": "packet-archives/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=detail&capture=1",
+      "title": "原包归档",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:13:12.076Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 113747,
+      "image": {
+        "width": 1280,
+        "height": 1129
+      },
+      "sha256": "111616905557e2e78672a187fc220294e984d027e132bb14bd5aaf798954fe69"
+    },
+    {
+      "file": "packet-archives/action.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=action&capture=1",
+      "title": "原包归档",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:13:21.760Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 125362,
+      "image": {
+        "width": 1280,
+        "height": 1129
+      },
+      "sha256": "0188ff4755f32565a548999b00706a5924fb2a0c9382e743394d901a2422c7f4"
+    },
+    {
+      "file": "packet-archives/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=loading&capture=1",
+      "title": "原包归档",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:13:29.434Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 91582,
+      "image": {
+        "width": 1280,
+        "height": 968
+      },
+      "sha256": "9e3d711be5c748d2296dbdbeb61703d7968a780433ae2a6a49d0e852572e699f"
+    },
+    {
+      "file": "packet-archives/error.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=error&capture=1",
+      "title": "原包归档",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:13:37.470Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88700,
+      "image": {
+        "width": 1280,
+        "height": 863
+      },
+      "sha256": "18abbb47871ec8792ef75535c5b8dc259bb7a6fbf269c355c0f86acb050d3d5b"
     },
     {
       "file": "capture-policy/data.jpg",
@@ -10464,6 +10590,132 @@
       "sha256": "e4b00dd818a55c38b9e18b5667a2ade735ce37ff65b39251ed80de2fd1b31793"
     },
     {
+      "file": "sensor-groups/data.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=data&capture=1",
+      "title": "探针分组",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:13:44.552Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 139517,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "a22b9fc130afeed83c25b3a3ba379c6b26b852561be4d5b1d1028ccbda932c29"
+    },
+    {
+      "file": "sensor-groups/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=empty&capture=1",
+      "title": "探针分组",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:13:49.534Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 82421,
+      "image": {
+        "width": 1280,
+        "height": 831
+      },
+      "sha256": "d15f44a76220197eff99a237d409633b3ecef2248c96daf21e74aebbfa5c199a"
+    },
+    {
+      "file": "sensor-groups/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=detail&capture=1",
+      "title": "探针分组",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:13:55.225Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 108058,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "66c70a145a98137361ca5bc2a968c1a28019f8833bf7f8ec6d1345c1ec0076f6"
+    },
+    {
+      "file": "sensor-groups/action.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=action&capture=1",
+      "title": "探针分组",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:14:01.079Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 110744,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "79d8ec1f0733a4fd742769ccbbb81c2b8905720dc5fb7d05725b5fee601098ed"
+    },
+    {
+      "file": "sensor-groups/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=loading&capture=1",
+      "title": "探针分组",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:14:07.637Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83594,
+      "image": {
+        "width": 1280,
+        "height": 968
+      },
+      "sha256": "722fe5fd8bbcdf87d82d57873a05c2e71831284e12892b2faaa0d3fa79f07661"
+    },
+    {
+      "file": "sensor-groups/error.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=error&capture=1",
+      "title": "探针分组",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:14:12.779Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83389,
+      "image": {
+        "width": 1280,
+        "height": 863
+      },
+      "sha256": "bb6bf26fc24427eeb5df2aec11b2866190b051709802d3c1bbfbe0a474e0bd07"
+    },
+    {
       "file": "releases/data.jpg",
       "url": "http://127.0.0.1:4173/page/releases?state=data&capture=1",
       "title": "发布中心",
@@ -13360,6 +13612,132 @@
         "height": 1003
       },
       "sha256": "00e064f39018a607b6de01cf61ff77c10744921c32d40e7add490bcbf1d7f22c"
+    },
+    {
+      "file": "decision-evaluations/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "评估记录",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:14:24.603Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 151817,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "69007190cbbbfb389e15a177974a8e02959fd153eb07cd1393adaa7d5ab6614f"
+    },
+    {
+      "file": "decision-evaluations/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=empty&capture=1",
+      "title": "评估记录",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:14:30.035Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 76860,
+      "image": {
+        "width": 1280,
+        "height": 831
+      },
+      "sha256": "5536cb72945b5014f470dcd9ab9159a6009082cdd1980a79dc9530960aa4e16f"
+    },
+    {
+      "file": "decision-evaluations/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=detail&capture=1",
+      "title": "评估记录",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:14:37.603Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 114435,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "9c7e713cb388b7d51be4299625533cc0247dc0ae48b053bb6cf7dc8d00a5c55c"
+    },
+    {
+      "file": "decision-evaluations/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=action&capture=1",
+      "title": "评估记录",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:14:45.528Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 126223,
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "867e10e75691c4945645757174dff92dab1b8f781bd752557b31510e31165eb2"
+    },
+    {
+      "file": "decision-evaluations/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=loading&capture=1",
+      "title": "评估记录",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:14:51.185Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 80157,
+      "image": {
+        "width": 1280,
+        "height": 968
+      },
+      "sha256": "17b684449b8e50fd20462cf019c97736e44594cc58c64d96bad634e6f33e01b4"
+    },
+    {
+      "file": "decision-evaluations/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=error&capture=1",
+      "title": "评估记录",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:15:17.122Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78502,
+      "image": {
+        "width": 1280,
+        "height": 863
+      },
+      "sha256": "da9a71abb8066a0e88b627b499235daba282781f8249e13bb91606472a1cb249"
     },
     {
       "file": "notification-routes/data.jpg",

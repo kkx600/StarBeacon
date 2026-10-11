@@ -12640,6 +12640,294 @@
         "width": 1280
       },
       "bytes": 86693
+    },
+    {
+      "file": "packet-archives/data.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=data&capture=1",
+      "title": "原包归档",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:12:23.834Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 150854
+    },
+    {
+      "file": "packet-archives/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=empty&capture=1",
+      "title": "原包归档",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:13:03.797Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 90917
+    },
+    {
+      "file": "packet-archives/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=detail&capture=1",
+      "title": "原包归档",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:13:12.076Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 113747
+    },
+    {
+      "file": "packet-archives/action.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=action&capture=1",
+      "title": "原包归档",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:13:21.760Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 125362
+    },
+    {
+      "file": "packet-archives/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=loading&capture=1",
+      "title": "原包归档",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:13:29.434Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 91582
+    },
+    {
+      "file": "packet-archives/error.jpg",
+      "url": "http://127.0.0.1:4173/page/packet-archives?state=error&capture=1",
+      "title": "原包归档",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:13:37.470Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88700
+    },
+    {
+      "file": "sensor-groups/data.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=data&capture=1",
+      "title": "探针分组",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:13:44.552Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 139517
+    },
+    {
+      "file": "sensor-groups/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=empty&capture=1",
+      "title": "探针分组",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:13:49.534Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 82421
+    },
+    {
+      "file": "sensor-groups/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=detail&capture=1",
+      "title": "探针分组",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:13:55.225Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 108058
+    },
+    {
+      "file": "sensor-groups/action.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=action&capture=1",
+      "title": "探针分组",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:14:01.079Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 110744
+    },
+    {
+      "file": "sensor-groups/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=loading&capture=1",
+      "title": "探针分组",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:14:07.637Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83594
+    },
+    {
+      "file": "sensor-groups/error.jpg",
+      "url": "http://127.0.0.1:4173/page/sensor-groups?state=error&capture=1",
+      "title": "探针分组",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:14:12.779Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 83389
+    },
+    {
+      "file": "decision-evaluations/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "评估记录",
+      "state": "data",
+      "capturedAt": "2026-10-11T14:14:24.603Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 151817
+    },
+    {
+      "file": "decision-evaluations/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=empty&capture=1",
+      "title": "评估记录",
+      "state": "empty",
+      "capturedAt": "2026-10-11T14:14:30.035Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 76860
+    },
+    {
+      "file": "decision-evaluations/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=detail&capture=1",
+      "title": "评估记录",
+      "state": "detail",
+      "capturedAt": "2026-10-11T14:14:37.603Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 114435
+    },
+    {
+      "file": "decision-evaluations/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=action&capture=1",
+      "title": "评估记录",
+      "state": "action",
+      "capturedAt": "2026-10-11T14:14:45.528Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 126223
+    },
+    {
+      "file": "decision-evaluations/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=loading&capture=1",
+      "title": "评估记录",
+      "state": "loading",
+      "capturedAt": "2026-10-11T14:14:51.185Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 80157
+    },
+    {
+      "file": "decision-evaluations/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=error&capture=1",
+      "title": "评估记录",
+      "state": "error",
+      "capturedAt": "2026-10-11T14:15:17.122Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 78502
     }
   ],
   "errors": []
