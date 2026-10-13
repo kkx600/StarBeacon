@@ -53,6 +53,14 @@ jobs:
             starbeacon-release-builder --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" \
             --source-commit-file /output/source.commit \
             --web-root /web --output /output --epoch "$(git show -s --format=%ct HEAD)"
+      - name: 保留构建失败诊断
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: starbeacon-preview-diagnostics
+          path: .local/preview/dependency-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
       - name: 核对发行内容与依赖并生成说明
         env:
           GH_TOKEN: ${{ github.token }}

@@ -165,5 +165,17 @@ class GoDependencyTests(unittest.TestCase):
                 dependencies.compiler_inventory(value, linked)
 
 
+class DependencyToolDiagnosticsTests(unittest.TestCase):
+    def test_failed_tool_identifies_its_log_and_preserves_output(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            root = pathlib.Path(scratch)
+            log = root / "fixture-license.log"
+            command = [sys.executable, "-c", "import sys; print('fixture output'); sys.stderr.write('fixture error'); sys.exit(7)"]
+            with self.assertRaisesRegex(ValueError, "fixture-license.log，退出码 7"):
+                dependencies.execute(command, root, {}, log)
+            self.assertEqual(log.read_text(), "fixture error")
+            self.assertEqual(log.with_suffix(".stdout").read_text(), "fixture output\n")
+
+
 if __name__ == "__main__":
     unittest.main()

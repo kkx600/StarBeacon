@@ -358,7 +358,7 @@ def execute(arguments, root, environment, log):
     log.write_bytes(result.stderr)
     log.with_suffix(".stdout").write_bytes(result.stdout)
     if result.returncode:
-        raise ValueError("依赖工具执行失败；原始诊断已保留")
+        raise ValueError(f"依赖工具执行失败（{log.name}，退出码 {result.returncode}）；原始诊断已保留")
     return result.stdout.decode("utf-8")
 
 
