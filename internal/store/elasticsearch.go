@@ -37,6 +37,18 @@ type IndexItemError struct{ Status int }
 
 func (e *IndexItemError) Error() string { return fmt.Sprintf("ES 分项写入失败: %d", e.Status) }
 
+type IndexCreateError struct {
+	Status          int
+	CapacityLimited bool
+}
+
+func (e *IndexCreateError) Error() string {
+	if e.CapacityLimited {
+		return "ES 分片容量不足，索引尚未创建；请核对过期索引回收或集群容量"
+	}
+	return fmt.Sprintf("创建索引失败: %d", e.Status)
+}
+
 func OpenES(address, key string) (*Elasticsearch, error) {
 	u, e := url.Parse(address)
 	if e != nil || u.Host == "" {
@@ -186,12 +198,15 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 		if res.IsError() {
 			var failure struct {
 				Error struct {
-					Type string `json:"type"`
+					Type   string `json:"type"`
+					Reason string `json:"reason"`
 				} `json:"error"`
 			}
 			_ = json.NewDecoder(io.LimitReader(res.Body, 65536)).Decode(&failure)
 			if failure.Error.Type != "resource_already_exists_exception" {
-				return nil, fmt.Errorf("创建索引失败: %d", res.StatusCode)
+				// 不向日志透传依赖返回的原文；分片上限保持集群配置，由运维核对容量。
+				limited := failure.Error.Type == "validation_exception" && strings.Contains(failure.Error.Reason, "maximum") && strings.Contains(failure.Error.Reason, "shards")
+				return nil, &IndexCreateError{Status: res.StatusCode, CapacityLimited: limited}
 			}
 		}
 		s.mu.Lock()

@@ -115,7 +115,7 @@ func newGenericHTTPDevice(t *testing.T, dir string) *genericHTTPDevice {
 	require(t, os.WriteFile(f.file, raw, 0600))
 	return f
 }
-func verifyNativeResponse(t *testing.T, ctx context.Context, client *liveHTTP, sensor string, device *genericHTTPDevice) {
+func waitNativeResponseReady(t *testing.T, ctx context.Context, client *liveHTTP, sensor string, device *genericHTTPDevice) {
 	t.Helper()
 	var sensors struct {
 		Items []model.Sensor `json:"items"`
@@ -134,6 +134,14 @@ func verifyNativeResponse(t *testing.T, ctx context.Context, client *liveHTTP, s
 		}
 		return false
 	})
+}
+
+func verifyNativeResponse(t *testing.T, ctx context.Context, client *liveHTTP, sensor string, device *genericHTTPDevice) {
+	t.Helper()
+	device.mu.Lock()
+	priorWrites, priorDeletes := device.writes, device.deletes
+	device.mu.Unlock()
+	waitNativeResponseReady(t, ctx, client, sensor, device)
 	input := responseapi.Request{Kind: "response.block", Intent: responseapi.Intent{ConnectorID: device.config.ID, ConfigSHA256: device.config.SHA256(), TargetIP: "198.51.100.10", TTLSeconds: 300, Reason: "受控 HTTP 协议验收"}}
 	var accepted, again map[string]string
 	key := store.RandomID("response_native_")
@@ -184,7 +192,7 @@ func verifyNativeResponse(t *testing.T, ctx context.Context, client *liveHTTP, s
 	}
 	device.mu.Lock()
 	defer device.mu.Unlock()
-	if device.writes != 1 || device.deletes != 1 {
+	if device.writes != priorWrites+1 || device.deletes != priorDeletes+1 {
 		t.Fatal("端到端重复写入或误解除", device.writes, device.deletes)
 	}
 }

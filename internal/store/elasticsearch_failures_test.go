@@ -191,3 +191,30 @@ func TestLifecycleFailuresNeverCacheUnconfirmedCreation(t *testing.T) {
 		t.Fatal("分项错误不可识别")
 	}
 }
+
+func TestIndexShardLimitHasActionableErrorWithoutLeakingDependencyText(t *testing.T) {
+	for _, tc := range []struct {
+		name, body string
+		limited    bool
+	}{
+		{"分片上限", `{"error":{"type":"validation_exception","reason":"this action would add [2] shards; maximum normal shards open"}}`, true},
+		{"其他校验", `{"error":{"type":"validation_exception","reason":"private-dependent-data"}}`, false},
+		{"拒绝权限", `{"error":{"type":"security_exception","reason":"private-dependent-data"}}`, false},
+		{"损坏响应", `{`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(400); io.WriteString(w, tc.body) }))
+			defer server.Close()
+			es, err := OpenES(server.URL, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			es.templateReady, es.policies[180] = true, true
+			err = es.EnsureIndex(context.Background(), "sb-alerts-tenant_owned-2026.10.12", "2026-10-12")
+			var failure *IndexCreateError
+			if !errors.As(err, &failure) || failure.CapacityLimited != tc.limited || es.IndexKnown("sb-alerts-tenant_owned-2026.10.12") || strings.Contains(err.Error(), "private-dependent-data") {
+				t.Fatal("失败原因、缓存或依赖原文边界不正确", err)
+			}
+		})
+	}
+}

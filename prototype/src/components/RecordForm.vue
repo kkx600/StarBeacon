@@ -16,9 +16,10 @@ const fields=computed<FieldSpec[]>(()=>exportMode.value?[
   {key:'range',label:'导出范围',type:'select',required:true,value:'当前筛选快照',options:['当前筛选快照','已选记录']},
   {key:'format',label:'文件格式',type:'select',required:true,value:'CSV',options:['CSV','JSON']},
   {key:'reason',label:'使用目的',type:'textarea',required:true,value:'界面评审与业务核对'},
-]:props.page.family==='user'&&props.record?props.page.fields.filter(field=>field.key!=='password'):props.page.fields)
+]:props.page.family==='user'&&props.record?props.page.fields.filter(field=>field.key!=='password'):props.page.family==='decision'?props.page.fields.filter(field=>!(['provider','providerRevision'].includes(field.key)&&values.mode==='影子评估')&&!(['sensor','registration','connector','configSha','ttl','cooldown','hourly','acceptScore','autoTriage','triageSeverity','triageDaily','triagePermission'].includes(field.key)&&values.mode!=='持续评估与自动执行')&&!(['triageSeverity','triageDaily','triagePermission'].includes(field.key)&&!values.autoTriage)):props.page.fields)
 const title=computed(()=>exportMode.value?props.page.primary:props.record?`${props.page.rowAction} · ${props.record.name}`:props.page.primary)
-watch(()=>props.open,open=>{if(open){formError.value='';Object.keys(values).forEach(k=>delete values[k]);fields.value.forEach(f=>values[f.key]=formValueFor(f,props.record));formRef.value?.clearValidate()}},{immediate:true})
+watch(()=>props.open,open=>{if(open){formError.value='';Object.keys(values).forEach(k=>delete values[k]);(exportMode.value?fields.value:props.page.fields).forEach(f=>values[f.key]=formValueFor(f,props.record));formRef.value?.clearValidate()}},{immediate:true})
+watch(()=>[values.mode,values.provider,values.providerRevision,values.sensor,values.registration,values.connector,values.configSha],()=>{if(props.open&&props.page.family==='decision'){values.acceptScore=false;values.triagePermission=false}})
 const rules=computed(()=>Object.fromEntries(fields.value.map(f=>[f.key,[...(f.required?[{required:true,message:`请${f.type==='select'?'选择':'填写'}${f.label}`}]:[])]])))
 function checkBusiness(){
   if(props.page.family==='sensor-group'){const error=managementInputError({id:'prototype_group',expected_revision:Number(props.record?.revision??0),name:String(values.name??''),description:String(values.description??''),active:Boolean(values.active)});if(error)throw new Error(error)}
@@ -36,7 +37,14 @@ function checkBusiness(){
   }else if(values.confidence!==undefined&&(Number(values.confidence)<0||Number(values.confidence)>1))throw new Error('校准置信度门槛应在 0 与 1 之间。')
   if(props.page.family==='emergency'&&values.confirm!=='确认控制')throw new Error('请输入“确认控制”以确认控制范围。')
   if(props.page.family==='retention'&&!values.preview)throw new Error('请先核对影响预览。')
-  if(props.page.family==='decision'&&values.mode==='自动'&&!String(values.calibration??'').trim())throw new Error('自动模式需要经过验收的校准与评测版本。')
+  if(props.page.family==='decision'&&values.mode==='持续评估与自动执行'){
+    if(values.autoTriage&&(!values.triagePermission||!Number.isInteger(Number(values.triageDaily))||Number(values.triageDaily)<1||Number(values.triageDaily)>1000))throw new Error('请确认自动研判数据使用及费用，每日额度须为 1–1000 项。')
+    if(!values.acceptScore)throw new Error('请明确授权使用未校准分数，或选择人工确认模式。')
+    if(Number(values.confidence)<0.5)throw new Error('自动模式的模型自报分数阈值不得低于 0.5。')
+    if(!Number.isInteger(Number(values.ttl))||Number(values.ttl)<30||Number(values.ttl)>3600)throw new Error('处置期限须为 30–3600 秒。')
+    if(!Number.isInteger(Number(values.cooldown))||Number(values.cooldown)<Number(values.ttl)||Number(values.cooldown)>86400)throw new Error('目标冷却须不短于处置期限，且不超过 86400 秒。')
+    if(!Number.isInteger(Number(values.hourly))||Number(values.hourly)<1||Number(values.hourly)>100)throw new Error('每小时授权上限须为 1–100 次。')
+  }
 }
 async function submit(){
   try{formError.value='';await formRef.value?.validate();checkBusiness();busy.value=true;await new Promise(resolve=>setTimeout(resolve,180));const output={...values};if(props.page.family==='user'){delete output.password;output.status=values.active?'启用':'停用'}if(props.page.family==='sensor-group'){output.status=values.active?'启用':'停用';output.memberCount=props.record?.memberCount??0;output.revision=Number(props.record?.revision??0)+1}if(props.page.family==='sensor'){output.metadataRevision=Number(props.record?.metadataRevision??0)+1}emit('save',output)}
@@ -64,7 +72,7 @@ async function submit(){
         </a-form-item>
       </div>
     </a-form>
-    <div v-if="page.family==='decision'" class="policy-gates"><b>影子评估条件</b><div><a-tag>本人研判</a-tag><a-tag>来源摘要</a-tag><a-tag>材料时限</a-tag><a-tag>保护网段</a-tag><a-tag>表达式预算</a-tag></div><small>本原型使用合成材料展示配置；影子结果没有设备执行授权。</small></div>
+    <div v-if="page.family==='decision'" class="policy-gates"><b>判断与授权条件</b><div><a-tag>本人研判</a-tag><a-tag>来源摘要</a-tag><a-tag>材料时限</a-tag><a-tag>保护网段</a-tag><a-tag>表达式预算</a-tag><template v-if="values.mode==='持续评估与自动执行'"><a-tag>攻击尝试与事实引用</a-tag><a-tag>注册与设备绑定</a-tag><a-tag>告警去重</a-tag><a-tag>冷却与预算</a-tag></template></div><small>本原型仅保存合成示例；判断、独立授权及设备效果分别核对。</small></div>
     <div class="modal-footnote">表单提交仅保存在当前原型会话中。</div>
   </a-modal>
 </template>

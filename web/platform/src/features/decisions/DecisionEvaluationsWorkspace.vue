@@ -29,13 +29,13 @@ onScopeDispose(()=>read?.abort())
 </script>
 <template>
  <header class="page-header"><div><h1>模型配置</h1><p class="page-description">查看本账号的评估档案与策略快照，核对判断依据和处置授权记录。</p></div></header>
- <a-alert type="info" show-icon message="仅显示本账号的影子评估记录。结果和策略快照默认保留 180 天，未授权执行；研判原文使用独立留存期限。" class="section-gap"/>
+ <a-alert type="info" show-icon message="仅显示本账号的评估记录。判断与持续决策授权独立留档，详情可核对自动任务或未授权原因；默认保留 180 天。" class="section-gap"/>
  <form class="evaluation-toolbar" @submit.prevent="search"><a-input v-model:value="draft.policy_id" aria-label="评估策略标识" placeholder="策略标识" :maxlength="64"/><a-input v-model:value="draft.triage_id" aria-label="评估研判作业标识" placeholder="研判作业标识" :maxlength="64"/><a-select v-model:value="draft.status" aria-label="评估判断结果" :options="[{value:'',label:'全部结果'},...Object.entries(policyStatuses).map(([value,label])=>({value,label}))]"/><a-button html-type="submit" :disabled="model.pending.value">检索</a-button><a-button :loading="model.pending.value" @click="refresh">刷新</a-button></form>
  <section class="panel"><div class="panel-header"><h2>评估记录</h2><span>当前页 {{model.page.value.items.length}} 条 · 持久提交倒序</span></div>
   <StatePanel :loading="model.pending.value" :error="model.error.value" :empty="!model.page.value.items.length" :description="Object.values(model.filter.value).some(Boolean)?'没有符合筛选条件的评估记录。请调整条件后重新检索。':'暂无评估记录。使用本人研判材料执行影子评估后，可在此查看判断快照。'" @retry="model.refresh">
    <a-table :data-source="model.page.value.items" :columns="columns" row-key="id" :pagination="false" size="small" :scroll="{x:1220}"><template #bodyCell="{column,record}">
     <template v-if="column.key==='id'"><span class="technical">{{record.id}}</span></template><template v-else-if="column.key==='policy'"><strong>{{record.policy.name}}</strong><div class="page-description">{{record.policy.id}} / {{record.policy.revision}}</div></template>
-    <template v-else-if="column.key==='status'"><a-tag :color="record.result.status==='matched'?'green':record.result.status==='protected'?'gold':'default'">{{policyStatuses[record.result.status as keyof typeof policyStatuses]}}</a-tag><div class="page-description">未授权执行</div></template>
+    <template v-else-if="column.key==='status'"><a-tag :color="record.result.status==='matched'?'green':record.result.status==='protected'?'gold':'default'">{{policyStatuses[record.result.status as keyof typeof policyStatuses]}}</a-tag><div class="page-description">{{record.policy.definition.mode==='shadow'?'未授权执行':'授权记录见详情'}}</div></template>
     <template v-else-if="column.key==='confidence'">{{record.result.confidence===null?'未参与评估':record.result.confidence.toFixed(3)}}<div class="page-description">未校准</div></template><template v-else-if="column.key==='triage'"><span class="technical">{{record.result.triage_id}}</span></template><template v-else-if="column.key==='time'">{{formatTime(record.result.evaluated_at)}}</template><template v-else-if="column.key==='actions'"><a-button type="link" size="small" @click="inspect(record.id)">查看</a-button></template>
    </template></a-table>
   </StatePanel>

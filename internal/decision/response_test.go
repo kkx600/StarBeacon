@@ -34,7 +34,7 @@ func TestDecisionResponseRequiresCurrentMaterialsAndExplicitConfirmation(t *test
 	if err != nil || intent.TargetIP != e.Result.TargetIP || intent.TTLSeconds != 300 || Digest(e) != original || e.Result.ExecutionAuthorized {
 		t.Fatal("人工确认未绑定原来源或改写影子结果", intent, err)
 	}
-	for _, kind := range []string{"unconfirmed", "archive_digest", "expired", "not_matched", "notify", "policy_revision", "policy_disabled", "policy_corrupt", "job_identity", "job_expired", "cancelled", "material_changed", "material_corrupt", "stale", "zero_time", "invalid_reason", "future_evaluation", "provider_changed", "score_changed", "current_not_matched"} {
+	for _, kind := range []string{"unconfirmed", "archive_digest", "expired", "not_matched", "notify", "policy_revision", "policy_disabled", "policy_corrupt", "automatic_current", "automatic_archive", "job_identity", "job_expired", "cancelled", "material_changed", "material_corrupt", "stale", "zero_time", "invalid_reason", "future_evaluation", "provider_changed", "score_changed", "current_not_matched"} {
 		t.Run(kind, func(t *testing.T) {
 			e, p, job, request, now := responseMaterial(t)
 			material := job.Evidence
@@ -55,6 +55,10 @@ func TestDecisionResponseRequiresCurrentMaterialsAndExplicitConfirmation(t *test
 				p.Active = false
 			case "policy_corrupt":
 				p.DefinitionSHA256 = strings.Repeat("b", 64)
+			case "automatic_current":
+				p.Definition.Mode = "automatic"
+			case "automatic_archive":
+				e.Policy.Definition.Mode = "automatic"
 			case "job_identity":
 				job.ID = "triage_other"
 			case "job_expired":

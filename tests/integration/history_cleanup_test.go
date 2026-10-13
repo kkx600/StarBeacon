@@ -278,9 +278,11 @@ func TestHistoryCleanupBoundsDurableCategoryCursorTenantFairnessAndLocks(t *test
 	started := time.Now()
 	report, err = classificationStore.SweepHistory(ctx)
 	require(t, err)
-	if time.Since(started) > 3*time.Second || report.Deleted != 1 {
-		t.Fatal("分类锁阻塞了其他租户")
+	elapsed := time.Since(started)
+	if elapsed > 3*time.Second || report.Deleted != 1 {
+		t.Fatal("分类锁阻塞了其他租户", elapsed, report)
 	}
+	t.Log("分类锁被跳过，其他租户实际提交清理", elapsed)
 	_, err = lock.Exec(ctx, `UPDATE retention_maintenance SET next_category=0 WHERE tenant_id='tenant_00'`)
 	require(t, err)
 	require(t, lock.Commit(ctx))

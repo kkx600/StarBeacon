@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,6 +13,79 @@ import (
 	"github.com/kkx600/StarBeacon/internal/decision"
 	"github.com/kkx600/StarBeacon/internal/store"
 )
+
+func TestContinuousDecisionHTTPContractRejectsNullBindingsAndInvalidLookups(t *testing.T) {
+	a := &API{}
+	for _, body := range []string{
+		`{"definition":{"continuous":null}}`,
+		`{"definition":{"continuous":{"provider_id":"provider_owned","provider_revision":1,"automatic":null}}}`,
+		`{"definition":{"continuous":{"provider_id":"provider_owned","provider_revision":1,"trigger":null}}}`,
+		`{"definition":{"continuous":{"provider_id":"provider_owned","provider_revision":1,"automatic":{"accept_uncalibrated_score":true,"accept_uncalibrated_score":false}}}}`,
+	} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("POST", "/", strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		a.validateDecisionPolicy(w, r)
+		if w.Code != 400 {
+			t.Fatal("空绑定或重复授权字段被接受", w.Code)
+		}
+	}
+	d := policyDefinition()
+	d.Mode = "approval"
+	d.Continuous = &decision.ContinuousConfig{ProviderID: "provider_owned", ProviderRevision: 1}
+	for _, mode := range []string{"approval", "automatic"} {
+		d.Mode = mode
+		if mode == "automatic" {
+			d.CandidateAction = "block_source"
+			d.Continuous.Automatic = &decision.AutomaticConfig{SensorID: "sensor_owned", RegistrationID: "registration_owned", ConnectorID: "connector_owned", ConfigSHA256: strings.Repeat("a", 64), TTLSeconds: 60, CooldownSeconds: 60, MaxHourlyActions: 1, AcceptUncalibratedScore: true}
+			d.Continuous.Trigger = &decision.TriageTrigger{Severities: []string{"high"}, MaxDailyJobs: 10, AllowModelContext: true}
+		}
+		raw, err := json.Marshal(map[string]any{"definition": d})
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := httptest.NewRequest("POST", "/", strings.NewReader(string(raw)))
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		a.validateDecisionPolicy(w, r)
+		if w.Code != 200 {
+			t.Fatal("合法持续模式被拒绝", mode, w.Code)
+		}
+	}
+	for _, item := range []struct {
+		id, query string
+		want      int
+	}{
+		{"/", "", 400}, {"evaluation_owned", "?unknown=x", 400}, {"evaluation_owned", "", 503},
+	} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("GET", "/"+item.query, nil)
+		r.SetPathValue("id", item.id)
+		a.continuousDecision(w, r)
+		if w.Code != item.want {
+			t.Fatal("持续授权详情边界错误", item, w.Code)
+		}
+	}
+	if after, count, err := a.SweepContinuousDecisions(context.Background(), "tenant_owned"); err == nil || after != "tenant_owned" || count != 0 {
+		t.Fatal("未就绪扫描跳过了游标或返回成功")
+	}
+	for _, item := range []struct {
+		revision, query string
+		want            int
+	}{{"x", "", 400}, {"01", "", 400}, {"0", "", 400}, {"1000001", "", 400}, {"1", "?unknown=x", 400}, {"1", "?before=/", 400}, {"1", "?before=a&before=b", 400}, {"1", "", 503}} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("GET", "/"+item.query, nil)
+		r.SetPathValue("id", "policy_owned")
+		r.SetPathValue("revision", item.revision)
+		a.automaticTriages(w, r)
+		if w.Code != item.want {
+			t.Fatal("自动研判记录参数边界不正确", item, w.Code)
+		}
+	}
+	if count, err := a.SweepAutomaticTriages(context.Background(), "tenant_owned"); err != nil || count != 0 {
+		t.Fatal("未就绪扫描提交了收费作业")
+	}
+}
 
 func policyDefinition() decision.Definition {
 	return decision.Definition{SchemaVersion: decision.Schema, Mode: "shadow", Expression: "confidence >= threshold", Threshold: .9, CandidateAction: "investigate", MaxAgeSeconds: 3600, ProtectedPrefixes: []string{}}

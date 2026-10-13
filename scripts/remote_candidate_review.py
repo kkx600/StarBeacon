@@ -458,6 +458,8 @@ def activate_frontend(state, review, definition, directory):
 
 def deploy(args):
     state, review = review_tools.read_review()
+    if review_tools.active_runtime_project(state, review) != state['project']:
+        raise ValueError('独立运行实例的候选更新须使用专属部署定义，拒绝操作原角色')
     original_review = json.loads(json.dumps(review))
     capture = review_tools.managed_capture_metadata(state, review)
     if review.get('scope') != 'development_ui_review' or not capture:

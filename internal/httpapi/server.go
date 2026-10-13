@@ -52,9 +52,17 @@ type attempt struct {
 	Count int
 }
 
+// 不存在账号使用相同成本验证；随机占位哈希按进程生成一次，没有任何账号或会话资格。
+var missingAccountHash = sync.OnceValue(func() string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(store.Token()), bcrypt.DefaultCost)
+	if err != nil {
+		panic("登录校验初始化失败")
+	}
+	return string(hash)
+})
+
 func NewAuth(s SessionStore, r *redis.Client, origin, cookie string, secure bool) *Auth {
-	dummy, _ := bcrypt.GenerateFromPassword([]byte(store.Token()), bcrypt.DefaultCost)
-	return &Auth{Store: s, Redis: r, Origin: origin, CookieName: cookie, Secure: secure, dummy: dummy, attempts: map[string]attempt{}}
+	return &Auth{Store: s, Redis: r, Origin: origin, CookieName: cookie, Secure: secure, dummy: []byte(missingAccountHash()), attempts: map[string]attempt{}}
 }
 func Principal(r *http.Request) model.Principal {
 	u, _ := r.Context().Value(principalKey).(model.Principal)
@@ -202,19 +210,26 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		Fail(w, r, 400, "invalid_request", "登录信息格式无效")
 		return
 	}
+	phase := time.Now()
 	u, hash, lookup := a.Store.Password(r.Context(), input.Username)
+	telemetry.AuthPhaseDuration.WithLabelValues("credential_lookup").Observe(time.Since(phase).Seconds())
 	compare := []byte(hash)
 	if lookup != nil {
 		compare = a.dummy
 		u = model.Principal{Username: strings.TrimSpace(input.Username)}
 	}
+	phase = time.Now()
 	e = bcrypt.CompareHashAndPassword(compare, []byte(input.Password))
+	telemetry.AuthPhaseDuration.WithLabelValues("password_verify").Observe(time.Since(phase).Seconds())
 	if lookup != nil && !errors.Is(lookup, model.ErrUnauthenticated) {
 		Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
 		return
 	}
 	success := lookup == nil && e == nil
-	if e = a.Store.LoginAudit(r.Context(), u, success); e != nil {
+	phase = time.Now()
+	e = a.Store.LoginAudit(r.Context(), u, success)
+	telemetry.AuthPhaseDuration.WithLabelValues("audit_write").Observe(time.Since(phase).Seconds())
+	if e != nil {
 		Fail(w, r, 503, "audit_unavailable", "暂时无法记录登录，请稍后重试")
 		return
 	}
@@ -222,7 +237,9 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		Fail(w, r, 401, "invalid_credentials", "登录信息无效")
 		return
 	}
+	phase = time.Now()
 	token, csrf, e := a.Store.CreateSession(r.Context(), u)
+	telemetry.AuthPhaseDuration.WithLabelValues("session_write").Observe(time.Since(phase).Seconds())
 	if e != nil {
 		if errors.Is(e, model.ErrUnauthenticated) {
 			Fail(w, r, 401, "credentials_changed", "账号信息已变化，请重新登录")

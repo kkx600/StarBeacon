@@ -3,7 +3,7 @@
   "synthetic": true,
   "renderer": "Codex in-app browser",
   "baseStateCount": 755,
-  "supplementalCount": 43,
+  "supplementalCount": 45,
   "entries": [
     {
       "file": "overview/data.jpg",
@@ -8578,126 +8578,132 @@
       "url": "http://127.0.0.1:4173/page/decision-policies?state=data&capture=1",
       "title": "决策策略",
       "state": "data",
-      "capturedAt": "2026-10-01T17:51:04.045Z",
+      "capturedAt": "2026-10-12T09:30:52.660Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 136409,
+      "bytes": 176217,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 1080
+        "width": 1920,
+        "height": 1129
       },
-      "sha256": "315f4d2e09b21081a85b9d6f5a93fb348eabf53919446421f35b11f2c43ff984"
+      "sha256": "1b7744a084c4d28eec0102d6afdd7c1a28c6324864c15887b46309d49bf92507"
     },
     {
       "file": "decision-policies/empty.jpg",
       "url": "http://127.0.0.1:4173/page/decision-policies?state=empty&capture=1",
       "title": "决策策略",
       "state": "empty",
-      "capturedAt": "2026-10-01T17:51:04.593Z",
+      "capturedAt": "2026-10-12T09:30:53.050Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 79676,
+      "bytes": 110860,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 800
+        "width": 1920,
+        "height": 1080
       },
-      "sha256": "84e21675d70219fc9c2e88fe5aa7be8eca93847c78633bfbc423acc035a655eb"
+      "sha256": "e1921dbdd497817e574676f85e21bfe3ed6e8db3a3a6be86ce40e85ec16dce9c"
     },
     {
       "file": "decision-policies/detail.jpg",
       "url": "http://127.0.0.1:4173/page/decision-policies?state=detail&capture=1",
       "title": "决策策略",
       "state": "detail",
-      "capturedAt": "2026-10-01T17:51:05.862Z",
+      "capturedAt": "2026-10-12T09:30:54.677Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 108187,
+      "bytes": 165922,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 1080
+        "width": 1920,
+        "height": 1129
       },
-      "sha256": "506f334908663715018049825a360b0077f0b5fa9f85b0cda700ef30623c789f"
+      "sha256": "452202b1b8430774ff59ba365485a1630c6ad65d5d6c10b947a18aa8ace6adbe"
     },
     {
       "file": "decision-policies/action.jpg",
       "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
       "title": "决策策略",
       "state": "action",
-      "capturedAt": "2026-10-01T17:51:05.955Z",
+      "capturedAt": "2026-10-12T09:30:56.191Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 114170,
+      "bytes": 171687,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 1080
+        "width": 1920,
+        "height": 1129
       },
-      "sha256": "502520dff9853ead14b3b20e4c77ac5543643e6e931a8bacd71aa5edbc370adc"
+      "sha256": "90b9f44ccb179e527913522de8a6cdef065ea103075b427ef32fca4892ab7321"
     },
     {
       "file": "decision-policies/loading.jpg",
       "url": "http://127.0.0.1:4173/page/decision-policies?state=loading&capture=1",
       "title": "决策策略",
       "state": "loading",
-      "capturedAt": "2026-10-01T17:51:07.574Z",
+      "capturedAt": "2026-10-12T09:30:56.493Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 79392,
+      "bytes": 111086,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 919
+        "width": 1920,
+        "height": 1080
       },
-      "sha256": "f6e7d4fdfaecff8df0683b9842cb50a885a075e6bb3ce846cc8665b167d10515"
+      "sha256": "133ab88ba954c19a48339d20852f70da3306b6ad042c5006b2de2523b958c572"
     },
     {
       "file": "decision-policies/error.jpg",
       "url": "http://127.0.0.1:4173/page/decision-policies?state=error&capture=1",
       "title": "决策策略",
       "state": "error",
-      "capturedAt": "2026-10-01T17:51:07.526Z",
+      "capturedAt": "2026-10-12T09:30:56.769Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
       },
-      "bytes": 78664,
+      "bytes": 110015,
+      "pageTitle": "决策策略",
       "image": {
-        "width": 1280,
-        "height": 814
+        "width": 1920,
+        "height": 1080
       },
-      "sha256": "e81d3455ada301efee0b51bc60a27bb684d2ff30856eea59e0f4181c1bfb1763"
+      "sha256": "983fe36877f430fd8fd207ef8b5b9014b1d1f07b3b33f0e10a7054c19c99e092"
     },
     {
       "file": "devices/data.jpg",
@@ -13618,7 +13624,7 @@
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
       "title": "评估记录",
       "state": "data",
-      "capturedAt": "2026-10-11T14:14:24.603Z",
+      "capturedAt": "2026-10-11T17:26:12.572Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13627,19 +13633,19 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 151817,
+      "bytes": 148430,
       "image": {
         "width": 1280,
         "height": 1127
       },
-      "sha256": "69007190cbbbfb389e15a177974a8e02959fd153eb07cd1393adaa7d5ab6614f"
+      "sha256": "f7cee3cc2ffedede85619df8a8d7ee0468269ef01fd3bcc9ae40a35de62e3728"
     },
     {
       "file": "decision-evaluations/empty.jpg",
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=empty&capture=1",
       "title": "评估记录",
       "state": "empty",
-      "capturedAt": "2026-10-11T14:14:30.035Z",
+      "capturedAt": "2026-10-11T17:26:13.992Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13648,19 +13654,19 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 76860,
+      "bytes": 75807,
       "image": {
         "width": 1280,
         "height": 831
       },
-      "sha256": "5536cb72945b5014f470dcd9ab9159a6009082cdd1980a79dc9530960aa4e16f"
+      "sha256": "a44224e423364ee81d1054c423b5838ffa129feaf86cf68007837d55b7566651"
     },
     {
       "file": "decision-evaluations/detail.jpg",
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=detail&capture=1",
       "title": "评估记录",
       "state": "detail",
-      "capturedAt": "2026-10-11T14:14:37.603Z",
+      "capturedAt": "2026-10-11T17:26:18.243Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13669,19 +13675,19 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 114435,
+      "bytes": 122928,
       "image": {
         "width": 1280,
         "height": 1127
       },
-      "sha256": "9c7e713cb388b7d51be4299625533cc0247dc0ae48b053bb6cf7dc8d00a5c55c"
+      "sha256": "3c3d82ebdf57fa4ff912ea7edd368496de7c831fc2b7bb22f45a627f47e3fa0d"
     },
     {
       "file": "decision-evaluations/action.jpg",
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=action&capture=1",
       "title": "评估记录",
       "state": "action",
-      "capturedAt": "2026-10-11T14:14:45.528Z",
+      "capturedAt": "2026-10-11T17:26:19.755Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13690,19 +13696,19 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 126223,
+      "bytes": 127541,
       "image": {
         "width": 1280,
         "height": 1127
       },
-      "sha256": "867e10e75691c4945645757174dff92dab1b8f781bd752557b31510e31165eb2"
+      "sha256": "1426e10b3db611d4c36fedee4bd8aa1ada08827b542297e4580dc3d99fede2e2"
     },
     {
       "file": "decision-evaluations/loading.jpg",
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=loading&capture=1",
       "title": "评估记录",
       "state": "loading",
-      "capturedAt": "2026-10-11T14:14:51.185Z",
+      "capturedAt": "2026-10-11T17:26:15.404Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13711,19 +13717,19 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 80157,
+      "bytes": 76883,
       "image": {
         "width": 1280,
         "height": 968
       },
-      "sha256": "17b684449b8e50fd20462cf019c97736e44594cc58c64d96bad634e6f33e01b4"
+      "sha256": "a14d48d5d18b8b2441439f80555e587e88d400f55273cde42948eea92de6bb2a"
     },
     {
       "file": "decision-evaluations/error.jpg",
       "url": "http://127.0.0.1:4173/page/decision-evaluations?state=error&capture=1",
       "title": "评估记录",
       "state": "error",
-      "capturedAt": "2026-10-11T14:15:17.122Z",
+      "capturedAt": "2026-10-11T17:26:16.822Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
@@ -13732,12 +13738,12 @@
         "scrollWidth": 1280,
         "width": 1280
       },
-      "bytes": 78502,
+      "bytes": 77049,
       "image": {
         "width": 1280,
         "height": 863
       },
-      "sha256": "da9a71abb8066a0e88b627b499235daba282781f8249e13bb91606472a1cb249"
+      "sha256": "2b57459fe273c415fdf37904072e11912f36bb3eb6ed337a82fcb61f0a9bcef7"
     },
     {
       "file": "notification-routes/data.jpg",
@@ -16762,6 +16768,50 @@
         "height": 894
       },
       "sha256": "c7cc2e8a965a3f7cdc647ad8786bc0d462c9f342a91312e72a01b098991a2f17"
+    },
+    {
+      "file": "continuous-authorization-form.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action",
+      "title": "限时自动授权配置",
+      "state": "supplemental",
+      "capturedAt": "2026-10-12T09:30:50.881Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 1080,
+        "scrollWidth": 1920,
+        "width": 1920
+      },
+      "bytes": 175639,
+      "pageTitle": "决策策略",
+      "image": {
+        "width": 1920,
+        "height": 1129
+      },
+      "sha256": "1bc682307ea752caa682a6a7fa6387065d58e3d15f144deb8a6a1f8558946ca1"
+    },
+    {
+      "file": "continuous-authorization-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "持续决策授权详情",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:28:00.504Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 101884,
+      "pageTitle": "评估记录",
+      "image": {
+        "width": 1280,
+        "height": 1127
+      },
+      "sha256": "5e84cf500a2cb30b8f61cf2c06b7e4e3471a6591b9f6f2b513ad4c82dcb20877"
     }
   ]
 }

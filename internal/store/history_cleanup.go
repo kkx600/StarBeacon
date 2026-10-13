@@ -46,6 +46,8 @@ var historyCategories = []historyCategory{
 	{"decision_policy_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM decision_policies c WHERE c.tenant_id=h.tenant_id AND c.id=h.policy_id AND c.revision=h.revision)`},
 	{"decision_evaluations", "expires_at", "true"},
 	{"decision_responses", "expires_at", "true"},
+	{"decision_continuous_runs", "expires_at", "true"},
+	{"decision_triage_triggers", "expires_at", `state<>'pending'`},
 }
 
 type HistorySweep struct {
@@ -156,26 +158,41 @@ func (p *Postgres) sweepTenantHistory(ctx context.Context, tenant string, budget
 		}
 		var deleted int64
 		last := ""
-		for range len(historyCategories) {
-			limit := min(256, budget-int(deleted), 1024-int(deleted))
-			if limit <= 0 {
+		for visited := 0; visited < len(historyCategories); {
+			remaining := min(budget-int(deleted), 1024-int(deleted))
+			if remaining <= 0 {
 				break
 			}
-			category := historyCategories[next]
-			scope := "h.tenant_id=$1"
-			if category.table == "sessions" {
-				scope = "true"
+			// 批内按每表的最大删除量预留预算，不能用尚未返回的删除数预支额度。
+			// 同一事务顺序执行，减少空分类的数据库往返，不改变引用检查和分类续点。
+			limit := min(256, remaining)
+			size := min(remaining/limit, len(historyCategories)-visited)
+			batch := &pgx.Batch{}
+			for offset := range size {
+				category := historyCategories[(next+offset)%len(historyCategories)]
+				scope := "h.tenant_id=$1"
+				if category.table == "sessions" {
+					scope = "true"
+				}
+				// 标识符和条件均为内部常量；租户与上限始终绑定，不授予历史 UPDATE。
+				query := fmt.Sprintf(`WITH picked AS(SELECT h.ctid FROM %s h WHERE %s AND h.%s<=now() AND (%s) ORDER BY h.%s,h.ctid LIMIT $2) DELETE FROM %s h USING picked WHERE h.ctid=picked.ctid`, category.table, scope, category.expiry, category.predicate, category.expiry, category.table)
+				batch.Queue(query, tenant, limit)
 			}
-			// 表名、列名和条件均为内部常量；租户与批次上限始终通过参数绑定。
-			// 不向不可变历史授予 UPDATE；普通业务行锁冲突由短 lock_timeout 回滚并重试。
-			query := fmt.Sprintf(`WITH picked AS(SELECT h.ctid FROM %s h WHERE %s AND h.%s<=now() AND (%s) ORDER BY h.%s,h.ctid LIMIT $2) DELETE FROM %s h USING picked WHERE h.ctid=picked.ctid`, category.table, scope, category.expiry, category.predicate, category.expiry, category.table)
-			tag, err := tx.Exec(ctx, query, tenant, limit)
-			if err != nil {
+			results := tx.SendBatch(ctx, batch)
+			for range size {
+				tag, err := results.Exec()
+				if err != nil {
+					return errors.Join(err, results.Close())
+				}
+				category := historyCategories[next]
+				counts[category.table] += tag.RowsAffected()
+				deleted += tag.RowsAffected()
+				last, next = category.table, (next+1)%len(historyCategories)
+				visited++
+			}
+			if err := results.Close(); err != nil {
 				return err
 			}
-			counts[category.table] += tag.RowsAffected()
-			deleted += tag.RowsAffected()
-			last, next = category.table, (next+1)%len(historyCategories)
 		}
 		_, err := tx.Exec(ctx, `UPDATE retention_maintenance SET next_category=$2,last_category=$3,last_deleted=$4::bigint::integer,total_deleted=total_deleted+$4::bigint,checked_at=clock_timestamp() WHERE tenant_id=$1`, tenant, next, last, deleted)
 		return err

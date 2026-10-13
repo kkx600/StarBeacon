@@ -62,6 +62,10 @@ func (p *Postgres) ExistingAlertTriage(ctx context.Context, u model.Principal, k
 }
 
 func (p *Postgres) CreateAlertTriage(ctx context.Context, u model.Principal, input triage.Request, key string, evidence triage.Evidence, queue *river.Client[pgx.Tx], vault *secrets.Vault, requestID string) (triage.Job, error) {
+	return p.createAlertTriage(ctx, u, input, key, evidence, queue, vault, requestID, nil)
+}
+
+func (p *Postgres) createAlertTriage(ctx context.Context, u model.Principal, input triage.Request, key string, evidence triage.Evidence, queue *river.Client[pgx.Tx], vault *secrets.Vault, requestID string, automatic *AutomaticTriageCandidate) (triage.Job, error) {
 	var job triage.Job
 	prompt, err := triage.Prompt(input, evidence)
 	if err != nil || u.Role != "admin" || !contract.ValidID(u.ID) || !contract.ValidID(key) || queue == nil || queue.Schema() != assistant.QueueSchema {
@@ -72,6 +76,11 @@ func (p *Postgres) CreateAlertTriage(ctx context.Context, u model.Principal, inp
 	err = p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, u.TenantID+"/models"); err != nil {
 			return err
+		}
+		if automatic != nil {
+			if err := checkAutomaticTrigger(ctx, tx, *automatic); err != nil {
+				return err
+			}
 		}
 		if err := recoverAlertTriage(ctx, tx, u.TenantID); err != nil {
 			return err
@@ -126,6 +135,11 @@ func (p *Postgres) CreateAlertTriage(ctx context.Context, u model.Principal, inp
 		}
 		if _, err := tx.Exec(ctx, `UPDATE alert_triage_jobs SET river_job_id=$3 WHERE tenant_id=$1 AND id=$2`, u.TenantID, job.ID, queued.Job.ID); err != nil {
 			return err
+		}
+		if automatic != nil {
+			if _, err := tx.Exec(ctx, `UPDATE decision_triage_triggers SET state='submitted',code='model_queue_accepted',triage_id=$3 WHERE tenant_id=$1 AND id=$2 AND state='pending'`, u.TenantID, automatic.ID, job.ID); err != nil {
+				return err
+			}
 		}
 		return insertOperationAudit(ctx, tx, u, "alerts.triage.create", job.ID, requestID)
 	})
@@ -231,6 +245,13 @@ func (p *Postgres) StartAlertTriage(ctx context.Context, args triage.Args, river
 			return nil
 		}
 		code := ""
+		var triggerAuthorized bool
+		if err := tx.QueryRow(ctx, `SELECT NOT EXISTS(SELECT 1 FROM decision_triage_triggers q WHERE q.tenant_id=$1 AND q.triage_id=$2) OR EXISTS(SELECT 1 FROM decision_triage_triggers q JOIN decision_policies h ON h.tenant_id=q.tenant_id AND h.id=q.policy_id AND h.revision=q.policy_revision JOIN decision_policy_revisions v ON v.tenant_id=h.tenant_id AND v.policy_id=h.id AND v.revision=h.revision JOIN sensors s ON s.tenant_id=q.tenant_id AND s.id=q.sensor_id AND s.registration_id=q.registration_id AND s.active WHERE q.tenant_id=$1 AND q.triage_id=$2 AND q.state='submitted' AND h.active AND v.definition_sha256=q.definition_sha256 AND v.created_by=q.created_by AND v.definition->'continuous'->'trigger' IS NOT NULL AND q.observed_at>=now()-make_interval(secs=>(v.definition->>'max_age_seconds')::integer))`, args.TenantID, args.JobID).Scan(&triggerAuthorized); err != nil {
+			return err
+		}
+		if !triggerAuthorized {
+			code = "authorization_revoked"
+		}
 		if err := activePlanOwner(ctx, tx, args.TenantID, owner); errors.Is(err, pgx.ErrNoRows) {
 			code = "authorization_revoked"
 		} else if err != nil {

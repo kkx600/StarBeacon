@@ -31,7 +31,7 @@ func decisionResponseFailure(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, response.ErrQuota):
 		httpapi.Fail(w, r, 429, "response_quota_exhausted", err.Error())
 	case errors.Is(err, response.ErrPermission), errors.Is(err, decision.ErrPermission):
-		httpapi.Fail(w, r, 403, "decision_response_forbidden", "当前账号不再具有处置确认权限，请核对账号状态")
+		httpapi.Fail(w, r, 403, "decision_response_forbidden", "当前账号或策略不满足人工处置确认条件，请核对账号状态和运行模式")
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "本人评估、研判或探针不存在、已到期或不可访问")
 	default:

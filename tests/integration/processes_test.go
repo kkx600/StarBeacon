@@ -276,7 +276,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			if _, err := tx.Exec(clean, `DELETE FROM starbeacon_jobs.river_job WHERE args->>'tenant_id'=$1`, tenant); err != nil {
 				return err
 			}
-			for _, table := range []string{"packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			for _, table := range []string{"packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}
@@ -782,6 +782,9 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	})
 	verifyNativeRuleGeneration(t, ctx, platformHTTP, collectorHTTP, provider.URL, modelCalls)
 	triageJob := verifyNativeAlertTriage(t, ctx, platformHTTP, alerts.Items[0], triageProvider.URL, triageCalls)
+	if !managed {
+		verifyNativeContinuousDecision(t, ctx, platformHTTP, alerts.Items[0], identity.SensorID, responseDevice, triageProvider.URL)
+	}
 	verifyNativeResponse(t, ctx, platformHTTP, identity.SensorID, responseDevice)
 	if !managed {
 		// 离线 PCAP 的保留测试地址仅连接协议夹具，不封禁真实管理链路。

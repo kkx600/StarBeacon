@@ -70,10 +70,45 @@ def read_review():
     for key in ('platform_port', 'collector_port'):
         if type(result.get(key)) is not int or not 1024 <= result[key] <= 65535:
             raise ValueError('界面验收端口无效')
+    active_runtime_project(state, result)
     return state, result
 
 
+def active_runtime_project(state, review):
+    """独立恢复实例须绑定原数据项目和已核验的程序来源，不能静默回退到旧角色。"""
+    base = state['project']
+    project = review.get('runtime_service_project', base)
+    candidate = review.get('runtime_candidate') or {}
+    if not isinstance(candidate, dict) or not isinstance(project, str):
+        raise ValueError('在线运行实例标识无效')
+    if project == base:
+        if candidate.get('runtime_project', base) != base:
+            raise ValueError('在线运行实例与候选记录不一致')
+        return base
+    if not re.fullmatch(re.escape(base) + r'_r[1-9][0-9]{0,2}', project):
+        raise ValueError('独立运行实例不属于本验收项目')
+    source, frontend = review.get('runtime_backend_source', ''), review.get('runtime_frontend_source', '')
+    directory, candidate_directory = review.get('directory'), candidate.get('directory')
+    if (review.get('project') != base or candidate.get('status') != 'passed'
+        or candidate.get('scope') != 'engineering_actual_zip_review_not_formal_release'
+        or candidate.get('project') != base or candidate.get('base_project') != base
+        or candidate.get('runtime_project') != project
+        or not isinstance(source, str) or not re.fullmatch(r'[a-f0-9]{64}', source)
+        or not isinstance(frontend, str) or not re.fullmatch(r'[a-f0-9]{64}', frontend)
+        or candidate.get('backend_source') != source or candidate.get('frontend_source') != frontend
+        or not isinstance(directory, str) or not isinstance(candidate_directory, str)
+        or not re.fullmatch(re.escape(state['directory']) + r'/review-[a-f0-9]{16}', directory)
+        or not re.fullmatch(re.escape(directory) + r'/candidate-[a-f0-9]{16}', candidate_directory)):
+        raise ValueError('独立运行实例缺少一致的候选验收来源')
+    return project
+
+
 def compose(state, review, arguments, **options):
+    project = active_runtime_project(state, review)
+    if project != state['project']:
+        if arguments != ['ps', '--all', 'review', 'review-web', 'review-capture']:
+            raise ValueError('独立运行实例仅支持状态查看，启停和更新须使用该实例的专属部署定义')
+        return acceptance.ssh(state['host'], ['docker', 'compose', '--env-file', state['directory'] + '/dependencies.env', '-p', project, '-f', review['runtime_candidate']['directory'] + '/isolated-runtime-compose.json', *arguments], **options)
     return acceptance.ssh(state['host'], ['docker', 'compose', '--env-file', state['directory'] + '/dependencies.env', '-p', state['project'], '-f', state['directory'] + '/compose.json', '-f', review['directory'] + '/compose.json', *arguments], **options)
 
 
@@ -243,9 +278,10 @@ for app,port,prefix in [('platform',8080,'/api/v1'),('collector',8081,'/api/loca
             rows.append(row)
 print(json.dumps(rows,ensure_ascii=False))
 '''
-    result = acceptance.ssh(state['host'], ['docker', 'exec', state['project'] + '-review-1', 'python3', '-c', probe], stdout=subprocess.PIPE, timeout=60)
+    project = active_runtime_project(state, review)
+    result = acceptance.ssh(state['host'], ['docker', 'exec', project + '-review-1', 'python3', '-c', probe], stdout=subprocess.PIPE, timeout=60)
     rows = json.loads(result.stdout)
-    report = {'scope': 'development_gateway_review', 'backend_source': review.get('runtime_backend_source', review['backend_source']), 'frontend_source': review.get('runtime_frontend_source', review['frontend_source']), 'nginx_source': review.get('runtime_nginx_source'), 'rows': rows}
+    report = {'scope': 'development_gateway_review', 'runtime_project': project, 'backend_source': review.get('runtime_backend_source', review['backend_source']), 'frontend_source': review.get('runtime_frontend_source', review['frontend_source']), 'nginx_source': review.get('runtime_nginx_source'), 'rows': rows}
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return report
 
@@ -301,12 +337,15 @@ def main():
         deploy()
     else:
         state, review = read_review()
+        project = active_runtime_project(state, review)
+        if project != state['project'] and arguments.action not in ('status', 'verify-gateway', 'tunnel'):
+            raise ValueError('独立运行实例的启停和更新须使用专属部署定义，拒绝操作原角色')
         if arguments.action == 'update':
             update(state, review)
         elif arguments.action == 'verify-gateway':
             verify_gateway(state, review)
         elif arguments.action == 'tunnel':
-            payload = acceptance.ssh(state['host'], ['docker', 'inspect', state['project'] + '-review-1', '--format', '{{json .NetworkSettings.Networks}}'], stdout=subprocess.PIPE, timeout=15)
+            payload = acceptance.ssh(state['host'], ['docker', 'inspect', project + '-review-1', '--format', '{{json .NetworkSettings.Networks}}'], stdout=subprocess.PIPE, timeout=15)
             networks = json.loads(payload.stdout)
             network = networks.get(state['project'] + '_default')
             if len(networks) != 1 or not network or network.get('Gateway'):
@@ -322,7 +361,13 @@ def main():
                 compose(state, review, ['run', '--rm', '--no-deps', 'review-init'])
             compose(state, review, ['up', '-d', '--wait', '--wait-timeout', '120', '--no-deps', 'review', 'review-web'])
         else:
-            compose(state, review, ['ps', '--all', 'review', 'review-web'] if arguments.action == 'status' else ['stop', 'review-web', 'review'])
+            if arguments.action == 'status':
+                services = ['review', 'review-web']
+                if project != state['project']:
+                    services.append('review-capture')
+                compose(state, review, ['ps', '--all', *services])
+            else:
+                compose(state, review, ['stop', 'review-web', 'review'])
 
 
 if __name__ == '__main__':

@@ -137,6 +137,15 @@ func (p *Postgres) SaveDecisionPolicy(ctx context.Context, u model.Principal, ke
 		if current.Revision > 0 && current.Name == c.Name && current.Description == c.Description && current.Active == *c.Active && current.DefinitionSHA256 == decision.Digest(c.Definition) {
 			return decision.ErrInput
 		}
+		if *c.Active && c.Definition.Continuous != nil && c.Definition.Continuous.Trigger != nil {
+			var count int
+			if err := tx.QueryRow(ctx, `SELECT count(*) FROM decision_policies h JOIN decision_policy_revisions v ON v.tenant_id=h.tenant_id AND v.policy_id=h.id AND v.revision=h.revision WHERE h.tenant_id=$1 AND h.id<>$2 AND h.active AND v.definition->'continuous'->'trigger' IS NOT NULL`, u.TenantID, c.ID).Scan(&count); err != nil {
+				return err
+			}
+			if count >= 8 {
+				return decision.ErrQuota
+			}
+		}
 		var count int
 		if current.Revision == 0 {
 			if err := tx.QueryRow(ctx, `SELECT count(*) FROM decision_policies WHERE tenant_id=$1`, u.TenantID).Scan(&count); err != nil {

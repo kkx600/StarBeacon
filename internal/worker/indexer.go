@@ -94,6 +94,12 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 		indexed = append(indexed, docs[i])
 	}
 	docs = indexed
+	if batch.StreamId == "alerts" && w.DB != nil && len(docs) > 0 {
+		// 触发登记与索引重投共享稳定事件身份；持久登记失败时不确认原消息。
+		if e := w.DB.RecordAutomaticTriage(ctx, envelope.TenantID, docs); e != nil {
+			return e
+		}
+	}
 	ids := make([]string, 0, len(docs))
 	for _, d := range docs {
 		ids = append(ids, d.EventID)

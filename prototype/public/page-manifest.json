@@ -4086,7 +4086,7 @@
       "title": "决策策略",
       "group": "response",
       "kind": "table",
-      "description": "配置判断表达式、分数阈值、材料时限和保护网段，复用本人研判验证策略。",
+      "description": "配置判断条件、模型修订与限时处置授权，持续核对本人完成的研判。",
       "requirements": [
         "SB-RSP-001"
       ],
@@ -6007,7 +6007,7 @@
       "title": "评估记录",
       "group": "response",
       "kind": "table",
-      "description": "查看本人影子评估的不可变判断与策略快照。",
+      "description": "查看本人评估的不可变判断、策略快照和独立持续授权。",
       "requirements": [
         "SB-RSP-001",
         "SB-RSP-004"

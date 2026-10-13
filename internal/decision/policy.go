@@ -1,4 +1,4 @@
-// Package decision 对冻结研判材料执行有界影子策略，不持有设备写入权限。
+// Package decision 对冻结研判材料执行有界策略判断，不持有设备写入权限。
 package decision
 
 import (
@@ -33,7 +33,7 @@ const (
 
 var (
 	ErrInput      = errors.New("决策策略输入无效")
-	ErrMode       = errors.New("当前执行资格只支持影子评估")
+	ErrMode       = errors.New("持续决策模式缺少模型或执行授权配置")
 	ErrPermission = errors.New("决策策略操作权限已撤回")
 	ErrQuota      = errors.New("决策策略数量或变更额度已达上限")
 	ErrSource     = errors.New("研判材料与来源摘要不一致")
@@ -68,21 +68,28 @@ func Compile(expression string) (cel.Program, error) {
 }
 
 type Definition struct {
-	SchemaVersion     string   `json:"schema_version"`
-	Mode              string   `json:"mode"`
-	Expression        string   `json:"expression"`
-	Threshold         float64  `json:"threshold"`
-	CandidateAction   string   `json:"candidate_action"`
-	MaxAgeSeconds     int      `json:"max_age_seconds"`
-	ProtectedPrefixes []string `json:"protected_prefixes"`
+	SchemaVersion     string            `json:"schema_version"`
+	Mode              string            `json:"mode"`
+	Expression        string            `json:"expression"`
+	Threshold         float64           `json:"threshold"`
+	CandidateAction   string            `json:"candidate_action"`
+	MaxAgeSeconds     int               `json:"max_age_seconds"`
+	ProtectedPrefixes []string          `json:"protected_prefixes"`
+	Continuous        *ContinuousConfig `json:"continuous,omitempty"`
 }
 
 func (d Definition) Validate() error {
 	if !slices.Contains([]string{"shadow", "approval", "automatic"}, d.Mode) {
 		return ErrInput
 	}
-	if d.Mode != "shadow" {
+	if d.Mode == "shadow" && d.Continuous != nil {
+		return ErrInput
+	}
+	if d.Mode != "shadow" && (d.Continuous == nil || d.Continuous.Validate(d.Mode) != nil) {
 		return ErrMode
+	}
+	if d.Mode == "automatic" && (d.CandidateAction != "block_source" || d.Threshold < 0.5) {
+		return ErrInput
 	}
 	if d.SchemaVersion != Schema || math.IsNaN(d.Threshold) || math.IsInf(d.Threshold, 0) || d.Threshold <= 0 || d.Threshold > 1 || !slices.Contains([]string{"investigate", "notify", "block_source"}, d.CandidateAction) || d.MaxAgeSeconds < 60 || d.MaxAgeSeconds > 86400 || d.ProtectedPrefixes == nil || len(d.ProtectedPrefixes) > 32 {
 		return ErrInput

@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"flag"
 	"fmt"
@@ -121,6 +122,50 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			return err
 		}
 	}
+	// 本地签名、存储与地址配置先核对；远端连接延迟不能掩盖本地配置错误。
+	var signer ed25519.PrivateKey
+	var samples replay.Storage
+	var packets packetarchive.ObjectStorage
+	var redisOptions *redis.Options
+	packetStaging := filepath.Join(c.PacketDir, "validation")
+	if role == "platform" {
+		signer, e = control.PrivateKey(c.CommandSigningKey)
+		if e != nil {
+			return e
+		}
+	}
+	if role == "platform" {
+		redisOptions, e = redis.ParseURL(c.RedisURL)
+		if e != nil {
+			return e
+		}
+		if c.ReplayBackend != "" {
+			local, e := replay.NewLocal(c.ReplayDir, c.ReplayBytes)
+			if e != nil {
+				return e
+			}
+			samples = local
+			if c.ReplayBackend == "s3" {
+				samples, e = replay.NewS3(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure, local)
+				if e != nil {
+					return e
+				}
+			}
+		}
+		if c.PacketBackend != "" {
+			if e = os.MkdirAll(packetStaging, 0700); e != nil {
+				return e
+			}
+			if c.PacketBackend == "s3" {
+				packets, e = packetarchive.NewS3Objects(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure)
+			} else {
+				packets, e = packetarchive.NewLocalObjects(filepath.Join(c.PacketDir, "objects"))
+			}
+			if e != nil {
+				return e
+			}
+		}
+	}
 	startup, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	var db *store.Postgres
@@ -161,51 +206,15 @@ func Run(ctx context.Context, role string, c config.Config) error {
 	var handler http.Handler = m
 	switch role {
 	case "platform":
-		options, e := redis.ParseURL(c.RedisURL)
-		if e != nil {
-			return e
-		}
-		redisClient = redis.NewClient(options)
+		redisClient = redis.NewClient(redisOptions)
 		defer redisClient.Close()
 		if e = redisClient.Ping(startup).Err(); e != nil {
 			return e
 		}
 		auth := httpapi.NewAuth(db, redisClient, c.AllowedOrigin, c.CookieName, c.Mode == "production")
-		signer, e := control.PrivateKey(c.CommandSigningKey)
-		if e != nil {
-			return e
-		}
 		wakeup := &control.Wakeup{}
-		var samples replay.Storage
-		if c.ReplayBackend != "" {
-			local, e := replay.NewLocal(c.ReplayDir, c.ReplayBytes)
-			if e != nil {
-				return e
-			}
-			samples = local
-			if c.ReplayBackend == "s3" {
-				samples, e = replay.NewS3(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure, local)
-				if e != nil {
-					return e
-				}
-			}
-		}
-		var packets packetarchive.ObjectStorage
-		packetStaging := filepath.Join(c.PacketDir, "validation")
-		if c.PacketBackend != "" {
-			if e = os.MkdirAll(packetStaging, 0700); e != nil {
-				return e
-			}
-			if c.PacketBackend == "s3" {
-				packets, e = packetarchive.NewS3Objects(c.ReplayS3Endpoint, c.ReplayS3AccessKey, c.ReplayS3SecretKey, c.ReplayS3Bucket, c.ReplayS3Secure)
-			} else {
-				packets, e = packetarchive.NewLocalObjects(filepath.Join(c.PacketDir, "objects"))
-			}
-			if e != nil {
-				return e
-			}
-		}
 		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes, Vault: vault, Outbound: policy, Packets: packets, PacketStaging: packetStaging}
+
 		if packets != nil {
 			group.Go(func() error {
 				ticker := time.NewTicker(time.Minute)
@@ -278,6 +287,26 @@ func Run(ctx context.Context, role string, c config.Config) error {
 				return nil
 			})
 		}
+		// 队列与就绪状态完成绑定后才启动读取 API 配置的持续轮询。
+		group.Go(func() error {
+			timer := time.NewTicker(time.Second)
+			defer timer.Stop()
+			after := ""
+			for {
+				select {
+				case <-run.Done():
+					return nil
+				case <-timer.C:
+					call, cancel := context.WithTimeout(run, 10*time.Second)
+					next, _, err := api.SweepContinuousDecisions(call, after)
+					cancel()
+					after = next
+					if err != nil && run.Err() == nil {
+						slog.Warn("持续决策部分材料核对未完成，未确认任务不执行")
+					}
+				}
+			}
+		})
 		if samples != nil {
 			group.Go(func() error {
 				timer := time.NewTicker(time.Minute)

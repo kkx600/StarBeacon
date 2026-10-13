@@ -41,7 +41,7 @@ const names: Record<string,string[]> = {
   sandbox: ['二进制动态分析','PDF 动态分析','脚本动态分析','沙箱复核任务','离线样本分析'],
   'file-report': ['PDF 分析报告','二进制分析报告','脚本分析报告','样本复核报告','重复分析比较'],
   'decision-evaluation':['evaluation_example_1','evaluation_example_2','evaluation_example_3','evaluation_example_4','evaluation_example_5'],
-  decision: ['Web 攻击影子策略','暴力尝试影子策略','高危外连影子策略','敏感资产影子策略','文件分析影子策略'],
+  decision: ['Web 攻击策略','暴力尝试策略','高危外连策略','敏感资产策略','文件分析策略'],
   assessment: ['管理路径告警研判','DNS 外连线索研判','凭据尝试研判','TLS 元数据研判','文件样本研判'],
   latency: ['捕获 → 引擎检测','检测 → 持久接收','接收 → ES 可检索','告警 → 通知接受','审批 → 执行采集器','采集器 → 设备接受','设备接受 → 配置读回','配置读回 → 效果观察'],
   metric: ['Web 攻击场景','暴力登录场景','外连异常场景','文件异步分析场景','手动审批场景'],
@@ -74,7 +74,7 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
       handshake:i%3===1?'缺少 SYN':'SYN / SYN-ACK / ACK',continuity:i%3===2?'存在字节缺口':'双向已核对',closure:i%3===2?'活动连接':'FIN / ACK',
       accepted:i===1?'尚未确认':'已接受',effective:i===1?'结果未知':'已读回',observed:i%2?'无后续流量':'已观察丢弃',
       format:['PCAPNG','CSV','JSON'][i%3]!,port:[443,80,53,445][i%4]!,window:'最近 24 小时',schedule:'每天 08:00（Asia/Shanghai）',
-      entity:['source.ip','asset.id','user.id'][i%3]!,lateness:'60 秒',revision:1+i%3,sid:1000001+i,hits:142-i*11,mode:['审批','影子','自动'][i%3]!,
+      entity:['source.ip','asset.id','user.id'][i%3]!,lateness:'60 秒',revision:1+i%3,sid:1000001+i,hits:142-i*11,mode:['审批','影子评估','自动'][i%3]!,
       target:i%2?'10.20.1.18':'198.51.100.24',sensor:['总部执行探针','分支执行探针'][i%2]!,address:`https://192.0.2.${20+i}`,capability:i%2?'终端隔离／恢复':'IP 封禁／解封',
       account:`analyst${i+1}@example.test`,department:['总部安全中心','研发中心'][i%2]!,mfa:i%3?'已验证':'需核验',
       provider:['本地服务','通用 API','Jev','Laya'][i%4]!,purpose:['研判＋结构化输出','报告总结','决策适配','决策适配'][i%4]!,residency:i%2?'授权云区域':'本地',
@@ -170,7 +170,9 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
     if (family==='report') {record.type=name.includes('日报')?'日报':name.includes('月报')?'月报':'周报';record.window=record.type==='日报'?'2026-09-29':record.type==='周报'?'2026-09-21 — 2026-09-27':'2026-09';record.status=['待审核','已审核','生成中','证据不足'][i%4]!}
     if (family==='retention') {record.status='继承默认';record.storage=({'全量 PCAP':'S3 对象存储','文件样本':'S3 对象存储＋PG 元数据','安全报告':'S3 正文＋PG 元数据','导出记录':'PG 任务＋S3 导出对象'} as Record<string,string>)[name]??'ES 数据流'}
     if(family==='decision-evaluation'){record.name='evaluation_example_'+(i+1);record.policy='攻击尝试策略 / 1';record.model='triage_example_'+i;record.confidence=record.status==='不参与决策'?null:0.87;record.expression=record.status==='策略未命中'?'confidence >= 0.95':'confidence >= threshold && verdict == \"confirmed\"';record.action=['策略命中','保护网段排除'].includes(record.status)?'建议评估源 IP 封禁':'继续调查';record.source='192.0.2.10';record.authorized='未授权执行';record.expires='2027-03-29 09:42:16';record.digest='未提供实际档案；不生成虚构摘要';record.notes='只包含判断及策略元数据，不复制原始载荷和提供方凭据。'}
-    if (family==='decision') {record.mode='影子';record.model='triage_example_'+i;record.confidence=0.8;record.age=3600;record.expression='confidence >= threshold && verdict == "confirmed"';record.scope=i%2?'2001:db8::/32':'192.0.2.0/24'}
+    if (family==='decision'||family==='decision-evaluation') {record.mode=['影子评估','持续评估与人工确认','持续评估与自动执行'][i%3]!;record.provider='provider_example';record.providerRevision=1;record.sensor='总部采集探针';record.registration='registration_example';record.connector='connector_example';record.configSha='未提供实际设备配置';record.ttl=300;record.cooldown=3600;record.hourly=10;record.acceptScore=record.mode==='持续评估与自动执行';record.autoTriage=record.mode==='持续评估与自动执行';record.triageDaily=100;record.triageSeverity='高危及严重';record.triagePermission=record.autoTriage;record.continuousState=record.mode==='影子评估'?'无持续授权':record.mode==='持续评估与人工确认'?'等待人工确认':'平台任务已受理（示例）';record.continuousCode=record.mode==='持续评估与自动执行'?'固定条件核对通过（示例）':'模型与材料绑定核对';record.task=record.mode==='持续评估与自动执行'?'task_example_'+i:'未创建任务'}
+    if (family==='decision-evaluation'&&record.mode!=='影子评估'&&record.status!=='策略命中') {record.continuousState='未授权';record.continuousCode='策略未满足条件（示例）';record.task='未创建任务'}
+    if (family==='decision') {record.model=record.mode==='影子评估'?'按需选择本人研判':'provider_example / 1';record.confidence=0.8;record.age=3600;record.expression='confidence >= threshold && verdict == "confirmed"';record.scope=i%2?'2001:db8::/32':'10.20.0.0/24'}
     if (family==='action') {
       const waiting=record.status==='等待审批';const unknown=record.status==='结果未知';const revoked=record.status==='已撤销';const executing=record.status==='执行中'
       record.accepted=waiting?'未派发':unknown?'尚未确认':executing?'执行中':'已接受'

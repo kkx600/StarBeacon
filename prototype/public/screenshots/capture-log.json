@@ -12928,6 +12928,611 @@
         "width": 1280
       },
       "bytes": 78502
+    },
+    {
+      "file": "decision-policies/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=data",
+      "title": "决策策略",
+      "state": "data",
+      "capturedAt": "2026-10-11T17:03:00.967Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 145015
+    },
+    {
+      "file": "decision-policies/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=empty&capture=1",
+      "title": "决策策略",
+      "state": "empty",
+      "capturedAt": "2026-10-11T17:03:08.780Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 85924
+    },
+    {
+      "file": "decision-policies/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=loading&capture=1",
+      "title": "决策策略",
+      "state": "loading",
+      "capturedAt": "2026-10-11T17:03:10.186Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 87261
+    },
+    {
+      "file": "decision-policies/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=error&capture=1",
+      "title": "决策策略",
+      "state": "error",
+      "capturedAt": "2026-10-11T17:03:11.614Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 86241
+    },
+    {
+      "file": "decision-policies/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=detail&capture=1",
+      "title": "决策策略",
+      "state": "detail",
+      "capturedAt": "2026-10-11T17:03:13.202Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 115085
+    },
+    {
+      "file": "decision-policies/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "决策策略",
+      "state": "action",
+      "capturedAt": "2026-10-11T17:03:14.756Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 135263
+    },
+    {
+      "file": "continuous-authorization-form.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "限时自动授权配置",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:03:32.857Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 143086,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "continuous-authorization-form.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "限时自动授权配置",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:06:01.702Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 136554,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-evaluations/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "评估记录",
+      "state": "data",
+      "capturedAt": "2026-10-11T17:06:15.370Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 148430
+    },
+    {
+      "file": "continuous-authorization-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "持续决策授权详情",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:06:17.516Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 101202,
+      "pageTitle": "评估记录"
+    },
+    {
+      "file": "decision-evaluations/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=empty&capture=1",
+      "title": "评估记录",
+      "state": "empty",
+      "capturedAt": "2026-10-11T17:07:42.053Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 75807
+    },
+    {
+      "file": "decision-evaluations/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=loading&capture=1",
+      "title": "评估记录",
+      "state": "loading",
+      "capturedAt": "2026-10-11T17:07:43.768Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 76883
+    },
+    {
+      "file": "decision-evaluations/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=error&capture=1",
+      "title": "评估记录",
+      "state": "error",
+      "capturedAt": "2026-10-11T17:07:45.521Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 77049
+    },
+    {
+      "file": "decision-evaluations/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=detail&capture=1",
+      "title": "评估记录",
+      "state": "detail",
+      "capturedAt": "2026-10-11T17:07:47.701Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 122928
+    },
+    {
+      "file": "decision-evaluations/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=action&capture=1",
+      "title": "评估记录",
+      "state": "action",
+      "capturedAt": "2026-10-11T17:07:49.896Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 127541
+    },
+    {
+      "file": "continuous-authorization-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "持续决策授权详情",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:08:13.916Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 101884,
+      "pageTitle": "评估记录"
+    },
+    {
+      "file": "decision-policies/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=data&capture=1",
+      "title": "决策策略",
+      "state": "data",
+      "capturedAt": "2026-10-11T17:26:03.556Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 147457
+    },
+    {
+      "file": "decision-policies/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=empty&capture=1",
+      "title": "决策策略",
+      "state": "empty",
+      "capturedAt": "2026-10-11T17:26:04.969Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 85924
+    },
+    {
+      "file": "decision-policies/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=loading&capture=1",
+      "title": "决策策略",
+      "state": "loading",
+      "capturedAt": "2026-10-11T17:26:06.493Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 87261
+    },
+    {
+      "file": "decision-policies/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=error&capture=1",
+      "title": "决策策略",
+      "state": "error",
+      "capturedAt": "2026-10-11T17:26:08.012Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 86241
+    },
+    {
+      "file": "decision-policies/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=detail&capture=1",
+      "title": "决策策略",
+      "state": "detail",
+      "capturedAt": "2026-10-11T17:26:09.530Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 117193
+    },
+    {
+      "file": "decision-policies/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "决策策略",
+      "state": "action",
+      "capturedAt": "2026-10-11T17:26:11.080Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 136897
+    },
+    {
+      "file": "decision-evaluations/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "评估记录",
+      "state": "data",
+      "capturedAt": "2026-10-11T17:26:12.572Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 148430
+    },
+    {
+      "file": "decision-evaluations/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=empty&capture=1",
+      "title": "评估记录",
+      "state": "empty",
+      "capturedAt": "2026-10-11T17:26:13.992Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 75807
+    },
+    {
+      "file": "decision-evaluations/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=loading&capture=1",
+      "title": "评估记录",
+      "state": "loading",
+      "capturedAt": "2026-10-11T17:26:15.404Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 76883
+    },
+    {
+      "file": "decision-evaluations/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=error&capture=1",
+      "title": "评估记录",
+      "state": "error",
+      "capturedAt": "2026-10-11T17:26:16.822Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 77049
+    },
+    {
+      "file": "decision-evaluations/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=detail&capture=1",
+      "title": "评估记录",
+      "state": "detail",
+      "capturedAt": "2026-10-11T17:26:18.243Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 122928
+    },
+    {
+      "file": "decision-evaluations/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=action&capture=1",
+      "title": "评估记录",
+      "state": "action",
+      "capturedAt": "2026-10-11T17:26:19.755Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 127541
+    },
+    {
+      "file": "continuous-authorization-form.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "限时自动授权配置",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:27:58.176Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 137801,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "continuous-authorization-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-evaluations?state=data&capture=1",
+      "title": "持续决策授权详情",
+      "state": "supplemental",
+      "capturedAt": "2026-10-11T17:28:00.504Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 101884,
+      "pageTitle": "评估记录"
+    },
+    {
+      "file": "continuous-authorization-form.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action",
+      "title": "限时自动授权配置",
+      "state": "supplemental",
+      "capturedAt": "2026-10-12T09:30:50.881Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 1080,
+        "scrollWidth": 1920,
+        "width": 1920
+      },
+      "bytes": 175639,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/data.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=data&capture=1",
+      "title": "决策策略",
+      "state": "data",
+      "capturedAt": "2026-10-12T09:30:52.660Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 176217,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=empty&capture=1",
+      "title": "决策策略",
+      "state": "empty",
+      "capturedAt": "2026-10-12T09:30:53.050Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 110860,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=detail&capture=1",
+      "title": "决策策略",
+      "state": "detail",
+      "capturedAt": "2026-10-12T09:30:54.677Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 165922,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/action.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=action&capture=1",
+      "title": "决策策略",
+      "state": "action",
+      "capturedAt": "2026-10-12T09:30:56.191Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 171687,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=loading&capture=1",
+      "title": "决策策略",
+      "state": "loading",
+      "capturedAt": "2026-10-12T09:30:56.493Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 111086,
+      "pageTitle": "决策策略"
+    },
+    {
+      "file": "decision-policies/error.jpg",
+      "url": "http://127.0.0.1:4173/page/decision-policies?state=error&capture=1",
+      "title": "决策策略",
+      "state": "error",
+      "capturedAt": "2026-10-12T09:30:56.769Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "scrollWidth": 1920
+      },
+      "bytes": 110015,
+      "pageTitle": "决策策略"
     }
   ],
   "errors": []

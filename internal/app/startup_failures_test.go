@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -23,6 +24,7 @@ func TestStartupConfigurationFailureNeverReportsServiceStarted(t *testing.T) {
 		{"出站网段无效", "platform", config.Config{OutboundNetworks: "invalid-network"}},
 		{"出站证书丢失", "worker", config.Config{OutboundCA: filepath.Join(t.TempDir(), "missing.crt")}},
 		{"出站证书损坏", "ingest", config.Config{OutboundCA: malformedRoot(t)}},
+		{"签名私钥丢失", "platform", config.Config{CommandSigningKey: filepath.Join(t.TempDir(), "missing.key"), DatabaseURL: "postgres://%invalid"}},
 		{"平台数据库地址无效", "platform", config.Config{DatabaseURL: "postgres://%invalid"}},
 		{"接入数据库地址无效", "ingest", config.Config{DatabaseURL: "postgres://%invalid"}},
 		{"工作进程数据库地址无效", "worker", config.Config{DatabaseURL: "postgres://%invalid"}},
@@ -35,6 +37,26 @@ func TestStartupConfigurationFailureNeverReportsServiceStarted(t *testing.T) {
 				t.Fatal("启动配置错误被当作服务正常")
 			}
 		})
+	}
+}
+
+func TestSigningKeyFailurePrecedesDatabaseAccess(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	c := config.Config{CommandSigningKey: filepath.Join(t.TempDir(), "missing.key"), DatabaseURL: "postgres://%invalid"}
+	err := Run(ctx, "platform", c)
+	if !os.IsNotExist(err) || ctx.Err() != nil {
+		t.Fatal("签名私钥未在访问数据库前核对", err)
+	}
+	path := filepath.Join(t.TempDir(), "samples")
+	if err := os.WriteFile(path, []byte("ordinary file"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	c = config.Config{ReplayBackend: "local", ReplayDir: path, ReplayBytes: 128 << 20, RedisURL: "redis://127.0.0.1:6379/0", DatabaseURL: "postgres://%invalid"}
+	err = Run(ctx, "platform", c)
+	var failure *os.PathError
+	if !errors.As(err, &failure) || !strings.Contains(failure.Path, "samples") || ctx.Err() != nil {
+		t.Fatal("样本目录未在访问数据库前核对", err)
 	}
 }
 

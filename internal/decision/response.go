@@ -33,6 +33,10 @@ func (r ResponseRequest) Validate() error {
 
 // 提交时重新核对当前策略、原研判与实际告警白名单；历史匹配不能替代当前执行资格。
 func ResponseIntent(ctx context.Context, e Evaluation, policy Record, job triage.Job, evidence triage.Evidence, request ResponseRequest, now time.Time) (responseapi.Intent, error) {
+	// 自动模式使用独立持续授权，人工入口不得为同一策略建立第二条执行路径。
+	if policy.Definition.Mode == "automatic" || e.Policy.Definition.Mode == "automatic" {
+		return responseapi.Intent{}, ErrPermission
+	}
 	sealed, err := e.Seal()
 	if request.Validate() != nil || err != nil || sealed.SHA256 != e.SHA256 || request.EvaluationSHA256 != e.SHA256 || now.IsZero() || e.Result.EvaluatedAt.After(now) || !e.ExpiresAt.After(now) || e.Result.Status != "matched" || e.Result.CandidateAction != "block_source" || e.Result.TargetIP == "" || policy.Validate() != nil || policy.TenantID != e.TenantID || policy.ID != e.Policy.ID || policy.Revision != e.Policy.Revision || policy.DefinitionSHA256 != e.Policy.DefinitionSHA256 || !policy.Active || job.ID != e.Result.TriageID || job.Evidence.SHA256 != e.Result.EvidenceSHA256 {
 		return responseapi.Intent{}, ErrSource

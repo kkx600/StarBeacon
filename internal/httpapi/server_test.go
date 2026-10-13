@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -75,5 +76,23 @@ func TestLoginDoesNotTreatStorageFailureAsWrongPassword(t *testing.T) {
 	a.Login(w, r)
 	if w.Code != 503 || !strings.Contains(w.Body.String(), "auth_unavailable") {
 		t.Fatal("依赖故障被解释为错误密码")
+	}
+}
+
+func TestMissingAccountRetainsDefaultCostAndNeverReceivesSession(t *testing.T) {
+	for range 2 {
+		a := NewAuth(sessionStub{err: model.ErrUnauthenticated}, nil, "https://console.example", "session", true)
+		cost, err := bcrypt.Cost(a.dummy)
+		if err != nil || cost != bcrypt.DefaultCost {
+			t.Fatal("不存在账号的验证强度改变", cost, err)
+		}
+		r := httptest.NewRequest("POST", "/auth/login", strings.NewReader(`{"username":"missing","password":"arbitrary-password"}`))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", "https://console.example")
+		w := httptest.NewRecorder()
+		a.Login(w, r)
+		if w.Code != 401 || len(w.Result().Cookies()) != 0 {
+			t.Fatal("不存在账号获得了登录资格", w.Code)
+		}
 	}
 }

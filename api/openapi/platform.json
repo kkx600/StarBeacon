@@ -11092,7 +11092,7 @@
       },
       "post": {
         "summary": "维护决策策略",
-        "description": "仅有效管理员。当前只支持影子模式。CAS、不可变修订、原提交幂等回执和操作审计同事务；1024 次变更/租户/滚动 24 小时。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史按 operations 策略默认保留 180 天，当前引用保护。",
+        "description": "仅有效管理员。支持 shadow 按需评估、approval 持续评估与独立人工确认、automatic 持续评估与限时任务授权。持续模式绑定提供方修订，仅处理当前维护者在本修订保存后创建并完成的本人研判；不扫描旧告警或自动请求模型。自动配置固定观测及执行探针注册、连接器摘要、TTL、冷却、每小时预算与明确评分授权。CAS、不可变修订、幂等回执及审计同事务；1024 次变更/租户/滚动 24 小时。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史默认 operations 180 天，当前配置受引用保护。",
         "responses": {
           "400": {
             "description": "请求未完成，具体含义见 code/message。",
@@ -12179,7 +12179,7 @@
       },
       "post": {
         "summary": "管理员确认原研判的单次限时处置",
-        "description": "从原评估派生唯一源 IP，不接收 target_ip。原评估必须 matched/block_source、未到期，当前策略修订、定义、本人研判、实际 ES 告警白名单和判断结果须保持一致；重新核对观测时限、注册代次、签名及 35 秒内连接器状态。授权档案、签名任务及两份审计在同一事务提交；任一失败整体回滚。同一评估只接受一次授权，换请求键不补发。原键绑定账号与全部原输入，重复确认先读取原档案，不重复读取模型、不依赖已回收材料、不延长期限；账号实时资格仍需成立。每实例最多两个并发确认，最近 24 小时租户响应任务最多 1024 项。未知提交应保留原键。202 仅代表人工任务受理，设备配置回读和实际流量效果分别核验。当前未提供持续自动执行或多级审批。",
+        "description": "从原评估派生唯一源 IP，不接收 target_ip。原评估必须 matched/block_source、未到期，当前策略修订、定义、本人研判、实际 ES 告警白名单和判断结果须保持一致；重新核对观测时限、注册代次、签名及 35 秒内连接器状态。授权档案、签名任务及两份审计在同一事务提交；任一失败整体回滚。同一评估只接受一次授权，换请求键不补发。原键绑定账号与全部原输入，重复确认先读取原档案，不重复读取模型、不依赖已回收材料、不延长期限；账号实时资格仍需成立。每实例最多两个并发确认，最近 24 小时租户响应任务最多 1024 项。未知提交应保留原键。202 仅代表人工任务受理，设备配置回读和实际流量效果分别核验。此接口只提供独立人工确认；持续策略授权通过独立档案记录，多级审批尚未提供。",
         "x-required-role": "admin",
         "responses": {
           "202": {
@@ -12395,6 +12395,243 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/decision-evaluations/{id}/continuous": {
+      "get": {
+        "summary": "读取本人评估的持续决策授权",
+        "description": "读取本人未到期的持续决策档案并核对不可变摘要。按需评估、尚未运行或档案到期返回 item:null；不触发新的判断、模型调用或设备操作。原评估结果始终不持有执行授权。拒绝查询参数。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "原授权或尚无授权。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "item": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/DecisionContinuousRun"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "item"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/decision-policies/{id}/revisions/{revision}/triggers": {
+      "get": {
+        "summary": "读取本人策略修订的自动研判登记",
+        "description": "仅管理员读取本租户、本人许可下的固定策略修订；每页最多 20 条。登记、队列提交、模型执行与设备效果独立，不触发模型或设备动作。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；结果须核对来源、修订与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionAutomaticTriagePage"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "revision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "description": "上一页 next_cursor；目录按登记标识升序，刷新回到第一页。"
+          }
+        ]
       }
     }
   },
@@ -20587,7 +20824,12 @@
           },
           "mode": {
             "const": "shadow",
-            "description": "当前仅支持影子评估；approval/automatic 返回 409。"
+            "description": "当前仅支持影子评估；approval/automatic 返回 409。",
+            "enum": [
+              "shadow",
+              "approval",
+              "automatic"
+            ]
           },
           "expression": {
             "type": "string",
@@ -20624,6 +20866,9 @@
               "maxLength": 128
             },
             "description": "规范且已掩码的 IPv4/IPv6 CIDR，无重复；拒绝 IPv4 映射 IPv6。源 IP 封禁候选排除保护网段。"
+          },
+          "continuous": {
+            "$ref": "#/components/schemas/DecisionContinuousConfig"
           }
         },
         "required": [
@@ -20635,7 +20880,97 @@
           "max_age_seconds",
           "protected_prefixes"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "shadow"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "continuous"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "approval",
+                    "automatic"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "continuous"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "approval"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "continuous": {
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "automatic"
+                        ]
+                      }
+                    },
+                    {
+                      "not": {
+                        "required": [
+                          "trigger"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "automatic"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "threshold": {
+                  "minimum": 0.5
+                },
+                "candidate_action": {
+                  "const": "block_source"
+                },
+                "continuous": {
+                  "required": [
+                    "automatic"
+                  ]
+                }
+              }
+            }
+          }
+        ]
       },
       "DecisionPolicyChange": {
         "type": "object",
@@ -21493,6 +21828,372 @@
           "sha256"
         ],
         "additionalProperties": false
+      },
+      "DecisionAutomaticConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "connector_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 3600
+          },
+          "cooldown_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 86400,
+            "description": "不得短于封禁期限；同一设备目标与人工任务共享冷却。"
+          },
+          "max_hourly_actions": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "accept_uncalibrated_score": {
+            "type": "boolean",
+            "const": true,
+            "description": "管理员明确授权在固定范围内使用未经校准的模型自报分数。"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "registration_id",
+          "connector_id",
+          "config_sha256",
+          "ttl_seconds",
+          "cooldown_seconds",
+          "max_hourly_actions",
+          "accept_uncalibrated_score"
+        ]
+      },
+      "DecisionContinuousConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider_id",
+          "provider_revision"
+        ],
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "provider_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "automatic": {
+            "$ref": "#/components/schemas/DecisionAutomaticConfig"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/DecisionTriageTrigger"
+          }
+        }
+      },
+      "DecisionContinuousRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "tenant_id",
+          "id",
+          "created_by",
+          "evaluation_id",
+          "evaluation_sha256",
+          "policy_id",
+          "policy_revision",
+          "definition_sha256",
+          "triage_id",
+          "target_ip",
+          "task_id",
+          "created_at",
+          "expires_at",
+          "sha256",
+          "event_id",
+          "raw_sha256",
+          "config",
+          "state",
+          "code"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "decision-continuous.v1"
+          },
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^decision_response_[a-f0-9]{32}$"
+          },
+          "created_by": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "evaluation_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "evaluation_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "policy_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "triage_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "target_ip": {
+            "type": "string",
+            "maxLength": 45
+          },
+          "task_id": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "仅 queued 状态包含签名任务标识；其他状态为空。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "config": {
+            "$ref": "#/components/schemas/DecisionContinuousConfig"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "awaiting_confirmation",
+              "skipped"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "policy_authorized",
+              "manual_confirmation_required",
+              "policy_not_matched",
+              "model_binding_changed",
+              "score_below_threshold",
+              "conclusion_not_eligible",
+              "evidence_limited",
+              "references_incomplete",
+              "sensor_binding_changed",
+              "evidence_changed",
+              "target_cooldown",
+              "event_already_authorized",
+              "hourly_quota",
+              "device_unavailable",
+              "task_conflict",
+              "tenant_quota"
+            ]
+          }
+        },
+        "description": "独立策略授权档案。queued 仅代表平台受理，不表示设备已丢弃流量。默认按 operations 保留 180 天。"
+      },
+      "DecisionTriageTrigger": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "severities",
+          "max_daily_jobs",
+          "allow_model_context"
+        ],
+        "properties": {
+          "severities": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          },
+          "max_daily_jobs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "按 UTC 自然日对同一策略跨修订累计登记量；另受模型和租户共享费用额度约束。"
+          },
+          "allow_model_context": {
+            "type": "boolean",
+            "const": true,
+            "description": "管理员明确允许发送告警白名单字段并接受模型调用费用。省略 trigger 时不自动提交。"
+          }
+        }
+      },
+      "DecisionAutomaticTriageRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "policy_id",
+          "policy_revision",
+          "definition_sha256",
+          "event_id",
+          "raw_sha256",
+          "sensor_id",
+          "registration_id",
+          "state",
+          "code",
+          "triage_id",
+          "created_at",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "policy_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "submitted",
+              "skipped"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "awaiting_model_queue",
+              "model_queue_accepted",
+              "authorization_unavailable",
+              "evidence_changed",
+              "model_quota"
+            ]
+          },
+          "triage_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DecisionAutomaticTriagePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DecisionAutomaticTriageRecord"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
       }
     }
   }

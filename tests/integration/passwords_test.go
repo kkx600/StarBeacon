@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -294,5 +295,88 @@ func TestPasswordQuotaReceiptsAndReusedPasswords(t *testing.T) {
 	}
 	if _, err = f.Runtime.PasswordAccount(ctx, u); !errors.Is(err, accounts.ErrUnavailable) {
 		t.Fatal("停用租户读取了账号")
+	}
+}
+
+func TestPasswordConcurrentResetAndRevokedActorCannotCommit(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	f, u, _, password := accountFixture(t, ctx)
+	active := true
+	target, err := f.Runtime.CreateUser(ctx, u, "password_concurrent_create", accounts.Create{Username: "password_concurrent_viewer", Password: store.Token(), Role: "viewer", Active: &active})
+	require(t, err)
+	viewer, _, err := f.Runtime.Password(ctx, target.Username)
+	require(t, err)
+	session, _, err := f.Runtime.CreateSession(ctx, viewer)
+	require(t, err)
+	input := accounts.PasswordChange{ExpectedRevision: 1, CurrentPassword: password, NewPassword: store.Token()}
+	type outcome struct {
+		record accounts.Record
+		err    error
+	}
+	results := make(chan outcome, 3)
+	start := make(chan struct{})
+	var workers sync.WaitGroup
+	for range 3 {
+		workers.Go(func() {
+			<-start
+			record, err := f.Runtime.ChangePassword(ctx, u, target.ID, "password_concurrent_reset", input)
+			results <- outcome{record, err}
+		})
+	}
+	close(start)
+	workers.Wait()
+	close(results)
+	for result := range results {
+		require(t, result.err)
+		if result.record.ID != target.ID || result.record.Revision != 2 {
+			t.Fatal("并发原键没有返回同一密码回执")
+		}
+	}
+	var revision int64
+	var receipts, audits int
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT revision FROM users WHERE id=$1`, target.ID).Scan(&revision))
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM user_management_requests WHERE operation='password'`).Scan(&receipts))
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM operation_audits WHERE action='users.password.reset'`).Scan(&audits))
+	if revision != 2 || receipts != 1 || audits != 1 {
+		t.Fatal("并发原键重复修改密码或审计", revision, receipts, audits)
+	}
+	if _, err := f.Runtime.Session(ctx, session); !errors.Is(err, model.ErrUnauthenticated) {
+		t.Fatal("并发重置未撤销旧会话", err)
+	}
+	wrong := input
+	wrong.NewPassword = store.Token()
+	if _, err := f.Runtime.ChangePassword(ctx, u, target.ID, "password_concurrent_reset", wrong); !errors.Is(err, store.ErrConflict) {
+		t.Fatal("同键不同密码沿用了原回执", err)
+	}
+
+	// 真实资源锁使已计算完成的请求等待提交，在此期间撤回账号修订。
+	lock, err := f.Owner.Pool.Begin(ctx)
+	require(t, err)
+	defer lock.Rollback(context.WithoutCancel(ctx))
+	_, err = lock.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, u.TenantID+"/users")
+	require(t, err)
+	input.ExpectedRevision = 2
+	input.NewPassword = store.Token()
+	finished := make(chan error, 1)
+	go func() {
+		_, err := f.Runtime.ChangePassword(ctx, u, target.ID, "password_revoked_actor", input)
+		finished <- err
+	}()
+	eventually(t, ctx, "密码请求等待提交锁", func() bool {
+		var waiting bool
+		err := f.Owner.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND NOT granted)`).Scan(&waiting)
+		return err == nil && waiting
+	})
+	_, err = f.Owner.Pool.Exec(ctx, `UPDATE users SET role='viewer',revision=revision+1 WHERE id=$1`, u.ID)
+	require(t, err)
+	require(t, lock.Commit(ctx))
+	if err := <-finished; !errors.Is(err, accounts.ErrUnavailable) {
+		t.Fatal("计算期间撤回的账号仍提交密码", err)
+	}
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT revision FROM users WHERE id=$1`, target.ID).Scan(&revision))
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM user_management_requests WHERE operation='password'`).Scan(&receipts))
+	if revision != 2 || receipts != 1 {
+		t.Fatal("拒绝提交后仍改变目标密码或回执")
 	}
 }

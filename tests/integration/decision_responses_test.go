@@ -366,6 +366,9 @@ func TestDecisionResponseAuthenticatedHTTPUsesActualAlertAndOriginalConfirmation
 
 func verifyNativeDecisionResponse(t *testing.T, ctx context.Context, client *liveHTTP, job triage.Job, sensor string, device *genericHTTPDevice) {
 	t.Helper()
+	device.mu.Lock()
+	priorWrites, priorDeletes := device.writes, device.deletes
+	device.mu.Unlock()
 	change := decisionPolicyInput("policy_native_consent")
 	change.Definition.MaxAgeSeconds = 86400
 	var policy decision.Record
@@ -429,7 +432,7 @@ func verifyNativeDecisionResponse(t *testing.T, ctx context.Context, client *liv
 	}
 	device.mu.Lock()
 	defer device.mu.Unlock()
-	if device.writes != 2 || device.deletes != 2 {
+	if device.writes != priorWrites+1 || device.deletes != priorDeletes+1 {
 		t.Fatal("独立人工处置重复执行", device.writes, device.deletes)
 	}
 }

@@ -17,6 +17,7 @@ import (
 func (a *API) registerDecisionPolicies(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/decision-policies", a.Auth.Require(false, a.decisionPolicies))
 	m.HandleFunc("GET /api/v1/decision-policies/{id}/revisions/{revision}", a.Auth.Require(false, a.decisionPolicy))
+	m.HandleFunc("GET /api/v1/decision-policies/{id}/revisions/{revision}/triggers", a.Auth.Require(true, a.automaticTriages))
 	m.HandleFunc("POST /api/v1/decision-policies", a.Auth.Require(true, a.saveDecisionPolicy))
 	m.HandleFunc("POST /api/v1/decision-policies/validate", a.Auth.Require(false, a.validateDecisionPolicy))
 	m.HandleFunc("POST /api/v1/decision-policies/{id}/evaluate", a.Auth.Require(true, a.evaluateDecisionPolicy))
@@ -24,6 +25,7 @@ func (a *API) registerDecisionPolicies(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/decision-evaluations", a.Auth.Require(false, a.decisionEvaluations))
 	m.HandleFunc("GET /api/v1/decision-evaluations/{id}", a.Auth.Require(false, a.decisionEvaluation))
 	m.HandleFunc("GET /api/v1/decision-evaluations/{id}/response", a.Auth.Require(false, a.decisionResponse))
+	m.HandleFunc("GET /api/v1/decision-evaluations/{id}/continuous", a.Auth.Require(false, a.continuousDecision))
 	capacity := make(chan struct{}, 2)
 	m.HandleFunc("POST /api/v1/decision-evaluations/{id}/response", a.Auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		select {
@@ -42,8 +44,24 @@ func decodeDecision(w http.ResponseWriter, r *http.Request, target any) error {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16384)
 	var raw json.RawMessage
-	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), []string{"id", "policy_id", "expected_revision", "name", "description", "active", "definition", "schema_version", "mode", "expression", "threshold", "candidate_action", "max_age_seconds", "protected_prefixes", "triage_id"}, 16384) != nil {
+	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), []string{"id", "policy_id", "expected_revision", "name", "description", "active", "definition", "schema_version", "mode", "expression", "threshold", "candidate_action", "max_age_seconds", "protected_prefixes", "triage_id", "continuous", "provider_id", "provider_revision", "automatic", "sensor_id", "registration_id", "connector_id", "config_sha256", "ttl_seconds", "cooldown_seconds", "max_hourly_actions", "accept_uncalibrated_score", "trigger", "severities", "max_daily_jobs", "allow_model_context"}, 16384) != nil {
 		return decision.ErrInput
+	}
+	var root, definition, continuous map[string]json.RawMessage
+	if json.Unmarshal(raw, &root) == nil && json.Unmarshal(root["definition"], &definition) == nil {
+		if value, ok := definition["continuous"]; ok {
+			if bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+				return decision.ErrInput
+			}
+			if json.Unmarshal(value, &continuous) == nil {
+				if value, ok := continuous["automatic"]; ok && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+					return decision.ErrInput
+				}
+				if value, ok := continuous["trigger"]; ok && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+					return decision.ErrInput
+				}
+			}
+		}
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
@@ -58,7 +76,7 @@ func decisionFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, decision.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_decision_policy", "请核对策略名称、表达式类型、阈值、材料时限与保护网段")
 	case errors.Is(err, decision.ErrMode):
-		httpapi.Fail(w, r, 409, "decision_mode_unavailable", "当前仅支持影子评估；审批和自动执行需要独立的校准与设备执行资格")
+		httpapi.Fail(w, r, 409, "decision_mode_unavailable", "持续决策需要指定模型修订；自动执行还须完整绑定探针、设备、期限、频率及评分授权")
 	case errors.Is(err, decision.ErrPermission):
 		httpapi.Fail(w, r, 403, "decision_policy_forbidden", "当前账号不再具有决策策略操作权限，请重新登录并核对权限")
 	case errors.Is(err, decision.ErrQuota):

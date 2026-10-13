@@ -64,6 +64,10 @@ func newTriageProvider(t *testing.T) (*httptest.Server, *atomic.Int32) {
 			return
 		}
 		answer := triage.Answer{Verdict: "confirmed", Outcome: "attempt", Confidence: 0.87, Reason: "规则和请求路径共同支持攻击尝试建议，尚无业务成功证据", References: []string{"rule.id", "http.path"}, CounterEvidence: []string{"现有字段未排除授权测试"}, Missing: []string{"终端与业务日志"}, Recommendation: "investigate", NeedsReview: true}
+		if strings.Contains(prompt.Note, "[automatic_response]") || strings.HasPrefix(prompt.Note, "持续决策自动研判；策略 ") {
+			answer.Recommendation = "block_source"
+			answer.References = []string{"source.ip", "rule.id"}
+		}
 		if strings.Contains(prompt.Note, "[invalid_output]") {
 			answer.Outcome = "success"
 		}
