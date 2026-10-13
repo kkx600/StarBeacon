@@ -387,6 +387,12 @@ def sbom_source(root, target, commit_file, commit):
     return target
 
 
+def sbom_environment(environment):
+    # 副本只携带已核验的提交对象，不能让 Go 将其当作完整 Git 工作树读取。
+    # 实际版本、提交与程序摘要在 sbom_bind 中独立绑定，编译环境保持原值。
+    return dict(environment, GOFLAGS=(environment.get("GOFLAGS", "") + " -buildvcs=false").strip())
+
+
 def collect(root, source, roles, metadata, environment, licenses_tool, sbom_tool, diagnostics, commit_file):
     root, source = pathlib.Path(root), pathlib.Path(source)
     directory = source / "dependencies"
@@ -426,7 +432,7 @@ def collect(root, source, roles, metadata, environment, licenses_tool, sbom_tool
                 path = "notices/" + entry["module"] + "/" + entry["source_path"]
                 entry["path"] = path
                 records[(entry["module"], entry["source_path"], entry["identifier"])] = entry
-            raw = execute([sbom_tool, "app", "-json", "-std", "-licenses", "-noserial", "-notimestamp", "-output-version", "1.6", "-main", "cmd/" + role, str(sbom_root)], sbom_root, environment, scratch / (role + "-sbom.log"))
+            raw = execute([sbom_tool, "app", "-json", "-std", "-licenses", "-noserial", "-notimestamp", "-output-version", "1.6", "-main", "cmd/" + role, str(sbom_root)], sbom_root, sbom_environment(environment), scratch / (role + "-sbom.log"))
             bom = sbom_bind(raw, linked, role, metadata["version"], metadata["commit"], metadata["arch"], metadata["go"], metadata["binaries"][role])
             path = directory / (role + ".cdx.json")
             path.write_text(json.dumps(bom, ensure_ascii=False, sort_keys=True, indent=2) + "\n")

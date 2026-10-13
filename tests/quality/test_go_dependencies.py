@@ -3,7 +3,9 @@ import base64
 import copy
 import hashlib
 import json
+import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -166,6 +168,37 @@ class GoDependencyTests(unittest.TestCase):
 
 
 class DependencyToolDiagnosticsTests(unittest.TestCase):
+    def test_go_can_inspect_verified_commit_snapshot_without_full_git_tree(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            root = pathlib.Path(scratch)
+            source = root / "source"
+            source.mkdir()
+            for name in ("cmd/fixture", "internal", "migrations", "api/sensor"):
+                (source / name).mkdir(parents=True)
+            (source / "go.mod").write_text("module github.com/kkx600/StarBeacon\n\ngo 1.26.8\n")
+            (source / "go.sum").write_text(f"{FIXTURE_MODULE} v1.0.0 {FIXTURE_SUM}\n")
+            (source / "LICENSE").write_text("Apache-2.0 fixture\n")
+            (source / "cmd/fixture/main.go").write_text("package main\nfunc main() {}\n")
+            raw = (b"tree " + b"0" * 40 + b"\nauthor Fixture <fixture@example.test> 0 +0000\n"
+                   b"committer Fixture <fixture@example.test> 0 +0000\n\nfixture\n")
+            commit = hashlib.sha1(b"commit " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+            commit_file = root / "source.commit"
+            commit_file.write_bytes(raw)
+            snapshot = dependencies.sbom_source(source, root / "snapshot", commit_file, commit)
+            environment = dict(os.environ, GOTOOLCHAIN="local", GOPROXY="off", GOWORK="off", GOFLAGS="-mod=readonly",
+                               GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+            command = [os.environ.get("GO", "go"), "list", "-json", "./cmd/fixture"]
+            before = subprocess.run(command, cwd=snapshot, env=environment, capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(before.returncode, 0)
+            self.assertIn("error obtaining VCS status", before.stderr)
+            after = subprocess.run(command, cwd=snapshot, env=dependencies.sbom_environment(environment), capture_output=True, text=True, timeout=30)
+            self.assertEqual(after.returncode, 0, after.stderr)
+            self.assertEqual(json.loads(after.stdout)["ImportPath"], dependencies.MODULE + "/cmd/fixture")
+            self.assertEqual((snapshot / ".git/HEAD").read_text().strip(), commit)
+            self.assertEqual(environment["GOFLAGS"], "-mod=readonly")
+            with self.assertRaises(ValueError):
+                dependencies.sbom_source(source, root / "wrong", commit_file, "f" * 40)
+
     def test_failed_tool_identifies_its_log_and_preserves_output(self):
         with tempfile.TemporaryDirectory() as scratch:
             root = pathlib.Path(scratch)
