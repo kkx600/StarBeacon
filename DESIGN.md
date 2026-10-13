@@ -2,25 +2,30 @@
 name: "星烽 StarBeacon"
 description: "以记录、证据与受控操作为中心的安全运营控制台设计系统。"
 colors:
-  primary: "#096bff"
-  primary-hover: "#075de3"
-  primary-active: "#074ab8"
-  link: "#0759d5"
+  primary: "#4269e1"
+  primary-hover: "#365ac8"
+  primary-active: "#2d4cad"
+  action: "#5d87ff"
+  action-hover: "#4a75e8"
+  action-active: "#3d66d4"
+  link: "#365ac8"
   surface: "#ffffff"
   workspace: "#f7f7f7"
   line: "#e8e8e8"
-  control-border: "#7b8fae"
-  text: "#22334d"
-  muted: "#526581"
-  text-placeholder: "#596b84"
-  field-label: "#496381"
-  record-text: "#344c70"
+  control-border: "#e4e7ed"
+  control-hover: "#5d87ff"
+  selection-border: "#8a8f99"
+  text: "#29343d"
+  muted: "#6b6b6b"
+  text-placeholder: "#a8abb2"
+  field-label: "#626873"
+  record-text: "#374151"
   table-header: "#fafafa"
   row-hover: "#fafafa"
   nav-selected: "#f0f0f0"
   tab-selected: "#f3f3f3"
   selection-surface: "#e9e9e9"
-  selection-text: "#074ab8"
+  selection-text: "#2d4cad"
   success: "#087a43"
   success-dot: "#079454"
   warning: "#a65a00"
@@ -28,12 +33,12 @@ colors:
   danger: "#cc2640"
   danger-dot: "#e83855"
   status-surface: "#f3f3f3"
-  status-text: "#526581"
+  status-text: "#626c7f"
   success-surface: "#eff8f2"
   warning-surface: "#fff7e9"
   danger-surface: "#fff0ef"
   info-surface: "#f4f4f4"
-  info-text: "#095ace"
+  info-text: "#365ac8"
   teal: "#0095ad"
   violet: "#8950e9"
   syntax-variable: "#7434bb"
@@ -110,7 +115,7 @@ typography:
     fontWeight: 650
     lineHeight: 1.25
 rounded:
-  control: "6px"
+  control: "8px"
   panel: "8px"
   tag: "4px"
   nested: "5px"
@@ -123,16 +128,16 @@ spacing:
   label-gap: "4px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
+    backgroundColor: "{colors.action}"
     textColor: "{colors.surface}"
     typography: "{typography.button}"
     rounded: "{rounded.control}"
     padding: "5px 15px"
     height: "34px"
   button-primary-hover:
-    backgroundColor: "{colors.primary-hover}"
+    backgroundColor: "{colors.action-hover}"
   button-primary-active:
-    backgroundColor: "{colors.primary-active}"
+    backgroundColor: "{colors.action-active}"
   record-link:
     backgroundColor: "transparent"
     textColor: "{colors.link}"
@@ -242,7 +247,7 @@ components:
 
 工程的 [共享主题](web/packages/shared/src/theme.ts)保留同一角色配色，`applyPalette` 将其写入根级 CSS 变量；[共享样式](web/packages/shared/src/styles.css)沿用六项空间变量。[规则编辑器](web/packages/shared/src/components/RuleEditor.vue)由两端工程与原型直接复用，基础诊断依据为[受控规则检查](web/packages/shared/src/utils/ruleSyntax.ts)，数值表示依据为[容量与速率工具](web/packages/shared/src/utils/format.ts)。PCAP 重放依据 [功能与部署边界](docs/PCAP重放与规则验证.md)、[样本工作区](web/packages/shared/src/components/ReplayWorkspace.vue)、[检测结果](web/packages/shared/src/components/ReplayResult.vue)和[任务详情](web/packages/shared/src/components/TaskTable.vue)记录。既有原型导航数量、局部布局与评审数据只适用于原型；工程组件的局部差异不重定义共用 token。
 
-设计依据为用户指定布局、产品约束、实际代码和截图。配色回归脚本核对 55 组文字组合（对比度至少 4.5:1）、16 组控件与图形组合（至少 3:1）及静态截图目录的角色颜色一致性；这些静态检查不替代所有视图、交互状态和可访问性的验收。737 个桌面基础状态与 374 个窄屏布局状态的几何记录未发现多业务列表或页面横向溢出，详情字段描述表不算第二个业务列表。780 张图库图片来自内置浏览器实际渲染并保留来源与 SHA-256；人工视觉检查仅覆盖指定代表页面，不能由数量或来源记录推定逐图人工视觉、性能或生产验收。收尾评审结论仅适用于指定代表页面、布局记录与已核对的源码范围。侧车的八阶色带是设计面板使用的 OKLCH 派生预览，不属于界面 token。
+设计依据为用户指定布局、产品约束、实际代码和截图。配色回归脚本核对 54 组正文与业务文字组合（对比度至少 4.5:1）、18 组选择标记、焦点与图形组合（至少 3:1）及静态截图目录的角色颜色一致性；静态检查不替代所有交互状态的可访问性验收。2026-10-13 的 800 张原型图均来自内置浏览器实际渲染，保留来源、视口、主题摘要和 SHA-256。159 项响应式 DOM 观察覆盖全部 124 个工作区的 1024×600 操作状态，以及七个代表表单的五档尺寸。代表页面另做人工视觉和操作检查；数量与来源不推定逐图人工视觉、性能或生产验收。侧车色带属于设计面板预览，不是界面 token。
 
 ## Colors
 
@@ -250,8 +255,9 @@ components:
 
 ### Primary
 
-- **操作蓝**（primary）：主按钮、焦点轮廓、选中字节和信息状态圆点；白色文字置于操作蓝按钮上。
-- **主色悬停**（primary-hover）、**主色按下**（primary-active）：主题文件明确指定的动作与链接反馈。
+- **强调蓝**（primary）：键盘焦点轮廓、选中字节、图表与信息状态圆点。
+- **动作蓝**（action）：主按钮背景，采用参考界面的明亮蓝色；与正文链接及证据选中字节分别配置。
+- **动作悬停与按下**（action-hover、action-active）：主按钮交互背景；正文链接继续使用 primary-hover、primary-active。
 - **链接蓝**（link）：记录入口、普通链接、选中导航与页签文字；与动作背景分别取用，保证浅色底上的文字可读。
 - **文本选择字色**（selection-text）：与纯灰文本选择底成对使用，保持选中文本可读。
 
@@ -279,7 +285,7 @@ components:
 - **面板白**（surface）：导航、顶栏、指标、表格、表单与详情容器。
 - **工作区浅灰**（workspace）：控制台与认证入口的纯浅灰背景；面板通过底色与边框形成层次。
 - **分隔线浅灰**（line）：面板边框、工具栏、字段组与记录区域的结构分隔。
-- **控件边界灰蓝**（control-border）：正常输入、选择、默认按钮、复选与单选控件的可辨识边界；结构分隔仍使用分隔线浅灰。
+- **控件边界浅灰**（control-border）：正常输入、选择和默认按钮的轻量轮廓；复选框、单选框使用独立 selection-border，焦点与错误使用对应语义色。
 - **正文墨蓝**（text）、**记录文字**（record-text）：正文及密集记录；**辅助灰蓝**（muted）用于业务说明、提示与元数据。
 - **字段标签**（field-label）：筛选条件及表头；**占位灰蓝**（text-placeholder）只说明输入预期，不替代字段名称。
 - **表头浅灰**（table-header）、**记录悬停底**（row-hover）：表头和辅助区域使用纯灰底，帮助扫描和追踪当前行。
@@ -369,7 +375,7 @@ components:
 | ≤599px | 顶栏隐藏租户选择，收紧原型状态按钮与入口间距；探针筛选单列，健康摘要与阈值说明允许换行；检索标题与操作控件可换行，分段控件不超出容器。 |
 | ≤550px | 折叠侧栏隐藏，主区左侧边距归零；普通筛选与表单单列、动作换行，普通标题为 22px；长表格和字节区域保留内部滚动。 |
 
-详情与操作弹窗采用内部滚动，正文最大高度为 75vh。操作表单、记录表单和节点检查器的字段组底部距离取 panel-inset；详情分节及底部操作区的上方距离也取 panel-inset，底部操作区分隔线上方内边距取 section-gap。详情证据摘要内边距与底部间隔为 12px；四列之间保留局部 10px 间隔，标签与值保留局部 7px 距离，在较窄视口变为两列、单列。
+详情与操作弹窗采用内部滚动，内容容器为纵向弹性布局，默认最大高度为 `calc(100dvh - 128px)`；屏高不超过 700px 时距顶 20px、最大高度为 `calc(100dvh - 48px)`。标题与底部按钮不收缩，正文吸收可用高度并单独滚动。操作表单、记录表单和节点检查器的字段组底部距离取 panel-inset；详情分节及底部操作区的上方距离也取 panel-inset，底部操作区分隔线上方内边距取 section-gap。详情证据摘要内边距与底部间隔为 12px；四列之间保留局部 10px 间隔，标签与值保留局部 7px 距离，在较窄视口变为两列、单列。
 
 工程 PCAP 重放表单与任务详情使用局部宽度（780px）。任务详情正文最大高度为 68vh 并保持内部滚动；样本表、任务表和命中明细各自在容器内横向滚动。摘要与标识使用等宽字体并允许任意位置折行。原始执行回执保留换行、内部滚动与局部最大高度（320px），采用 execution-receipt 的底色、字体、圆角和内边距；这些局部尺寸不改变原型的弹窗或通用布局规范。
 
@@ -379,11 +385,11 @@ components:
 
 页面原型图库使用独立 HTML 样式，页头与主区内边距为纵向 16px、横向 4%，卡片间隔为 12px、分组底部间隔为 24px，边界入口容器内边距为 16px。图库保持三列，1100px 及以下为两列，650px 及以下为单列；其 panel-inset 不继承控制台的 899px 窄屏覆盖。
 
-窄屏规则是已实现行为。737 个桌面基础状态及 374 个窄屏布局状态的几何审计记录支持其检查范围内的布局边界；代表截图另核对检索、规则编辑、重放与采集器操作。几何检查不替代全部 116 个主控功能视图、图库图片或未捕获状态的人工视觉、可访问性与性能验收。
+窄屏规则是已实现行为。737 个桌面基础状态及 374 个窄屏布局状态的几何审计记录支持其检查范围内的布局边界；代表截图另核对检索、规则编辑、重放与采集器操作。几何检查不替代全部 119 个主控功能视图、图库图片或未捕获状态的人工视觉、可访问性与性能验收。
 
 顶栏“原型状态”下拉属于评审工具，不能成为正式生产导航或权限判断的视觉规范。
 
-原生滚动条使用辅助灰滑块与中性浅灰工作区轨道，沿用浏览器提供的操作方式。探针、PCAP 与通用详情的说明字段使用响应式列数：xs、sm 为单列，md 起为双列；原本为单列的完整性内容继续单列。该配置记录已实现行为，不扩大窄屏验收范围。
+原生滚动条使用浅中性灰滑块（`#e0e3e9`）与透明轨道，沿用浏览器提供的操作方式。探针、PCAP 与通用详情的说明字段使用响应式列数：xs、sm 为单列，md 起为双列；原本为单列的完整性内容继续单列。该配置记录已实现行为，不扩大窄屏验收范围。
 
 ## Elevation & Depth
 
@@ -391,12 +397,12 @@ components:
 
 ### Shadow Vocabulary
 
-- **主按钮反馈**：`0 2px 0 var(--primary)` 来自固定组件样式与 controlOutline；实际按钮反馈使用操作蓝，仅适用于主按钮，不应用于内容面板。
+- **主按钮反馈**：明亮蓝底、白字和 8px 圆角，下沿采用 2px 的低透明度同色投影；悬停与按下分别采用独立蓝色。输入焦点使用 2px 半透明蓝色外沿，不覆盖错误与禁用状态。
 - **窄屏覆盖导航**：源码为 `5px 0 20px #29394a1c`，只在侧栏覆盖主区时出现。
 - **页签选中线**：`inset 0 -2px 0 var(--primary)` 是位置标记，不是面板抬升。
 - **剧本选中节点**：`0 0 0 2px var(--selection-surface)` 表达纯灰选中边界；它不表示任务已经运行或执行成功，也不作为内容面板的阴影规则。
 
-主按钮的实心偏移是组件生成的局部反馈，不作为供内容面板继承的阴影规则。弹窗、浮层及组件内部的其余阴影由固定 Ant Design Vue 主题生成，未独立采样，不在此记录未核实的值。
+主按钮使用 `0 2px 0 rgba(93, 135, 255, 0.12)`，默认按钮使用 `0 2px 0 rgba(41, 52, 61, 0.025)`。弹窗、浮层及组件内部的其余阴影由固定 Ant Design Vue 主题生成，未独立采样，不在此记录未核实的值。
 
 **The 平面工作区 Rule.** 控制台面板依靠底色、细边框与间距区分；投影用于控件反馈与窄屏覆盖导航，不为每个内容面板制造浮起效果。
 
@@ -408,6 +414,10 @@ components:
 
 ## Components
 
+主控平台、采集器和交互原型共用 `web/packages/shared/src/theme.ts` 与 `controls.css`；原型主题仅重新导出共享定义。工作区、导航、面板、表头及选中底色沿用现有白灰值。主动作采用 `#5d87ff`，正文使用中性深灰 `#29343d`；说明文字与禁用内容各自使用独立语义色。输入框、数字输入、选择器、日期和密码控件由 Ant Design Vue 统一派生状态，不使用常态边框覆盖错误、悬停或焦点。
+
+表单标签使用 13px 中等字重，帮助与校验文字使用 12px、1.65 行高。弹窗标题 18px，底部操作区以细分隔线与内容区区分；长表单在内容区滚动，决策策略的关闭、校验与保存保持可见。决策表单按基本信息、判断条件、模型与执行范围、表达式与保护范围组织；授权字段与业务限制原意不变。
+
 ### Buttons
 
 主按钮表达可执行的主要动作，主题高度为 34px；背景、文字、圆角与内边距见 button-primary。悬停与按下背景分别采用 button-primary-hover、button-primary-active；文字保持面板白。记录链接保持透明背景、13px 字号、500 字重和零内边距，悬停出现下划线；链接与记录入口的下划线偏移为 3px。检索示例按钮为白底细边框，悬停时边框与文字转为主色；它是辅助输入入口。
@@ -418,11 +428,11 @@ components:
 
 ### Inputs / Fields
 
-字段名称与控件分开，标签为 12px；帮助说明为 11px 并解释单位、业务条件与影响。普通输入、选择和数值控件沿用 App 主题的高度、圆角与正文；正常控件边界使用 control-border，选择器、默认按钮、复选框与单选框也保持这一边界。未独立采样的 Ant 悬停、禁用与内部焦点状态继续由固定主题派生。
+字段名称与控件分开，Ant 纵向表单标签为 14px、常规字重；帮助说明为 12px 并解释单位、业务条件与影响。筛选栏标签仍为局部 12px。普通输入、选择和数值控件沿用 App 主题的高度、圆角与正文；正常控件边界使用 control-border，选择器与默认按钮也保持这一边界；复选框、单选框使用 selection-border。未独立采样的 Ant 悬停、禁用与内部焦点状态继续由固定主题派生。
 
 筛选标签与控件的 4px 距离用于关联同一条件；普通表单列间隔为 12px，字段组底部距离取 panel-inset。Ant 表单内部标签、帮助与校验反馈仍由既有组件规则组织，不将筛选区的标签距离推广到全部表单内部。
 
-正常输入与选择占位使用 text-placeholder；按源码颜色计算，白底对比度约为 5.44:1，正常控件边界与白底约为 3.29:1。这些取值核对不代替所有页面与交互状态的可访问性验收。禁用状态不复用正常占位规则。占位提示不承担唯一字段说明。输入、文本区域与可编辑内容的光标使用主色；原生文本选择使用 selection 系列配色。
+正常输入与选择占位使用 text-placeholder；按源码颜色计算，白底占位文字对比度为 2.30:1，普通输入轮廓为 1.24:1，主按钮白字为 3.29:1。这三项采用用户参考图的轻量视觉，不纳入正文 4.5:1 门槛；当前风格不能宣称全界面达到 WCAG AA。正文、业务提示和重要状态继续执行各自对比度检查。禁用状态不复用正常占位规则。占位提示不承担唯一字段说明。输入、文本区域与可编辑内容的光标使用主色；原生文本选择使用 selection 系列配色。
 
 未选中且可操作的开关使用辅助灰背景，悬停使用字段标签色，白色“关闭”文字保持可辨识；禁用与已选中状态继续沿用组件主题。
 

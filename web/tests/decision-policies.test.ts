@@ -73,7 +73,7 @@ describe('策略目录与原提交确认',()=>{
 describe('策略表单、详情与评估交互',()=>{
  it('名称必填，语法回执独立核验，保存不要求伪造评估结果',async()=>{
   const w=ui(DecisionPolicyForm,{record:null,busy:false,unconfirmed:false,error:''});await finish(w);expect(body().text()).toContain('请填写策略名称');await body().find('#policy-name').setValue(' 业务策略 ')
-  request.mockImplementation(async(_p,opts)=>({valid:true,schema_version:'decision-policy.v1',definition_sha256:await goJSONDigest(orderedPolicy(opts.body.definition)),execution_authorized:false}));await click('检查表达式');await vi.waitFor(()=>expect(body().text()).toContain('表达式与参数校验通过'));await finish(w);expect(w.emitted('save')?.[0]?.[0]).toMatchObject({name:'业务策略',expected_revision:0,definition:{mode:'shadow'}})
+  request.mockImplementation(async(_p,opts)=>({valid:true,schema_version:'decision-policy.v1',definition_sha256:await goJSONDigest(orderedPolicy(opts.body.definition)),execution_authorized:false}));await click('检查表达式');await vi.waitFor(()=>expect(body().text()).toContain('表达式与参数校验通过'));await click('保存',document.querySelector('.ant-modal-footer')!);expect(w.emitted('save')?.[0]?.[0]).toMatchObject({name:'业务策略',expected_revision:0,definition:{mode:'shadow'}})
   await body().find('#policy-expression').setValue('confidence > threshold');expect(body().text()).not.toContain('表达式与参数校验通过');request.mockResolvedValueOnce({});await click('检查表达式');await vi.waitFor(()=>expect(body().text()).toContain('回执与当前定义不一致'));await click('关闭');expect(w.emitted('close')).toHaveLength(1)
  })
  it('无变更、未知提交和卸载期间不能另建动作',async()=>{

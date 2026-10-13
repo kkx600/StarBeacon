@@ -5,6 +5,7 @@ import App from './App.vue'
 import { router } from './router'
 import './styles.css'
 import './collector.css'
+import '../../web/packages/shared/src/controls.css'
 import {applyPalette} from './theme'
 
 applyPalette()

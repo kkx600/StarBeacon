@@ -53,14 +53,16 @@ async function submit(){
 </script>
 
 <template>
-  <a-modal :open="open" :title="title" :width="720" :body-style="{maxHeight:'calc(100vh - 252px)',overflowY:'auto'}" :confirm-loading="busy" ok-text="提交" cancel-text="取消" destroy-on-close @cancel="emit('close')" @ok="submit" class="record-form-modal">
+  <a-modal :open="open" :title="title" :width="page.family==='decision'?820:720" :body-style="{maxHeight:'calc(100vh - 252px)',overflowY:'auto'}" :confirm-loading="busy" ok-text="提交" cancel-text="取消" destroy-on-close @cancel="emit('close')" @ok="submit" class="record-form-modal">
     <a-alert v-if="page.notice" :message="page.notice" type="info" show-icon class="modal-notice"/>
     <a-alert v-if="page.family==='action'||page.family==='emergency'" message="此原型仅创建本地示例任务，不连接设备。生产执行前需核对目标、授权、保护名单和撤销路径。" type="warning" show-icon class="modal-notice"/>
     <a-alert v-if="exportMode" message="导出内容仅包含当前有权限的示例记录；生产导出绑定查询快照、脱敏策略和下载期限。" type="info" show-icon class="modal-notice"/>
     <div v-if="formError" ref="errorRef" role="alert" tabindex="-1" aria-label="表单校验信息" class="form-validation-error"><a-alert type="error" show-icon :message="formError" /></div>
     <a-form ref="formRef" :model="values" :rules="rules" layout="vertical" class="operation-form">
       <div class="form-grid">
-        <a-form-item v-for="field in fields" :key="field.key" :label="field.label" :name="field.key" :class="{'form-span-2':field.type==='textarea'}">
+        <template v-for="field in fields" :key="field.key">
+        <h3 v-if="page.family==='decision'&&['name','confidence','provider','expression'].includes(field.key)" class="form-section-title">{{({name:'基本信息',confidence:'判断条件',provider:'模型与执行范围',expression:'表达式与保护范围'} as Record<string,string>)[field.key]}}</h3>
+        <a-form-item :label="field.label" :name="field.key" :class="{'form-span-2':field.type==='textarea'}">
           <a-select v-if="field.type==='select'" v-model:value="values[field.key]" :options="field.options?.map(value=>({value,label:value}))" :placeholder="`请选择${field.label}`" @keydown.esc.stop/>
           <a-input-number v-else-if="field.type==='number'" v-model:value="values[field.key]" :min="field.key==='confidence'?0:field.min??1" :max="field.key==='confidence'?1:field.max" :step="field.key==='confidence'?0.01:1" style="width:100%"/>
           <a-switch v-else-if="field.type==='switch'" v-model:checked="values[field.key]" :disabled="page.family==='sensor-group'&&!record&&field.key==='active'" checked-children="开启" un-checked-children="关闭"/>
@@ -70,6 +72,7 @@ async function submit(){
           <a-input v-else v-model:value="values[field.key]" :readonly="page.family==='user'&&!!record&&field.key==='name'" :placeholder="`请输入${field.label}`"/>
           <small v-if="field.hint" class="field-hint">{{field.hint}}</small>
         </a-form-item>
+        </template>
       </div>
     </a-form>
     <div v-if="page.family==='decision'" class="policy-gates"><b>判断与授权条件</b><div><a-tag>本人研判</a-tag><a-tag>来源摘要</a-tag><a-tag>材料时限</a-tag><a-tag>保护网段</a-tag><a-tag>表达式预算</a-tag><template v-if="values.mode==='持续评估与自动执行'"><a-tag>攻击尝试与事实引用</a-tag><a-tag>注册与设备绑定</a-tag><a-tag>告警去重</a-tag><a-tag>冷却与预算</a-tag></template></div><small>本原型仅保存合成示例；判断、独立授权及设备效果分别核对。</small></div>

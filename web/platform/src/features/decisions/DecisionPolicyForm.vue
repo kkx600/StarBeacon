@@ -57,24 +57,27 @@ function submit(){
 onScopeDispose(()=>{stopped=true;read?.abort();bindingRead?.abort()})
 </script>
 <template>
- <a-modal :open="true" :title="record||draft?.expected_revision?'编辑决策策略':'创建决策策略'" :width="820" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" :mask-closable="false" :closable="!busy" :keyboard="!busy" @cancel="emit('close')">
+ <a-modal :open="true" :title="record||draft?.expected_revision?'编辑决策策略':'创建决策策略'" :width="820" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" :mask-closable="false" :closable="!busy" :keyboard="!busy" @cancel="emit('close')">
   <a-alert type="info" show-icon message="影子评估按需执行；持续模式处理本修订启用后的指定模型研判。自动研判默认关闭，启用后仅提交指定探针的新告警。自动授权不表示攻击成功或设备已阻断流量。" class="section-gap"/>
   <a-alert v-if="unconfirmed" type="warning" show-icon message="原提交结果尚未确认，请先核对；字段暂不可编辑。" class="section-gap"/>
   <div v-if="localError||error" ref="errorPanel" role="region" aria-label="决策策略校验信息" tabindex="-1" class="section-gap"><a-alert type="error" show-icon :message="error||localError"/></div>
   <a-alert v-if="validation" type="success" show-icon :message="validation" class="section-gap"/>
   <a-form layout="vertical" :model="form" :disabled="locked" @finish="submit">
    <div class="policy-grid">
+    <h3 class="form-section-title">基本信息</h3>
     <a-form-item label="策略名称" html-for="policy-name" required><a-input id="policy-name" v-model:value="form.name" :maxlength="128"/></a-form-item>
     <a-form-item label="策略状态" html-for="policy-active"><a-select id="policy-active" v-model:value="form.active" :disabled="locked||!record&&!draft?.expected_revision" :options="[{value:'true',label:'启用'},{value:'false',label:'停用'}]" @keydown.esc.stop/></a-form-item>
     <a-form-item label="运行模式"><a-select v-model:value="continuous.mode" aria-label="决策运行模式" :options="Object.entries(policyModes).map(([value,label])=>({value,label}))" @keydown.esc.stop/></a-form-item>
     <a-form-item label="候选处置" html-for="policy-action"><a-select id="policy-action" v-model:value="form.action" :disabled="locked||continuous.mode==='automatic'" :options="Object.entries(policyActions).map(([value,label])=>({value,label}))" @keydown.esc.stop/></a-form-item>
+    <h3 class="form-section-title">判断条件</h3>
     <a-form-item label="模型自报分数阈值" html-for="policy-threshold" extra="取值大于 0 且不超过 1，不等同攻击概率或封禁授权。"><a-input-number id="policy-threshold" v-model:value="form.threshold" :min=".001" :max="1" :step=".01" :precision="3"/></a-form-item>
     <a-form-item label="材料观测时限（秒）" html-for="policy-age" extra="按告警进入平台的观测时间核对，范围 60–86400 秒。"><a-input-number id="policy-age" v-model:value="form.age" :min="60" :max="86400" :precision="0"/></a-form-item>
    </div>
    <template v-if="continuous.mode!=='shadow'">
+    <h3 class="form-section-title">模型与执行范围</h3>
     <a-alert v-if="bindingsError" type="error" show-icon :message="bindingsError" class="section-gap"/>
     <a-form-item label="指定模型" required extra="固定提供方修订。模型停用或修订变化后，本策略不再授权执行。"><a-select :value="continuous.provider_id||undefined" aria-label="持续决策指定模型" :loading="bindingsPending" :disabled="locked" :options="providers.map(v=>({value:v.id,label:v.name+' · 修订 '+v.revision}))" placeholder="选择已启用模型" @update:value="chooseProvider"/></a-form-item>
-    <p class="page-description">当前绑定：{{continuous.provider_id||'未选择'}} / {{continuous.provider_revision||'无'}}。<a-button size="small" :loading="bindingsPending" :disabled="locked" @click="readBindings">刷新模型与探针</a-button></p>
+    <p class="policy-binding page-description">当前绑定：{{continuous.provider_id||'未选择'}} / {{continuous.provider_revision||'无'}}。<a-button size="small" :loading="bindingsPending" :disabled="locked" @click="readBindings">刷新模型与探针</a-button></p>
     <template v-if="continuous.mode==='automatic'">
      <a-form-item label="执行探针" required extra="仅授权该探针、该注册代次观测的告警；重新注册后需重新配置。"><a-select :value="continuous.sensor_id||undefined" aria-label="自动执行探针" :disabled="locked" :options="sensors.map(v=>({value:v.id,label:v.name+' · '+v.id}))" placeholder="选择具有就绪联动设备的在线探针" @update:value="chooseSensor"/></a-form-item>
      <a-form-item label="联动设备" required><a-select :value="continuous.connector_id||undefined" aria-label="自动执行联动设备" :disabled="locked||!selectedSensor" :options="connectors.map(v=>({value:v.connector_id,label:v.device_id+' · '+v.connector_id}))" placeholder="选择设备连接器" @update:value="chooseConnector"/></a-form-item>
@@ -89,12 +92,16 @@ onScopeDispose(()=>{stopped=true;read?.abort();bindingRead?.abort()})
      </template>
     </template>
    </template>
+   <h3 class="form-section-title">表达式与保护范围</h3>
    <a-form-item label="决策表达式" html-for="policy-expression" required extra="CEL 布尔表达式，最多 2048 字节。自动执行始终额外核对分数阈值，表达式不能绕过固定门槛。"><a-textarea id="policy-expression" v-model:value="form.expression" :rows="3" :maxlength="2048" class="technical" spellcheck="false"/></a-form-item>
    <p class="page-description">可用变量：confidence、threshold、verdict、outcome、recommendation、protocol、reference_count、missing_count、evidence_limited、needs_review。未知变量、非布尔结果和循环宏不能保存。</p>
    <a-form-item label="保护网段" html-for="policy-prefixes" extra="每行一个规范 IPv4 / IPv6 CIDR，最多 32 个；仅在源 IP 封禁候选中排除匹配地址。"><a-textarea id="policy-prefixes" v-model:value="form.prefixes" :rows="2" :maxlength="4127" placeholder="192.0.2.0/24&#10;2001:db8::/32" spellcheck="false"/></a-form-item>
    <a-form-item label="维护说明" html-for="policy-description"><a-input id="policy-description" v-model:value="form.description" :maxlength="1000"/></a-form-item>
-   <div class="policy-actions"><a-button :disabled="busy" @click="emit('close')">关闭</a-button><a-button v-if="unconfirmed" type="primary" :loading="busy" :disabled="busy" @click="emit('confirm')">核对原提交</a-button><template v-else><a-button :loading="checking" :disabled="locked" @click="validate">检查表达式</a-button><a-button type="primary" html-type="submit" :disabled="locked" :loading="busy">保存</a-button></template></div>
+
   </a-form>
+  <template #footer>
+   <div class="policy-actions"><a-button :disabled="busy" @click="emit('close')">关闭</a-button><a-button v-if="unconfirmed" type="primary" :loading="busy" :disabled="busy" @click="emit('confirm')">核对原提交</a-button><template v-else><a-button :loading="checking" :disabled="locked" @click="validate">检查表达式</a-button><a-button type="primary" @click="submit" :disabled="locked" :loading="busy">保存</a-button></template></div>
+  </template>
  </a-modal>
 </template>
-<style scoped>.policy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.policy-actions{display:flex;gap:8px;justify-content:flex-end}.ant-input-number{width:100%}@media(max-width:700px){.policy-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.policy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.policy-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.policy-binding{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.ant-input-number{width:100%}@media(max-width:700px){.policy-grid{grid-template-columns:minmax(0,1fr)}}</style>

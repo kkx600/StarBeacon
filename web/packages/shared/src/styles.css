@@ -14,8 +14,6 @@ body {margin: 0; min-width: 320px}
 button, input, textarea {font: inherit; caret-color: var(--primary)}
 ::selection {background: var(--selection-surface); color: var(--selection-text)}
 :focus-visible {outline: 2px solid var(--primary); outline-offset: 2px}
-::-webkit-scrollbar {width: 8px; height: 8px}
-::-webkit-scrollbar-thumb {background: var(--control-border); border-radius: 4px}
 .app-shell {min-height: 100vh; background: var(--workspace)}
 .app-shell > .ant-layout-sider {border-right: 1px solid var(--line); position: sticky; top: 0; height: 100vh; overflow: auto}
 .app-shell > .ant-layout {min-width: 0; background: var(--workspace)}
@@ -99,7 +97,6 @@ h2 {margin: 0; font-size: 16px; font-weight: 600}
   .ant-modal {top:20px}
   .ant-modal .ant-modal-content {max-height:calc(100dvh - 48px)}
 }
-.ant-btn:disabled,.ant-input:disabled,.ant-select-disabled .ant-select-selection-item {color:var(--muted)}
 .ant-table-cell {overflow-wrap:anywhere}
 .ant-alert-description,.ant-alert-message {overflow-wrap:anywhere}
 .metric-grid strong,.metric-item strong {min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
