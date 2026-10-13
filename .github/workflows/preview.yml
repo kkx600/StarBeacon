@@ -1,0 +1,105 @@
+name: Linux 工程预览发布
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 工程预览版本，例如 v0.1.0-rc.3
+        required: true
+        type: string
+      engineering_run_id:
+        description: 本仓库 main 同一提交的成功工程检查运行 ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: starbeacon-linux-release
+  cancel-in-progress: false
+env:
+  RELEASE_VERSION: ${{ inputs.version }}
+  ENGINEERING_RUN_ID: ${{ inputs.engineering_run_id }}
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: 核对同一提交的工程检查
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check_preview_release.py --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" --run-id "$ENGINEERING_RUN_ID"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.19.0'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: '12.6.0'
+          run_install: false
+      - run: pnpm --dir web install --frozen-lockfile
+      - run: pnpm --dir web build
+      - name: 构建 Linux amd64 ZIP 并核验 UPX 程序
+        run: |
+          mkdir -p .local/preview
+          git cat-file commit "$GITHUB_SHA" > .local/preview/source.commit
+          docker build --platform linux/amd64 -f deploy/Dockerfile.release -t starbeacon-release-builder .
+          docker run --rm --platform linux/amd64 --read-only --network none --cap-drop ALL --security-opt no-new-privileges --memory 6g --cpus 2 --tmpfs /tmp:rw,exec,nosuid,nodev,size=4g,mode=1777 \
+            -e GOCACHE=/tmp/go-cache \
+            --mount "type=bind,src=$PWD/web,dst=/web,readonly" \
+            --mount "type=bind,src=$PWD/.local/preview,dst=/output" \
+            starbeacon-release-builder --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" \
+            --source-commit-file /output/source.commit \
+            --web-root /web --output /output --epoch "$(git show -s --format=%ct HEAD)"
+      - name: 核对发行内容与依赖并生成说明
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check_preview_release.py --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" --run-id "$ENGINEERING_RUN_ID" --directory .local/preview
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: starbeacon-linux-preview
+          path: |
+            .local/preview/*.zip
+            .local/preview/checksums.json
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: starbeacon-linux-preview
+          path: .local/preview
+      - name: 复核提交与下载的发行包
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check_preview_release.py --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" --run-id "$ENGINEERING_RUN_ID" --directory .local/preview
+      - name: 发布工程预览版
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          root = pathlib.Path('.local/preview')
+          version, commit, repository = (os.environ[key] for key in ('RELEASE_VERSION','GITHUB_SHA','GITHUB_REPOSITORY'))
+          # 创建固定提交的轻量标签；已有同名标签只允许绑定相同提交。
+          result = subprocess.run(['gh','api',f'repos/{repository}/git/refs','-X','POST','-f',f'ref=refs/tags/{version}','-f',f'sha={commit}'],capture_output=True,text=True)
+          if result.returncode:
+              tag = json.loads(subprocess.check_output(['gh','api',f'repos/{repository}/git/ref/tags/{version}'],text=True))
+              if tag.get('object',{}).get('type') != 'commit' or tag['object'].get('sha') != commit:
+                  raise SystemExit('已有标签与工程预览提交不一致')
+          data = json.loads((root/'checksums.json').read_text())
+          subprocess.run(['gh','release','create',version,*[str(root/item['name']) for item in data['archives']],str(root/'checksums.json'),
+                          '--verify-tag','--target',commit,'--prerelease','--latest=false','--title',f'StarBeacon {version}',
+                          '--notes-file',str(root/'notes.md')],check=True)
+          PY
