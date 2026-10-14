@@ -13071,6 +13071,9 @@
           },
           "application_rules": {
             "$ref": "#/components/schemas/ApplicationState"
+          },
+          "protocol_capabilities": {
+            "$ref": "#/components/schemas/ProtocolCapabilities"
           }
         },
         "required": [
@@ -22682,6 +22685,232 @@
           "result"
         ],
         "additionalProperties": false
+      },
+      "ProtocolCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "设备原生命令和配置的有界观测，不是实际效果或发布资格。offline_template 不证明外部 EVE 进程配置；native_listed=false 不等于引擎未编译。失败/等待不携带协议能力。",
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "pending",
+              "unavailable"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "managed_configuration",
+              "offline_template",
+              "unavailable"
+            ]
+          },
+          "capture_active": {
+            "type": "boolean"
+          },
+          "engine_version": {
+            "type": "string",
+            "const": "8.0.7"
+          },
+          "engine_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "error_code": {
+            "type": "string",
+            "enum": [
+              "inspection_pending",
+              "engine_not_configured",
+              "engine_isolation_unavailable",
+              "engine_version_mismatch",
+              "native_protocol_inventory_unavailable",
+              "protocol_configuration_unavailable",
+              "protocol_configuration_unsupported",
+              "protocol_observation_changed",
+              "protocol_inspection_cancelled"
+            ]
+          },
+          "protocols": {
+            "type": "array",
+            "maxItems": 160,
+            "items": {
+              "$ref": "#/components/schemas/ProtocolCapabilityEntry"
+            }
+          },
+          "limits": {
+            "type": "array",
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "maxLength": 90,
+                  "enum": [
+                    "flow.memcap",
+                    "stream.memcap",
+                    "stream.reassembly.memcap",
+                    "stream.reassembly.depth",
+                    "defrag.memcap",
+                    "app-layer.protocols.http.libhtp.default-config.request-body-limit",
+                    "app-layer.protocols.http.libhtp.default-config.response-body-limit"
+                  ]
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 32,
+                  "description": "只返回显式有界数值与单位，空串表示未知默认值。"
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "state",
+          "observed_at",
+          "source",
+          "capture_active",
+          "protocols",
+          "limits"
+        ]
+      },
+      "ProtocolCapabilityEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "最多 64 个 UTF-8 字节，不含控制字符。"
+          },
+          "bindings": {
+            "type": "array",
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/ProtocolParserBinding"
+            }
+          },
+          "native_listed": {
+            "type": "boolean"
+          },
+          "recognition": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "partial",
+              "disabled",
+              "unlisted",
+              "detection_only",
+              "configured",
+              "native_listed"
+            ]
+          },
+          "transactions": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "partial",
+              "disabled",
+              "configured",
+              "not_configured"
+            ]
+          },
+          "online_rules": {
+            "type": "string",
+            "enum": [
+              "requires_validation",
+              "disabled"
+            ]
+          },
+          "file_extraction": {
+            "type": "string",
+            "enum": [
+              "not_implemented"
+            ]
+          },
+          "packet_forensics": {
+            "type": "string",
+            "enum": [
+              "packet_headers_only",
+              "not_implemented"
+            ]
+          },
+          "external_logs": {
+            "type": "string",
+            "enum": [
+              "not_implemented"
+            ]
+          },
+          "qualification": {
+            "type": "string",
+            "const": "not_qualified"
+          }
+        },
+        "required": [
+          "protocol",
+          "name",
+          "bindings",
+          "native_listed",
+          "recognition",
+          "transactions",
+          "online_rules",
+          "file_extraction",
+          "packet_forensics",
+          "external_logs",
+          "qualification"
+        ]
+      },
+      "ProtocolParserBinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp",
+              "unknown"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "detection-only",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "transport",
+          "mode"
+        ]
       }
     }
   }

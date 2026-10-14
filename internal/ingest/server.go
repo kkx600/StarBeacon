@@ -285,7 +285,7 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 			switch m.Kind {
 			case sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT:
 				var h model.HostHealth
-				if m.PayloadSchema != "host.health.v1" || json.Unmarshal(m.PayloadJson, &h) != nil || h.ObservedAt.IsZero() {
+				if m.PayloadSchema != "host.health.v1" || json.Unmarshal(m.PayloadJson, &h) != nil || h.ObservedAt.IsZero() || h.ProtocolCapabilities != nil && h.ProtocolCapabilities.Validate() != nil {
 					stop()
 					return status.Error(codes.InvalidArgument, "健康消息无效")
 				}

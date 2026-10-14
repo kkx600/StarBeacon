@@ -154,6 +154,11 @@ func (s *Server) addTools(server *mcp.Server) {
 			}
 			for n := range data {
 				data[n].RegistrationID = ""
+				health, err := sensorSummaryHealth(data[n].Health)
+				if err != nil {
+					return nil, false, err
+				}
+				data[n].Health = health
 			}
 			return struct {
 				Items []model.Sensor `json:"items"`
@@ -189,6 +194,25 @@ func (s *Server) addTools(server *mcp.Server) {
 		return nil, result, err
 	})
 	s.addFilterTools(server, catalog[7], catalog[8], "context")
+}
+
+// 探针目录不隐式扩展到完整协议观测；后者有独立来源和资格，不能挤占批量摘要的输出预算。
+func sensorSummaryHealth(raw json.RawMessage) (json.RawMessage, error) {
+	if len(raw) == 0 {
+		return raw, nil
+	}
+	if len(raw) > 72*1024 {
+		return nil, errors.New("探针健康摘要超出边界，请缩小查询范围")
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil {
+		return nil, errors.New("探针健康摘要无法核对")
+	}
+	if _, exists := fields["protocol_capabilities"]; !exists {
+		return raw, nil
+	}
+	delete(fields, "protocol_capabilities")
+	return json.Marshal(fields)
 }
 
 func (s *Server) addFilterTools(server *mcp.Server, fieldsTool, validationTool ToolInfo, dataset string) {

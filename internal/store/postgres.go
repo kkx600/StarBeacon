@@ -186,6 +186,9 @@ func (p *Postgres) SensorActive(ctx context.Context, id transport.SensorIdentity
 	})
 }
 func (p *Postgres) Heartbeat(ctx context.Context, id transport.SensorIdentity, h model.HostHealth) error {
+	if h.ProtocolCapabilities != nil && h.ProtocolCapabilities.Validate() != nil {
+		return fmt.Errorf("协议能力观测格式无效")
+	}
 	b, e := json.Marshal(h)
 	if e != nil {
 		return e

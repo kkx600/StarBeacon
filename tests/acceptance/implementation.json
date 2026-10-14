@@ -1004,6 +1004,33 @@
         "tests/integration/platform_startup_readiness_test.go"
       ],
       "boundary": "仅处理当前维护者在策略修订保存后创建并完成的指定模型研判；默认不自动发起模型调用；独立勾选数据使用及费用许可后，仅指定探针、注册代次和等级的新观测告警登记自动研判；按 UTC 日历日跨修订限量、全租户最多八个有效触发策略，并受模型/租户共享费用额度约束。平台在队列及就绪状态绑定完成后才启动持续轮询，避免初始化并发读写。登记、队列与审计原子提交，原键重复不追加收费请求，执行前重新核对策略/账号/模型/探针许可；登记与拒绝可在本人策略修订的自动研判记录查看。持续人工确认与自动模式分别留档，判断结果本身不持有执行授权。自动固定门槛包括阈值、确认攻击尝试、封禁建议、源 IP/规则事实引用、完整白名单材料、观测探针与注册、保护网段、设备/签名就绪、独立 TTL、目标冷却、原告警去重及小时/租户配额。授权、签名任务和审计原子提交；确定性拒绝留档，不盲目续期或重发。账号停用/降权、策略停用或修订及模型变更阻止新授权。档案不可改写，默认 operations 180 天；模型评分未经校准、真实设备流量效果、跨账号触发、自动研判的生产规模与故障恢复、多级审批和大规模队列吞吐仍需独立验收。"
+    },
+    {
+      "id": "protocol_capabilities",
+      "name": "协议能力与检测限额观测",
+      "code": [
+        "internal/protocolcap/catalog.go",
+        "internal/protocolcap/validate.go",
+        "internal/agent/protocols.go",
+        "internal/agent/health.go",
+        "internal/ingest/server.go",
+        "web/packages/shared/src/protocols.ts",
+        "web/packages/shared/src/components/ProtocolCapabilities.vue",
+        "web/packages/shared/src/components/ProtocolCapabilitiesDialog.vue"
+      ],
+      "pages": [
+        "platform:/sensors",
+        "collector:/network"
+      ],
+      "tests": [
+        "internal/protocolcap/catalog_test.go",
+        "internal/agent/protocols_test.go",
+        "internal/agent/detection_quality_test.go",
+        "tests/integration/control_failures_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/protocol-capabilities.test.ts"
+      ],
+      "boundary": "固定 Suricata 8.0.7 的隔离原生命令、冻结引擎文件和配置摘要；按探针、注册代次和站点显示识别、事务日志、在线规则、文件提取、报文取证与外部补充。显式区分禁用、仅识别、配置差异、原生目录和未核实状态；只展示七项白名单限额，不展示配置正文。缓存按文件字节与运行状态失效，失败不授予能力。离线模板不证明外部 EVE 进程实际配置，目录不等同真实效果或完整协议资格；当前源码的远程原生与页面结果单独记录。"
     }
   ],
   "requirements": [
@@ -2482,10 +2509,12 @@
       "acceptance": "pending",
       "capabilities": [
         "rules",
-        "replay"
+        "replay",
+        "protocol_capabilities"
       ],
       "implemented": [
-        "原生 Suricata 装载检查和有界离线重放"
+        "原生 Suricata 装载检查和有界离线重放",
+        "实际配置中显式 TCP/分片内存、重组深度和 HTTP 默认正文深度的白名单观测；跨包、乱序及分片正反样本入口"
       ],
       "remaining": [
         "大帧/分片/跨包/重组/长流/压缩正文限额矩阵",
@@ -2528,13 +2557,20 @@
     },
     {
       "id": "SB-NET-008",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "protocol_capabilities"
+      ],
+      "implemented": [
+        "采集器原生协议目录与显式配置观测，通过认证心跳汇入指定探针",
+        "两端共享六层能力列表、筛选、详情和显式限额",
+        "配置、版本、摘要、未知及未验收效果分别显示"
+      ],
       "remaining": [
-        "站点/版本六层协议能力目录",
-        "正反例与非标准端口验收"
+        "全部目标协议的正常、异常、版本差异、加密与非标准端口资格矩阵",
+        "TShark 与外部补充连接器的实际能力、按配置修订留存的资格记录",
+        "多站点统一聚合筛选及海量环境验收"
       ]
     },
     {

@@ -555,11 +555,20 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		if json.Unmarshal(sensors.Items[0].Health, &health) != nil {
 			return false
 		}
+		protocols := health.ProtocolCapabilities
+		if protocols == nil || protocols.Validate() != nil || protocols.State != "observed" || protocols.EngineVersion != "8.0.7" || protocols.EngineSHA256 == "" || len(protocols.Protocols) < 35 || protocols.CaptureActive != managed {
+			return false
+		}
 		if managed {
 			var state agent.CaptureState
 			if json.Unmarshal(health.Capture, &state) != nil || health.CaptureStatus != "running" || state.PID != capture.PID || state.ConfigSHA256 != capture.ConfigSHA256 || state.AppliedRevision != capture.Revision || state.CountersObservedAt == nil {
 				return false
 			}
+			if protocols.Source != "managed_configuration" || protocols.ConfigSHA256 != state.ConfigSHA256 {
+				return false
+			}
+		} else if protocols.Source != "offline_template" {
+			return false
 		}
 		return strings.Contains(strings.Join(health.TaskCapabilities, ","), "rules.replay") && health.Version != ""
 	})

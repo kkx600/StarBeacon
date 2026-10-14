@@ -152,6 +152,8 @@ func Run(ctx context.Context, c config.Config) error {
 	tasks.Capture = capture
 	wal.registeredRulesAvailable = c.SuricataRulesPath != ""
 	wal.registeredRulesPath = c.SuricataRulesPath
+	protocols := &ProtocolInspector{Engine: engine}
+	wal.protocolSnapshot = protocols.Snapshot
 	if len(publicKey) > 0 {
 		wal.taskCapabilities = engine.Capabilities()
 		wal.capabilities = engine.Capabilities
@@ -215,6 +217,7 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	auth := httpapi.NewAuth(local, nil, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 	group, run := errgroup.WithContext(ctx)
+	group.Go(func() error { protocols.Run(run); return nil })
 	if engine.Response != nil {
 		group.Go(func() error { return engine.Response.Run(run) })
 	}

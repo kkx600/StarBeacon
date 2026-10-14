@@ -16,6 +16,7 @@ import (
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	bolt "go.etcd.io/bbolt"
@@ -39,6 +40,7 @@ type WAL struct {
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
 	applicationState                          func() json.RawMessage
+	protocolSnapshot                          func(context.Context) *protocolcap.Report
 }
 type Source struct {
 	FileID       string `json:"file_id"`

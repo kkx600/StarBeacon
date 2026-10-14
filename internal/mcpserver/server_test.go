@@ -81,7 +81,7 @@ func (b *mockBackend) InventoryAsset(context.Context, model.Principal, string) (
 }
 func (b *mockBackend) ListSensors(context.Context, model.Principal) ([]model.Sensor, error) {
 	b.queries++
-	return []model.Sensor{{ID: "probe_a", RegistrationID: "private-registration"}, {ID: "probe_b"}}, b.errorQuery
+	return []model.Sensor{{ID: "probe_a", RegistrationID: "private-registration", Health: json.RawMessage(`{"cpu_percent":25,"protocol_capabilities":{"private":"native-protocol-directory"}}`)}, {ID: "probe_b"}}, b.errorQuery
 }
 
 type bearerTransport struct {
@@ -163,6 +163,9 @@ func TestOfficialClientDiscoveryAndReadOnlyBoundedResults(t *testing.T) {
 		}
 		if call.Name == "sensors.list" && !strings.Contains(string(raw), `"truncated":true`) {
 			t.Fatal("列表截断没有标注", string(raw))
+		}
+		if call.Name == "sensors.list" && (strings.Contains(string(raw), "native-protocol-directory") || !strings.Contains(string(raw), `"cpu_percent":25`)) {
+			t.Fatal("探针摘要丢失资源观测或隐式带出完整协议目录")
 		}
 	}
 	before := b.queries

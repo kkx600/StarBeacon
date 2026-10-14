@@ -45,6 +45,7 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
       <a-descriptions-item label="目标引擎版本">{{record.targetVersion??'未配置'}}</a-descriptions-item><a-descriptions-item label="版本回执">未提供发布任务回执</a-descriptions-item><a-descriptions-item label="规则快照">{{execution?'不适用（执行角色）':record.ruleVersion??'尚未上报'}}</a-descriptions-item><a-descriptions-item label="执行范围">{{execution?record.zone:'未授权执行设备动作'}}</a-descriptions-item>
     </a-descriptions>
     <p class="field-hint">配置目标版本不表示升级成功；生产环境以探针上报版本和发布任务回执为准。</p>
+    <router-link to="/page/protocols?state=data"><a-button style="margin-top:12px">协议能力</a-button></router-link>
     <router-link to="/page/releases"><a-button style="margin-top:16px">查看版本发布</a-button></router-link>
     <router-link v-if="record.id===collectorDevice.id" to="/collector/overview"><a-button style="margin:16px 0 0 8px">采集器本地管理</a-button></router-link>
     <p v-if="record.id===collectorDevice.id" class="field-hint">本地管理原型绑定当前样机，提供网卡、平台接入与维护流程；生产入口需独立鉴权和管理网络可达。</p>

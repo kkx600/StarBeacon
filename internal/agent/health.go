@@ -91,6 +91,9 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	if capabilities != nil {
 		h.TaskCapabilities = capabilities()
 	}
+	if w.protocolSnapshot != nil {
+		h.ProtocolCapabilities = w.protocolSnapshot(ctx)
+	}
 	if w.responseHealth != nil {
 		h.ResponseConnectors = w.responseHealth()
 	}

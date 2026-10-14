@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "scope": "协议能力观测、检测正反样本、工程全量回归与双端定向交互；不授予完整产品或生产发布资格",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "runtime_targets": {
+    "host_service": "已确认；安装、管理网络和升级回退执行器待实现及验收",
+    "container": "已确认；正式安装与升级回退待验收，远程工程测试使用独立 Docker"
+  },
+  "backend": {
+    "source_sha256": "7cc988050554e992288a0ba348f263112e11a7514d7f68b6482d0cd40289a870",
+    "execution_commit": "c7bc2e634c00d6a4947bf1a34e0db8060e7a75d6",
+    "clean_commit_at_execution": false,
+    "target": "linux/amd64",
+    "go": "1.26.8",
+    "suricata": "8.0.7",
+    "dependency_storage": "专属持久 Docker 卷；不授予 HA、180 天容量或备份恢复资格",
+    "tests": {
+      "unit": {
+        "run": 415,
+        "pass": 415,
+        "fail": 0,
+        "skip": 0
+      },
+      "integration": {
+        "run": 106,
+        "pass": 106,
+        "fail": 0,
+        "skip": 0
+      },
+      "capture": {
+        "run": 1,
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "coverage": {
+      "covered": 16620,
+      "total": 18371,
+      "percentage": 90.4686734527244,
+      "minimum": 90
+    },
+    "stages": [
+      {
+        "name": "functional",
+        "actual_exit_code": 0,
+        "oom_killed": false,
+        "control_exit_code": null
+      },
+      {
+        "name": "capture",
+        "actual_exit_code": 0,
+        "oom_killed": false,
+        "control_exit_code": 0
+      },
+      {
+        "name": "combined",
+        "actual_exit_code": 0,
+        "oom_killed": false,
+        "control_exit_code": 0
+      }
+    ],
+    "archive_sha256": "cea1a09ef763f79f85d2636ccbdc854dfc9818e3f6f2a7d69b0f3782a6347ce0",
+    "source_report_sha256": "6a2767f2ea49503da7647c54d7e4f7dd20c88010605570109f4bb8181794efa2",
+    "native_quality_cases": 8,
+    "quality_scope": "非标准端口 18088：TCP 跨段、TCP 乱序、IPv4 分片、IPv4 分片乱序，各含正反 URI",
+    "interruptions": [
+      "原功能容器实际退出 0，SSH 断连后从原容器状态和原始报告恢复观察",
+      "首轮网卡冷编译约 197 秒，触及原 240 秒外层期限；原始失败归档，同一源码和原期限的后继执行通过",
+      "早期快照因 MCP 摘要回归修正主动中断，未继承验收结论"
+    ]
+  },
+  "frontend": {
+    "source_sha256": "e5641ab2925c91f94d85bda1657f1d1a0f24b36527c380378162f06b973ef0f3",
+    "snapshot_algorithm": "sha256-path-size-sha256-v1",
+    "tests": 532,
+    "tool_tests": 9,
+    "test_files": 45,
+    "coverage": {
+      "statements": 95.54771665554391,
+      "branches": 93.015477949755,
+      "functions": 92.2635237231792,
+      "lines": 98.933468765871
+    },
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 0.461
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 476.745
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 45.027
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 23.123
+      }
+    ],
+    "manifest_sha256": "df4465c9775021a381639f0fd6b76db37e4d83f16ce0de6cb3938e0d015cea41"
+  },
+  "runtime": {
+    "scope": "专属工程实例；非正式安装包部署及升级回退资格",
+    "backend_source": "7cc988050554e992288a0ba348f263112e11a7514d7f68b6482d0cd40289a870",
+    "frontend_artifact": "563e71d7d6cf67e616559ed4ebaeb279cdb2e657e3104bb32b0844ef78140d20",
+    "identities_and_persistent_data_preserved": true,
+    "original_runtime_unchanged": true,
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "programs": {
+      "starbeacon": "92db744de79063cf0de7db56137f2b8705c225de055182b0726f9cc0a2f285c0",
+      "starbeacon-ingest": "ab937f8d58c043dc05cca9045d4ecfb1b381bd3855f8d85d0b497b82ecdbe9af",
+      "starbeacon-worker": "372fa1e701bf04402a1b984a0df90fc1f3ad9421e7c1bb2194c2d63064b7c211",
+      "starbeacon-agent": "9ed93d021f7ea49468cae2721bece51051387f0b40e9e9ea8b8d0563a9cb40fe",
+      "starbeaconctl": "1e9ca67690c0741bea31a4000fec213ddccae1c68db8843b802b90214ac7dcae"
+    },
+    "frontend_files": 81,
+    "protocols_observed": 43,
+    "protocol_source": "offline_template",
+    "ui_layout_observations": 64,
+    "specified_interaction_records": 4,
+    "ui_evidence_sha256": "25901e350bd1bfb356496c741459cc84a7f5a7b8e0884b3c70943ca086e105f6",
+    "ui_scope": "协议目录、HTTP 筛选、筛选空结果、分层详情和来源；八档 PC，不是全产品 CRUD 或全状态验收"
+  },
+  "prototype": {
+    "base_images": 755,
+    "supplemental_images": 54,
+    "total_images": 809,
+    "layout_observations": 96,
+    "layout_evidence_sha256": "78977c9b2728bc8e824d2d7b96f8c31e6d58d25a6f491c9b9c9d18e2d4c3c3b9",
+    "provenance_sha256": "1071190d739f40c85c5a1abf7cec3d3ca7fcd1de719886aa33153fa6bc34a444"
+  },
+  "limitations": [
+    "所有协议条目仍为 not_qualified，观测配置不等同于检测效果",
+    "尚未完成 jumbo、重叠或 IPv6 分片、隧道、深度边界及生产压力验收",
+    "当前工程实例使用外部 EVE；真实 AF_PACKET 在独立测试链路验证",
+    "Linux 主机服务和容器的产品执行器、证书生命周期、规则订阅仍需落实",
+    "真实模型、外部办公渠道、具体防火墙／EDR、对象存储生命周期、文件沙箱及完整 107 项验收仍未完成",
+    "没有生成包含本批代码的新发行 ZIP，没有发布正式版本"
+  ],
+  "cleanup": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_protocol_test_project_only",
+    "containers_removed": 9,
+    "volumes_removed": 4,
+    "online_instances_unchanged": true,
+    "raw_evidence_and_current_image_preserved": true,
+    "global_prune": false,
+    "cache_allocated_bytes_removed": 2542505984,
+    "profile_unloaded": true,
+    "cache_directories_removed": 2
+  },
+  "local_cleanup": {
+    "status": "passed",
+    "tunnel_stopped": true,
+    "owned_prototype_servers_stopped": 1,
+    "browser_sessions_logged_out": true
+  }
+}

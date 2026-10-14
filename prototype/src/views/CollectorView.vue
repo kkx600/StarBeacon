@@ -15,6 +15,8 @@ import {pageById} from '../data/catalog'
 import {formatQuantity} from '../../../web/packages/shared/src/utils/format'
 import CollectorForm from '../components/CollectorForm.vue'
 import CollectorResponsesPreview from '../components/CollectorResponsesPreview.vue'
+import ProtocolCapabilitiesDialog from '../../../web/packages/shared/src/components/ProtocolCapabilitiesDialog.vue'
+import {protocolObservation} from '../data/protocols'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview();const {state:collector,device}=useCollector()
 const page=computed(()=>collectorPages.find(item=>item.id===route.params.id))
 const detailOpen=ref(false);const actionOpen=ref(false);const selected=ref<CollectorInterface|CollectorTask>();const action=ref<CollectorAction>('network');const localTab=ref('interfaces');const keyword=ref('');const statusFilter=ref('全部状态')
@@ -22,6 +24,9 @@ const archivePage={...pageById.get('packet-archives')!,readOnly:true,primary:'�
 const pageTabs:Record<string,string[]>={network:['interfaces','capture','archives','replay-samples','replay-tasks','responses'],updates:['rules','system'],maintenance:['services','audits']}
 watch(()=>[page.value?.id,route.query.view],()=>{const tabs=pageTabs[page.value?.id??'']??['interfaces'];const value=route.query.view;localTab.value=typeof value==='string'&&tabs.includes(value)?value:tabs[0]!},{immediate:true})
 function changeTab(value:string|number){const next=String(value);const tabs=pageTabs[page.value?.id??'']??[];if(!tabs.includes(next)||next===localTab.value)return;void router.push({query:{...route.query,view:next===tabs[0]?undefined:next}})}
+const protocolsOpen=ref(false)
+const protocolExample=protocolObservation()
+const protocolReport=computed(()=>state.value==='empty'?undefined:state.value==='error'||state.value==='loading'?{schema_version:1,state:state.value==='loading'?'pending':'unavailable',source:'unavailable',capture_active:false,observed_at:protocolExample.observed_at,error_code:state.value==='loading'?'inspection_pending':'native_protocol_inventory_unavailable',protocols:[],limits:[]}:protocolExample)
 const serviceId=ref('suricata')
 const defaultActions:Record<string,CollectorAction>={overview:'service',network:'network',connection:'connection',updates:'rule-sync',maintenance:'maintenance'}
 const primaryAction=computed<CollectorAction>(()=>page.value?.id==='updates'&&localTab.value==='system'?'upgrade':defaultActions[page.value?.id??'overview']??'service')
@@ -36,7 +41,7 @@ const hasFilters=computed(()=>!!keyword.value.trim()||statusFilter.value!=='全�
 const selectedNic=computed(()=>selected.value&&'mac' in selected.value?selected.value:undefined)
 const selectedTask=computed(()=>selected.value&&'steps' in selected.value?selected.value:undefined)
 const metrics=computed(()=>[{label:'CPU 使用率',value:'22',suffix:'%',note:'同一设备遥测快照'},{label:'内存使用率',value:'35',suffix:'%',note:'16 GiB 总内存'},{label:'磁盘使用率',value:'48',suffix:'%',note:'示例可分配缓冲 300 GiB'},{label:'镜像流量',value:'482',suffix:'Mbit/s',note:'eth0 · 丢包率 0.00%'}])
-watch(()=>[page.value?.id,state.value,localTab.value],()=>{detailOpen.value=state.value==='detail'&&localTab.value!=='archives'&&localTab.value!=='responses';actionOpen.value=state.value==='action'&&localTab.value!=='archives'&&localTab.value!=='responses';action.value=primaryAction.value;selected.value=page.value?.id==='network'?collector.interfaces[0]:page.value?.id==='updates'?collector.tasks[1]:undefined;keyword.value='';statusFilter.value='全部状态'},{immediate:true})
+watch(()=>[page.value?.id,state.value,localTab.value],()=>{protocolsOpen.value=false;detailOpen.value=state.value==='detail'&&localTab.value!=='archives'&&localTab.value!=='responses';actionOpen.value=state.value==='action'&&localTab.value!=='archives'&&localTab.value!=='responses';action.value=primaryAction.value;selected.value=page.value?.id==='network'?collector.interfaces[0]:page.value?.id==='updates'?collector.tasks[1]:undefined;keyword.value='';statusFilter.value='全部状态'},{immediate:true})
 function openAction(value:CollectorAction,service='suricata'){action.value=value;serviceId.value=service;actionOpen.value=true}
 function showDetail(item?:CollectorInterface|CollectorTask){selected.value=item;detailOpen.value=true}
 function closeDetail(){detailOpen.value=false;if(state.value==='detail')setState('data')}
@@ -46,7 +51,7 @@ function clearFilters(){keyword.value='';statusFilter.value='全部状态'}
 </script>
 <template>
   <div v-if="page" class="page-surface" :data-page-id="`collector-${page.id}`" :data-page-state="state">
-    <PageHeader :title="page.title" :description="page.description"><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" @click="showDetail()">{{page.id==='network'?'查看配置':page.id==='updates'?'版本明细':'查看详情'}}</a-button><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" type="primary" @click="openAction(primaryAction)">{{primaryLabel}}</a-button></PageHeader>
+    <PageHeader :title="page.title" :description="page.description"><a-button v-if="page.id==='network'" @click="protocolsOpen=true">协议能力</a-button><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" @click="showDetail()">{{page.id==='network'?'查看配置':page.id==='updates'?'版本明细':'查看详情'}}</a-button><a-button v-if="!localTab.startsWith('replay-')&&localTab!=='archives'&&localTab!=='responses'" type="primary" @click="openAction(primaryAction)">{{primaryLabel}}</a-button></PageHeader>
     <div class="collector-context"><span><b>{{device.name}}</b> · {{device.id}}</span><span>{{device.zone}} · 快照 {{device.snapshot}}</span></div>
     <nav v-if="page.id==='network'" class="workspace-views" aria-label="网络与采集功能"><a-tabs :active-key="localTab" @change="changeTab"><a-tab-pane key="interfaces" tab="网卡与地址"/><a-tab-pane key="capture" tab="采集配置"/><a-tab-pane key="archives" tab="原包归档"/><a-tab-pane key="replay-samples" tab="重放样本"/><a-tab-pane key="replay-tasks" tab="重放任务"/><a-tab-pane key="responses" tab="联动设备"/></a-tabs></nav>
     <ReplayPreview v-if="page.id==='network'&&localTab.startsWith('replay-')" local embedded :tasks="localTab==='replay-tasks'" :state="state" @state="setState" @view="changeTab"/>
@@ -86,6 +91,7 @@ function clearFilters(){keyword.value='';statusFilter.value='全部状态'}
         <section v-else class="panel table-panel"><div class="table-toolbar"><h2>本地操作日志</h2><span class="muted">不记录密钥与业务载荷</span></div><a-table :columns="auditColumns" :data-source="collector.audits" row-key="id" :pagination="{pageSize:8,showSizeChanger:false}" :scroll="{x:1005}" size="middle"/></section>
       </template>
     </template>
+    <ProtocolCapabilitiesDialog :open="protocolsOpen" name="总部核心探针" :report="protocolReport" @close="protocolsOpen=false" />
     <CollectorForm :open="actionOpen&&!localTab.startsWith('replay-')" :action="action" :service-id="serviceId" @close="closeAction" @requested="onRequested"/>
     <a-modal :open="detailOpen&&!localTab.startsWith('replay-')" :title="selectedNic?`网卡详情 · ${selectedNic.name}`:selectedTask?`任务详情 · ${selectedTask.id}`:page.id==='connection'?'设备证书与连接':`${page.title}详情`" :width="760" :footer="null" destroy-on-close class="record-detail-modal" @cancel="closeDetail">
       <template v-if="selectedNic"><a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small"><a-descriptions-item v-for="(value,label) in {'接口名称':selectedNic.name,'用途':selectedNic.role,'链路状态':selectedNic.status,'MAC 地址':selectedNic.mac,'IPv4':selectedNic.ipv4,'IPv6':selectedNic.ipv6,'驱动':selectedNic.driver,'速率':selectedNic.speed,'MTU':selectedNic.mtu,'队列数':selectedNic.queues,'GRO':selectedNic.gro,'LRO':selectedNic.lro}" :key="label" :label="label">{{value}}</a-descriptions-item></a-descriptions><p class="field-hint">链路断开时速率与流量不可观测。镜像口不承载管理 IP，实际卸载能力由驱动回读。</p></template>

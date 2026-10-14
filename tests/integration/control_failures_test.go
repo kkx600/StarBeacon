@@ -16,6 +16,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/ingest"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"google.golang.org/grpc"
@@ -56,7 +57,7 @@ func TestMTLSRejectsInvalidControlAndBatchBeforeAcknowledgment(t *testing.T) {
 	health, err := json.Marshal(model.HostHealth{ObservedAt: time.Now().UTC()})
 	require(t, err)
 	base := &sensorv1.AgentMessage{SensorId: id.SensorID, SensorRegistrationId: id.RegistrationID, Kind: sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT, MessageId: "heartbeat_owned", PayloadSchema: "host.health.v1", PayloadJson: health}
-	for _, mode := range []string{"sensor", "registration", "oversized", "schema", "json", "observed_time", "receipt_schema", "receipt_json", "receipt_identity", "receipt_invalid", "unknown"} {
+	for _, mode := range []string{"sensor", "registration", "oversized", "schema", "json", "observed_time", "protocol_self_qualification", "receipt_schema", "receipt_json", "receipt_identity", "receipt_invalid", "unknown"} {
 		t.Run(mode, func(t *testing.T) {
 			message := &sensorv1.AgentMessage{SensorId: base.SensorId, SensorRegistrationId: base.SensorRegistrationId, Kind: base.Kind, MessageId: base.MessageId, PayloadSchema: base.PayloadSchema, PayloadJson: append([]byte(nil), base.PayloadJson...)}
 			want := codes.InvalidArgument
@@ -73,6 +74,8 @@ func TestMTLSRejectsInvalidControlAndBatchBeforeAcknowledgment(t *testing.T) {
 				message.PayloadJson = []byte(`{`)
 			case "observed_time":
 				message.PayloadJson = []byte(`{}`)
+			case "protocol_self_qualification":
+				message.PayloadJson, _ = json.Marshal(model.HostHealth{ObservedAt: time.Now().UTC(), ProtocolCapabilities: &protocolcap.Report{SchemaVersion: 1, State: "accepted", ObservedAt: time.Now().UTC()}})
 			case "receipt_schema":
 				message.Kind = sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_TASK_RECEIPT
 			case "receipt_json":
