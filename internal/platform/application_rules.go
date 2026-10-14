@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 
 func (a *API) registerApplicationRules(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/application-rules", a.Auth.Require(false, a.applicationRules))
+	m.HandleFunc("GET /api/v1/application-rules/snapshot", a.Auth.Require(false, a.applicationSnapshot))
+	m.HandleFunc("POST /api/v1/sensors/{id}/application-rules", a.Auth.Require(true, a.deployApplicationRules))
 	m.HandleFunc("GET /api/v1/application-rules/{id}/revisions/{revision}", a.Auth.Require(false, a.applicationRule))
 	m.HandleFunc("POST /api/v1/application-rules", a.Auth.Require(true, a.saveApplicationRule))
 	m.HandleFunc("POST /api/v1/application-rules/preview", a.Auth.Require(false, a.previewApplicationRule))
@@ -29,7 +32,7 @@ func decodeApplication(w http.ResponseWriter, r *http.Request, target any) error
 	if err := httpapi.Decode(w, r, &raw); err != nil {
 		return application.ErrInput
 	}
-	fields := []string{"id", "expected_revision", "name", "description", "active", "definition", "observation", "schema_version", "product_id", "product_name", "category_id", "protocols", "any", "all", "exclude", "field", "op", "value", "protocol", "http_host", "http_method", "http_path", "http_user_agent", "tls_sni", "tls_alpn", "dns_names"}
+	fields := []string{"id", "expected_revision", "name", "description", "active", "definition", "observation", "schema_version", "product_id", "product_name", "category_id", "protocols", "any", "all", "exclude", "field", "op", "value", "protocol", "http_host", "http_method", "http_path", "http_user_agent", "tls_sni", "tls_alpn", "dns_names", "expected_registration_id", "expected_state_sha256", "rules_sha256"}
 	if contract.JSONFields(string(raw), fields, 32768) != nil {
 		return application.ErrInput
 	}
@@ -43,6 +46,8 @@ func decodeApplication(w http.ResponseWriter, r *http.Request, target any) error
 
 func applicationFailure(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, store.ErrApplicationState):
+		httpapi.Fail(w, r, 409, "application_state_conflict", "探针不在线、信任信息或规则状态已变化，请刷新并核对后提交")
 	case errors.Is(err, application.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_application_rule", "请核对规则、材料字段、协议范围与修订；正向候选须包含实际可见的产品域名条件")
 	case errors.Is(err, application.ErrQuota):
@@ -56,6 +61,44 @@ func applicationFailure(w http.ResponseWriter, r *http.Request, err error) {
 	default:
 		httpapi.Fail(w, r, 503, "application_rule_unavailable", "应用识别规则服务暂不可用；提交结果未确认时请核对原提交")
 	}
+}
+
+func (a *API) applicationSnapshot(w http.ResponseWriter, r *http.Request) {
+	if r.URL.RawQuery != "" {
+		applicationFailure(w, r, application.ErrInput)
+		return
+	}
+	if !a.applicationReady(w, r) {
+		return
+	}
+	snapshot, err := a.DB.ApplicationSnapshot(r.Context(), httpapi.Principal(r))
+	if err != nil {
+		applicationFailure(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, snapshot)
+}
+
+func (a *API) deployApplicationRules(w http.ResponseWriter, r *http.Request) {
+	var input application.DeploymentInput
+	if !contract.ValidID(r.PathValue("id")) || !contract.ValidID(r.Header.Get("Idempotency-Key")) || r.URL.RawQuery != "" || decodeApplication(w, r, &input) != nil || input.Validate() != nil {
+		applicationFailure(w, r, application.ErrInput)
+		return
+	}
+	if len(a.Signer) != ed25519.PrivateKeySize {
+		httpapi.Fail(w, r, 503, "signer_unavailable", "平台任务签名密钥未配置")
+		return
+	}
+	if !a.applicationReady(w, r) {
+		return
+	}
+	id, err := a.DB.CreateApplicationDeployment(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.Header.Get("Idempotency-Key"), input, a.Signer)
+	if err != nil {
+		applicationFailure(w, r, err)
+		return
+	}
+	a.Wakeup.Notify(httpapi.Principal(r).TenantID, r.PathValue("id"))
+	httpapi.JSON(w, 202, map[string]string{"id": id})
 }
 
 func (a *API) applicationReady(w http.ResponseWriter, r *http.Request) bool {

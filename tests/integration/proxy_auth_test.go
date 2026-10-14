@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"strings"
 	"testing"
@@ -31,8 +32,10 @@ func TestTrustedProxyAuthenticationRedisBudgetAndAuditSource(t *testing.T) {
 	defer cache.Close()
 	policy, err := clientip.Parse("127.0.0.1/32,::1/128")
 	require(t, err)
-	nonce := store.Token()[:4]
-	first, second := "2001:db8:"+nonce+"::1", "2001:db8:"+nonce+"::2"
+	// 强制覆盖含前导零的有效地址；限流键和审计使用规范地址，不沿用头部原文。
+	nonce := "0" + store.Token()[:3]
+	firstInput, secondInput := "2001:db8:"+nonce+"::1", "2001:db8:"+nonce+"::2"
+	first, second := netip.MustParseAddr(firstInput).String(), netip.MustParseAddr(secondInput).String()
 	keys := []string{"sb:login:" + store.Hash(first), "sb:login:" + store.Hash(second)}
 	defer func() {
 		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
@@ -62,12 +65,12 @@ func TestTrustedProxyAuthenticationRedisBudgetAndAuditSource(t *testing.T) {
 			t.Fatal("失败或限流请求创建了会话")
 		}
 	}
-	post(first, login, 200)
+	post(firstInput, login, 200)
 	for range 9 {
-		post(first, []byte(`{"unknown":true}`), 400)
+		post(firstInput, []byte(`{"unknown":true}`), 400)
 	}
-	post(first, login, 429)
-	post(second, login, 200)
+	post(firstInput, login, 429)
+	post(secondInput, login, 200)
 	for i, want := range []int64{11, 1} {
 		count, err := cache.Get(ctx, keys[i]).Int64()
 		require(t, err)

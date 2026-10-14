@@ -38,6 +38,7 @@ type WAL struct {
 	packetArchives                            *PacketArchiveController
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
+	applicationState                          func() json.RawMessage
 }
 type Source struct {
 	FileID       string `json:"file_id"`
@@ -233,11 +234,11 @@ func (w *WAL) Next(stream string) (*sensorv1.EventBatch, error) {
 			if e := proto.Unmarshal(p.Record, &r); e != nil {
 				return e
 			}
-			if len(b.Records) > 0 && size+len(r.Payload) > 1024*1024 {
+			if len(b.Records) > 0 && size+len(r.Payload)+len(r.ApplicationJson) > 1024*1024 {
 				break
 			}
 			b.Records = append(b.Records, &r)
-			size += len(r.Payload)
+			size += len(r.Payload) + len(r.ApplicationJson)
 			if len(b.Records) >= contract.MaxBatchRecords {
 				break
 			}

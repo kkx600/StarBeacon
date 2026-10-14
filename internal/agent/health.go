@@ -94,6 +94,9 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	if w.responseHealth != nil {
 		h.ResponseConnectors = w.responseHealth()
 	}
+	if w.applicationState != nil {
+		h.ApplicationRules = w.applicationState()
+	}
 	if rulesPath != "" {
 		if hash, err := ruleFileDigest(rulesPath, 64*1024*1024); err == nil {
 			h.RegisteredRulesSHA256 = hash

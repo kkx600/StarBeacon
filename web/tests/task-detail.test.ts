@@ -7,6 +7,8 @@ import {ApiError} from '@starbeacon/shared/api.ts'
 import TaskTable from '@starbeacon/shared/components/TaskTable.vue'
 import TaskWorkspace from '../platform/src/features/sensors/TaskWorkspace.vue'
 import {principal,task,click,deferred} from './fixtures'
+import {webcrypto} from 'node:crypto'
+import {goJSONDigest} from '../packages/shared/src/utils/goJSONDigest'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 const user=shallowRef(principal)
 vi.mock('../platform/src/session',()=>({session:{api:{request},get current(){return user}}}))
@@ -19,6 +21,18 @@ async function workspace(url='/sensors?view=tasks&task=task_1',sensorId?:string)
  return {wrapper,router}
 }
 describe('历史任务详情与链接',()=>{
+ it('应用安装档案绑定原任务和持久状态摘要，拒绝其他任务或损坏回执',async()=>{
+  vi.stubGlobal('crypto',webcrypto)
+  const rules='1'.repeat(64),installed={schema_version:'application-state.v1',deployment_id:task.id,rules_sha256:rules,state_sha256:await goJSONDigest({deployment_id:task.id,rules_sha256:rules}),rule_count:1,installed_at:new Date().toISOString()}
+  const row={...history(),kind:'applications.apply',receipt:{...history().receipt,result:installed}}
+  request.mockImplementation((path:string)=>Promise.resolve(path.startsWith('/tasks/')?row:{items:[row]}))
+  const {wrapper}=await workspace();await vi.waitFor(()=>expect(document.body.textContent).toContain('应用规则安装'))
+  expect(document.body.textContent).toContain('采集器已持久安装');expect(document.body.textContent).toContain(rules);expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  for(const value of [{...installed,deployment_id:'task_other'},{...installed,state_sha256:'0'.repeat(64)},{...installed,rule_count:129}]){
+   request.mockResolvedValueOnce({...row,receipt:{...row.receipt,result:value}});await click('刷新详情');await vi.waitFor(()=>expect(document.body.textContent).toContain('安装回执与原任务不一致'));expect(document.body.textContent).not.toContain('采集器已持久安装')
+  }
+  wrapper.unmount()
+ })
  it('独立读取列表之外的任务，刷新和重挂载仍打开原标识，关闭保留视图与筛选',async()=>{
   const {wrapper,router}=await workspace('/sensors?view=tasks&task=task_1&source=archive#trace')
   expect(request.mock.calls.some(call=>call[0]==='/tasks/task_1')).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1)

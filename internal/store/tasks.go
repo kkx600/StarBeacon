@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -55,10 +56,15 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 	var id string
 	var sampleID *string
 	request := control.Digest(append([]byte(sensor+"\x00"+kind+"\x00"), payload...))
-	if strings.HasPrefix(kind, "response.") {
+	if strings.HasPrefix(kind, "response.") || kind == "applications.apply" {
 		request = control.Digest(append([]byte(u.ID+"\x00"+sensor+"\x00"+kind+"\x00"), payload...))
 	}
 	e := func() error {
+		if kind == "applications.apply" {
+			if err := applicationRuleUser(ctx, tx, u, true); err != nil {
+				return err
+			}
+		}
 		if strings.HasPrefix(kind, "response.") {
 			if err := responseTaskActor(ctx, tx, u); err != nil {
 				return err
@@ -102,6 +108,12 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 				return errors.New("任务签名密钥未配置")
 			}
 			if e = qualifyCaptureTask(ctx, tx, u.TenantID, sensor, registration, payload, signer); e != nil {
+				return e
+			}
+		}
+		if kind == "applications.apply" {
+			payload, e = qualifyApplicationTask(ctx, tx, u, sensor, registration, payload, signer)
+			if e != nil {
 				return e
 			}
 		}
@@ -326,6 +338,15 @@ func (p *Postgres) SaveReceipt(ctx context.Context, id transport.SensorIdentity,
 			}
 			if e = control.ValidateCaptureResult(p, receipt.Result); e != nil {
 				return e
+			}
+		}
+		if kind == "applications.apply" && receipt.State == "succeeded" {
+			var c control.Command
+			if json.Unmarshal(command, &c) != nil || control.Validate(c) != nil || c.ID != receipt.CommandID || c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {
+				return application.ErrInput
+			}
+			if err := validateApplicationReceipt(c, receipt); err != nil {
+				return err
 			}
 		}
 		if strings.HasPrefix(kind, "response.") && receipt.State == "succeeded" {

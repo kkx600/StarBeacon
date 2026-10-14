@@ -29,6 +29,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/worker"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -53,14 +54,16 @@ func TestNotificationHTTPDurableOutboxTLSReceiptAndIsolation(t *testing.T) {
 	queue, err := bus.OpenNamespace(ctx, os.Getenv("SB_NATS_URL"), store.RandomID("it_notice_"))
 	require(t, err)
 	defer queue.Close()
-	require(t, queue.Ensure(ctx, 1, 16*1024*1024))
 	defer func() {
 		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
 		for _, stream := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
-			require(t, queue.JS.DeleteStream(clean, queue.StreamName(stream)))
+			if err := queue.JS.DeleteStream(clean, queue.StreamName(stream)); !errors.Is(err, jetstream.ErrStreamNotFound) {
+				require(t, err)
+			}
 		}
 	}()
+	require(t, queue.Ensure(ctx, 1, 16*1024*1024))
 	tenants := []string{store.RandomID("it_notice_a_"), store.RandomID("it_notice_b_")}
 	password := store.Token()
 	for _, tenant := range tenants {

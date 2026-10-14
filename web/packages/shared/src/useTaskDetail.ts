@@ -1,9 +1,10 @@
 import {onScopeDispose,reactive,watch,type ComputedRef} from 'vue'
 import type {SensorTask,TaskDetailState,Principal} from './types'
 import type {ApiClient} from './api'
+import {validApplicationState} from './application'
 
 const id=/^[a-z0-9][a-z0-9_-]{0,63}$/
-const kinds=new Set(['diagnostics','capture.configure','rules.validate','rules.replay','rules.apply','rules.reconcile','response.block','response.read','response.revoke'])
+const kinds=new Set(['diagnostics','capture.configure','applications.apply','rules.validate','rules.replay','rules.apply','rules.reconcile','response.block','response.read','response.revoke'])
 const states=new Set(['queued','delivered','running','succeeded','failed','unknown','expired','cancelled'])
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)
 function validTask(v:unknown,requested:string,sensor?:string,local=false):v is SensorTask{
@@ -44,6 +45,11 @@ export function useTaskDetail(task:ComputedRef<unknown>,options:{api:()=>ApiClie
    const result=await options.api().request<unknown>('/tasks/'+encodeURIComponent(requested),{signal:current.signal})
    if(current.signal.aborted||controller!==current)return
    if(!validTask(result,requested,sensor(),local()))throw new Error('任务详情未能完整返回，请刷新核对；不使用列表或历史回执代替。')
+   if(result.kind==='applications.apply'&&result.state==='succeeded'){
+    const installed=result.receipt.result
+    if(!await validApplicationState(installed)||installed?.deployment_id!==requested)throw new Error('应用规则安装回执与原任务不一致，请刷新后核对。')
+   }
+   if(current.signal.aborted||controller!==current)return
    detail.item=result;failures=0
   }catch(cause){if(!current.signal.aborted&&controller===current){detail.error=cause instanceof Error?cause.message:'任务详情读取失败，请重试。';failures++}}
   finally{

@@ -28,12 +28,16 @@ func TestComparisonsAndProtocolGuards(t *testing.T) {
 		{`http.request.method == "get" and http.request.uri contains "/admin?x=*"`, []string{`"http.method":"GET"`, `"network.protocol":"http"`, `*`}},
 		{`tcp.port in {80 443 8000..8080} && not ip.addr == 192.0.2.1`, []string{`"network.transport":"tcp"`, `"gte":8000`, `"lte":8080`, `"must_not"`, `"minimum_should_match":1`}},
 		{`(udp.dstport ge 0x35 or dns) and eth.src == "AA-BB-CC-DD-EE-FF"`, []string{`"gte":53`, `"source.mac":"aa:bb:cc:dd:ee:ff"`, `"network.protocol":"dns"`}},
-		{`ipv6.addr in {2001:db8::/32}`, []string{`"source.ip":"::/0"`, `"destination.ip":"2001:db8::/32"`}},
+		{`ipv6.addr in {2001:db8::/32}`, []string{`"source.ip":"0.0.0.0/0"`, `"must_not"`, `"destination.ip":"2001:db8::/32"`}},
 		{`frame.time >= "2026-10-01T12:00:00+08:00"`, []string{`"gte":"2026-10-01T04:00:00Z"`}},
 		{`suricata.flow_id == 18446744073709551615`, []string{`"suricata.flow_id":"18446744073709551615"`}},
 		{`network.transport == TCP && http.host contains "example"`, []string{`"network.transport":"tcp"`, `*example*`}},
 		{`source.ip`, []string{`"exists":{"field":"source.ip"}`}},
 		{`!!tls`, []string{`"network.protocol":"tls"`}},
+		{`ip and eth`, []string{`"source.ip":"0.0.0.0/0"`, `"destination.ip":"0.0.0.0/0"`, `"exists":{"field":"source.mac"}`}},
+		{`ipv6 && not ip`, []string{`"source.ip":"0.0.0.0/0"`, `"exists":{"field":"source.ip"}`, `"must_not"`}},
+		{`ip.src > 192.0.2.0 and ipv6.dst le 2001:db8::ffff`, []string{`"gt":"192.0.2.0"`, `"source.ip":"0.0.0.0/0"`, `"lte":"2001:db8::ffff"`, `"destination.ip":"0.0.0.0/0"`, `"must_not"`}},
+		{`http.path contains r"\admin\files"`, []string{`\\\\admin\\\\files`}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.source, func(t *testing.T) {
@@ -78,6 +82,7 @@ func TestInvalidFiltersFailWithPosition(t *testing.T) {
 		`source.mac == 00:11:22:33:44:55:66:77`, `rule.id == 18446744073709551616`, `rule.id == x`,
 		`frame.time < "2026-10-01"`, `http contains "x"`, `http.method contains ""`, `http.path == "a\nb"`,
 		`http.path == "a\u0000b"`, `http.path == "` + strings.Repeat("x", 1025) + `"`,
+		`ip == true`, `ipv6 contains "x"`, `eth == true`, `source.ip > 192.0.2.0/24`, `http.path == r"unfinished`,
 		`http &&`, `http | tls`, `(`, `http)`, `http.path == "unfinished`, `http.request.uri[0:2] == "xx"`,
 		strings.Repeat("(", 17) + "http" + strings.Repeat(")", 17), strings.Repeat("http or ", 128) + "tls",
 		`tcp.port in {` + strings.Repeat("80 ", 65) + `}`, strings.Repeat("x", 4097), string([]byte{0xff}),
@@ -95,7 +100,7 @@ func TestInvalidFiltersFailWithPosition(t *testing.T) {
 
 func TestCatalogCapabilitiesAndIsolation(t *testing.T) {
 	first := Catalog()
-	if len(first) != len(fields)+len(protocols) {
+	if len(first) != len(fields)+len(protocols)+3 {
 		t.Fatal("字段目录不完整")
 	}
 	seen := map[string]bool{}

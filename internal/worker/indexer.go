@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
+	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -58,6 +59,7 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	}
 	docs := make([]model.Alert, 0, len(batch.Records))
 	quarantined := 0
+	matchers := map[string]*application.Matcher{}
 	for _, r := range batch.Records {
 		v, e := normalize.Normalize(envelope.TenantID, batch.SensorId, batch.SensorRegistrationId, r, envelope.ReceivedAt)
 		if e != nil {
@@ -75,6 +77,36 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 			}
 			quarantined++
 			continue
+		}
+		if len(r.ApplicationJson) > 0 {
+			a, err := application.ReadAttribution(r.ApplicationJson)
+			if err == nil {
+				matcher, known := matchers[a.DeploymentID]
+				if !known {
+					if w.DB == nil {
+						return errors.New("应用分类缺少部署档案服务")
+					}
+					matcher, err = w.DB.ApplicationDeployment(ctx, envelope.TenantID, batch.SensorId, batch.SensorRegistrationId, a.DeploymentID)
+					if err != nil && !errors.Is(err, store.ErrApplicationProvenance) {
+						return err
+					}
+					matchers[a.DeploymentID] = matcher
+				}
+				if matcher == nil {
+					err = store.ErrApplicationProvenance
+				} else {
+					err = matcher.Verify(a, r.Payload, a.DeploymentID, r.ObservedAt.AsTime())
+				}
+			}
+			if err != nil {
+				// 分类依据失败只隔离附加数据；基础告警仍照常入库和推送。
+				if e := w.Bus.Publish(ctx, "sb.quarantine", r.EventId+"_application", map[string]any{"tenant_id": envelope.TenantID, "event_id": r.EventId, "reason": "application_attribution_rejected", "classification": r.ApplicationJson, "received_at": envelope.ReceivedAt}); e != nil {
+					return e
+				}
+				quarantined++
+			} else {
+				v.Application = &a
+			}
 		}
 		docs = append(docs, v)
 	}

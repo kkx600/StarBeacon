@@ -60,6 +60,11 @@ var fields = []Field{
 	{Name: "@timestamp", Label: "事件发生时间", Type: "time", Aliases: []string{"frame.time"}, Paths: []string{"@timestamp"}},
 	{Name: "observed_at", Label: "采集器观察时间", Type: "time", Paths: []string{"observed_at"}},
 	{Name: "received_at", Label: "平台接收时间", Type: "time", Paths: []string{"received_at"}},
+	{Name: "application.product_id", Label: "应用产品标识", Type: "keyword", Aliases: []string{"app.product"}, Paths: []string{"application.product_id"}},
+	{Name: "application.category_id", Label: "应用类别", Type: "keyword", Aliases: []string{"app.category"}, Paths: []string{"application.category_id"}},
+	{Name: "application.result.status", Label: "应用识别状态", Type: "keyword", Aliases: []string{"app.status"}, Paths: []string{"application.result.status"}},
+	{Name: "application.deployment_id", Label: "应用部署任务", Type: "keyword", Paths: []string{"application.deployment_id"}},
+	{Name: "application.result.rules_sha256", Label: "应用规则快照", Type: "keyword", Paths: []string{"application.result.rules_sha256"}},
 }
 
 var protocols = map[string]string{
@@ -95,12 +100,14 @@ type valueSet struct {
 	Values []*value `parser:"\"{\" ( @@ ( \",\"? @@ )* )? \"}\""`
 }
 type value struct {
-	Quoted *string `parser:"@String"`
+	Raw    *string `parser:"@RawString"`
+	Quoted *string `parser:"| @String"`
 	Atom   *string `parser:"| @Word"`
 }
 
 var grammar = participle.MustBuild[expression](participle.Lexer(lexer.MustSimple([]lexer.SimpleRule{
 	{Name: "whitespace", Pattern: `\s+`},
+	{Name: "RawString", Pattern: `r"(?:[^"\\]|\\.)*"`},
 	{Name: "String", Pattern: `"(?:[^"\\]|\\.)*"`},
 	{Name: "Operator", Pattern: `==|!=|>=|<=|&&|\|\||[(){}!,<>]`},
 	{Name: "Word", Pattern: `[@A-Za-z0-9_][A-Za-z0-9_@.:/+-]*`},
@@ -131,6 +138,9 @@ func Catalog() []Field {
 	for _, name := range []string{"tcp", "udp", "icmp", "icmpv6", "http", "http2", "tls", "dns", "quic", "ssh", "ftp", "smtp", "imap", "pop3", "smb", "rdp", "dhcp", "ntp", "sip", "mqtt", "modbus", "dnp3", "nfs", "snmp"} {
 		out = append(out, Field{Name: name, Label: name + " 协议", Type: "protocol", Aliases: []string{}, Operators: []string{"exists"}})
 	}
+	for _, name := range []string{"ip", "ipv6", "eth"} {
+		out = append(out, Field{Name: name, Label: name + " 协议", Type: "protocol", Aliases: []string{}, Operators: []string{"exists"}})
+	}
 	return out
 }
 
@@ -154,7 +164,7 @@ func CatalogForDataset(dataset string) ([]Field, error) {
 }
 func operators(kind string) []string {
 	out := []string{"exists", "==", "!=", "in"}
-	if kind == "port" || kind == "time" {
+	if kind == "port" || kind == "time" || kind == "ip" {
 		out = append(out, ">", ">=", "<", "<=")
 	}
 	if kind == "string" || kind == "keyword" || kind == "text" {
@@ -231,6 +241,14 @@ func boolQuery(key string, nodes []any) any {
 }
 func term(path string, v any) any { return map[string]any{"term": map[string]any{path: v}} }
 func exists(path string) any      { return map[string]any{"exists": map[string]string{"field": path}} }
+func addressFamily(path string, ipv6 bool) any {
+	if !ipv6 {
+		return term(path, "0.0.0.0/0")
+	}
+	// ES 的 IPv4 使用 IPv6 映射编码；::/0 不能区分地址族。
+	// 存在性同时排除缺失地址，避免把无地址记录归为 IPv6。
+	return boolQuery("filter", []any{exists(path), boolQuery("must_not", []any{term(path, "0.0.0.0/0")})})
+}
 func compileExpression(e *expression, budget *int, catalog []Field) (any, error) {
 	or := make([]any, 0, len(e.Terms))
 	for _, c := range e.Terms {
@@ -260,6 +278,16 @@ func compileExpression(e *expression, budget *int, catalog []Field) (any, error)
 	return boolQuery("should", or), nil
 }
 func compilePredicate(p *predicate, catalog []Field) (any, error) {
+	if p.Name == "ip" || p.Name == "ipv6" || p.Name == "eth" {
+		if p.Comparison != nil {
+			return nil, fail(p.Pos, "协议存在性请直接使用协议名称")
+		}
+		// 判断实际索引地址，不将传输层标签或缺失 MAC 推定为链路层观测。
+		if p.Name == "eth" {
+			return boolQuery("should", []any{exists("source.mac"), exists("destination.mac")}), nil
+		}
+		return boolQuery("should", []any{addressFamily("source.ip", p.Name == "ipv6"), addressFamily("destination.ip", p.Name == "ipv6")}), nil
+	}
 	if path, ok := protocols[p.Name]; ok {
 		if p.Comparison != nil {
 			return nil, fail(p.Pos, "协议存在性请直接使用协议名称")
@@ -305,8 +333,8 @@ func compilePredicate(p *predicate, catalog []Field) (any, error) {
 			presence = boolQuery("filter", []any{term(path, "0.0.0.0/0"), presence})
 		}
 		if strings.HasPrefix(p.Name, "ipv6.") {
-			node = boolQuery("filter", []any{term(path, "::/0"), node})
-			presence = boolQuery("filter", []any{term(path, "::/0"), presence})
+			node = boolQuery("filter", []any{addressFamily(path, true), node})
+			presence = boolQuery("filter", []any{addressFamily(path, true), presence})
 		}
 		present = append(present, presence)
 		matches = append(matches, node)
@@ -347,7 +375,9 @@ func compileComparison(path string, f Field, p *predicate) (any, error) {
 	var nodes []any
 	for _, v := range values {
 		raw := ""
-		if v.Quoted != nil {
+		if v.Raw != nil {
+			raw = (*v.Raw)[2 : len(*v.Raw)-1]
+		} else if v.Quoted != nil {
 			raw = *v.Quoted
 		} else {
 			raw = *v.Atom
@@ -368,6 +398,9 @@ func compileComparison(path string, f Field, p *predicate) (any, error) {
 		value, err := typedValue(raw, f)
 		if err != nil {
 			return nil, fail(p.Pos, err.Error())
+		}
+		if f.Type == "ip" && (op == ">" || op == ">=" || op == "<" || op == "<=") && strings.Contains(raw, "/") {
+			return nil, fail(p.Pos, "IP 大小比较需要单个地址，网段请使用相等或集合条件")
 		}
 		node := term(path, value)
 		switch op {

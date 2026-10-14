@@ -8,13 +8,19 @@ import {applicationCategories,validRule,type AppChange,type AppRule} from './app
 import {useApplicationRules} from './useApplicationRules'
 import ApplicationRuleForm from './ApplicationRuleForm.vue'
 import ApplicationRuleTest from './ApplicationRuleTest.vue'
+import ApplicationDeploymentForm from './ApplicationDeploymentForm.vue'
+import {useApplicationDeployment} from './useApplicationDeployment'
+import {router} from '../../router'
 const model=useApplicationRules(),canEdit=computed(()=>session.current.value?.role==='admin'),filter=reactive({keyword:'',active:''})
 const editing=shallowRef(false),editRecord=shallowRef<AppRule|null>(null),detail=shallowRef<AppRule|null>(null),detailTarget=shallowRef<AppRule|null>(null),detailError=shallowRef(''),detailPending=shallowRef(false),revision=shallowRef<number|null>(null)
 const testing=shallowRef(false),testRecord=shallowRef<AppRule|null>(null)
+const deployment=useApplicationDeployment()
 let read:AbortController|undefined,stopped=false
 const columns=[{title:'规则名称',key:'name',width:200},{title:'应用产品 / 类别',key:'product',width:200},{title:'协议范围',key:'protocols',width:135},{title:'修订',dataIndex:'revision',width:75},{title:'状态',key:'active',width:80},{title:'保存时间',key:'created',width:175},{title:'操作',key:'actions',width:180}]
 function closeDetail(){read?.abort();read=undefined;detail.value=null;detailTarget.value=null;detailError.value='';detailPending.value=false}
-function closeOverlays(){closeDetail();testing.value=false;testRecord.value=null}
+function closeOverlays(){closeDetail();testing.value=false;testRecord.value=null;deployment.hide()}
+function deploy(){if(deployment.busy.value)return;closeOverlays();editing.value=false;deployment.show()}
+function viewDeploymentTask(id:string){deployment.hide();void router.push({path:'/sensors',query:{view:'tasks',task:id}})}
 function search(){closeOverlays();model.search(filter.keyword,filter.active)}
 function refresh(){closeOverlays();void model.refresh()}
 function page(direction:'next'|'previous'){closeOverlays();model[direction]()}
@@ -37,8 +43,8 @@ watch(()=>[session.current.value?.id,session.current.value?.tenant_id,session.cu
 onScopeDispose(()=>{stopped=true;read?.abort()})
 </script>
 <template>
- <a-alert type="info" show-icon message="维护产品名称识别规则并验证可见元数据。当前规则用于输入验证；探针分发、真实流量归因与应用字节计量尚未提供。" class="section-gap"/>
- <form class="application-rule-toolbar" @submit.prevent="search"><a-input v-model:value="filter.keyword" aria-label="应用识别规则名称" placeholder="规则名称" :maxlength="128"/><a-select v-model:value="filter.active" aria-label="应用识别规则状态" :options="[{value:'',label:'全部状态'},{value:'true',label:'启用'},{value:'false',label:'停用'}]"/><a-button html-type="submit" :disabled="model.pending.value">检索</a-button><a-button :loading="model.pending.value" @click="refresh">刷新</a-button><a-button :disabled="model.pending.value" @click="test(null)">验证启用规则</a-button><a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{model.unconfirmed.value?'核对原提交':'创建规则'}}</a-button></form>
+ <a-alert type="info" show-icon message="维护并验证产品名称规则；编辑或停用后须通过签名任务部署到指定探针。协议事件保留独立分类依据；应用字节计量仍需流计量关联，不能从名称命中推算流量。" class="section-gap"/>
+ <form class="application-rule-toolbar" @submit.prevent="search"><a-input v-model:value="filter.keyword" aria-label="应用识别规则名称" placeholder="规则名称" :maxlength="128"/><a-select v-model:value="filter.active" aria-label="应用识别规则状态" :options="[{value:'',label:'全部状态'},{value:'true',label:'启用'},{value:'false',label:'停用'}]"/><a-button html-type="submit" :disabled="model.pending.value">检索</a-button><a-button :loading="model.pending.value" @click="refresh">刷新</a-button><a-button :disabled="model.pending.value" @click="test(null)">验证启用规则</a-button><a-button v-if="canEdit" :disabled="deployment.busy.value||model.busy.value" @click="deploy">{{deployment.unconfirmed.value?'核对应用部署':'部署到探针'}}</a-button><a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{model.unconfirmed.value?'核对原提交':'创建规则'}}</a-button></form>
  <section class="panel"><div class="panel-header"><h2>应用识别规则</h2><span>当前页 {{model.page.value.items.length}} 条</span></div>
   <StatePanel :loading="model.pending.value" :error="model.error.value" :empty="!model.page.value.items.length" :description="model.keyword.value||model.active.value?'没有符合筛选条件的应用识别规则。请调整条件后重新检索。':'暂无应用识别规则。管理员配置规则后可验证产品名称条件与排除依据。'" @retry="model.refresh">
    <a-table :data-source="model.page.value.items" :columns="columns" row-key="id" :pagination="false" size="small" :scroll="{x:1045}"><template #bodyCell="{column,record}">
@@ -54,6 +60,7 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
  </section>
  <ApplicationRuleForm v-if="editing" :record="editRecord" :draft="model.draft()" :busy="model.busy.value" :unconfirmed="model.unconfirmed.value" :error="model.mutationError.value" @save="save" @confirm="confirm" @close="editing=false"/>
  <ApplicationRuleTest v-else-if="testing" :definition="testRecord?.definition" :name="testRecord?.name" :revision="testRecord?.revision" @close="testing=false;testRecord=null"/>
+ <ApplicationDeploymentForm v-else-if="deployment.open.value" :pending="deployment.pending.value" :busy="deployment.busy.value" :unconfirmed="deployment.unconfirmed.value" :error="deployment.error.value" :targets="deployment.targets.value" :snapshot="deployment.snapshot.value" :selected="deployment.selected.value" :task-id="deployment.taskID.value" @close="deployment.hide" @refresh="deployment.refresh" @choose="deployment.choose" @submit="deployment.submit" @confirm="deployment.confirm" @task="viewDeploymentTask"/>
  <a-modal v-else-if="detailTarget" :open="true" title="应用识别规则详情" :width="800" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" @cancel="closeDetail">
   <div class="application-revision"><label for="application-revision">读取修订</label><a-input-number id="application-revision" :value="revision??''" :min="1" :max="detailTarget.revision" :precision="0" :disabled="detailPending" @input="inputRevision" @update:value="setRevision"/><a-button :loading="detailPending" :disabled="detailPending||revision===null" @click="loadDetail">读取</a-button></div>
   <StatePanel :loading="detailPending" :error="detailError" @retry="loadDetail"><template v-if="detail">

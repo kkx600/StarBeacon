@@ -1,7 +1,7 @@
 export interface Principal {id: string; tenant_id: string; username: string; role: 'admin' | 'viewer'; csrf_token: string}
-export interface HostHealth {version: string; hostname: string; observed_at: string; cpu_percent: number | null; memory_percent: number | null; disk_percent: number | null; rx_bytes: string; tx_bytes: string; wal_pending: number; wal_bytes: number; errors: string[]; capture_status: string; capture?:CaptureConfig; packet_archive?:import('./packetArchives').PacketHealth; network_interfaces?:NetworkInterface[];task_capabilities?:string[]; command_signer_sha256?:string; registered_rules_available?:boolean; registered_rules_sha256?:string;response_connectors?:import('./response').ResponseConnector[]}
+export interface HostHealth {application_rules?:import('./application').ApplicationState;version: string; hostname: string; observed_at: string; cpu_percent: number | null; memory_percent: number | null; disk_percent: number | null; rx_bytes: string; tx_bytes: string; wal_pending: number; wal_bytes: number; errors: string[]; capture_status: string; capture?:CaptureConfig; packet_archive?:import('./packetArchives').PacketHealth; network_interfaces?:NetworkInterface[];task_capabilities?:string[]; command_signer_sha256?:string; registered_rules_available?:boolean; registered_rules_sha256?:string;response_connectors?:import('./response').ResponseConnector[]}
 export interface Sensor {id: string; name: string; registration_id: string; active: boolean; created_at: string; last_seen: string | null; health: Partial<HostHealth>; status: 'online' | 'offline' | 'disabled';metadata_revision?:number;group_id?:string;group_name?:string;site?:string;description?:string;metadata_updated_at?:string}
-export interface Alert {event_id: string; tenant_id: string; sensor_id: string; '@timestamp': string; observed_at: string; received_at: string; source_offset: string; sequence: string; raw_sha256: string; source: {ip?: string; port?: number; mac?: string}; destination: {ip?: string; port?: number; mac?: string}; network: {transport?: string; protocol?: string}; rule: {id?: string; name?: string; revision?: string}; http: {method?: string; hostname?: string; path?: string}; suricata: {flow_id?: string; action?: string}; severity: 'high' | 'medium' | 'low' | 'unknown'; event: {kind: string; original: string}; evidence_status: string}
+export interface Alert {application?:import('./application').ApplicationAttribution;event_id: string; tenant_id: string; sensor_id: string; '@timestamp': string; observed_at: string; received_at: string; source_offset: string; sequence: string; raw_sha256: string; source: {ip?: string; port?: number; mac?: string}; destination: {ip?: string; port?: number; mac?: string}; network: {transport?: string; protocol?: string}; rule: {id?: string; name?: string; revision?: string}; http: {method?: string; hostname?: string; path?: string}; suricata: {flow_id?: string; action?: string}; severity: 'high' | 'medium' | 'low' | 'unknown'; event: {kind: string; original: string}; evidence_status: string}
 export interface SearchRequest {start: string; end: string; page: number; page_size: number; keyword: string; source_ip: string; destination_ip: string; protocol: string; method: string; path: string; severity: string; filter?: string}
 export interface SearchResult {items: Alert[]; total: number; page: number; page_size: number}
 export interface NetworkInterface {name: string; index: number; mac: string; mtu: number; up: boolean; loopback: boolean; addresses: string[]}
@@ -20,7 +20,7 @@ export interface RuleResolution {task_id:string;confirmed_at:string;result:{veri
 export interface SensorTask {id:string;sensor_id:string;kind:string;state:string;created_by:string;created_at:string;expires_at:string;retain_until?:string;retention_protected?:boolean;delivery_count:number;updated_at:string;receipt:Partial<TaskReceipt>;acknowledged?:boolean;origin?:string;rule_resolution?:RuleResolution;response_action?:import('./response').ResponseAction}
 export interface TaskDetailState {open:boolean;item:SensorTask|null;pending:boolean;error:string}
 export interface RulePackage {id:string;name:string;revision:number;engine_version:string;text?:string;sha256:string;created_at:string;generation_id?:string;generation_sid?:number}
-export const taskNames:Record<string,string> = {diagnostics:'运行诊断','capture.configure':'采集配置','rules.validate':'规则装载检查','rules.apply':'规则发布','rules.reconcile':'规则核实','rules.replay':'PCAP 重放'}
+export const taskNames:Record<string,string> = {diagnostics:'运行诊断','applications.apply':'应用规则部署','capture.configure':'采集配置','rules.validate':'规则装载检查','rules.apply':'规则发布','rules.reconcile':'规则核实','rules.replay':'PCAP 重放'}
 Object.assign(taskNames,{'response.block':'限时封禁','response.read':'联动状态回读','response.revoke':'解除封禁'})
 export const taskStates:Record<string,string> = {queued:'等待投递',delivered:'已投递',running:'执行中',succeeded:'执行成功',failed:'执行失败',unknown:'待核实',expired:'已过期',cancelled:'已取消'}
 export const taskCodes:Record<string,string> = {execution_interrupted:'执行被中断，需核实实际状态',command_expired:'任务已过期或设备时钟异常',engine_not_configured:'检测引擎未配置',engine_version_mismatch:'检测引擎版本不匹配',engine_validation_failed:'规则装载检查未通过',local_storage_unavailable:'本地存储不可用',result_unknown:'执行结果无法确认',invalid_execution_result:'执行结果不符合约定',managed_rules_mismatch:'规则来源无法确认',rule_reload_failed_rolled_back:'规则重载失败，已恢复原规则'}
@@ -33,6 +33,7 @@ export interface SampleOrigin {kind:'http_raw';synthetic:true;raw_sha256:string;
 export interface ReplaySample {id:string;name:string;size:number;sha256:string;format:'pcap'|'pcapng';created_at:string;expires_at:string;origin?:SampleOrigin}
 const healthErrors: Record<string, string> = {
   ...captureErrors,
+  application_state_unavailable:'应用规则状态无法核对，基础采集继续上报；请保留配置并检查本地持久状态',
   cpu_unavailable: 'CPU 指标不可用', memory_unavailable: '内存指标不可用',
   disk_unavailable: '磁盘指标不可用', network_unavailable: '网络指标不可用',
   network_inventory_unavailable:'网卡清单无法完整观测，请核对设备网络环境',
@@ -47,3 +48,5 @@ const healthErrors: Record<string, string> = {
 export const formatHealthErrors = (errors?: string[]) => errors?.length
   ? errors.map(code => healthErrors[code] ?? `未识别的观测异常（${code}）`).join('；')
   : '无已报告异常'
+
+Object.assign(taskCodes,{invalid_application_package:'应用规则包无效或与注册身份不一致',application_state_conflict:'采集器应用规则状态已变化，请刷新后核对',application_storage_unavailable:'本地应用规则持久存储不可用',application_service_unavailable:'采集器应用识别服务未就绪',application_apply_cancelled:'应用规则安装已取消'})

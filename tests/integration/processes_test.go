@@ -276,7 +276,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			if _, err := tx.Exec(clean, `DELETE FROM starbeacon_jobs.river_job WHERE args->>'tenant_id'=$1`, tenant); err != nil {
 				return err
 			}
-			for _, table := range []string{"packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			for _, table := range []string{"packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}
@@ -564,6 +564,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		return strings.Contains(strings.Join(health.TaskCapabilities, ","), "rules.replay") && health.Version != ""
 	})
 	enabled := true
+	applicationDeployment := prepareNativeApplicationDeployment(t, ctx, platformHTTP, sensors.Items[0])
 	channel := store.ChannelChange{ID: "channel_live", Name: "链路告警", Kind: "webhook", Enabled: &enabled, Severities: []string{"high", "medium", "low", "unknown"}, Connection: &notify.Config{Endpoint: sink.URL}}
 	platformHTTP.request("POST", "/notifications/channels", "", channel, nil, 200)
 	// 真实坏批次须被隔离，后续合法告警仍能完成通知。
@@ -603,7 +604,10 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			t.Fatal("托管采集验收必须提供专属 Docker HTTP 流量端点")
 		}
 		traffic := &http.Client{Transport: &http.Transport{Proxy: nil, DisableKeepAlives: true}, Timeout: 3 * time.Second}
-		response, err := traffic.Get(endpoint + "/starbeacon/validation")
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"/starbeacon/validation", nil)
+		require(t, err)
+		request.Host = "replay.example"
+		response, err := traffic.Do(request)
 		require(t, err)
 		_, err = io.Copy(io.Discard, io.LimitReader(response.Body, 65537))
 		require(t, err)
@@ -676,6 +680,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	if alerts.Total != 1 || alerts.Items[0].Rule.ID != "1000999" || alerts.Items[0].Source.MAC != expectedMAC || alerts.Items[0].HTTP.Method != "GET" {
 		t.Fatal("原生告警检索、MAC 或 HTTP 解析不一致", alerts)
 	}
+	verifyNativeApplicationAttribution(t, alerts.Items[0], applicationDeployment)
 	contextIndex, err := contract.IndexName(tenant, "context", time.Now().UTC().Format("2006-01-02"))
 	require(t, err)
 	defer func() {
@@ -706,6 +711,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		platformHTTP.request("POST", "/traffic/search", "", trafficQuery, &protocols, 200)
 		return protocols.Total > 0
 	})
+	verifyNativeApplicationAttribution(t, protocols.Items[0].Alert, applicationDeployment)
 	if protocols.Total != 1 || protocols.Items[0].HTTP.Method != "GET" || protocols.Items[0].HTTP.Path != "/starbeacon/validation" || protocols.Items[0].TenantID != tenant || protocols.Items[0].Event.Kind != "http" || protocols.Items[0].Event.Original == "" || protocols.Items[0].Suricata.FlowID != alerts.Items[0].Suricata.FlowID {
 		t.Fatal("实际 HTTP 事务、流来源与告警不能对应")
 	}
@@ -749,9 +755,17 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	var tasks struct {
 		Items []store.SensorTask `json:"items"`
 	}
+	var lastReplayState string
 	eventually(t, ctx, "指定探针执行重放并回传原生结果", func() bool {
 		platformHTTP.request("GET", "/tasks", "", nil, &tasks, 200)
 		for _, item := range tasks.Items {
+			if item.ID == task.ID && item.State != lastReplayState {
+				lastReplayState = item.State
+				t.Logf("指定探针重放状态 %s，原回执 %s", item.State, item.Receipt)
+			}
+			if item.ID == task.ID && (item.State == "failed" || item.State == "unknown" || item.State == "expired" || item.State == "cancelled") {
+				t.Fatalf("指定探针重放未完成：状态 %s，原回执 %s", item.State, item.Receipt)
+			}
 			if item.ID == task.ID && item.State == "succeeded" {
 				var receipt control.Receipt
 				require(t, json.Unmarshal(item.Receipt, &receipt))
@@ -764,7 +778,10 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 				if report.Metadata.TCPHandshake.CompleteHandshakes != 1 || report.Metadata.TCPHandshake.IncompleteFlows != 0 || report.Metadata.TCPHandshake.Algorithm != "tcp-handshake-observation-v1" {
 					t.Fatal("探针未回传实际握手观测", report)
 				}
-				return report.AlertCount == 1 && report.PacketsProcessed == "9"
+				if report.AlertCount != 1 || report.PacketsProcessed != "9" {
+					t.Fatal("指定探针重放结果与原生样本不一致", report)
+				}
+				return true
 			}
 		}
 		return false

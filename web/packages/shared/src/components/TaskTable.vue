@@ -8,11 +8,16 @@ import CaptureResult from './CaptureResult.vue'
 import StatePanel from './StatePanel.vue'
 import TaskActions from './TaskActions.vue'
 import {responseStates} from '../response'
+import {basicApplicationState} from '../application'
 const ADescriptionsItem = ADescriptions.Item
 const props = defineProps<{items:readonly SensorTask[];cancellable?:boolean;reconcilable?:boolean;saving?:boolean;local?:boolean;responseable?:boolean;detail?:TaskDetailState}>()
 const emit = defineEmits<{cancel:[task:SensorTask];reconcile:[task:SensorTask];response:[task:SensorTask,kind:'response.read'|'response.revoke'];view:[task:SensorTask];close:[];refreshDetail:[]}>()
 const selectedID = shallowRef('')
 const selected=computed(()=>props.detail?props.detail.item:props.items.find(row=>row.id===selectedID.value)??null)
+const applicationInstalled=computed(()=>{
+ const task=selected.value,state=task?.receipt.result
+ return task?.kind==='applications.apply'&&task.state==='succeeded'&&basicApplicationState(state)&&state.deployment_id===task.id?state:null
+})
 const rows = computed(()=>[...props.items])
 const columns = computed(()=>[{title:'任务',key:'kind',width:200},{title:'探针',dataIndex:'sensor_id',width:190},{title:'状态',key:'state',width:110},{title:'提交时间',key:'time',width:190},props.local?{title:'平台确认',key:'ack',width:100}:{title:'投递次数',dataIndex:'delivery_count',width:100},{title:'操作',key:'action',width:180}])
 function find(id:string){return props.items.find(row=>row.id===id)}
@@ -39,6 +44,7 @@ const statusClass=(state:string)=>state==='succeeded'?'status-online':state==='f
       <a-alert v-if="selected.receipt.result?.syntax==='passed'&&selected.receipt.result?.replay==='not_run'" type="info" show-icon message="规则装载检查通过；该回执仅证明规则可加载，不授予发布资格。发布前仍需独立正、反样本验证。" class="section-gap" />
       <ReplayResult v-if="selected.kind==='rules.replay'&&selected.receipt.result?.replay" :result="selected.receipt.result" :local="selected.origin==='local'" />
       <CaptureResult v-if="selected.kind==='capture.configure'&&selected.receipt.result?.managed" :result="selected.receipt.result" />
+      <section v-if="applicationInstalled" class="application-installation section-gap" aria-label="应用规则安装结果"><h3>应用规则安装</h3><p>采集器已持久安装此规则快照，后续规则变更以独立部署任务为准。</p><dl><dt>安装规则</dt><dd>{{applicationInstalled.rule_count}} 条</dd><dt>安装时间</dt><dd>{{formatTime(applicationInstalled.installed_at??undefined)}}</dd><dt>快照 SHA-256</dt><dd class="technical">{{applicationInstalled.rules_sha256}}</dd><dt>状态 SHA-256</dt><dd class="technical">{{applicationInstalled.state_sha256}}</dd></dl></section>
       <template v-if="selected.response_action"><a-alert type="info" show-icon message="以下为此任务结束时的设备配置回读快照。到期及后续变更需再次回读；实际流量阻断效果尚未观测。" class="section-gap"/><a-descriptions bordered :column="1" size="small"><a-descriptions-item label="设备 / 连接器">{{selected.response_action.device_id}} / {{selected.response_action.connector_id}}</a-descriptions-item><a-descriptions-item label="原租约">{{selected.response_action.lease_id}}</a-descriptions-item><a-descriptions-item label="目标 IP">{{selected.response_action.target_ip}}</a-descriptions-item><a-descriptions-item label="封禁到期时间">{{formatTime(selected.response_action.expires_at)}}</a-descriptions-item><a-descriptions-item label="操作依据">{{selected.response_action.reason}}</a-descriptions-item><a-descriptions-item label="配置回读快照">{{responseStates[String((selected.receipt.result?.observation as Record<string,unknown>|undefined)?.state??'unknown')]??'状态待核查'}}</a-descriptions-item><a-descriptions-item label="回读时间">{{formatTime((selected.receipt.result?.observation as Record<string,unknown>|undefined)?.observed_at as string|undefined)}}</a-descriptions-item></a-descriptions></template>
       <details :open="selected.kind!=='rules.replay'" class="section-gap"><summary>任务追溯</summary>
       <a-descriptions bordered :column="1" size="small">
@@ -57,3 +63,6 @@ const statusClass=(state:string)=>state==='succeeded'?'status-online':state==='f
     <div v-if="detail" class="filter-actions section-gap"><TaskActions v-if="selected&&!detail.pending&&!detail.error" :task="selected" :cancellable="cancellable" :reconcilable="reconcilable" :responseable="responseable" :saving="saving" :local="local" @cancel="emit('cancel',$event)" @reconcile="emit('reconcile',$event)" @response="(task,kind)=>emit('response',task,kind)" /><a-button :loading="detail.pending" @click="emit('refreshDetail')">刷新详情</a-button><a-button @click="close">关闭</a-button></div>
   </a-modal>
 </template>
+<style scoped>
+.application-installation h3{margin:0 0 8px;font-size:16px}.application-installation dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;margin:12px 0}.application-installation dt{color:var(--text-secondary,#4b5563)}.application-installation dd{margin:0;overflow-wrap:anywhere}
+</style>

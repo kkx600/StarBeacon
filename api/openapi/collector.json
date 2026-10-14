@@ -1816,6 +1816,9 @@
             "items": {
               "$ref": "#/components/schemas/ResponseConnector"
             }
+          },
+          "application_rules": {
+            "$ref": "#/components/schemas/ApplicationState"
           }
         },
         "required": [
@@ -2098,7 +2101,8 @@
               "rules.reconcile",
               "response.block",
               "response.read",
-              "response.revoke"
+              "response.revoke",
+              "applications.apply"
             ]
           },
           "state": {
@@ -3137,6 +3141,47 @@
         ],
         "additionalProperties": false,
         "description": "采集器本地私有配置的只读设备目录；没有凭据、管理地址和可执行脚本。ready 仅代表协议身份与原生 TTL 能力核验，超过 35 秒须刷新。"
+      },
+      "ApplicationState": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "application-state.v1"
+          },
+          "deployment_id": {
+            "type": "string",
+            "pattern": "^$|^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "state_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "rule_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "installed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "schema_version",
+          "deployment_id",
+          "rules_sha256",
+          "state_sha256",
+          "rule_count",
+          "installed_at"
+        ],
+        "additionalProperties": false
       }
     }
   }

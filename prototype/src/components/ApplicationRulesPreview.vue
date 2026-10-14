@@ -5,6 +5,8 @@ import type {ApiClient} from '../../../web/packages/shared/src/api'
 import {applicationCategories,appDigest,orderedDefinition,orderedObservation,changeError,type AppChange,type AppCondition,type AppDefinition,type AppObservation,type AppResult,type AppRule} from '../../../web/platform/src/features/applications/applicationRules'
 import ApplicationRuleForm from '../../../web/platform/src/features/applications/ApplicationRuleForm.vue'
 import ApplicationRuleTest from '../../../web/platform/src/features/applications/ApplicationRuleTest.vue'
+import ApplicationDeploymentForm from '../../../web/platform/src/features/applications/ApplicationDeploymentForm.vue'
+import type {AppSnapshot,AppTarget} from '../../../web/platform/src/features/applications/applicationDeployment'
 import type {PreviewState} from '../models'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
@@ -12,9 +14,19 @@ const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:P
 const records=shallowRef<AppRule[]>([]),ready=ref(false),loadError=ref(''),keyword=ref(''),active=ref('')
 const editing=ref(false),editRecord=shallowRef<AppRule|null>(null),busy=ref(false),error=ref(''),detail=shallowRef<AppRule|null>(null),testing=ref(false),testRecord=shallowRef<AppRule|null>(null),revision=ref<number|string>(1)
 const history=new Map<string,Map<number,AppRule>>()
+const deploying=ref(false),deploymentSnapshot=shallowRef<AppSnapshot|null>(null),deploymentTargets=shallowRef<AppTarget[]>([]),deploymentSelected=ref(''),deploymentTask=ref('')
 const columns=[{title:'规则名称',key:'name',width:225},{title:'应用产品 / 类别',key:'product',width:200},{title:'协议范围',key:'protocols',width:150},{title:'修订',dataIndex:'revision',width:70},{title:'状态',key:'active',width:90},{title:'操作',key:'action',width:180}]
 const items=computed(()=>props.state==='empty'?[]:records.value.filter(row=>(!keyword.value||row.name.includes(keyword.value))&&(active.value===''||row.active===(active.value==='true'))))
-function clear(){editing.value=false;editRecord.value=null;detail.value=null;testing.value=false;testRecord.value=null;error.value=''}
+function clear(){editing.value=false;editRecord.value=null;detail.value=null;testing.value=false;testRecord.value=null;deploying.value=false;error.value=''}
+async function deploy(){
+ clear();deploymentTask.value='';deploymentSelected.value=''
+ const versions=(props.state==='empty'?[]:records.value.filter(row=>row.active)).map(row=>({id:row.id,revision:row.revision,definition:orderedDefinition(row.definition)})).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0)
+ const rules=await appDigest([]),state=await appDigest({deployment_id:'',rules_sha256:rules})
+ deploymentSnapshot.value={versions,rules_sha256:await appDigest(versions)}
+ deploymentTargets.value=[{id:'sensor_example',name:'业务探针（示例）',registration_id:'registration_example',observed_at:new Date().toISOString(),state:{schema_version:'application-state.v1',deployment_id:'',rules_sha256:rules,state_sha256:state,rule_count:0,installed_at:null}}]
+ deploying.value=true
+}
+function submitDeployment(){if(deploymentSelected.value)deploymentTask.value='task_example_application'}
 function close(){clear();if(props.state==='action'||props.state==='detail')emit('state','data')}
 function create(record:AppRule|null=null){clear();editRecord.value=record;editing.value=true}
 function inspect(record:AppRule){clear();detail.value=record;revision.value=record.revision}
@@ -57,8 +69,8 @@ watch(()=>props.state,applyState)
 onMounted(async()=>{try{const examples=[['files','业务文件服务（示例）','cloud_storage'],['video','视频服务（示例）','video'],['office','协作服务（示例）','office']] as const;for(const [id,name,category]of examples){const definition:AppDefinition={schema_version:'application-rule.v1',product_id:id+'_demo',product_name:name,category_id:category,protocols:['http','tls'],any:[{field:'http.host',op:'domain_suffix',value:id+'.example'},{field:'tls.sni',op:'domain_suffix',value:id+'.example'}],all:[],exclude:[]};const row:AppRule={tenant_id:'prototype_tenant',id:'app_demo_'+id,revision:1,name:name+'名称规则',description:'合成 .example 名称；不用于真实产品识别。',active:true,definition,definition_sha256:await appDigest(orderedDefinition(definition)),created_by:'prototype_user',created_at:'2026-10-10T00:00:00Z',expires_at:'2027-04-08T00:00:00Z'};history.set(row.id,new Map([[1,row]]));records.value=[...records.value,row]}applyState()}catch(e){loadError.value=e instanceof Error?e.message:'示例数据无法加载。'}finally{ready.value=true}})
 </script>
 <template>
- <PageHeader title="应用识别规则" description="维护产品名称条件、不可变修订与可见元数据输入验证。"><a-button :disabled="!ready||busy" @click="test()">验证启用规则</a-button><a-button type="primary" :disabled="!ready||busy" @click="create()">创建规则</a-button></PageHeader>
- <a-alert type="info" show-icon message="全部为合成示例；操作只保存在当前原型页面内存中。名称规则形成产品候选或冲突，不表示真实流量归因、探针分发或应用计量已完成。" class="page-notice"/>
+ <PageHeader title="应用识别规则" description="维护产品名称条件、不可变修订与可见元数据输入验证。"><a-button :disabled="!ready||busy" @click="test()">验证启用规则</a-button><a-button :disabled="!ready||busy" @click="deploy">部署到探针</a-button><a-button type="primary" :disabled="!ready||busy" @click="create()">创建规则</a-button></PageHeader>
+ <a-alert type="info" show-icon message="全部为合成示例；操作只保存在当前原型页面内存中。此页面演示规则验证与指定探针快照部署，不调用工程接口。候选或冲突不表示产品准确率或应用字节计量。" class="page-notice"/>
  <section class="panel table-panel"><form class="table-toolbar" @submit.prevent><h2>应用识别规则</h2><a-input v-model:value="keyword" placeholder="规则名称" aria-label="应用识别规则名称" style="width:220px"/><a-select v-model:value="active" aria-label="应用识别规则状态" :options="[{value:'',label:'全部状态'},{value:'true',label:'启用'},{value:'false',label:'停用'}]" style="width:130px"/><span class="muted">当前筛选 {{items.length}} 条</span></form>
   <StatePanel v-if="!ready||state==='loading'" state="loading"/>
   <StatePanel v-else-if="loadError||state==='error'" state="error" :description="loadError||'示例错误状态；工程服务没有被调用。'" @action="emit('state','data')"/>
@@ -67,6 +79,7 @@ onMounted(async()=>{try{const examples=[['files','业务文件服务（示例）
  </section>
  <ApplicationRuleForm v-if="editing" :record="editRecord" :busy="busy" :unconfirmed="false" :error="error" @save="save" @confirm="error='当前原型没有未确认的工程请求。'" @close="close"/>
  <ApplicationRuleTest v-else-if="testing" :definition="testRecord?.definition" :name="testRecord?.name" :revision="testRecord?.revision" :api="previewAPI" @close="close"/>
+ <ApplicationDeploymentForm v-else-if="deploying" :pending="false" :busy="false" :unconfirmed="false" error="" :targets="deploymentTargets" :snapshot="deploymentSnapshot" :selected="deploymentSelected" :task-id="deploymentTask" @close="close" @refresh="deploy" @choose="deploymentSelected=$event" @submit="submitDeployment" @confirm="error='原型不执行工程请求。'" @task="message.info('此任务为合成示例，未调用工程平台或探针。')"/>
  <a-modal v-else-if="detail" :open="true" title="应用识别规则详情" :width="800" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" @cancel="close"><a-alert type="info" show-icon message="此修订与摘要属于合成示例，不来自工程平台。" class="modal-notice"/><a-alert v-if="error" type="error" show-icon :message="error" class="modal-notice"/><form class="application-preview-revision" @submit.prevent="selectRevision"><label for="prototype-application-revision">读取修订</label><a-input-number id="prototype-application-revision" v-model:value="revision" :min="1" :max="records.find(row=>row.id===detail?.id)?.revision??1"/><a-button html-type="submit">读取</a-button></form><a-descriptions bordered :column="1" size="small"><a-descriptions-item label="规则 / 修订">{{detail.name}} / {{detail.revision}}</a-descriptions-item><a-descriptions-item label="状态">{{detail.active?'启用':'停用'}}</a-descriptions-item><a-descriptions-item label="定义 SHA-256"><span class="technical">{{detail.definition_sha256}}</span></a-descriptions-item><a-descriptions-item label="维护说明">{{detail.description||'未填写'}}</a-descriptions-item></a-descriptions><pre class="application-preview-definition">{{JSON.stringify(detail.definition,null,2)}}</pre></a-modal>
 </template>
 <style scoped>.application-preview-actions,.application-preview-revision{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.application-preview-revision{margin-bottom:12px}.application-preview-definition{padding:12px;background:var(--bg-soft,#f8f9fa);border:1px solid var(--border,#e5e7eb);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}.technical{overflow-wrap:anywhere}</style>

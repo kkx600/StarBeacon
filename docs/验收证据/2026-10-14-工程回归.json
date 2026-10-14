@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "scope": "工程源码回归与指定页面交互；不授予完整产品或生产发布资格",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 59,
+    "planned": 48,
+    "accepted": 0
+  },
+  "backend": {
+    "source_sha256": "20d2c5b88e1ffc355834efdfe902ec78a0b6d8726ac3238878424ebe35404b7f",
+    "execution_commit": "a665e6fecdd3b441c1017363a8ded27946003eb2",
+    "clean_commit_at_execution": false,
+    "target": "linux/amd64",
+    "go": "1.26.8",
+    "suricata": "8.0.7",
+    "tests": {
+      "unit": {
+        "run": 405,
+        "pass": 405,
+        "fail": 0,
+        "skip": 0
+      },
+      "integration": {
+        "run": 106,
+        "pass": 106,
+        "fail": 0,
+        "skip": 0
+      },
+      "capture": {
+        "run": 1,
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "coverage": {
+      "covered": 16354,
+      "total": 18094,
+      "percentage": 90.3835525588593,
+      "minimum": 90
+    },
+    "integration_strategy": "sequential_shards_v1",
+    "integration_groups": 2,
+    "group_test_counts": [
+      53,
+      53
+    ],
+    "stages": [
+      {
+        "name": "backend106-functional.json",
+        "exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "name": "backend106-capture.json",
+        "exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "name": "backend106-combined.json",
+        "exit_code": 0,
+        "oom_killed": false
+      }
+    ],
+    "archive_sha256": "4013766958c20e76209b10639f6fa6239ae5f886c4e3e238b36c663f59ededb5",
+    "source_report_sha256": "9cb2f42c0576aab219e336f839123a7654f4ce162a610fb58505489690f3be47"
+  },
+  "frontend": {
+    "source_sha256": "f4f8c3c9e39702551908269b07882548e933ef81b02039e1843f1a2797399d58",
+    "snapshot_algorithm": "sha256-path-size-sha256-v1",
+    "tests": 527,
+    "tool_tests": 9,
+    "test_files": 44,
+    "coverage": {
+      "statements": 95.53992871592332,
+      "branches": 92.99353006154331,
+      "functions": 92.27230910763569,
+      "lines": 98.96854048478598
+    },
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 0.388
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 121.335
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 12.205
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 10.829
+      }
+    ]
+  },
+  "quality": {
+    "python_quality_tests": 67,
+    "python_script_tests": 54,
+    "prototype_filter_tests": 3,
+    "api_operations": {
+      "platform": 112,
+      "collector": 17
+    }
+  },
+  "browser": {
+    "type": "Codex In-app Browser",
+    "views": 48,
+    "viewports": [
+      {
+        "width": 1024,
+        "height": 600
+      },
+      {
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "width": 2560,
+        "height": 1440
+      }
+    ],
+    "geometry_observations": 384,
+    "selected_interaction_checks": 12,
+    "raw_report_sha256": "026cf32c4e4cebe8c95131d28072b0f7b3964606e45863f9b239f2074a9496e7",
+    "screenshot_sha256": "a4687a5be19858a31573bfe82bbd60a2803ea269e6feca2120f2d1ca37ecf6fc",
+    "scope": "engineering_dom_geometry_and_selected_interactions_not_full_crud_or_production_acceptance",
+    "sessions_logged_out": true
+  },
+  "prototype": {
+    "base_screenshots": 755,
+    "supplemental_screenshots": 48,
+    "total_screenshots": 803,
+    "strict_source_dimensions_and_sha256_check": true
+  },
+  "deployment": {
+    "scope": "owned_engineering_instance_not_production_release",
+    "backend_source": "20d2c5b88e1ffc355834efdfe902ec78a0b6d8726ac3238878424ebe35404b7f",
+    "frontend_source": "f4f8c3c9e39702551908269b07882548e933ef81b02039e1843f1a2797399d58",
+    "frontend_artifact": "1bcddb1b46e8e6565a86d5644900698ba4246fb6f8d04a7af6cbf72d3addb035",
+    "identities_and_persistent_data_preserved": true,
+    "original_runtime_unchanged": true,
+    "new_release": false,
+    "static_resource_count": 82,
+    "role_readiness_after_cleanup": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    }
+  },
+  "limitations": [
+    "完整 107 项业务验收尚未完成",
+    "本轮 ES 功能回归使用独立临时内存存储，不包含生产容量或持久恢复资格",
+    "工程实例保留原数据库与本地状态；这不是采集器产品升级、自动回退或无损升级验收",
+    "真实外部模型、办公服务、生产对象存储、具体设备效果与规模压力仍按各自边界验收",
+    "正式验收工作流只核对完整输入；完整业务断言执行器尚未交付"
+  ],
+  "timings_not_sla": [
+    {
+      "name": "migrate",
+      "duration_seconds": 0.569
+    },
+    {
+      "name": "runtime-role",
+      "duration_seconds": 0.118
+    },
+    {
+      "name": "go-unit",
+      "duration_seconds": 126.688
+    },
+    {
+      "name": "go-integration",
+      "duration_seconds": 1254.274
+    },
+    {
+      "name": "go-cli-format",
+      "duration_seconds": 1.023
+    },
+    {
+      "name": "pcap-inspection-benchmark",
+      "duration_seconds": 50.63
+    }
+  ],
+  "cleanup": {
+    "status": "passed",
+    "cache_bytes_removed": 616815201,
+    "unused_apparmor_profile_unloaded": true,
+    "current_engineering_instance_unchanged": true,
+    "original_runtime_unchanged": true,
+    "raw_reports_and_failures_preserved": true,
+    "global_prune": false,
+    "removed_test_containers": 6
+  }
+}

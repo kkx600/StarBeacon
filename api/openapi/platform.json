@@ -12633,6 +12633,236 @@
           }
         ]
       }
+    },
+    "/api/v1/application-rules/snapshot": {
+      "get": {
+        "summary": "读取完整启用应用规则快照",
+        "description": "有效管理员和只读账号可读。固定 ID 升序、最多 128 条，无分页截断；目录读取不发布探针、不改变历史事件，不接受查询参数。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；结果须核对来源、修订与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sensors/{id}/application-rules": {
+      "post": {
+        "summary": "部署应用识别规则到指定探针",
+        "description": "仅当前有效管理员。冻结调用方核对的注册代次、采集器状态与完整目录摘要。事务内核对 35 秒内心跳和匹配的签名信任；采集器再次核对 CAS 状态并同步持久化后返回回执。空目录显式清空该探针规则。每租户最近 24 小时最多 2048 次部署；幂等键绑定操作者及完整原输入，目录变化后仍可核对原提交。受理不等于生效；只分类，不执行阻断。",
+        "x-required-role": "admin",
+        "responses": {
+          "202": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "同一原请求复用，不能修改对象或输入。回执按操作类别策略留存，默认 180 天。"
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationDeploymentInput"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -12838,6 +13068,9 @@
             "items": {
               "$ref": "#/components/schemas/ResponseConnector"
             }
+          },
+          "application_rules": {
+            "$ref": "#/components/schemas/ApplicationState"
           }
         },
         "required": [
@@ -13112,6 +13345,9 @@
             "enum": [
               "not_linked"
             ]
+          },
+          "application": {
+            "$ref": "#/components/schemas/ApplicationAttribution"
           }
         },
         "required": [
@@ -13382,7 +13618,8 @@
               "rules.reconcile",
               "response.block",
               "response.read",
-              "response.revoke"
+              "response.revoke",
+              "applications.apply"
             ]
           },
           "state": {
@@ -22194,6 +22431,257 @@
             "maxLength": 64
           }
         }
+      },
+      "ApplicationSnapshot": {
+        "type": "object",
+        "properties": {
+          "rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "versions": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                  "maxLength": 64
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
+                },
+                "definition": {
+                  "$ref": "#/components/schemas/ApplicationDefinition"
+                }
+              },
+              "required": [
+                "id",
+                "revision",
+                "definition"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "rules_sha256",
+          "versions"
+        ],
+        "additionalProperties": false
+      },
+      "ApplicationDeploymentInput": {
+        "type": "object",
+        "properties": {
+          "expected_registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "expected_state_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "expected_registration_id",
+          "expected_state_sha256",
+          "rules_sha256"
+        ],
+        "additionalProperties": false
+      },
+      "ApplicationState": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "application-state.v1"
+          },
+          "deployment_id": {
+            "type": "string",
+            "pattern": "^$|^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "state_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "rule_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "installed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "schema_version",
+          "deployment_id",
+          "rules_sha256",
+          "state_sha256",
+          "rule_count",
+          "installed_at"
+        ],
+        "additionalProperties": false
+      },
+      "ApplicationAttributionResult": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "application-test.v1"
+          },
+          "origin": {
+            "const": "suricata_visible_metadata"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "tls",
+              "quic",
+              "dns"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "candidate",
+              "conflict"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "no_matching_rule",
+              "visible_name_rule",
+              "multiple_products",
+              "metadata_unavailable",
+              "metadata_invalid",
+              "transaction_unbound"
+            ]
+          },
+          "evaluated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observation_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "rule_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "matched_rule_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "matches": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMatch"
+            }
+          },
+          "limited": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schema_version",
+          "origin",
+          "protocol",
+          "status",
+          "reason",
+          "evaluated_at",
+          "observation_sha256",
+          "rules_sha256",
+          "rule_count",
+          "matched_rule_count",
+          "matches",
+          "limited"
+        ],
+        "additionalProperties": false,
+        "description": "采集器按本条实际 EVE 可见字段匹配，平台按不可变部署命令复算。缺测、冲突、畸形或估计关联不输出已确认产品；不表示连接字节、攻击结果或响应授权。"
+      },
+      "ApplicationAttribution": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "application-attribution.v1"
+          },
+          "deployment_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "state_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "product_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "product_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "category_id": {
+            "type": "string",
+            "enum": [
+              "",
+              "cloud_storage",
+              "video",
+              "communication",
+              "office",
+              "development",
+              "remote_access",
+              "business",
+              "other"
+            ]
+          },
+          "result": {
+            "$ref": "#/components/schemas/ApplicationAttributionResult"
+          }
+        },
+        "required": [
+          "schema_version",
+          "deployment_id",
+          "state_sha256",
+          "raw_sha256",
+          "product_id",
+          "product_name",
+          "category_id",
+          "result"
+        ],
+        "additionalProperties": false
       }
     }
   }

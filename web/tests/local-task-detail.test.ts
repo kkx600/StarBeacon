@@ -8,6 +8,8 @@ import ReplayWorkspace from '@starbeacon/shared/components/ReplayWorkspace.vue'
 import TaskTable from '@starbeacon/shared/components/TaskTable.vue'
 import RuleEditor from '@starbeacon/shared/components/RuleEditor.vue'
 import {principal,task,sample,click,deferred,rules,writeRule} from './fixtures'
+import {webcrypto} from 'node:crypto'
+import {goJSONDigest} from '../packages/shared/src/utils/goJSONDigest'
 
 const request=vi.fn(),api=new ApiClient('/api/local/v1');api.request=request
 const localID='localtask_19a1'
@@ -23,6 +25,14 @@ async function workspace(url='/network?view=tasks&task='+localID,view:'samples'|
  return {wrapper,router}
 }
 describe('采集器历史任务详情',()=>{
+ it('平台下发的应用安装可独立读取，本地来源不能冒充签名部署',async()=>{
+  vi.stubGlobal('crypto',webcrypto)
+  const rulesSHA='1'.repeat(64),installed={schema_version:'application-state.v1',deployment_id:'task_remote',rules_sha256:rulesSHA,state_sha256:await goJSONDigest({deployment_id:'task_remote',rules_sha256:rulesSHA}),rule_count:1,installed_at:new Date().toISOString()}
+  const row={...archive('task_remote'),kind:'applications.apply',origin:'platform',receipt:{...archive('task_remote').receipt,result:installed}}
+  request.mockImplementation((path:string)=>Promise.resolve(path.startsWith('/tasks/')?row:{items:[row]}))
+  const {wrapper}=await workspace('/network?view=tasks&task=task_remote');await vi.waitFor(()=>expect(document.body.textContent).toContain('采集器已持久安装'))
+  request.mockResolvedValueOnce({...row,origin:'local'});await click('刷新详情');expect(document.body.textContent).toContain('详情未能完整返回');expect(document.body.textContent).not.toContain('采集器已持久安装');wrapper.unmount()
+ })
  it('不依赖最近列表，执行已截止仍可读取；刷新、关闭和路由往返保持原任务',async()=>{
   const {wrapper,router}=await workspace('/network?view=tasks&task='+localID+'&source=replay#trace')
   expect(request.mock.calls.some(call=>call[0]==='/tasks/'+localID)).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(document.body.textContent).toContain('记录保留截止')

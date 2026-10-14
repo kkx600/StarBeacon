@@ -11,7 +11,9 @@ import time
 import urllib.parse
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from check_go_coverage import check_sources, merge_profiles, summarize
+import integration_execution
 
 REPORTS = pathlib.Path("/reports")
 ROOT = pathlib.Path("/source")
@@ -19,7 +21,11 @@ ROOT = pathlib.Path("/source")
 def execute(arguments, environment, name, timeout=600):
     started = time.monotonic()
     with (REPORTS / (name + ".jsonl")).open("w") as log:
-        result = subprocess.run(arguments, env=environment, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
+        try:
+            result = subprocess.run(arguments, env=environment, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # 未取得子进程实际退出回执时不推定 137；失败阶段仍进入最终报告。
+            return {"name": name, "status": "failed", "exit_code": None, "timed_out": True, "deadline_seconds": timeout, "duration_seconds": round(time.monotonic() - started, 3)}
     return {"name": name, "status": "passed" if result.returncode == 0 else "failed", "exit_code": result.returncode, "duration_seconds": round(time.monotonic() - started, 3)}
 
 def main():
@@ -53,7 +59,8 @@ def main():
         results.append(execute(["go", "test", "-race", "-json", "-count=1", "-timeout=240s", "-coverpkg=./cmd/...,./internal/...", "-coverprofile=/reports/go-unit.cover", "./cmd/...", "./internal/..."], environment, "go-unit"))
         # 包级预算覆盖顺序执行的整套集成用例；HTTP、上下文与子进程仍受各自期限约束。
         # 外层预算保留编译与退出整理时间，不将整套耗时解释为业务响应时限。
-        results.append(execute(["go", "test", "-race", "-json", "-tags=integration", "-count=1", "-timeout=1200s", "-coverpkg=./cmd/...,./internal/...", "-coverprofile=/reports/go-integration.cover", "./tests/integration"], environment, "go-integration", timeout=1260))
+        if results[-1]["status"] == "passed":
+            results.append(integration_execution.run(REPORTS, environment, execute))
     coverage = None
     if all(item["status"] == "passed" for item in results) and len(results) == 4:
         results.append(execute(["go", "tool", "covdata", "textfmt", "-i=" + str(counters), "-o=/reports/go-cli.cover"], environment, "go-cli-format"))
@@ -67,7 +74,7 @@ def main():
             results.append(execute(["go", "test", "-json", "-run=^$", "-bench=^BenchmarkInspectHTTP100K$", "-benchtime=1x", "-count=3", "-benchmem", "-timeout=60s", "./internal/replay"], environment, "pcap-inspection-benchmark"))
     source = json.loads((REPORTS / "source.json").read_text())
     evidence = []
-    for path in sorted(p for p in REPORTS.iterdir() if p.suffix in (".jsonl", ".cover") or p.name == "go-coverage.json"):
+    for path in sorted(p for p in REPORTS.iterdir() if p.suffix in (".jsonl", ".cover") or p.name in ("go-coverage.json", "go-integration-manifest.json")):
         evidence.append({"path": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
     report = {"schema_version": 1, "commit": source["commit"], "workspace_sha256": source["workspace_sha256"], "clean_commit": source["clean_commit"], "environment": "remote_docker", "mode": "development", "project": os.environ["SB_ACCEPTANCE_PROJECT"], "results": results, "evidence": evidence, "status": "passed" if all(item["status"] == "passed" for item in results) else "failed", "scope": "go_unit_native_suricata_and_dependency_integration"}
     if coverage is not None:

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
@@ -82,6 +83,19 @@ func Run(ctx context.Context, c config.Config) error {
 		return e
 	}
 	engine := &Engine{Config: c, WAL: wal}
+	engine.Applications, e = NewApplicationService(wal)
+	if e != nil {
+		// 附加分类不可用不应停止基础采集；保留损坏配置供核对，不宣称空快照已生效。
+		engine.Applications = nil
+		wal.setFailure("application_state_unavailable", true)
+		slog.Error("应用规则状态无法核对，协议数据继续按原始记录上报", "error", e)
+	}
+	if engine.Applications != nil {
+		wal.applicationState = func() json.RawMessage {
+			raw, _ := json.Marshal(engine.Applications.Snapshot())
+			return raw
+		}
+	}
 	if c.ResponseConnectorsFile != "" {
 		engine.Response, e = NewResponseService(wal, c.ResponseConnectorsFile, c.PlatformAddr, c.IngestAddr)
 		if e != nil {
@@ -188,6 +202,9 @@ func Run(ctx context.Context, c config.Config) error {
 		routes[stream] = r
 		return r.Token, nil
 	}}
+	if engine.Applications != nil {
+		reader.Attribute = engine.Applications.Attribute
+	}
 	if capture != nil {
 		reader.CanSwitch = capture.CanSwitchSource
 	}

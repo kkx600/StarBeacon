@@ -7,6 +7,7 @@ import type {Principal} from '../packages/shared/src/types'
 import TrafficWorkspace from '../platform/src/features/traffic/TrafficEvents.vue'
 import TrafficFilters from '../platform/src/features/traffic/TrafficFilters.vue'
 import TrafficDetail from '../platform/src/features/traffic/TrafficDetail.vue'
+import TrafficTable from '../platform/src/features/traffic/TrafficTable.vue'
 import {defaultTrafficFilters,endpoint,validTrafficResult,type TrafficQuery,type TrafficRecord,type TrafficResult} from '../platform/src/features/traffic/traffic'
 import {useTraffic} from '../platform/src/features/traffic/useTraffic'
 import {session} from '../platform/src/session'
@@ -20,6 +21,13 @@ function result(q:TrafficQuery=query):TrafficResult{return{items:[record(q)],tot
 beforeEach(()=>{(session.current as ShallowRef<Principal|null>).value=principal;request.mockReset();request.mockImplementation((path:string,options?:{body?:TrafficQuery})=>Promise.resolve(path==='/traffic/search'?result(options!.body!):path==='/search/validate'?{valid:true}:{fields:[{name:'http.path',label:'HTTP 路径',type:'string',aliases:['http.request.uri'],operators:['contains']},{name:'tcp',label:'TCP',type:'protocol',aliases:[],operators:[]}]}))})
 
 describe('流量响应契约',()=>{
+ it('协议事务缺失包数保持缺测，会话零包不显示为缺测',async()=>{
+  const missing=result();missing.items[0]!.event.kind='http';missing.items[0]!.details.flow=null
+  const wrapper=mount(TrafficTable,{props:{result:missing},global,attachTo:document.body});await flushPromises()
+  expect(wrapper.text()).toContain('包数未获取');expect(wrapper.text()).not.toContain('未获取 包');expect(wrapper.text()).not.toContain('0 B')
+  const counted=result();counted.items[0]!.details.flow!.packets_to_server='0';await wrapper.setProps({result:counted});expect(wrapper.text()).toContain('0 包');expect(wrapper.text()).not.toContain('包数未获取');wrapper.unmount()
+  const detail=mount(TrafficDetail,{props:{record:missing.items[0]!},global,attachTo:document.body});await flushPromises();expect(document.body.textContent).toContain('包数未获取');expect(document.body.textContent).not.toContain('未获取 包');detail.unmount()
+ })
  it('计数保留 uint64 精度，IPv6 端口与缺测含义清楚',()=>{
   expect(validTrafficResult(result(),query,principal.tenant_id)).toBe(true)
   expect(endpoint('2001:db8::1',443)).toBe('[2001:db8::1]:443');expect(endpoint('192.0.2.1',80)).toBe('192.0.2.1:80');expect(endpoint('2001:db8::1',undefined)).toBe('2001:db8::1');expect(endpoint(undefined,80)).toBe('未观测到')

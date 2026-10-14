@@ -442,8 +442,11 @@ type EventRecord struct {
 	PayloadSchema      string                 `protobuf:"bytes,13,opt,name=payload_schema,json=payloadSchema,proto3" json:"payload_schema,omitempty"`
 	ContentType        string                 `protobuf:"bytes,14,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	PayloadSha256      []byte                 `protobuf:"bytes,15,opt,name=payload_sha256,json=payloadSha256,proto3" json:"payload_sha256,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// 分类独立于原始 EVE 字节；摘要与批次身份共同绑定，可由平台按冻结规则复算。
+	ApplicationJson   []byte `protobuf:"bytes,16,opt,name=application_json,json=applicationJson,proto3" json:"application_json,omitempty"`
+	ApplicationSha256 []byte `protobuf:"bytes,17,opt,name=application_sha256,json=applicationSha256,proto3" json:"application_sha256,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *EventRecord) Reset() {
@@ -570,6 +573,20 @@ func (x *EventRecord) GetContentType() string {
 func (x *EventRecord) GetPayloadSha256() []byte {
 	if x != nil {
 		return x.PayloadSha256
+	}
+	return nil
+}
+
+func (x *EventRecord) GetApplicationJson() []byte {
+	if x != nil {
+		return x.ApplicationJson
+	}
+	return nil
+}
+
+func (x *EventRecord) GetApplicationSha256() []byte {
+	if x != nil {
+		return x.ApplicationSha256
 	}
 	return nil
 }
@@ -1257,7 +1274,7 @@ const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\tsample_id\x18\x02 \x01(\tR\bsampleId\"?\n" +
 	"\x11ReplaySampleChunk\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\xb7\x04\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\x91\x05\n" +
 	"\vEventRecord\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x120\n" +
@@ -1277,7 +1294,9 @@ const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\apayload\x18\f \x01(\fR\apayload\x12%\n" +
 	"\x0epayload_schema\x18\r \x01(\tR\rpayloadSchema\x12!\n" +
 	"\fcontent_type\x18\x0e \x01(\tR\vcontentType\x12%\n" +
-	"\x0epayload_sha256\x18\x0f \x01(\fR\rpayloadSha256J\x04\b\t\x10\n" +
+	"\x0epayload_sha256\x18\x0f \x01(\fR\rpayloadSha256\x12)\n" +
+	"\x10application_json\x18\x10 \x01(\fR\x0fapplicationJson\x12-\n" +
+	"\x12application_sha256\x18\x11 \x01(\fR\x11applicationSha256J\x04\b\t\x10\n" +
 	"R\beve_json\"\x83\x03\n" +
 	"\n" +
 	"EventBatch\x12\x19\n" +

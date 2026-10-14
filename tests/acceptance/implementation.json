@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-13",
+  "review_date": "2026-10-14",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -140,7 +140,10 @@
         "internal/platform/traffic.go",
         "internal/traffic/details.go",
         "web/platform/src/features/traffic/TrafficWorkspace.vue",
-        "web/platform/src/features/traffic/useTraffic.ts"
+        "web/platform/src/features/traffic/useTraffic.ts",
+        "web/platform/src/features/alerts/filterCompletion.ts",
+        "web/platform/src/features/alerts/useSearchFields.ts",
+        "web/platform/src/features/alerts/SearchFieldCatalog.vue"
       ],
       "pages": [
         "platform:/alerts",
@@ -161,9 +164,11 @@
         "tests/integration/search_integrity_test.go",
         "tests/integration/traffic_test.go",
         "tests/integration/processes_test.go",
-        "web/tests/traffic.test.ts"
+        "web/tests/traffic.test.ts",
+        "tests/integration/display_filter_test.go",
+        "web/tests/filter-completion.test.ts"
       ],
-      "boundary": "告警和协议事件使用独立数据集、固定租户与事件类型、有界分页及完整回执检查；高级表达式只编译实际映射字段。协议记录支持精确探针／注册／来源代次和 uint64 流标识条件；从实际 EVE 提取会话时间、双向计数、MAC 集合、TLS 与 DNS 白名单展示，原始 EVE 仅管理员可读。不包含原生逐包、完整会话重组、应用品牌识别、PCAP 导出或 TLS 解密。"
+      "boundary": "告警和协议事件使用独立数据集、固定租户与事件类型、有界分页及完整回执检查；高级表达式只编译实际映射字段。协议记录支持精确探针／注册／来源代次和 uint64 流标识条件；从实际 EVE 提取会话时间、双向计数、MAC 集合、TLS 与 DNS 白名单展示，原始 EVE 仅管理员可读。不包含原生逐包、完整会话重组、应用品牌识别、PCAP 导出或 TLS 解密。 字段补全按当前数据集目录与光标位置插入；IP 地址族和 Ethernet 存在性只使用实际索引地址／MAC，不补造原包或方向。IP 大小比较限单个地址；原始字符串保留反斜杠。"
     },
     {
       "id": "bytes",
@@ -467,7 +472,11 @@
         "web/licenses/sources.json",
         "scripts/package_go_dependencies.py",
         "licenses/go/exceptions.json",
-        "licenses/go/report.tpl"
+        "licenses/go/report.tpl",
+        "scripts/source_snapshot.py",
+        "scripts/qualify_frontend.py",
+        "scripts/check_evidence_source.py",
+        ".github/workflows/acceptance.yml"
       ],
       "pages": [],
       "tests": [
@@ -479,9 +488,12 @@
         "tests/integration/bootstrap_failures_test.go",
         "tests/quality/test_backend_evidence.py",
         "web/scripts/complete-licenses.test.mjs",
-        "tests/quality/test_go_dependencies.py"
+        "tests/quality/test_go_dependencies.py",
+        "scripts/tests/test_source_snapshot.py",
+        "scripts/tests/test_qualify_frontend.py",
+        "scripts/tests/test_evidence_source.py"
       ],
-      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。后续代码须重新核验；生产同源 TLS 部署、完整产品验收工作流、干净候选提交与正式发布仍未完成。"
+      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。"
     },
     {
       "id": "overview",
@@ -544,7 +556,7 @@
         "web/tests/report-plans.test.ts",
         "tests/integration/report_plan_failures_test.go"
       ],
-      "boundary": "实际统计驱动的私有对话、自然日/完整周/月报告、冻结快照、校验引用、统计降级与 HTML 导出；River 社区核心持久作业、共享额度、幂等、取消与未知结果。报告计划按固定时区、时间与模型修订持久调度，停止及权限变化阻止未提交周期，停机恢复只生成最近完整周期并记录错过范围；对应真实依赖测试及原生 UI 验收正在执行。受控模型 TLS 协议不代表真实模型领域效果、自然语言检索/SSE、发布/PDF、知识库或自动研判已经完成。"
+      "boundary": "实际统计驱动的私有对话、自然日/完整周/月报告、冻结快照、校验引用、统计降级与 HTML 导出；River 社区核心持久作业、共享额度、幂等、取消与未知结果。报告计划按固定时区、时间与模型修订持久调度，停止及权限变化阻止未提交周期，停机恢复只生成最近完整周期并记录错过范围；对应真实依赖测试及原生 UI 验收正在执行。真实模型领域效果、自然语言检索/SSE、发布/PDF、知识库及统计报告的完整验收仍待完成。指定探针告警的自动研判由持续决策能力独立提供，其规模、恢复与领域效果仍需验收。"
     },
     {
       "id": "mcp",
@@ -829,7 +841,7 @@
     },
     {
       "id": "application_rules",
-      "name": "应用识别规则与输入验证",
+      "name": "应用识别规则与采集器分类",
       "code": [
         "internal/application/rules.go",
         "internal/store/application_rules.go",
@@ -839,7 +851,18 @@
         "web/platform/src/features/applications/ApplicationRuleForm.vue",
         "web/platform/src/features/applications/ApplicationRuleTest.vue",
         "web/platform/src/features/applications/applicationRules.ts",
-        "web/platform/src/features/applications/useApplicationRules.ts"
+        "web/platform/src/features/applications/useApplicationRules.ts",
+        "internal/application/runtime.go",
+        "internal/application/attribution.go",
+        "internal/agent/application.go",
+        "internal/store/application_deployment.go",
+        "internal/worker/indexer.go",
+        "migrations/00041_application_deployment.sql",
+        "web/platform/src/features/applications/ApplicationDeploymentForm.vue",
+        "web/platform/src/features/applications/useApplicationDeployment.ts",
+        "web/platform/src/features/applications/applicationDeployment.ts",
+        "web/packages/shared/src/application.ts",
+        "web/packages/shared/src/components/ApplicationAttribution.vue"
       ],
       "pages": [
         "platform:/rules?view=applications"
@@ -848,9 +871,18 @@
         "internal/application/rules_test.go",
         "internal/platform/application_rules_test.go",
         "tests/integration/application_rules_test.go",
-        "web/tests/application-rules.test.ts"
+        "web/tests/application-rules.test.ts",
+        "internal/application/runtime_test.go",
+        "internal/agent/application_test.go",
+        "internal/contract/application_test.go",
+        "internal/store/application_mapping_test.go",
+        "internal/platform/application_deployment_test.go",
+        "tests/integration/application_deployment_test.go",
+        "tests/integration/application_deployment_live_test.go",
+        "web/tests/application-deployment.test.ts",
+        "tests/integration/application_attribution_pipeline_test.go"
       ],
-      "boundary": "租户规则目录、不可变修订、CAS、原提交回执与原子审计，默认 180 天历史清理及当前版本保护。受限 AND/OR/排除条件对用户提供的 HTTP Host、可见 SNI/ALPN、DNS 查询、HTTP 方法/路径/UA 进行输入验证；IDNA 和 label 边界、公共后缀/地址拒绝、产品冲突与输出限制。只形成规则候选，不写入真实流量归因或字节计量，不执行封禁；采集器规则包分发、活跃流计量、应用排行/趋势/大屏及产品样本矩阵仍未实现。远程与页面验收以对应源码的独立记录为准。"
+      "boundary": "租户规则目录、不可变修订、CAS、原提交与原子审计；用户材料验证与真实协议分类分开。支持单探针签名完整快照部署、注册代次与状态核对、同步本地提交、重启恢复、冻结 WAL 附加分类与批次摘要；平台按原部署快照复算，附加分类失败不阻止基础告警。HTTP/TLS/QUIC/DNS 的可见元数据保持候选、冲突、未知；不跨 DNS/传输会话分配产品，不执行网络动作。应用字节计量、跨探针计量域、应用排行/趋势/大屏、自动多探针灰度及真实互联网产品样本矩阵仍未实现。当前来源的真实验收尚待执行。"
     },
     {
       "id": "decision_policies",
@@ -1478,13 +1510,13 @@
         "search"
       ],
       "implemented": [
-        "32 个类型化值字段、24 个协议存在条件",
-        "and/or/not、比较、contains、in 和错误定位"
+        "37 个类型化值字段、27 个协议存在条件",
+        "and/or/not、比较、contains、in、端口范围、IP 地址大小比较及原始字符串；缺失与多值不等语义",
+        "按当前数据集读取字段目录、字段与别名前缀补全、光标位置插入及键盘选择；目录损坏、切换、取消与超长输入处理"
       ],
       "remaining": [
-        "覆盖其他主流 Wireshark 运算",
-        "自动完成与语法帮助完整联动",
-        "逐包原生模式与统一转换验收"
+        "覆盖其他主流 Wireshark 运算及运算符补全",
+        "版本化语法帮助、逐包原生模式与统一转换验收"
       ]
     },
     {
@@ -1778,7 +1810,7 @@
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",
         "EDR 隔离/恢复及跨设备冲突处理",
-        "全量告警自动研判、多级审批、置信度校准与自动设备动作的整体验收"
+        "自动研判的规模与恢复、多级审批、置信度校准与自动设备动作的整体验收"
       ]
     },
     {
@@ -1964,11 +1996,14 @@
       ],
       "implemented": [
         "应用识别规则目录、不可变修订、权限/CAS/原请求确认、原子审计和默认 180 天历史清理",
-        "可见名称与 HTTP 字段组合的材料验证、严格域名边界、缺测/冲突、快照摘要和独立单表弹窗页面"
+        "可见名称与 HTTP 字段组合的材料验证、严格域名边界、缺测/冲突、快照摘要和独立单表弹窗页面",
+        "单探针签名规则快照下发、注册身份与 CAS、同步持久安装及重启恢复",
+        "实际协议事件独立分类上报、原 EVE 字节保持、冻结部署复算与字段检索、告警和流量详情中的识别依据"
       ],
       "remaining": [
-        "采集器签名规则包分发、真实流量归因、周期活跃流计量、跨探针计量域与去重",
-        "应用流量趋势/Top/未知/大屏、真实产品正负样本矩阵与性能验收"
+        "周期活跃流计量、会话关联与历史归因修正、跨探针计量域与去重",
+        "应用流量趋势/Top/未知/大屏、真实互联网产品正负样本矩阵与性能验收",
+        "多探针灰度与自动订阅同步、当前来源的完整远程与工程页面验收"
       ]
     },
     {
@@ -2345,12 +2380,13 @@
         "规则修订/摘要和任务签名",
         "ZIP/UPX 门禁脚本",
         "工程候选实际 Linux UPX ZIP 运行链路",
-        "逐程序 Go SBOM、许可原文及所需编译源码入包"
+        "逐程序 Go SBOM、许可原文及所需编译源码入包",
+        "干净提交绑定的 GitHub 工程预览发行、两个实际 Linux UPX ZIP 及下载摘要回验"
       ],
       "remaining": [
         "TUF 内容更新/权重来源",
         "完整验收工作流与发布",
-        "干净候选提交及全部发布门禁的同源制品核验"
+        "正式发行包与完整生产验收证据的同源提交核验"
       ]
     },
     {
@@ -2603,8 +2639,8 @@
     "Go 全量语句覆盖率与前端语句、分支、函数、行覆盖率必须按实际源码快照达到 90%；执行指标见工程实现与开发。覆盖率达标仅证明已有代码，不授予完整产品发布资格。",
     "持续 PCAP 捕获、独立帧压缩及有界普通 TCP 完整会话导出已有实际工程流程和远程功能测试；历史同源码全量覆盖率达到 90%；仍需对后续源码重新验收。精确包索引、规则来源、自动灰度和在线检测质量矩阵未完成。",
     "置信度校准、具体防火墙／EDR 的实际封禁效果及插件式认证未验收；通用 HTTP 限时租约链路单独核验。",
-    "统计对话、周期报告、告警模型研判、AI 规则生成及 MCP 有界只读工具已有工程实现；同源码端到端、真实模型领域效果、自动发起研判与策略编排、自然语言检索、知识库、MCP 扩展、应用识别、事件调查完整协作/情报/风险及文件沙箱仍有缺口。",
+    "统计对话、周期报告、告警模型研判、AI 规则生成及 MCP 有界只读工具已有工程实现；同源码端到端、真实模型领域效果、自动研判的规模与恢复、多级审批和剧本编排、自然语言检索、知识库、MCP 扩展、应用识别、事件调查完整协作/情报/风险及文件沙箱仍有缺口。",
     "生产 TLS/R3 队列/HA/备份恢复、真实办公渠道/模型/对象存储/设备/沙箱验收、1–200+ 探针容量和七档 PC 全路由交互验收未完成。",
-    "完整验收工作流 .github/workflows/acceptance.yml 未交付；两个实际 Linux UPX ZIP 已通过远程构建与实时网卡核心链路验证，完整生产验收仍待完成；当前没有可发布的新版本或正式升级部署。"
+    "正式验收证据工作流 .github/workflows/acceptance.yml 已提供来源与完整报告核验；完整远程业务断言执行器和生产验收输入制品尚未交付。两个实际 Linux UPX ZIP 的历史子流程按原来源核验；工程预览 v0.1.0-rc.3 已发布，当前全部改动仍需干净提交、同源制品与完整生产验收，不能正式发布。"
   ]
 }

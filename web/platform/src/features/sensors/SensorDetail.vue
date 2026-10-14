@@ -4,12 +4,14 @@ import { session } from '../../session'
 import { message, Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue'
 const ADescriptionsItem = ADescriptions.Item
 import type { Sensor } from '@starbeacon/shared/types.ts'
+import {basicApplicationState} from '@starbeacon/shared/application.ts'
 import {formatBytes} from '@starbeacon/shared/utils/format.ts'
 import {packetStates} from '@starbeacon/shared/packetArchives.ts'
 import { captureStates,formatTime, formatPercent, formatHealthErrors, taskNames } from '@starbeacon/shared/types.ts'
 const props=defineProps<{sensor: Sensor | null}>()
 const emit = defineEmits<{close: [];submitted:[];configure:[sensor:Sensor];respond:[sensor:Sensor]}>()
 const pending=shallowRef(false)
+const applicationState=computed(()=>basicApplicationState(props.sensor?.health.application_rules)?props.sensor!.health.application_rules:null)
 const capture=computed(()=>props.sensor?.health.capture)
 const captureStatus=computed(()=>capture.value?.status ? captureStates[capture.value.status]??'状态无法识别' : props.sensor?.health.capture_status==='eve_reader_only'?'外部 EVE 文件':'尚未观测')
 let key:string|undefined
@@ -62,6 +64,8 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
           <a-descriptions-item label="EVE 缓冲占用">{{ formatBytes(capture.spool_bytes) }} / {{ formatBytes(capture.spool_budget) }}</a-descriptions-item>
           <a-descriptions-item v-if="capture.rotation_pending" label="来源轮转">旧来源等待持久排空，缓冲文件继续保留</a-descriptions-item>
         </template>
+        <a-descriptions-item label="应用识别规则">{{applicationState?applicationState.rule_count+' 条 / '+(applicationState.deployment_id||'尚未部署'):'未提供可核对的状态'}}</a-descriptions-item>
+        <a-descriptions-item v-if="applicationState" label="应用规则快照"><span class="capture-digest">{{applicationState.rules_sha256}}</span> · {{formatTime(applicationState.installed_at)}}</a-descriptions-item>
         <a-descriptions-item label="生效规则摘要"><span class="capture-digest">{{ sensor.health.registered_rules_sha256 || '尚未观测' }}</span></a-descriptions-item>
         <a-descriptions-item label="任务能力">{{ sensor.health.task_capabilities?.map(value=>(taskNames[value]??value)).join('、')||'尚未上报' }}</a-descriptions-item>
         <a-descriptions-item label="观测异常">{{ formatHealthErrors(sensor.health.errors) }}</a-descriptions-item>

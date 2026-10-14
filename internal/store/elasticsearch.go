@@ -152,7 +152,10 @@ const mapping = `{"dynamic":"strict","properties":{
 "event":{"properties":{"kind":{"type":"keyword"},"dataset":{"type":"keyword"},"original":{"type":"text","index":false}}},
 "source":{"properties":{"ip":{"type":"ip"},"port":{"type":"integer"},"mac":{"type":"keyword"}}},"destination":{"properties":{"ip":{"type":"ip"},"port":{"type":"integer"},"mac":{"type":"keyword"}}},
 "network":{"properties":{"transport":{"type":"keyword"},"protocol":{"type":"keyword"}}},"rule":{"properties":{"id":{"type":"keyword"},"revision":{"type":"keyword"},"name":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":512}}}}},
-"http":{"properties":{"method":{"type":"keyword"},"hostname":{"type":"keyword"},"path":{"type":"wildcard"}}},"suricata":{"properties":{"flow_id":{"type":"keyword"},"action":{"type":"keyword"}}},"severity":{"type":"keyword"},"evidence_status":{"type":"keyword"}}}`
+"http":{"properties":{"method":{"type":"keyword"},"hostname":{"type":"keyword"},"path":{"type":"wildcard"}}},"suricata":{"properties":{"flow_id":{"type":"keyword"},"action":{"type":"keyword"}}},"severity":{"type":"keyword"},"evidence_status":{"type":"keyword"},
+"application":` + applicationMapping + `}}`
+
+const applicationMapping = `{"properties":{"schema_version":{"type":"keyword"},"deployment_id":{"type":"keyword"},"state_sha256":{"type":"keyword"},"raw_sha256":{"type":"keyword"},"product_id":{"type":"keyword"},"product_name":{"type":"keyword","ignore_above":512},"category_id":{"type":"keyword"},"result":{"properties":{"schema_version":{"type":"keyword"},"origin":{"type":"keyword"},"protocol":{"type":"keyword"},"status":{"type":"keyword"},"reason":{"type":"keyword"},"evaluated_at":{"type":"date_nanos"},"observation_sha256":{"type":"keyword"},"rules_sha256":{"type":"keyword"},"rule_count":{"type":"short"},"matched_rule_count":{"type":"short"},"matches":{"type":"object","enabled":false},"limited":{"type":"boolean"}}}}}`
 
 func (s *Elasticsearch) EnsureIndex(ctx context.Context, index, partition string) error {
 	return s.EnsureIndexRetention(ctx, index, partition, 180)
@@ -207,6 +210,11 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 				// 不向日志透传依赖返回的原文；分片上限保持集群配置，由运维核对容量。
 				limited := failure.Error.Type == "validation_exception" && strings.Contains(failure.Error.Reason, "maximum") && strings.Contains(failure.Error.Reason, "shards")
 				return nil, &IndexCreateError{Status: res.StatusCode, CapacityLimited: limited}
+			}
+			// 只添加可选分类字段，不覆盖既有字段、分片、生命周期或历史文档。
+			updated, err := s.API.Indices.PutMapping([]string{index}, strings.NewReader(`{"properties":{"application":`+applicationMapping+`}}`), s.API.Indices.PutMapping.WithContext(ctx))
+			if err := response(updated, err, nil); err != nil {
+				return nil, err
 			}
 		}
 		s.mu.Lock()

@@ -1,3 +1,4 @@
+import {validApplicationAttribution} from '@starbeacon/shared/application.ts'
 import type {Alert,SearchRequest} from '@starbeacon/shared/types.ts'
 export const trafficKinds:Record<string,string>={flow:'会话摘要',http:'HTTP',http2:'HTTP/2',dns:'DNS',tls:'TLS',quic:'QUIC',ssh:'SSH',smtp:'SMTP',ftp:'FTP',smb:'SMB',nfs:'NFS',dhcp:'DHCP',rdp:'RDP',anomaly:'协议异常',fileinfo:'文件元数据'}
 export interface TrafficQuery extends SearchRequest {event_kind:string;sensor_id:string;sensor_registration_id:string;source_generation_id:string;flow_id:string}
@@ -7,6 +8,7 @@ export interface TrafficDetails {state:'available'|'unavailable';truncated:boole
 export interface TrafficRecord extends Alert {details:TrafficDetails;sensor_registration_id?:string;source_generation_id?:string}
 export interface TrafficResult {items:TrafficRecord[];total:number;page:number;page_size:number}
 export const defaultTrafficFilters=():TrafficFilters=>({event_kind:'flow',sensor_id:'',sensor_registration_id:'',source_generation_id:'',flow_id:'',protocol:'',source_ip:'',destination_ip:'',method:'',path:'',filter:'',keyword:'',severity:''})
+export function packetCountLabel(value:string|null|undefined):string{return value?`${value} 包`:'包数未获取'}
 export function endpoint(ip:string|undefined,port:number|undefined):string {
  if(!ip)return '未观测到'
  return port ? `${ip.includes(':')?'['+ip+']':ip}:${port}` : ip
@@ -31,6 +33,7 @@ export function validTrafficResult(value:unknown,query:TrafficQuery,tenant:strin
  const ids=new Set<string>()
  return value.items.every(row=>{
   if(!object(row)||typeof row.event_id!=='string'||ids.has(row.event_id)||row.tenant_id!==tenant||typeof row.sensor_id!=='string'||!object(row.event)||!Object.hasOwn(trafficKinds,String(row.event.kind))||typeof row.event.original!=='string'||!['source','destination','network','http','suricata','rule'].every(k=>object(row[k]))||typeof row['@timestamp']!=='string'||!Number.isFinite(Date.parse(row['@timestamp']))||Date.parse(row['@timestamp'])<Date.parse(query.start)||Date.parse(row['@timestamp'])>=Date.parse(query.end)||!validDetails(row.details))return false
+  if(row.application!==undefined&&!validApplicationAttribution(row.application,String(row.raw_sha256),String(row.observed_at)))return false
   if(query.event_kind&&row.event.kind!==query.event_kind)return false
   ids.add(row.event_id);return true
  })

@@ -258,8 +258,9 @@ def run_backend(state):
         cache = state["directory"] + "/" + name
         ssh(state["host"], ["mkdir", "-p", "-m", "700", cache], timeout=15)
         ssh(state["host"], ["chown", owner, cache], timeout=15)
-    # 控制调用覆盖迁移、编译、单元及集成执行；不改变业务用例的独立期限。
-    compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "runner"], timeout=1800)
+    # 观察预算覆盖单元、两组顺序集成及覆盖整理，不改变各业务请求和用例的期限。
+    # 两组各保留 1260 秒外层预算，另留编译、单元及退出整理时间。
+    compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "runner"], timeout=3000)
     try:
         compose(state, ["up", "-d", "--no-build", "capture-fixture"], timeout=60)
         compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/capture-go-build-cache:/tmp/go-cache", "capture-runner"], timeout=360)

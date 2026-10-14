@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -17,6 +18,7 @@ import (
 const MaxPayloadBytes = 1024 * 1024
 const MaxBatchBytes = 2 * 1024 * 1024
 const MaxBatchRecords = 500
+const MaxApplicationBytes = 32 * 1024
 
 var safeID = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
 
@@ -58,6 +60,11 @@ func BatchDigest(b *sensorv1.EventBatch) []byte {
 		}
 		field(&v, r.RawSha256)
 		field(&v, r.PayloadSha256)
+		// 无附加分类的既有批次保持原摘要；附加数据使用独立域且参与重传身份。
+		if len(r.ApplicationJson) > 0 || len(r.ApplicationSha256) > 0 {
+			text(&v, "starbeacon.application-attribution.v1")
+			field(&v, r.ApplicationSha256)
+		}
 	}
 	h := sha256.Sum256(v.Bytes())
 	return h[:]
@@ -80,7 +87,7 @@ func Validate(tenant, sensor, registration string, b *sensorv1.EventBatch) error
 			return fmt.Errorf("来源或记录长度不合法")
 		}
 		previous = r.Sequence
-		n += len(r.Payload)
+		n += len(r.Payload) + len(r.ApplicationJson)
 		if n > MaxBatchBytes {
 			return fmt.Errorf("批次字节数超限")
 		}
@@ -93,6 +100,14 @@ func Validate(tenant, sensor, registration string, b *sensorv1.EventBatch) error
 		h := sha256.Sum256(r.Payload)
 		if !bytes.Equal(h[:], r.RawSha256) || !bytes.Equal(h[:], r.PayloadSha256) {
 			return fmt.Errorf("载荷摘要不匹配")
+		}
+		if len(r.ApplicationJson) > 0 {
+			digest := sha256.Sum256(r.ApplicationJson)
+			if len(r.ApplicationJson) > MaxApplicationBytes || !json.Valid(r.ApplicationJson) || !bytes.Equal(digest[:], r.ApplicationSha256) {
+				return fmt.Errorf("应用分类长度或摘要不合法")
+			}
+		} else if len(r.ApplicationSha256) > 0 {
+			return fmt.Errorf("应用分类摘要缺少对应内容")
 		}
 	}
 	h := BatchDigest(b)

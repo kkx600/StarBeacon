@@ -10,6 +10,7 @@ import {session} from '../../session'
 import {router} from '../../router'
 import AlertAssessment from './AlertAssessment.vue'
 import AlertTriage from './AlertTriage.vue'
+import ApplicationAttribution from '@starbeacon/shared/components/ApplicationAttribution.vue'
 const props=defineProps<{alert: Alert | null}>()
 const active=ref('evidence'),locked=ref(false)
 watch(()=>props.alert?.event_id,()=>{active.value='evidence';locked.value=false})
@@ -35,6 +36,7 @@ function investigate(){if(!props.alert||locked.value||session.current.value?.rol
         <a-descriptions-item label="平台接收时间">{{ formatTime(alert.received_at) }}</a-descriptions-item>
         <a-descriptions-item label="原始摘要"><span class="technical">{{ alert.raw_sha256 }}</span></a-descriptions-item>
       </a-descriptions>
+      <ApplicationAttribution :attribution="alert.application" :raw-digest="alert.raw_sha256" :observed="alert.observed_at"/>
       <ByteViewer :original="alert.event.original" />
       <h2>原始 EVE</h2><pre v-if="alert.event.original" class="raw-data technical">{{ alert.event.original }}</pre><a-empty v-else description="当前账号未获原始载荷读取权限" />
     </div>

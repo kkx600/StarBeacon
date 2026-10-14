@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/response"
 )
 
@@ -34,6 +35,7 @@ type Sensor struct {
 	MetadataUpdatedAt time.Time       `json:"metadata_updated_at"`
 }
 type HostHealth struct {
+	ApplicationRules         json.RawMessage    `json:"application_rules,omitempty"`
 	ResponseConnectors       []response.Health  `json:"response_connectors,omitempty"`
 	RegisteredRulesAvailable bool               `json:"registered_rules_available"`
 	RegisteredRulesSHA256    string             `json:"registered_rules_sha256,omitempty"`
@@ -70,18 +72,19 @@ type Endpoint struct {
 	MAC  string `json:"mac,omitempty"`
 }
 type Alert struct {
-	SchemaVersion      string    `json:"schema_version"`
-	EventID            string    `json:"event_id"`
-	TenantID           string    `json:"tenant_id"`
-	SensorID           string    `json:"sensor_id"`
-	RegistrationID     string    `json:"sensor_registration_id"`
-	SourceGenerationID string    `json:"source_generation_id"`
-	SourceOffset       string    `json:"source_offset"`
-	Sequence           string    `json:"sequence"`
-	RawSHA256          string    `json:"raw_sha256"`
-	Timestamp          time.Time `json:"@timestamp"`
-	ObservedAt         time.Time `json:"observed_at"`
-	ReceivedAt         time.Time `json:"received_at"`
+	Application        *application.Attribution `json:"application,omitempty"`
+	SchemaVersion      string                   `json:"schema_version"`
+	EventID            string                   `json:"event_id"`
+	TenantID           string                   `json:"tenant_id"`
+	SensorID           string                   `json:"sensor_id"`
+	RegistrationID     string                   `json:"sensor_registration_id"`
+	SourceGenerationID string                   `json:"source_generation_id"`
+	SourceOffset       string                   `json:"source_offset"`
+	Sequence           string                   `json:"sequence"`
+	RawSHA256          string                   `json:"raw_sha256"`
+	Timestamp          time.Time                `json:"@timestamp"`
+	ObservedAt         time.Time                `json:"observed_at"`
+	ReceivedAt         time.Time                `json:"received_at"`
 	Event              struct {
 		Kind     string `json:"kind"`
 		Dataset  string `json:"dataset"`

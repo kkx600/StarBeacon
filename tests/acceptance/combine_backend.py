@@ -9,6 +9,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
 from check_go_coverage import merge_profiles, summarize, check_sources, packages_without_tests
+import integration_execution
 
 
 def verify_execution(source, baseline, capture, directory, root=pathlib.Path("/source")):
@@ -40,6 +41,18 @@ def verify_execution(source, baseline, capture, directory, root=pathlib.Path("/s
                 raise ValueError("执行证据摘要不一致")
         if not required.issubset(paths):
             raise ValueError("执行证据遗漏原始日志或覆盖率")
+    integration = next(row for row in rows if row["name"] == "go-integration")
+    if integration.get("strategy") not in (None, "sequential_shards_v1"):
+        raise ValueError("集成执行策略未纳入验收契约")
+    if integration.get("strategy") == "sequential_shards_v1":
+        if type(integration.get("group_count")) is not int or integration["group_count"] not in (1, 2):
+            raise ValueError("集成分组数量无效")
+        required = {"go-integration-manifest.json", "go-integration-inventory.jsonl"}
+        for i in range(1, integration.get("group_count", 0) + 1):
+            required.update({f"go-integration-{i:02d}.jsonl", f"go-integration-{i:02d}.cover"})
+        if not required.issubset({e["path"] for e in baseline["evidence"]}):
+            raise ValueError("集成分组缺少独立原始证据")
+        integration_execution.verify(directory, integration)
     for path in (directory / "go-unit.jsonl", directory / "go-integration.jsonl", directory / "capture/go-capture.jsonl"):
         actions, skipped, no_test_output = [], [], set()
         for line in path.read_text().splitlines():

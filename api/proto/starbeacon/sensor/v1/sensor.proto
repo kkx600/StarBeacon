@@ -40,6 +40,9 @@ message EventRecord {
   string payload_schema = 13;
   string content_type = 14;
   bytes payload_sha256 = 15;
+  // 分类独立于原始 EVE 字节；摘要与批次身份共同绑定，可由平台按冻结规则复算。
+  bytes application_json = 16;
+  bytes application_sha256 = 17;
 }
 
 message EventBatch {

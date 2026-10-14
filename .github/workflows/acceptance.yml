@@ -1,0 +1,66 @@
+name: 正式发布验收
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: main 同一提交、包含完整远程验收输入制品的成功工程运行 ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: starbeacon-production-acceptance
+  cancel-in-progress: false
+jobs:
+  qualification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.8'
+          cache: true
+      - name: 核对验收输入来源
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVIDENCE_RUN_ID: ${{ inputs.evidence_run_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re, subprocess, sys
+          sys.path.insert(0, 'scripts')
+          from check_evidence_source import verify_source
+          if os.environ['GITHUB_REF'] != 'refs/heads/main':
+              raise SystemExit('正式验收仅允许 main 分支')
+          run_id = os.environ['EVIDENCE_RUN_ID']
+          if not re.fullmatch(r'[1-9][0-9]{0,19}', run_id):
+              raise SystemExit('证据运行 ID 无效')
+          prefix = f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}"
+          run = json.loads(subprocess.check_output(['gh','api',prefix],text=True))
+          artifacts = json.loads(subprocess.check_output(['gh','api',prefix+'/artifacts?per_page=100'],text=True))
+          verify_source(run, artifacts, os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_SHA'], run_id)
+          root = pathlib.Path('.local/acceptance')
+          root.mkdir(parents=True, exist_ok=True)
+          (root/'evidence-origin.json').write_text(json.dumps({'run':run,'artifacts':artifacts}))
+          PY
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: starbeacon-acceptance-input
+          path: .local/acceptance/report
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.evidence_run_id }}
+      - name: 核对完整需求、覆盖率、生产部署与屏幕矩阵
+        run: python3 scripts/check_acceptance.py .local/acceptance/report/acceptance.json --commit "$GITHUB_SHA"
+      - name: 核对源码与接口契约
+        run: |
+          go mod verify
+          python3 scripts/check_alignment.py --check
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: starbeacon-acceptance
+          path: .local/acceptance/report
+          if-no-files-found: error
+          retention-days: 14

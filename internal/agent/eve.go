@@ -31,6 +31,7 @@ type EVEReader struct {
 	source    Source
 	Route     func(context.Context, string) (string, error)
 	CanSwitch func(context.Context, string) (bool, error)
+	Attribute func([]byte, time.Time) (json.RawMessage, error)
 }
 
 func fileID(i os.FileInfo) string {
@@ -252,8 +253,22 @@ func (r *EVEReader) Poll(ctx context.Context) error {
 		}
 		h := sha256.Sum256(payload)
 		record := &sensorv1.EventRecord{SourceGenerationId: next.Generation, SourceOffset: next.Offset, EventTime: timestamppb.New(eventTime), ObservedAt: timestamppb.New(now), EventType: header.EventType, RawSha256: h[:], Payload: payload, PayloadSchema: "suricata.eve.v1", ContentType: "application/json", PayloadSha256: h[:]}
+		if r.Attribute != nil {
+			metadata, err := r.Attribute(payload, now)
+			if err != nil {
+				return fail(err)
+			}
+			if bytesRead+len(payload)+len(metadata) > contract.MaxBatchBytes {
+				break
+			}
+			if len(metadata) > 0 {
+				record.ApplicationJson = metadata
+				hash := sha256.Sum256(metadata)
+				record.ApplicationSha256 = hash[:]
+			}
+		}
 		next.Offset += uint64(len(line))
-		bytesRead += len(payload)
+		bytesRead += len(payload) + len(record.ApplicationJson)
 		entries = append(entries, Entry{Stream: stream, Route: route, Record: record})
 	}
 	return commit()

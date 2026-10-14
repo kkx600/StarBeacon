@@ -17,7 +17,7 @@ type historyCategory struct {
 var historyCategories = []historyCategory{
 	{"operation_audits", "expires_at", "true"},
 	{"login_audits", "expires_at", "true"},
-	{"sensor_tasks", "retain_until", `state IN ('succeeded','failed','expired','cancelled') OR (state='unknown' AND (kind<>'rules.apply' OR rule_resolution IS NOT NULL)) OR (state='queued' AND delivery_count=0 AND expires_at<=now())`},
+	{"sensor_tasks", "retain_until", `(state IN ('succeeded','failed','expired','cancelled') OR (state='unknown' AND (kind<>'rules.apply' OR rule_resolution IS NOT NULL)) OR (state='queued' AND delivery_count=0 AND expires_at<=now())) AND (kind<>'applications.apply' OR state NOT IN ('succeeded','unknown') OR EXISTS(SELECT 1 FROM sensor_tasks n WHERE n.tenant_id=h.tenant_id AND n.sensor_id=h.sensor_id AND n.registration_id=h.registration_id AND n.kind='applications.apply' AND n.state='succeeded' AND n.created_at>h.created_at))`},
 	{"inventory_history", "expires_at", "true"},
 	{"retention_previews", "expires_at", "true"},
 	{"retention_changes", "expires_at", "true"},

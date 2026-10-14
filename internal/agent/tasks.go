@@ -323,7 +323,7 @@ func (m *TaskManager) validateLocalTask(row LocalTask, id string) error {
 		return errors.New("本地任务来源不一致")
 	}
 	switch row.Command.Kind {
-	case "diagnostics", "capture.configure", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke":
+	case "diagnostics", "capture.configure", "applications.apply", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke":
 	default:
 		return errors.New("本地任务类型无效")
 	}

@@ -32,6 +32,7 @@ type Engine struct {
 	Config             config.Config
 	Capture            *CaptureSupervisor
 	WAL                *WAL
+	Applications       *ApplicationService
 	Response           *ResponseService
 	LocalReplay        *ReplayService
 	ReplayClient       sensorv1.SensorServiceClient
@@ -60,6 +61,9 @@ func (b *boundedLog) Write(p []byte) (int, error) {
 }
 func (e *Engine) Capabilities() []string {
 	out := []string{"diagnostics"}
+	if e.Applications != nil {
+		out = append(out, "applications.apply")
+	}
 	if e.Response != nil {
 		out = append(out, "response.block", "response.read", "response.revoke")
 	}
@@ -78,6 +82,12 @@ func (e *Engine) Capabilities() []string {
 	return out
 }
 func (e *Engine) Execute(ctx context.Context, c control.Command) (json.RawMessage, string, error) {
+	if c.Kind == "applications.apply" {
+		if e.Applications == nil {
+			return nil, "application_service_unavailable", errors.New("采集器应用识别服务未就绪")
+		}
+		return e.Applications.Apply(ctx, c)
+	}
 	if strings.HasPrefix(c.Kind, "response.") {
 		if e.Response == nil {
 			return nil, "response_device_unavailable", errors.New("采集器未配置联动设备")

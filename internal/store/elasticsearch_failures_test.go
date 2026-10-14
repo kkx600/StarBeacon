@@ -136,7 +136,7 @@ func TestLifecycleFailuresNeverCacheUnconfirmedCreation(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case strings.HasPrefix(r.URL.Path, "/_index_template/"):
-					fmt.Fprintf(w, `{"index_templates":[{"name":"%s","index_template":{"index_patterns":["sb-alerts-*","sb-context-*"],"allow_auto_create":false,"priority":150,"version":1,"_meta":{"owner":"starbeacon","schema":1},"template":{"mappings":%s}}}]}`, eventTemplateName, mapping)
+					fmt.Fprintf(w, `{"index_templates":[{"name":"%s","index_template":%s}]}`, eventTemplateName, eventTemplateBody())
 				case strings.HasPrefix(r.URL.Path, "/_ilm/policy/"):
 					if r.Method == http.MethodGet {
 						lookups++

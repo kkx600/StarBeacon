@@ -18,7 +18,7 @@
 | CaptureDialog | 冻结目标注册代次、实际网卡及采集修订；校验后下发签名任务，失败保留草稿与原幂等键。 |
 | AlertsWorkspace / useAlerts | 管理有界服务端检索、分页和请求取消；不使用本地全量筛选。 |
 | AlertFilters / AlertTable / AlertDetail | 分别接收条件并发出查询、展示分页记录、展示当前记录及原始 EVE。 |
-| AdvancedFilter | 按告警／协议事件数据集读取服务端字段目录，提供类型化表达式与错误位置。 |
+| AdvancedFilter / SearchFieldCatalog / useSearchFields | 按告警／协议事件读取并核验目录；字段与别名补全、光标插入、键盘选择和独立字段弹窗；切换与卸载取消旧请求。 |
 | TrafficWorkspace / useTraffic | 独立协议记录检索，完整分页校验、查询取消及固定窗口；错误不显示为空列表。 |
 | TrafficFilters / TrafficTable / TrafficDetail | 条件表单、一张流量列表、实际会话计数／时间／MAC／TLS／DNS 详情及权限限制。 |
 | PacketArchiveWorkspace / usePacketArchives / PacketArchiveDetail | 平台游标目录、采集器有界暂存目录、真实编码／捕获元数据、完整摘要核验和下载。 |
@@ -114,3 +114,11 @@ AI 规则生成通过 `/rules?view=generation` 提供单表历史和操作弹窗
 平台任务链接为 `/sensors?view=tasks&task=<任务标识>`；规则工作区任务页也支持 `task` 查询参数。列表只展示最近 200 项，详情独立读取留存期内的原档案。列表读取失败不阻止档案查询，详情失败清除旧快照；任务、账号、探针或页面变化取消旧请求，迟到结果不能恢复旧内容。关闭只移除 `task` 参数并保留视图、其它条件和锚点；浏览器历史、复制链接及刷新可恢复原任务。详情将执行截止与记录保留截止分开显示；回读、解除与规则核实仍需各自的当前设备资格，不因历史档案可读而获得执行许可。
 
 采集器任务记录支持 `/network?view=tasks&task=<id>` 的独立详情链接，受理入口引用原任务，执行和保留截止分别展示。共用详情读取器在任务、工作视图、账号或路由变化时取消旧请求，不以近期列表代替档案；本地结果仅供追溯，不提供设备写动作。
+
+## 前端工程验收证据
+
+在仓库根目录执行 `python3 scripts/qualify_frontend.py --output .local/acceptance/frontend`。证据目录必须不存在；脚本依次执行工具测试、单 worker 组件覆盖测试、严格类型检查和双端构建。语句、分支、函数、行均须达到 90%，跳过或未完成用例不能通过。
+
+`source.json` 使用 `sha256-path-size-sha256-v1`：按相对路径排序，将路径、原始字节长度和内容 SHA-256 以 NUL 分隔后计算总摘要。清单包含源码、测试、构建配置、锁文件和受版本管理的工程输入；即使源码被 Git 忽略，也必须进入清单。每个执行阶段后重新核对输入。可执行 `python3 scripts/source_snapshot.py --verify .local/acceptance/frontend/source.json` 独立复核。
+
+`frontend.json` 记录提交、工作区状态、实际退出码、阶段耗时、原始测试数量、四项覆盖率及所有日志与报告的 SHA-256。该报告证明前端工程检查，完整产品验收仍须核对真实业务、远程生产部署及全路由交互。

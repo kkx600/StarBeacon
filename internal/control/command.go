@@ -16,6 +16,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/response"
 )
@@ -228,6 +229,12 @@ func Validate(c Command) error {
 		return errors.New("任务参数无效")
 	}
 	switch c.Kind {
+	case "applications.apply":
+		p, err := application.ReadPackage(c.Payload)
+		if err == nil && p.ExpectedRegistrationID != c.RegistrationID {
+			return application.ErrInput
+		}
+		return err
 	case "response.block", "response.read", "response.revoke":
 		a, err := response.ReadAction(c.Payload)
 		if err != nil || a.OwnerSHA256 != response.Owner(c.TenantID, c.SensorID, c.RegistrationID, a.LeaseID) || c.Kind == "response.block" && a.LeaseID != c.ID {

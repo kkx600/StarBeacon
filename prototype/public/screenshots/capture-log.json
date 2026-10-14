@@ -10466,70 +10466,6 @@
       "bytes": 82618
     },
     {
-      "file": "application-rules/data.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=data&capture=1",
-      "title": "有数据",
-      "state": "data",
-      "capturedAt": "2026-10-01T18:25:11.716Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 130989
-    },
-    {
-      "file": "application-rules/empty.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=empty&capture=1",
-      "title": "无数据",
-      "state": "empty",
-      "capturedAt": "2026-10-01T18:25:10.328Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 76414
-    },
-    {
-      "file": "application-rules/detail.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=detail&capture=1",
-      "title": "查看详情",
-      "state": "detail",
-      "capturedAt": "2026-10-01T18:25:11.725Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 97871
-    },
-    {
-      "file": "application-rules/action.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=action&capture=1",
-      "title": "操作表单",
-      "state": "action",
-      "capturedAt": "2026-10-01T18:25:13.966Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 105691
-    },
-    {
       "file": "rule-samples/data.jpg",
       "url": "http://127.0.0.1:4173/page/rule-samples?state=data&capture=1",
       "title": "有数据",
@@ -10544,38 +10480,6 @@
         "scrollWidth": 1280
       },
       "bytes": 77652
-    },
-    {
-      "file": "application-rules/error.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=error&capture=1",
-      "title": "加载失败",
-      "state": "error",
-      "capturedAt": "2026-10-01T18:25:13.854Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 77237
-    },
-    {
-      "file": "application-rules/loading.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=loading&capture=1",
-      "title": "加载中",
-      "state": "loading",
-      "capturedAt": "2026-10-01T18:25:13.854Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 800,
-        "scrollWidth": 1280
-      },
-      "bytes": 78761
     },
     {
       "file": "rule-samples/detail.jpg",
@@ -24287,102 +24191,6 @@
       "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
     },
     {
-      "file": "application-rules/data.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=data&capture=1",
-      "title": "应用识别规则",
-      "state": "data",
-      "capturedAt": "2026-10-13T14:26:02.338Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
-      "file": "application-rules/empty.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=empty&capture=1",
-      "title": "应用识别规则",
-      "state": "empty",
-      "capturedAt": "2026-10-13T14:26:02.853Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
-      "file": "application-rules/detail.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=detail&capture=1",
-      "title": "应用识别规则",
-      "state": "detail",
-      "capturedAt": "2026-10-13T14:26:03.356Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
-      "file": "application-rules/action.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=action&capture=1",
-      "title": "应用识别规则",
-      "state": "action",
-      "capturedAt": "2026-10-13T14:26:03.831Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
-      "file": "application-rules/loading.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=loading&capture=1",
-      "title": "应用识别规则",
-      "state": "loading",
-      "capturedAt": "2026-10-13T14:26:04.270Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
-      "file": "application-rules/error.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=error&capture=1",
-      "title": "应用识别规则",
-      "state": "error",
-      "capturedAt": "2026-10-13T14:26:04.695Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "eeefa158b4890bf1d1c5bb0d65fb63aa6dd99596e33c2871d06fe7cd0351347b"
-    },
-    {
       "file": "rule-samples/data.jpg",
       "url": "http://127.0.0.1:4173/page/rule-samples?state=data&capture=1",
       "title": "重放样本",
@@ -33807,54 +33615,6 @@
       "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
     },
     {
-      "file": "application-rules/empty.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=empty&capture=1",
-      "title": "应用识别规则",
-      "state": "empty",
-      "capturedAt": "2026-10-13T15:08:57.916Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
-      "file": "application-rules/action.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=action&capture=1",
-      "title": "应用识别规则",
-      "state": "action",
-      "capturedAt": "2026-10-13T15:08:58.536Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
-      "file": "application-rules/error.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=error&capture=1",
-      "title": "应用识别规则",
-      "state": "error",
-      "capturedAt": "2026-10-13T15:08:59.101Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
       "file": "rule-samples/empty.jpg",
       "url": "http://127.0.0.1:4173/page/rule-samples?state=empty&capture=1",
       "title": "重放样本",
@@ -37695,54 +37455,6 @@
       "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
     },
     {
-      "file": "application-rules/data.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=data&capture=1",
-      "title": "应用识别规则",
-      "state": "data",
-      "capturedAt": "2026-10-13T15:23:13.978Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
-      "file": "application-rules/detail.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=detail&capture=1",
-      "title": "应用识别规则",
-      "state": "detail",
-      "capturedAt": "2026-10-13T15:23:14.425Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
-      "file": "application-rules/loading.jpg",
-      "url": "http://127.0.0.1:4173/page/application-rules?state=loading&capture=1",
-      "title": "应用识别规则",
-      "state": "loading",
-      "capturedAt": "2026-10-13T15:23:15.936Z",
-      "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图",
-      "stateVerified": true,
-      "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
-      },
-      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
-    },
-    {
       "file": "rule-samples/data.jpg",
       "url": "http://127.0.0.1:4173/page/rule-samples?state=data&capture=1",
       "title": "重放样本",
@@ -39149,6 +38861,439 @@
         "scrollWidth": 1280
       },
       "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "supplemental/application-deployment-accepted.jpg",
+      "title": "应用规则部署受理",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=data",
+      "capturedAt": "2026-10-13T18:58:00.490Z",
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "supplemental/application-deployment-form.jpg",
+      "title": "应用规则部署",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=data",
+      "capturedAt": "2026-10-13T18:58:00.493Z",
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/data.jpg",
+      "title": "应用识别规则",
+      "state": "data",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=data&capture=1",
+      "capturedAt": "2026-10-13T18:59:01.282Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/empty.jpg",
+      "title": "应用识别规则",
+      "state": "empty",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=empty&capture=1",
+      "capturedAt": "2026-10-13T18:59:02.692Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/detail.jpg",
+      "title": "应用识别规则",
+      "state": "detail",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=detail&capture=1",
+      "capturedAt": "2026-10-13T18:59:03.107Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/action.jpg",
+      "title": "应用识别规则",
+      "state": "action",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=action&capture=1",
+      "capturedAt": "2026-10-13T18:59:03.614Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/loading.jpg",
+      "title": "应用识别规则",
+      "state": "loading",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=loading&capture=1",
+      "capturedAt": "2026-10-13T18:59:05.078Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "application-rules/error.jpg",
+      "title": "应用识别规则",
+      "state": "error",
+      "url": "http://127.0.0.1:4173/page/application-rules?state=error&capture=1",
+      "capturedAt": "2026-10-13T18:59:06.487Z",
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "stateVerified": true,
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "themeSha256": "96ffb82fc4985c64e7367f0496a4e318492d1b789ae6e337a6b5be740ca53e79"
+    },
+    {
+      "file": "search/data.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=data&capture=1",
+      "title": "高级检索",
+      "state": "data",
+      "capturedAt": "2026-10-14T04:31:28.252Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 127498
+    },
+    {
+      "file": "search/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=empty&capture=1",
+      "title": "高级检索",
+      "state": "empty",
+      "capturedAt": "2026-10-14T04:31:29.619Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 86840
+    },
+    {
+      "file": "search/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=detail&capture=1",
+      "title": "高级检索",
+      "state": "detail",
+      "capturedAt": "2026-10-14T04:31:31.185Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 123460
+    },
+    {
+      "file": "search/action.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=action&capture=1",
+      "title": "高级检索",
+      "state": "action",
+      "capturedAt": "2026-10-14T04:31:32.702Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 112530
+    },
+    {
+      "file": "search/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=loading&capture=1",
+      "title": "高级检索",
+      "state": "loading",
+      "capturedAt": "2026-10-14T04:31:34.118Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 89137
+    },
+    {
+      "file": "search/error.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=error&capture=1",
+      "title": "高级检索",
+      "state": "error",
+      "capturedAt": "2026-10-14T04:31:35.427Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 86655
+    },
+    {
+      "file": "packets/data.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=data&capture=1",
+      "title": "数据包工作台",
+      "state": "data",
+      "capturedAt": "2026-10-14T04:31:36.898Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 194428
+    },
+    {
+      "file": "packets/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=empty&capture=1",
+      "title": "数据包工作台",
+      "state": "empty",
+      "capturedAt": "2026-10-14T04:31:38.249Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88145
+    },
+    {
+      "file": "packets/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=detail&capture=1",
+      "title": "数据包工作台",
+      "state": "detail",
+      "capturedAt": "2026-10-14T04:31:39.866Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 189503
+    },
+    {
+      "file": "packets/action.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=action&capture=1",
+      "title": "数据包工作台",
+      "state": "action",
+      "capturedAt": "2026-10-14T04:31:41.384Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 177747
+    },
+    {
+      "file": "packets/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=loading&capture=1",
+      "title": "数据包工作台",
+      "state": "loading",
+      "capturedAt": "2026-10-14T04:31:42.800Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 90844
+    },
+    {
+      "file": "packets/error.jpg",
+      "url": "http://127.0.0.1:4173/page/packets?state=error&capture=1",
+      "title": "数据包工作台",
+      "state": "error",
+      "capturedAt": "2026-10-14T04:31:44.167Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 88175
+    },
+    {
+      "file": "payloads/data.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=data&capture=1",
+      "title": "载荷与编码",
+      "state": "data",
+      "capturedAt": "2026-10-14T04:31:45.629Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 195473
+    },
+    {
+      "file": "payloads/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=empty&capture=1",
+      "title": "载荷与编码",
+      "state": "empty",
+      "capturedAt": "2026-10-14T04:31:46.922Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 89171
+    },
+    {
+      "file": "payloads/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=detail&capture=1",
+      "title": "载荷与编码",
+      "state": "detail",
+      "capturedAt": "2026-10-14T04:31:48.427Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 189448
+    },
+    {
+      "file": "payloads/action.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=action&capture=1",
+      "title": "载荷与编码",
+      "state": "action",
+      "capturedAt": "2026-10-14T04:31:49.934Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 177572
+    },
+    {
+      "file": "payloads/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=loading&capture=1",
+      "title": "载荷与编码",
+      "state": "loading",
+      "capturedAt": "2026-10-14T04:31:51.278Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 91669
+    },
+    {
+      "file": "payloads/error.jpg",
+      "url": "http://127.0.0.1:4173/page/payloads?state=error&capture=1",
+      "title": "载荷与编码",
+      "state": "error",
+      "capturedAt": "2026-10-14T04:31:52.592Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 89058
+    },
+    {
+      "file": "supplemental/search-syntax-help.jpg",
+      "url": "http://127.0.0.1:4173/page/search?state=data&capture=1",
+      "title": "高级检索语法与范围",
+      "state": "supplemental",
+      "capturedAt": "2026-10-14T04:32:30.018Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "bytes": 124941,
+      "captureStep": "打开语法帮助并核对内容与关闭入口"
     }
   ],
   "errors": []
