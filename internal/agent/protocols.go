@@ -149,10 +149,14 @@ func (p *ProtocolInspector) inspect(ctx context.Context, binary, binarySHA strin
 	call, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 	version, _, _, err := executeBounded(call, frozenBinary, job, input, output, []string{"-V"})
-	if err != nil || version.truncated || !engineVersion.Match(version.data) {
+	if err != nil || version.truncated {
 		if call.Err() != nil {
 			return protocolFailure("protocol_inspection_cancelled")
 		}
+		// 执行失败或输出不完整不能证明检测引擎的版本不兼容。
+		return protocolFailure("native_protocol_inventory_unavailable")
+	}
+	if !engineVersion.Match(version.data) {
 		return protocolFailure("engine_version_mismatch")
 	}
 	list, _, _, err := executeBounded(call, frozenBinary, job, input, output, []string{"-c", snapshot, "-l", output, "--list-app-layer-protos"})

@@ -112,3 +112,27 @@ func TestNativeProtocolObservationUsesFrozenConfigurationAndInvalidatesCache(t *
 		t.Fatal("未展开引用被当作实际配置", r)
 	}
 }
+
+func TestNativeProtocolCommandErrorsDoNotClaimVersionMismatch(t *testing.T) {
+	if os.Getenv("SB_TEST_SURICATA_BINARY") == "" {
+		t.Skip("原生命令错误验证需独立隔离环境")
+	}
+	path := filepath.Join(t.TempDir(), "profile.yaml")
+	if err := os.WriteFile(path, []byte("app-layer: {protocols: {http: {enabled: yes}}}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ binary, code string }{
+		{"/usr/bin/false", "native_protocol_inventory_unavailable"},
+		{"/usr/bin/true", "engine_version_mismatch"},
+	} {
+		t.Run(filepath.Base(tc.binary), func(t *testing.T) {
+			p := &ProtocolInspector{Engine: &Engine{Config: config.Config{Mode: "development", SuricataBinary: tc.binary, SuricataConfig: path}}}
+			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+			defer cancel()
+			r := p.Observe(ctx)
+			if r.Validate() != nil || r.State != "unavailable" || r.ErrorCode != tc.code || len(r.Protocols) != 0 || r.CaptureActive {
+				t.Fatal("原生命令执行错误与实际版本不匹配必须分别呈现", r)
+			}
+		})
+	}
+}

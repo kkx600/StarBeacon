@@ -27,6 +27,20 @@ def bundle(items=None, link=None):
     return output.getvalue()
 
 class ReportsTests(unittest.TestCase):
+    def test_runner_reaping_preserves_resource_and_namespace_boundaries(self):
+        definition = {'services': {name: {} for name in (*module.DEPENDENCY_IMAGES, 'runner')}}
+        definition['services']['runner'] = {'image':'fixture','init':False,'user':'65532:65532','pids_limit':96,'read_only':True,'cap_drop':['ALL'],'environment':{},'depends_on':{}}
+        module.configure_runner({'project':'sbacc_1234567890abcdef','directory':'/tmp/starbeacon-acceptance-sbacc_1234567890abcdef'},definition)
+        for name in ('runner','capture-runner'):
+            service=definition['services'][name]
+            self.assertTrue(service['init'])
+            self.assertEqual(service['pids_limit'],96)
+            self.assertTrue(service['read_only'])
+            self.assertEqual(service['cap_drop'],['ALL'])
+            self.assertNotIn('privileged',service)
+            self.assertNotIn('pid',service)
+        self.assertEqual(definition['services']['capture-runner']['cap_add'],['NET_RAW','SETFCAP'])
+
     def test_failed_run_replaces_reports_and_preserves_previous_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             output = pathlib.Path(directory)

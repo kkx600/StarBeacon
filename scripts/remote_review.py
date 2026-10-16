@@ -165,6 +165,7 @@ def managed_capture_metadata(state, review):
 def capture_service(state, image, directory, capture, runtime):
     return {
         'image': image, 'platform': 'linux/amd64', 'pull_policy': 'never', 'user': '0:0',
+        'init': True,
         'entrypoint': ['python3', '/capture-review/capture_runtime.py'],
         'network_mode': 'service:review', 'read_only': True,
         'cap_drop': ['ALL'], 'cap_add': ['NET_RAW', 'SETFCAP'],
@@ -212,6 +213,7 @@ def update(state, review):
             raise ValueError('原始初始化镜像身份无法核对')
         services['review-init']['image'] = original
     runtime = services['review']
+    runtime['init'] = True
     runtime['image'] = image
     runtime['volumes'] = [review['directory'] + '/data:/data', directory + ':/review:ro']
     # 初始化制品保持原始身份；界面升级不调用 review-init。
@@ -306,7 +308,7 @@ def deploy():
     review = {'schema_version': 1, 'project': state['project'], 'name': name, 'directory': directory, 'database': database, 'platform_port': ports[0], 'collector_port': ports[1], 'backend_source': state['workspace_sha256'], 'frontend_source': digest, 'commit': state['commit'], 'clean_commit': state['clean_commit'], 'nginx_image': image, 'scope': 'development_ui_review'}
     config = {'tenant': 'review_' + name.removeprefix('review-'), 'database': database, 'namespace': state['project'] + '_' + name.removeprefix('review-'), 'username': 'review_' + secrets.token_hex(8), 'password': secrets.token_hex(24), 'credential_key': secrets.token_hex(32), 'platform_origin': 'http://127.0.0.1:5184', 'collector_origin': 'http://127.0.0.1:5185', 'backend_source': review['backend_source'], 'frontend_source': digest}
     security = ['no-new-privileges:true', 'seccomp=' + state['directory'] + '/bubblewrap-seccomp.json', 'apparmor=' + state['project'] + '_runner', 'systempaths=unconfined']
-    runtime = {'image': backend, 'platform': 'linux/amd64', 'pull_policy': 'never', 'read_only': True, 'cap_drop': ['ALL'], 'security_opt': security, 'user': '65532:65532', 'tmpfs': ['/tmp:rw,exec,nosuid,nodev,size=512m,mode=1777'], 'mem_limit': '1g', 'cpus': '2', 'pids_limit': 512, 'volumes': [directory + '/data:/data', directory + ':/review:ro'], 'entrypoint': ['python3', '/review/runtime.py'], 'environment': {key: '${' + key + '}' for key in ('SB_RUNTIME_DB_PASSWORD', 'REDIS_PASSWORD', 'NATS_TOKEN')}}
+    runtime = {'image': backend, 'platform': 'linux/amd64', 'pull_policy': 'never', 'init': True, 'read_only': True, 'cap_drop': ['ALL'], 'security_opt': security, 'user': '65532:65532', 'tmpfs': ['/tmp:rw,exec,nosuid,nodev,size=512m,mode=1777'], 'mem_limit': '1g', 'cpus': '2', 'pids_limit': 512, 'volumes': [directory + '/data:/data', directory + ':/review:ro'], 'entrypoint': ['python3', '/review/runtime.py'], 'environment': {key: '${' + key + '}' for key in ('SB_RUNTIME_DB_PASSWORD', 'REDIS_PASSWORD', 'NATS_TOKEN')}}
     initialize = dict(runtime, command=['initialize'], environment=dict(runtime['environment'], POSTGRES_PASSWORD='${POSTGRES_PASSWORD}'), volumes=[*runtime['volumes'], directory + '/helper:/source/.review-helper:ro'], tmpfs=['/tmp:rw,exec,nosuid,nodev,size=1g,mode=1777'], mem_limit='2g')
     definition = {'services': {'review-init': initialize, 'review': dict(runtime, healthcheck={'test': ['CMD', 'curl', '--fail', '--silent', 'http://127.0.0.1:28080/readyz'], 'interval': '5s', 'timeout': '3s', 'retries': 12}), 'review-web': {'image': image, 'pull_policy': 'never', 'network_mode': 'service:review', 'read_only': True, 'cap_drop': ['ALL'], 'security_opt': ['no-new-privileges:true'], 'user': '65532:65532', 'volumes': [directory + '/ui:/ui:ro', directory + '/nginx.conf:/config/nginx.conf:ro'], 'tmpfs': ['/tmp:rw,nosuid,nodev,size=128m,mode=1777'], 'entrypoint': ['nginx'], 'command': ['-c', '/config/nginx.conf', '-g', 'daemon off;'], 'mem_limit': '256m', 'cpus': '1', 'depends_on': {'review': {'condition': 'service_healthy'}}}}}
     files['runtime.py'] = (ROOT / 'tests/acceptance/review_runtime.py').read_bytes()

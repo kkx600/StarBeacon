@@ -77,6 +77,7 @@ class CandidateMigrationTests(unittest.TestCase):
         self.assertEqual(runtime['environment'], {'SB_RUNTIME_DB_PASSWORD':'${SB_RUNTIME_DB_PASSWORD}','POSTGRES_PASSWORD':'${POSTGRES_PASSWORD}'})
         self.assertNotIn('POSTGRES_PASSWORD', definition['services']['review']['environment'])
         self.assertTrue(runtime['read_only'])
+        self.assertTrue(runtime['init'])
         self.assertEqual(runtime['cap_drop'], ['ALL'])
         self.assertTrue(all(key not in runtime for key in ('depends_on','healthcheck','ports','container_name')))
         self.assertEqual(runtime['restart'], 'no')

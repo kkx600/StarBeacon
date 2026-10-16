@@ -364,6 +364,7 @@ def migration_service(state, review, definition, directory):
     if len(configurations) != 1 or not configurations[0].endswith(':/review:ro') or not configurations[0].split(':')[0].startswith(expected + '/') or '..' in pathlib.PurePosixPath(configurations[0].split(':')[0]).parts:
         raise ValueError('迁移配置不属于本实例的只读目录')
     migration = copy.deepcopy(runtime)
+    migration['init'] = True
     for field in ('healthcheck', 'depends_on', 'ports', 'restart', 'container_name'):
         migration.pop(field, None)
     migration.update(entrypoint=['python3', '/migration/runtime.py'], command=['migrate'], restart='no', environment={'SB_RUNTIME_DB_PASSWORD':'${SB_RUNTIME_DB_PASSWORD}', 'POSTGRES_PASSWORD':'${POSTGRES_PASSWORD}'})
@@ -522,6 +523,7 @@ print('程序上传摘要核对通过')
     if not frontend_only:
         for service, roles in [('review', ROLES['platform']), ('review-capture', ROLES['collector'])]:
             definition['services'][service]['image'] = image
+            definition['services'][service]['init'] = True
             definition['services'][service]['volumes'] = replace_binary_mounts(definition['services'][service]['volumes'], directory, roles)
     definition['services']['review-web']['volumes'] = replace_frontend_mount(definition['services']['review-web']['volumes'], directory)
     encoded = (json.dumps(definition, ensure_ascii=False, indent=2) + '\n').encode()

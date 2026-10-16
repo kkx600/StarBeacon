@@ -47,6 +47,7 @@ class ReviewBoundaryTest(unittest.TestCase):
                 self.assertEqual(service['volumes'][1], review['directory'] + '/bundle-1234567890abcdef/capture_runtime.py:/capture-review/capture_runtime.py:ro')
                 self.assertEqual(service['network_mode'], 'service:review')
                 self.assertEqual(service['cap_add'], ['NET_RAW', 'SETFCAP'])
+                self.assertTrue(service['init'])
                 self.assertNotIn('environment', service)
                 for change in ({'project': 'other'}, {'bundle': '/tmp/other'}, {'agent_data': review['directory'] + '/data'}, {'agent_data': '../agent-data'}, {'host_network': True}, {'host_network_admin': True}, {'capabilities': ['NET_ADMIN']}):
                     path.write_text(json.dumps(dict(valid, **change)))

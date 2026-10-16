@@ -276,44 +276,67 @@ func TestHistoryCleanupBoundsDurableCategoryCursorTenantFairnessAndLocks(t *test
 	require(t, err)
 	defer classificationStore.Close()
 	started := time.Now()
-	report, err = classificationStore.SweepHistory(ctx)
-	require(t, err)
-	elapsed := time.Since(started)
-	if elapsed > 3*time.Second || report.Deleted != 1 {
-		t.Fatal("分类锁阻塞了其他租户", elapsed, report)
+	type sweepOutcome struct {
+		report  store.HistorySweep
+		err     error
+		elapsed time.Duration
 	}
-	t.Log("分类锁被跳过，其他租户实际提交清理", elapsed)
+	completed := make(chan sweepOutcome, 1)
+	sweepCtx, cancelSweep := context.WithCancel(ctx)
+	defer cancelSweep()
+	go func() {
+		result, sweepErr := classificationStore.SweepHistory(sweepCtx)
+		completed <- sweepOutcome{result, sweepErr, time.Since(started)}
+	}()
+	// 验证邻租户在持锁期间实际提交，不能把随后其他 30 个租户的扫描耗时算作锁等待。
+	// 进展期限保持 3 秒，整轮仍受 SweepHistory 的原 20 秒预算约束。
+	progressCtx, cancelProgress := context.WithTimeout(ctx, 3*time.Second)
+	var progressed time.Duration
+	var progressErr error
+	for progressCtx.Err() == nil {
+		var pending int
+		progressErr = f.Owner.Pool.QueryRow(progressCtx, `SELECT count(*) FROM operation_audits WHERE tenant_id='tenant_01' AND object_id='other_during_lock'`).Scan(&pending)
+		if progressErr != nil {
+			break
+		}
+		if pending == 0 {
+			progressed = time.Since(started)
+			break
+		}
+		select {
+		case <-progressCtx.Done():
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	cancelProgress()
+	if progressed == 0 || progressed > 3*time.Second {
+		cancelSweep()
+	}
+	result := <-completed
+	cancelSweep()
+	if progressed == 0 || progressed > 3*time.Second {
+		t.Fatal("分类锁持有期间邻租户未在原期限内提交清理", progressed, progressErr, result.err)
+	}
+	require(t, result.err)
+	report = result.report
+	if report.Deleted != 1 {
+		t.Fatal("分类锁期间清理数量不一致", report)
+	}
+	t.Log("分类锁持有期间邻租户实际提交清理", progressed, "整轮扫描", result.elapsed)
 	_, err = lock.Exec(ctx, `UPDATE retention_maintenance SET next_category=0 WHERE tenant_id='tenant_00'`)
 	require(t, err)
 	require(t, lock.Commit(ctx))
-	// 普通业务行锁不能通过授予历史 UPDATE 来绕过；短超时回滚，解除后实际删除。
-	_, err = f.Owner.Pool.Exec(ctx, `INSERT INTO operation_audits(tenant_id,user_id,action,object_id,request_id,expires_at) VALUES('tenant_00','owner','test','locked_row','test',now()-interval '1 day')`)
-	require(t, err)
-	lock, err = f.Owner.Pool.Begin(ctx)
-	require(t, err)
-	defer lock.Rollback(context.Background())
-	_, err = lock.Exec(ctx, `SELECT id FROM operation_audits WHERE tenant_id='tenant_00' FOR UPDATE`)
-	require(t, err)
-	lockedStore, err := store.Open(ctx, f.RuntimeDSN)
-	require(t, err)
-	defer lockedStore.Close()
-	started = time.Now()
-	_, err = lockedStore.SweepHistory(ctx)
-	if err == nil || !strings.Contains(err.Error(), "lock timeout") || time.Since(started) > 3*time.Second {
-		t.Fatal("业务锁没有触发有界回滚", err, time.Since(started))
-	}
-	require(t, lock.Rollback(ctx))
 	for range 8 {
-		_, err := lockedStore.SweepHistory(ctx)
+		_, err := classificationStore.SweepHistory(ctx)
 		require(t, err)
 	}
 	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM operation_audits`).Scan(&remaining))
 	if remaining != 0 {
-		t.Fatal("中断后的到期记录没有恢复回收", remaining)
+		t.Fatal("分类锁释放后的到期记录没有恢复回收", remaining)
 	}
 	var progress int64
 	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT total_deleted FROM retention_maintenance WHERE tenant_id='tenant_00'`).Scan(&progress))
-	if progress != 2401 {
+	if progress != 2400 {
 		t.Fatal(fmt.Sprintf("已提交的清理进度计数不一致：%d", progress))
 	}
 	// 匿名审计与多个高用量租户共享全局预算，部分分类从已提交续点继续。
@@ -345,5 +368,48 @@ func TestHistoryCleanupBoundsDurableCategoryCursorTenantFairnessAndLocks(t *test
 		if remaining != 0 {
 			t.Fatal("达到回收预算后没有从续点恢复", table, remaining)
 		}
+	}
+}
+
+// 独立数据库排除其他租户扫描时间，实际验证业务行锁的超时、回滚与解除后恢复。
+func TestHistoryCleanupLockedBusinessRowTimesOutAndRecovers(t *testing.T) {
+	ctx, stop := context.WithTimeout(context.Background(), 90*time.Second)
+	defer stop()
+	f := newIsolatedDatabase(t, ctx)
+	_, err := f.Owner.Pool.Exec(ctx, `INSERT INTO tenants(id,name) VALUES('history_locked','业务行锁验收')`)
+	require(t, err)
+	_, err = f.Owner.Pool.Exec(ctx, `INSERT INTO operation_audits(tenant_id,user_id,action,object_id,request_id,expires_at) VALUES('history_locked','owner','test','locked_row','test',now()-interval '1 day')`)
+	require(t, err)
+	lock, err := f.Owner.Pool.Begin(ctx)
+	require(t, err)
+	defer lock.Rollback(context.Background())
+	_, err = lock.Exec(ctx, `SELECT id FROM operation_audits WHERE tenant_id='history_locked' FOR UPDATE`)
+	require(t, err)
+	lockedStore, err := store.Open(ctx, f.RuntimeDSN)
+	require(t, err)
+	defer lockedStore.Close()
+	started := time.Now()
+	_, err = lockedStore.SweepHistory(ctx)
+	if err == nil || !strings.Contains(err.Error(), "lock timeout") || time.Since(started) > 3*time.Second {
+		t.Fatal("业务锁没有触发原期限内的回滚", err, time.Since(started))
+	}
+	var remaining int
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM operation_audits WHERE tenant_id='history_locked'`).Scan(&remaining))
+	if remaining != 1 {
+		t.Fatal("锁失败后到期记录没有完整保留", remaining)
+	}
+	require(t, lock.Rollback(ctx))
+	for range 8 {
+		_, err := lockedStore.SweepHistory(ctx)
+		require(t, err)
+	}
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM operation_audits WHERE tenant_id='history_locked'`).Scan(&remaining))
+	if remaining != 0 {
+		t.Fatal("业务锁释放后到期记录没有恢复回收", remaining)
+	}
+	var progress int64
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT total_deleted FROM retention_maintenance WHERE tenant_id='history_locked'`).Scan(&progress))
+	if progress != 1 {
+		t.Fatal("回滚或重试造成清理账目不一致", progress)
 	}
 }

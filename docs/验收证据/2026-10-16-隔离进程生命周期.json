@@ -1,0 +1,294 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-16",
+  "scope": "采集器隔离进程回收、协议错误分类、真实 PG 锁与全量工程回归；不授予完整产品或正式发布资格",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "runtime_targets": {
+    "host_service": "已确认；安装、管理网络和升级回退执行器待实现及验收",
+    "container": "已确认；正式安装与升级回退待验收，远程工程测试使用独立 Docker"
+  },
+  "backend": {
+    "source_sha256": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+    "execution_commit": "34f23206420a3cd2c05e6f9406dbaf5eaaa37888",
+    "clean_commit_at_execution": false,
+    "target": "linux/amd64",
+    "go": "1.26.8",
+    "suricata": "8.0.7",
+    "dependency_storage": "专属持久 Docker 卷",
+    "tests": {
+      "unit": {
+        "run": 418,
+        "pass": 418,
+        "fail": 0,
+        "skip": 0
+      },
+      "integration": {
+        "run": 107,
+        "pass": 107,
+        "fail": 0,
+        "skip": 0
+      },
+      "capture": {
+        "run": 1,
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "coverage": {
+      "covered": 16624,
+      "total": 18373,
+      "percentage": 90.4805965275132,
+      "minimum": 90
+    },
+    "stages": [
+      {
+        "name": "functional",
+        "actual_exit_code": 0,
+        "control_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "name": "capture",
+        "actual_exit_code": 0,
+        "control_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "name": "combined",
+        "actual_exit_code": 0,
+        "control_exit_code": 0,
+        "oom_killed": false
+      }
+    ],
+    "archive_sha256": "51b08bec8c68d5d370d996cfb9706c7eb9174eb41e0905ac34f29f3328bf2c14",
+    "archive_bytes": 5897693,
+    "source_report_sha256": "11d858fd185ecb65fb0975f2770e9deb33514df8b625b51cb1e80c30144bde22",
+    "native_quality_cases": 8
+  },
+  "native_processes": {
+    "scope": "native_sandbox_process_reaping_not_complete_product_acceptance",
+    "source_sha256": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+    "native_host": "linux/x86_64",
+    "binaries": {
+      "agent.test": {
+        "sha256": "c8617e733c321a3298722418512664eaeb1123c4a7655ab455c4badaca689fd7",
+        "size": 80030785
+      },
+      "test2json": {
+        "sha256": "647511456dc62240f0ce47a9b8bcba6c63d5790ed19d4d43fcc2b4fbe11cc966",
+        "size": 2400418
+      }
+    },
+    "runtime_pid_limit": 96,
+    "phases": [
+      {
+        "phase": "warm",
+        "qualified": true,
+        "actual_exit_code": 0,
+        "init": true,
+        "pids_limit": 256,
+        "tests": {},
+        "log_sha256": "877dc9d1fec1976460baf2615ae33b78e7c712871eacd54495c694fb7b316728"
+      },
+      {
+        "phase": "control",
+        "qualified": true,
+        "actual_exit_code": 1,
+        "init": false,
+        "pids_limit": 96,
+        "tests": {
+          "TestNativeSandboxRepeatedExitDoesNotExhaustProcesses": "fail",
+          "TestNativeSandboxCancellationReapsNamespaceChildren": "fail"
+        },
+        "log_sha256": "d1d56ab0d95a6636f1d861bd02a39df274c081cc7b3e54ea2a44d3bda2d3b515"
+      },
+      {
+        "phase": "fixed",
+        "qualified": true,
+        "actual_exit_code": 0,
+        "init": true,
+        "pids_limit": 96,
+        "tests": {
+          "TestNativeSandboxRepeatedExitDoesNotExhaustProcesses": "pass",
+          "TestNativeSandboxCancellationReapsNamespaceChildren": "pass"
+        },
+        "log_sha256": "590a090c7e64e7829090e227a2b740019796bc3ebafa11921d8019f5e3aae55f"
+      }
+    ],
+    "qualified_positive_exits": 128,
+    "qualified_cancellations": 8,
+    "negative_control_is_expected_failure": true,
+    "runtime_compiles_tests": false
+  },
+  "history_locks": {
+    "source_sha256": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+    "tests": {
+      "TestHistoryCleanupLockedBusinessRowTimesOutAndRecovers": 3,
+      "TestHistoryCleanupBoundsDurableCategoryCursorTenantFairnessAndLocks": 3
+    },
+    "observations": [
+      "history_cleanup_test.go:325: 分类锁持有期间邻租户实际提交清理 105.713942ms 整轮扫描 687.309217ms",
+      "history_cleanup_test.go:325: 分类锁持有期间邻租户实际提交清理 289.129866ms 整轮扫描 694.265792ms",
+      "history_cleanup_test.go:325: 分类锁持有期间邻租户实际提交清理 124.251244ms 整轮扫描 835.887896ms"
+    ],
+    "neighbor_deadline_seconds": 3,
+    "business_lock_rollback_deadline_seconds": 3,
+    "sweep_budget_seconds": 20,
+    "actual_exit_code": 0,
+    "oom_killed": false,
+    "log_sha256": "b5a0387d2e71a6649da31868eb691bbf9d80e4f614d84fb243395986c30eec90"
+  },
+  "protocol_checks": {
+    "status": "passed",
+    "scope": "native_protocol_source_cache_and_command_failure_classification",
+    "source": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+    "image_id": "sha256:299f3b1280a5e4c69343770e24539183f3db44b74519b22dd63359ed2a57f024",
+    "container_id": "4955eb7b662bffdd1e4f9adbfd2829fb57b15ba8e5a9a0300565900078033176",
+    "actual_exit_code": 0,
+    "oom_killed": false,
+    "init": true,
+    "tests": {
+      "TestNativeProtocolObservationUsesFrozenConfigurationAndInvalidatesCache": "pass",
+      "TestNativeProtocolCommandErrorsDoNotClaimVersionMismatch": "pass"
+    },
+    "log_sha256": "2312dcab0a7ced85194d0b731d656baea396da5893494253e6e7c0b0a928627b"
+  },
+  "local_quality": {
+    "quality_tests": 68,
+    "tool_tests": 62,
+    "go_vet": "passed",
+    "integration_vet": "passed"
+  },
+  "frontend": {
+    "source_sha256": "e5641ab2925c91f94d85bda1657f1d1a0f24b36527c380378162f06b973ef0f3",
+    "snapshot_algorithm": "sha256-path-size-sha256-v1",
+    "tests": 532,
+    "tool_tests": 9,
+    "test_files": 45,
+    "coverage": {
+      "statements": 95.54771665554391,
+      "branches": 93.015477949755,
+      "functions": 92.2635237231792,
+      "lines": 98.933468765871
+    },
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 0.461
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 476.745
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 45.027
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 23.123
+      }
+    ],
+    "manifest_sha256": "df4465c9775021a381639f0fd6b76db37e4d83f16ce0de6cb3938e0d015cea41",
+    "evidence_origin_date": "2026-10-14",
+    "current_source_unchanged_verified": true
+  },
+  "prototype": {
+    "base_images": 755,
+    "supplemental_images": 54,
+    "total_images": 809,
+    "layout_observations": 96,
+    "layout_evidence_sha256": "78977c9b2728bc8e824d2d7b96f8c31e6d58d25a6f491c9b9c9d18e2d4c3c3b9",
+    "provenance_sha256": "1071190d739f40c85c5a1abf7cec3d3ca7fcd1de719886aa33153fa6bc34a444",
+    "evidence_origin_date": "2026-10-14",
+    "current_cycle_ui_changed": false
+  },
+  "runtime": {
+    "scope": "专属工程实例；非产品安装、升级回退或无损采集资格",
+    "backend_source": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+    "frontend_artifact": "563e71d7d6cf67e616559ed4ebaeb279cdb2e657e3104bb32b0844ef78140d20",
+    "init": true,
+    "identity_files_and_role_configuration_sha256_preserved": true,
+    "persistent_mounts_preserved": true,
+    "original_runtime_unchanged": true,
+    "programs": {
+      "starbeacon": "97e4e98e128638f6c6f441f452da2da2507ca70dcccfd6aebd92c7815eb21040",
+      "starbeacon-ingest": "4aebfa0da981b79e0190fceacc6bd67a85d0d7a331f89e28c3a16682a1f11422",
+      "starbeacon-worker": "044e50245465423fc4dd6673a0b102038acad039d2893a13dda4c3968fde2d29",
+      "starbeacon-agent": "3758b20c39fc74a821ef614754b41217281d8b96f7d9048480e81c2bf7587272",
+      "starbeaconctl": "1e9ca67690c0741bea31a4000fec213ddccae1c68db8843b802b90214ac7dcae"
+    },
+    "programs_match_immutable_image": true,
+    "frontend_files": 81,
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "rechecked_after_cleanup": true,
+    "new_browser_ui_qualification": false
+  },
+  "preserved_failures": [
+    {
+      "source_sha256": "b2569b009b1ed6440a334553ae5e8a527dd560a41c5bbeb7e6cea99229f69200",
+      "unit_pass": 415,
+      "unit_fail": 2,
+      "actual_exit_code": 1,
+      "archive_sha256": "5a03c120338522519e4fe9b379a3308c5e66330ba2f7180c7da9aca3c44979a6"
+    },
+    {
+      "source_sha256": "a51357a3f9f3f16562b166cbea932fa92310f220bb4708e7ac8507ff2adf39bd",
+      "unit_pass": 418,
+      "integration_pass": 105,
+      "integration_fail": 1,
+      "actual_exit_code": 1,
+      "archive_sha256": "34665e2653a44ea82c4a81e6eea8fc55e07bc96113b90221eae4726cf668ff9a"
+    },
+    {
+      "source_sha256": "20f977d014bb0e69f47b6dae80cf894e811f91fa3c6186a532f99c18708f4b91",
+      "scope": "Go 链接观察超时、/proc ESRCH 枚举诊断和初次依赖等待失败，不计业务验收",
+      "archive_sha256": "add9e83362578333611bca05929d36dec480f7c64dd1fd1433d97f58b2899ffb"
+    },
+    {
+      "source_sha256": "55240c12cd3a1751639d13e70a48f723bd7522bc81a105d0eef6ea385eb6f4d8",
+      "scope": "网卡编译缓存所有权失败、重复日志目标拒绝、部署基线 Path.open 参数错误；均在相应业务或配置写入之前停止，原始记录保留"
+    }
+  ],
+  "cleanup": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_lifecycle_test_project_only",
+    "containers_removed": 32,
+    "volumes_removed": 4,
+    "online_instances_unchanged": true,
+    "raw_evidence_and_current_image_preserved": true,
+    "global_prune": false,
+    "cache_allocated_bytes_removed": 3089338368,
+    "profile_unloaded": true,
+    "cache_directories_removed": 2,
+    "binary_directories_removed": 2,
+    "binary_allocated_bytes_removed": 164884480
+  },
+  "limitations": [
+    "所有协议条目仍为 not_qualified，观测配置不等同于检测效果",
+    "尚未完成 jumbo、重叠或 IPv6 分片、隧道、深度边界及生产压力验收",
+    "当前工程实例使用外部 EVE；真实 AF_PACKET 在独立测试链路验证",
+    "Linux 主机服务和容器的产品执行器、证书生命周期、规则订阅仍需落实",
+    "真实模型、外部办公渠道、具体防火墙／EDR、对象存储生命周期、文件沙箱及完整 107 项验收仍未完成",
+    "没有生成包含本批代码的新发行 ZIP，没有发布正式版本",
+    "初次依赖 300 秒启动等待未通过；后继同一实例健康，无重启，不授予冷启动时限资格",
+    "工程测试数量与 107 项正式需求数量是独立口径，覆盖率通过不改变完整功能状态"
+  ]
+}

@@ -30,6 +30,8 @@ def configure_runner(state, definition):
         definition["services"][name]["platform"] = "linux/amd64"
     runner = definition["services"]["runner"]
     runner["platform"] = "linux/amd64"
+    # 原生隔离器的已退出后代由 PID 1 回收，不让长期观测耗尽容器 PID 配额。
+    runner["init"] = True
     runner["security_opt"] = ["no-new-privileges:true", "seccomp=" + state["directory"] + "/bubblewrap-seccomp.json", "apparmor=" + state["project"] + "_runner", "systempaths=unconfined"]
     capture = json.loads(json.dumps(runner))
     capture.pop("build", None)
@@ -64,8 +66,16 @@ def configure_security(state):
     state["apparmor_profile"] = profile
     state["apparmor_sha256"] = hashlib.sha256(data).hexdigest()
 
+def verify_native_host(state):
+    """镜像平台不能证明宿主架构；模拟运行不授予原生验收资格。"""
+    observed = ssh(state["host"], ["docker", "info", "--format", "{{.OSType}}/{{.Architecture}}"], stdout=subprocess.PIPE, timeout=15).stdout.decode().strip()
+    if observed not in ("linux/x86_64", "linux/amd64"):
+        raise ValueError("验收宿主必须为原生 Linux amd64")
+    return observed
+
 def verify_architecture(state):
     """拒绝通过模拟运行依赖，避免把模拟器错误当成产品错误。"""
+    verify_native_host(state)
     for image in [*DEPENDENCY_IMAGES.values(), image_name(state)]:
         observed = ssh(state["host"], ["docker", "image", "inspect", "--format", "{{.Os}}/{{.Architecture}}", image], stdout=subprocess.PIPE, timeout=15).stdout.decode().strip()
         if observed != "linux/amd64":
@@ -258,11 +268,15 @@ def run_backend(state):
         cache = state["directory"] + "/" + name
         ssh(state["host"], ["mkdir", "-p", "-m", "700", cache], timeout=15)
         ssh(state["host"], ["chown", owner, cache], timeout=15)
+    # 编译与测试二进制启动独立准备；不让冷编译争用原生命令的业务期限。
+    # 不执行用例、不生成通过报告；实际测试仍以 -count=1 和原期限重新执行。
+    compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "--entrypoint", "go", "runner", "test", "-race", "-json", "-count=1", "-coverpkg=./cmd/...,./internal/...", "-run=^$", "./cmd/...", "./internal/..."], timeout=600)
     # 观察预算覆盖单元、两组顺序集成及覆盖整理，不改变各业务请求和用例的期限。
     # 两组各保留 1260 秒外层预算，另留编译、单元及退出整理时间。
     compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "runner"], timeout=3000)
     try:
         compose(state, ["up", "-d", "--no-build", "capture-fixture"], timeout=60)
+        compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/capture-go-build-cache:/tmp/go-cache", "--entrypoint", "go", "capture-runner", "test", "-race", "-json", "-count=1", "-tags=integration,captureintegration", "-coverpkg=./cmd/...,./internal/...", "-run=^$", "./tests/integration"], timeout=600)
         compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/capture-go-build-cache:/tmp/go-cache", "capture-runner"], timeout=360)
     finally:
         compose(state, ["stop", "capture-fixture"], timeout=30)
