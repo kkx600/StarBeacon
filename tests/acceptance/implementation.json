@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-14",
+  "review_date": "2026-10-16",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -476,7 +476,15 @@
         "scripts/source_snapshot.py",
         "scripts/qualify_frontend.py",
         "scripts/check_evidence_source.py",
-        ".github/workflows/acceptance.yml"
+        ".github/workflows/acceptance.yml",
+        "internal/collectorupdate/bundle.go",
+        "internal/collectorupdate/manager.go",
+        "internal/collectorupdate/runtime.go",
+        "internal/collectorupdate/boot.go",
+        "internal/collectorupdate/cli.go",
+        "internal/collectorupdate/privileges_linux.go",
+        "internal/agent/maintenance_guard.go",
+        "cmd/starbeacon-agent/main.go"
       ],
       "pages": [],
       "tests": [
@@ -491,9 +499,18 @@
         "tests/quality/test_go_dependencies.py",
         "scripts/tests/test_source_snapshot.py",
         "scripts/tests/test_qualify_frontend.py",
-        "scripts/tests/test_evidence_source.py"
+        "scripts/tests/test_evidence_source.py",
+        "internal/collectorupdate/update_test.go",
+        "internal/collectorupdate/runtime_test.go",
+        "internal/collectorupdate/failure_test.go",
+        "internal/collectorupdate/tls_test.go",
+        "internal/collectorupdate/privileges_linux_test.go",
+        "internal/agent/maintenance_guard_test.go",
+        "cmd/starbeacon-agent/main_test.go",
+        "tests/acceptance/collector_update.py",
+        "tests/acceptance/fixtures/collector_wal/main.go"
       ],
-      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。"
+      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。 现场部署管理员可通过独立 Go CLI 验签离线 Agent ZIP、按修订切换、失败恢复、显式历史回退与中断恢复；systemd 服务模板与 Docker 运行后端独立。仅检查兼容数据格式，保留 WAL 和身份，不修改管理网络、不升级系统镜像或检测引擎，不提供平台灰度或无损切换资格。"
     },
     {
       "id": "overview",
@@ -2135,7 +2152,8 @@
         "tasks",
         "rules",
         "replay",
-        "sensors"
+        "sensors",
+        "delivery"
       ],
       "implemented": [
         "签名任务/诊断/规则装载检查",
@@ -2143,11 +2161,12 @@
         "采集器规则事务恢复核对摘要、当前文件与实际引擎；隔离验证历史内容，并保留失败恢复依据",
         "本机托管捕获配置实际应用，保留失败前进程并回读运行/停止",
         "完整验证资格绑定的手动单探针规则发布与独立中断核实；历史修订部署",
-        "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执"
+        "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执",
+        "现场 CLI 的独立发布签名、ZIP/ELF/摘要与代次核对、持久 journal/CAS/幂等、Agent 程序切换、失败回退和中断恢复；只读维护准入保护 WAL、未知任务和有效封禁撤销责任"
       ],
       "remaining": [
         "多探针配置编排与规则订阅自动同步",
-        "系统/插件升级与灰度/自动回滚编排",
+        "正式安装引导、系统/引擎/插件升级、平台灰度及全场景自动恢复编排",
         "全场景同版本远程及页面验收"
       ]
     },

@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "现场离线 Agent 程序维护、Docker 与专属容器内原生 systemd；不是完整产品或正式发行验收",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "source": {
+    "sha256": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+    "execution_commit": "1e4a723f1e4c270f60cd84e893abf69813e75c92",
+    "clean_commit_at_execution": false,
+    "target": "linux/amd64",
+    "go": "1.26.8"
+  },
+  "maintenance": {
+    "docker": {
+      "status": "passed",
+      "steps": 26,
+      "program_sha256": {
+        "1": "4a8a7d1bc66fb5c3bf17d51f32f14feaee01b2273d3ca76f37d2862788b82e49",
+        "2": "5e96a630e06e889ea07df9ab54b391536971562353ce1270def26dd0dce91879"
+      },
+      "archive": {
+        "status": "passed",
+        "source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+        "steps": 26,
+        "archive_sha256": "f857779b80fd899c5c98011c2d4e7c11c496be4521e14562daec72cb00234d8c",
+        "archive_bytes": 75581601,
+        "private_keys_and_passwords_excluded": true,
+        "test_container_removed": true
+      },
+      "actual_uid": 65532,
+      "capability": "NET_RAW",
+      "no_new_privileges": true,
+      "init": true,
+      "readonly": true,
+      "network": "none",
+      "wal_inode_preserved": true,
+      "wal_original_records_and_epoch_preserved": true,
+      "pending_before": 1,
+      "pending_after": 1,
+      "identity_config_preserved": true,
+      "test_container_removed": true
+    },
+    "systemd": {
+      "status": "passed",
+      "steps": 16,
+      "rights": {
+        "Uid": "65532\t65532\t65532\t65532",
+        "Gid": "65532\t65532\t65532\t65532",
+        "CapEff": "0000000000002000",
+        "CapPrm": "0000000000002000",
+        "CapBnd": "0000000000002000",
+        "CapAmb": "0000000000002000",
+        "NoNewPrivs": "1"
+      },
+      "outer_limits": {
+        "memory.max": "1073741824",
+        "cpu.max": "200000 100000",
+        "pids.max": "256"
+      },
+      "wal_preserved": true,
+      "archive": {
+        "status": "passed",
+        "source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+        "steps": 16,
+        "driver_sha256": "9f086ea5d1c76b158fb4553358b21f10666bc7bb913a5106e7bcfe6446c95e44",
+        "archive_sha256": "c8a11140361c7de41ebe40f149c636956d3e52f00cca3d722dce1fedfdbf8dcc",
+        "archive_bytes": 4468,
+        "template_sha256": "838587071412d812bdc9f6a6d3ba095bc73c741b68d2e3ecc8c8095394004abf",
+        "agent_program_sha256": "4a8a7d1bc66fb5c3bf17d51f32f14feaee01b2273d3ca76f37d2862788b82e49",
+        "scope": "native_systemd_service_in_isolated_container_not_host_installation"
+      },
+      "host_installation_qualified": false
+    },
+    "capture_privileges": {
+      "status": "passed",
+      "workspace_sha256": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+      "commit": "1e4a723f1e4c270f60cd84e893abf69813e75c92",
+      "clean_commit": false,
+      "container": "sbacc_525f20bd029b2093-maintenance-native119b",
+      "container_id": "03c4704cafbb13f3fb43f7e100073fd01ab9c4466a4a25d0372c72e714919f5c",
+      "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+      "exit_code": 0,
+      "actual_exit_code": 0,
+      "oom_killed": false,
+      "test_elf_sha256": "6af607860ab46ac442c2d6d857f6381e9a2a1830de360f869fe2375cc6aca19c",
+      "directory": "/tmp/starbeacon-acceptance-sbacc_525f20bd029b2093/maintenance-native119b",
+      "scope": "actual_nonroot_AF_PACKET_and_irreversible_capability_drop_not_complete_capture_qualification",
+      "log_sha256": "12908a7bfb8b986514380303d9d1e991e2bd133fed901a28dfbc1da45394d6f3",
+      "parent_profile_sha256": "a3ada3acff68bdf222b34dc443d83d141b58895a09d08962c95b296cff15d056",
+      "child_profile_sha256": "a34b22ed708751a08f1992797b61e9e748078d02a83a23bdff11a456c3571d2b",
+      "profiles_included_in_full_gate": false
+    }
+  },
+  "local_quality": {
+    "quality_tests": 68,
+    "quality_log_sha256": "a51e3904f36104613f30844f50b4a4732b735a1b1592747ed0c9481ec0c6ba42",
+    "tool_tests": 62,
+    "tool_log_sha256": "a954289939d19c06affae47a6d7c45c178e363c12b3da4c520acbfa9d22c9f0f",
+    "go_vet": "passed",
+    "integration_vet": "passed",
+    "final_quality_log_sha256": "3d2b96a9f911872f0685f8788367da5c4729cbd6c1447f1023143ba4c8d87be3",
+    "final_tool_log_sha256": "324ce424f08005ef00fa83e83930ebe0955aa1fd738c133f36c2be83e4c81169"
+  },
+  "frontend": {
+    "source_sha256": "e5641ab2925c91f94d85bda1657f1d1a0f24b36527c380378162f06b973ef0f3",
+    "source_unchanged_verified": true,
+    "new_browser_or_full_UI_qualification": false
+  },
+  "preserved_failures": [
+    {
+      "scope": "首次离线启动没有已授权路由，试验夹具未产生预期 WAL；后继由实际 EVEReader 与固定试验路由构造既有数据，不授予真实路由资格",
+      "archive_sha256": "0d5e7075ccdc4d0707c9dc52d802939aaf4ec6a9932ad013655fdad6deb7925f"
+    },
+    {
+      "scope": "试验故障程序 /usr/bin/false 实为 shell 包装器，被 ELF 检查正确拒绝；后继使用实际 Go ELF 验证启动失败恢复"
+    },
+    {
+      "scope": "原生 systemd 夹具缺少服务账号和 PID1 的命名空间管理权限；仅调整私有容器夹具，原服务模板保护保持"
+    },
+    {
+      "scope": "首轮原生权限测试的断言通过，但只读 /tmp 阻止 Go 覆盖数据输出，整体退出 2；后继同一 ELF 使用限定 tmpfs，完整实际退出 0",
+      "test_elf_sha256": "6af607860ab46ac442c2d6d857f6381e9a2a1830de360f869fe2375cc6aca19c",
+      "original_log_sha256": "22c6d3ee8d1c9f74d6706700838057039c329d681149dd8d3e54fbce6f8574a5",
+      "original_actual_exit_code": 2
+    },
+    {
+      "scope": "远程镜像架构观察超过原 15 秒期限；未开始业务测试，原期限重试通过",
+      "source_sha256": "d9e95482fef610c7463a07dc7565fcd293d3ba5d02757158fc82f9d3bd45efb6"
+    },
+    {
+      "scope": "先前源码的完整轮次在归档快照校验补齐时主动停止，不授予通过或覆盖率资格",
+      "source_sha256": "d9e95482fef610c7463a07dc7565fcd293d3ba5d02757158fc82f9d3bd45efb6",
+      "actual_exit_code": 143,
+      "archive_sha256": "e3a99af2511d3465d674cc27164b0bd7c7fc9269635872c56e3692cbedb0cb6a"
+    },
+    {
+      "scope": "中间源码、失败和主动停止的快照归档，不授予当前资格",
+      "archive_sha256": "93f0e8337ff4d11c3c9192a1c0c6dfe75cbdb76f0a5f78880ab41bf531122672"
+    },
+    {
+      "scope": "在线核对器首轮假定 argv[0] 是绝对路径；实际驱动按 PATH 启动。按程序名定位后仍逐个核对 /proc 实际字节与合格镜像，四个角色和静态资源通过；未改在线程序",
+      "log_sha256": "567e68668540bdbda14a46b604c2d71cb94de5ba9c059641caa7a99eb1b2d52c"
+    }
+  ],
+  "limitations": [
+    "相同源码的两个版本标签只验证切换算法；不是任意历史版本和未来数据格式兼容资格",
+    "WAL 由真实 EVEReader 和固定试验路由构造；不等同首次离线设备已获平台注册、路由或平台持久 ACK",
+    "维护准入在进程停止后核对，拒绝后恢复仍存在管理间隙；持续响应责任交接未完成",
+    "原生 systemd 在专属 Docker 内运行，不是宿主安装或所有发行版资格",
+    "未验收完整捕获／规则健康、代理缓存切换、平台灰度、系统／检测引擎升级及管理网络",
+    "维护记录默认 180 天，仅冻结期限；历史程序和维护记录物理回收未实现",
+    "没有生成当前正式 Linux UPX 发行 ZIP，不发布正式版本",
+    "工程覆盖率和用例数量不代替完整 107 项正式需求验收"
+  ],
+  "backend": {
+    "status": "passed",
+    "source_sha256": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+    "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+    "tests": {
+      "unit": {
+        "pass": 441,
+        "fail": 0,
+        "skip": 0
+      },
+      "integration": {
+        "pass": 107,
+        "fail": 0,
+        "skip": 0
+      },
+      "capture": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "coverage": {
+      "covered": 17423,
+      "total": 19340,
+      "percentage": 90.08790072388831
+    },
+    "minimum": 90,
+    "original_scope_and_exclusions_unchanged": true,
+    "stages": [
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+        "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+        "container": "sbacc_525f20bd029b2093-lifecycle119-functional",
+        "container_id": "722be4cb42b921c0e576b38fbe1ffbe84a79911e5cb53fa578760a1b04d271a9",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+        "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+        "container": "sbacc_525f20bd029b2093-lifecycle119-capture",
+        "container_id": "5b0ca3d91f39460c79c168554b2f228976bcbb7859d3285e96ad7e1ca706a315",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+        "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+        "container": "sbacc_525f20bd029b2093-lifecycle119-combined",
+        "container_id": "8f29ca91abf1bc86ecff6ee912c9f93f35df30ace8352ffb51b4a6c4da5bc2ba",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      }
+    ],
+    "archive_sha256": "8bd62358f9e9153fcc123cdbc0d6e903b2399e431573302af94c2518eae52293",
+    "archive_bytes": 6373023,
+    "capture_driver_duration_seconds": 74.432,
+    "duration_is_not_per_event_SLA": true
+  },
+  "runtime": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_engineering_instance_not_production_release",
+    "backend_source": "ba556adacaaa1cfeadaf76ed137bb40953fbbb7fb05da43629f39c421ceeed57",
+    "frontend_artifact": "563e71d7d6cf67e616559ed4ebaeb279cdb2e657e3104bb32b0844ef78140d20",
+    "container_id": "5d6149c00a6c751486b25f6525715fe69910173b741ad2cdca0aeab445d4e30a",
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "programs": {
+      "starbeacon": "032f896f5b5971e028b22822f946964509b3808d31c4d6fac97fa629575df69c",
+      "starbeacon-ingest": "3356e96fd12d287f6d7dd1f4b112081ffda796caf4527fb0a1a0da951f2de966",
+      "starbeacon-worker": "2ff8b26690fc8fb3c4a8e99a38a645926945540d7e25b31fc21c090847005c10",
+      "starbeacon-agent": "8b4d78d6cf9db4c4955f830bf4c0a228d402e32971ef554382abcff310969b76",
+      "starbeaconctl": "1e9ca67690c0741bea31a4000fec213ddccae1c68db8843b802b90214ac7dcae"
+    },
+    "frontend_files": 81,
+    "running_roles": {
+      "starbeacon": {
+        "pid": 8,
+        "sha256": "032f896f5b5971e028b22822f946964509b3808d31c4d6fac97fa629575df69c"
+      },
+      "starbeacon-ingest": {
+        "pid": 9,
+        "sha256": "3356e96fd12d287f6d7dd1f4b112081ffda796caf4527fb0a1a0da951f2de966"
+      },
+      "starbeacon-worker": {
+        "pid": 11,
+        "sha256": "2ff8b26690fc8fb3c4a8e99a38a645926945540d7e25b31fc21c090847005c10"
+      },
+      "starbeacon-agent": {
+        "pid": 17,
+        "sha256": "8b4d78d6cf9db4c4955f830bf4c0a228d402e32971ef554382abcff310969b76"
+      }
+    },
+    "checked_after_scoped_cleanup": true,
+    "observed_at": "2026-10-16T17:20:06.044125+00:00",
+    "image_id": "sha256:e1d1aa9db200178dbf8111922c4c4555ba36ecc3a93c0b976bbc31d8fb77000d",
+    "identity_and_role_config_preserved": true,
+    "persistent_mounts_preserved": true,
+    "original_runtime_unchanged": true,
+    "new_browser_UI_qualification": false
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "only_owned_collector_maintenance_tests",
+    "containers_removed": 16,
+    "dependency_volumes_removed": 4,
+    "native_raw_archive_sha256": "8d0fdcba56d66d9326962a497a8d2914729313517c17e1799cebbdeab3d91090",
+    "online_instances_unchanged": true,
+    "evidence_and_current_image_preserved": true,
+    "global_prune": false,
+    "allocated_bytes_removed": 9115439104,
+    "temporary_directories_removed": 17,
+    "profiles_unloaded": [
+      "sbacc_525f20bd029b2093_runner",
+      "sbacc_525f20bd029b2093_systemd"
+    ]
+  },
+  "local_cleanup": {
+    "status": "passed",
+    "scope": "only_owned_local_cross_compiled_test_ELFs",
+    "files": [
+      {
+        "name": "maintenance119.test",
+        "sha256": "6af607860ab46ac442c2d6d857f6381e9a2a1830de360f869fe2375cc6aca19c",
+        "bytes": 49810743,
+        "allocated_bytes": 49811456
+      }
+    ],
+    "raw_bytes_removed": 49811456,
+    "archive_bytes": 20554951,
+    "archive_sha256": "c681ac11cde235e3429d16bc3cfc3f9a1b49fcab66103cc23030e5e1a3e528db"
+  },
+  "historical_local_cleanup": {
+    "status": "passed",
+    "scope": "only_three_known_intermediate_maintenance_test_ELFs",
+    "files_removed": [
+      {
+        "path": "collector-maintenance-native.test",
+        "sha256": "d0a3e843556fca526cc1be4c6a5509f37cedcc40fa8e4f2d8abf18db2c3ce1a9",
+        "source": "301641b948335afce03feead51ac56552e67845b2b167fafdcc494be59849e3b",
+        "allocated_bytes": 49905664
+      },
+      {
+        "path": "collector-maintenance-native115.test",
+        "sha256": "f3f8cc2cf62b169c134bf6653b76df5ee6ea84da33cc47636601ed00a8cff41a",
+        "source": "67fb6718487e124430aa31a2b4751db53792ca2361d33a5471f203f4466b6dd9",
+        "allocated_bytes": 49913856
+      },
+      {
+        "path": "collector-maintenance-native116.test",
+        "sha256": "228a109b6e0a739146a8763f3c2f75850a90684729165656ad3c0a42a7948d08",
+        "source": "ba7082d48a254377ce87bde8400f589079f5e8bf4497bbd41f4dd29c5fa93bcc",
+        "allocated_bytes": 49922048
+      }
+    ],
+    "archive_bytes": 61870394,
+    "archive_sha256": "39bce41ad3cd783e68973686f906d2615f6ddb46705715935ebf1dd48666ba06"
+  }
+}
