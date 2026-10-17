@@ -24,6 +24,13 @@ DEPENDENCY_IMAGES = {
     "elasticsearch": "docker.elastic.co/elasticsearch/elasticsearch:9.5.4",
 }
 
+
+def dependency_secrets():
+    """环境变量会再次经过 NATS 配置解析；固定字母前缀避免随机值被当作数字。"""
+    values = {key: secrets.token_hex(24) for key in ("POSTGRES_PASSWORD", "SB_RUNTIME_DB_PASSWORD", "REDIS_PASSWORD", "NATS_TOKEN")}
+    values["NATS_TOKEN"] = "sb_" + values["NATS_TOKEN"]
+    return values
+
 def configure_runner(state, definition):
     """镜像架构和隔离策略只作用于当前项目的执行容器。"""
     for name, image in DEPENDENCY_IMAGES.items():
@@ -341,7 +348,7 @@ def stage(host, path, step_ca_image=STEP_CA_IMAGE):
             report.write_text(json.dumps({"commit": commit, "workspace_sha256": digest, "clean_commit": clean, "project": project}, indent=2) + "\n")
             output.add(report, arcname="reports/source.json")
             environment = work / "dependencies.env"
-            environment.write_text("\n".join(f"{key}={secrets.token_hex(24)}" for key in ("POSTGRES_PASSWORD", "SB_RUNTIME_DB_PASSWORD", "REDIS_PASSWORD", "NATS_TOKEN")) + "\n")
+            environment.write_text("\n".join(f"{key}={value}" for key, value in dependency_secrets().items()) + "\n")
             environment.chmod(0o600)
             output.add(environment, arcname="dependencies.env")
             nats = work / "nats.conf"
