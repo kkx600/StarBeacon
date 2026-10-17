@@ -14,6 +14,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/store"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/crypto/bcrypt"
@@ -136,6 +137,17 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 	}
 	httpapi.Health(m, func(ctx context.Context) error { _, _, e := wal.Stats(); return e })
 	registerLocalPackets(m, wal, auth)
+	m.HandleFunc("GET /api/local/v1/identity", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RawQuery != "" {
+			httpapi.Fail(w, r, 400, "invalid_identity_request", "证书状态查询不接受额外参数")
+			return
+		}
+		out := probepki.LocalStatus{Mode: "static", SensorID: wal.SensorID, RegistrationID: wal.RegistrationID}
+		if wal.certificateStatus != nil {
+			out = wal.certificateStatus()
+		}
+		httpapi.JSON(w, 200, out)
+	}))
 	m.HandleFunc("GET /api/local/v1/health", auth.Require(true, func(w http.ResponseWriter, r *http.Request) { httpapi.JSON(w, 200, wal.Health(r.Context(), statePath)) }))
 	m.HandleFunc("GET /api/local/v1/network/interfaces", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		v, e := Interfaces()

@@ -169,6 +169,147 @@ func (CommandKind) EnumDescriptor() ([]byte, []int) {
 	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{2}
 }
 
+// 续签复用已验证的 mTLS 身份；新的私钥与 CSR 在探针本机持久生成。
+type CertificateRenewalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CsrPem        string                 `protobuf:"bytes,1,opt,name=csr_pem,json=csrPem,proto3" json:"csr_pem,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CertificateRenewalRequest) Reset() {
+	*x = CertificateRenewalRequest{}
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertificateRenewalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertificateRenewalRequest) ProtoMessage() {}
+
+func (x *CertificateRenewalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertificateRenewalRequest.ProtoReflect.Descriptor instead.
+func (*CertificateRenewalRequest) Descriptor() ([]byte, []int) {
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CertificateRenewalRequest) GetCsrPem() string {
+	if x != nil {
+		return x.CsrPem
+	}
+	return ""
+}
+
+type CertificateStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CertificateStatusRequest) Reset() {
+	*x = CertificateStatusRequest{}
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertificateStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertificateStatusRequest) ProtoMessage() {}
+
+func (x *CertificateStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertificateStatusRequest.ProtoReflect.Descriptor instead.
+func (*CertificateStatusRequest) Descriptor() ([]byte, []int) {
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{1}
+}
+
+type CertificateIdentity struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ChainPem          string                 `protobuf:"bytes,1,opt,name=chain_pem,json=chainPem,proto3" json:"chain_pem,omitempty"`
+	FingerprintSha256 string                 `protobuf:"bytes,2,opt,name=fingerprint_sha256,json=fingerprintSha256,proto3" json:"fingerprint_sha256,omitempty"`
+	NotAfter          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=not_after,json=notAfter,proto3" json:"not_after,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CertificateIdentity) Reset() {
+	*x = CertificateIdentity{}
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertificateIdentity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertificateIdentity) ProtoMessage() {}
+
+func (x *CertificateIdentity) ProtoReflect() protoreflect.Message {
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertificateIdentity.ProtoReflect.Descriptor instead.
+func (*CertificateIdentity) Descriptor() ([]byte, []int) {
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CertificateIdentity) GetChainPem() string {
+	if x != nil {
+		return x.ChainPem
+	}
+	return ""
+}
+
+func (x *CertificateIdentity) GetFingerprintSha256() string {
+	if x != nil {
+		return x.FingerprintSha256
+	}
+	return ""
+}
+
+func (x *CertificateIdentity) GetNotAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NotAfter
+	}
+	return nil
+}
+
 // 首个消息仅包含冻结目录，后续消息仅含连续存储偏移和有界原包归档字节。
 type PacketArchiveChunk struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -181,7 +322,7 @@ type PacketArchiveChunk struct {
 
 func (x *PacketArchiveChunk) Reset() {
 	*x = PacketArchiveChunk{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[0]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +334,7 @@ func (x *PacketArchiveChunk) String() string {
 func (*PacketArchiveChunk) ProtoMessage() {}
 
 func (x *PacketArchiveChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[0]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +347,7 @@ func (x *PacketArchiveChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PacketArchiveChunk.ProtoReflect.Descriptor instead.
 func (*PacketArchiveChunk) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{0}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PacketArchiveChunk) GetManifestJson() []byte {
@@ -245,7 +386,7 @@ type PacketArchiveAck struct {
 
 func (x *PacketArchiveAck) Reset() {
 	*x = PacketArchiveAck{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[1]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -257,7 +398,7 @@ func (x *PacketArchiveAck) String() string {
 func (*PacketArchiveAck) ProtoMessage() {}
 
 func (x *PacketArchiveAck) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[1]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -270,7 +411,7 @@ func (x *PacketArchiveAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PacketArchiveAck.ProtoReflect.Descriptor instead.
 func (*PacketArchiveAck) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{1}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PacketArchiveAck) GetId() string {
@@ -332,7 +473,7 @@ type ReplaySampleRequest struct {
 
 func (x *ReplaySampleRequest) Reset() {
 	*x = ReplaySampleRequest{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[2]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -344,7 +485,7 @@ func (x *ReplaySampleRequest) String() string {
 func (*ReplaySampleRequest) ProtoMessage() {}
 
 func (x *ReplaySampleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[2]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -357,7 +498,7 @@ func (x *ReplaySampleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplaySampleRequest.ProtoReflect.Descriptor instead.
 func (*ReplaySampleRequest) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{2}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ReplaySampleRequest) GetCommandId() string {
@@ -384,7 +525,7 @@ type ReplaySampleChunk struct {
 
 func (x *ReplaySampleChunk) Reset() {
 	*x = ReplaySampleChunk{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[3]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -396,7 +537,7 @@ func (x *ReplaySampleChunk) String() string {
 func (*ReplaySampleChunk) ProtoMessage() {}
 
 func (x *ReplaySampleChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[3]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +550,7 @@ func (x *ReplaySampleChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplaySampleChunk.ProtoReflect.Descriptor instead.
 func (*ReplaySampleChunk) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{3}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReplaySampleChunk) GetOffset() uint64 {
@@ -451,7 +592,7 @@ type EventRecord struct {
 
 func (x *EventRecord) Reset() {
 	*x = EventRecord{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[4]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -463,7 +604,7 @@ func (x *EventRecord) String() string {
 func (*EventRecord) ProtoMessage() {}
 
 func (x *EventRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[4]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -476,7 +617,7 @@ func (x *EventRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventRecord.ProtoReflect.Descriptor instead.
 func (*EventRecord) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{4}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EventRecord) GetEventId() string {
@@ -608,7 +749,7 @@ type EventBatch struct {
 
 func (x *EventBatch) Reset() {
 	*x = EventBatch{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[5]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -620,7 +761,7 @@ func (x *EventBatch) String() string {
 func (*EventBatch) ProtoMessage() {}
 
 func (x *EventBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[5]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -633,7 +774,7 @@ func (x *EventBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventBatch.ProtoReflect.Descriptor instead.
 func (*EventBatch) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{5}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EventBatch) GetBatchId() string {
@@ -709,7 +850,7 @@ type SequenceRange struct {
 
 func (x *SequenceRange) Reset() {
 	*x = SequenceRange{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[6]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +862,7 @@ func (x *SequenceRange) String() string {
 func (*SequenceRange) ProtoMessage() {}
 
 func (x *SequenceRange) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[6]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,7 +875,7 @@ func (x *SequenceRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SequenceRange.ProtoReflect.Descriptor instead.
 func (*SequenceRange) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{6}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SequenceRange) GetFirst() uint64 {
@@ -770,7 +911,7 @@ type IngestAck struct {
 
 func (x *IngestAck) Reset() {
 	*x = IngestAck{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[7]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +923,7 @@ func (x *IngestAck) String() string {
 func (*IngestAck) ProtoMessage() {}
 
 func (x *IngestAck) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[7]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +936,7 @@ func (x *IngestAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngestAck.ProtoReflect.Descriptor instead.
 func (*IngestAck) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{7}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *IngestAck) GetBatchId() string {
@@ -886,7 +1027,7 @@ type RejectedRecord struct {
 
 func (x *RejectedRecord) Reset() {
 	*x = RejectedRecord{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[8]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -898,7 +1039,7 @@ func (x *RejectedRecord) String() string {
 func (*RejectedRecord) ProtoMessage() {}
 
 func (x *RejectedRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[8]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -911,7 +1052,7 @@ func (x *RejectedRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectedRecord.ProtoReflect.Descriptor instead.
 func (*RejectedRecord) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{8}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RejectedRecord) GetSequence() uint64 {
@@ -951,7 +1092,7 @@ type AgentMessage struct {
 
 func (x *AgentMessage) Reset() {
 	*x = AgentMessage{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[9]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -963,7 +1104,7 @@ func (x *AgentMessage) String() string {
 func (*AgentMessage) ProtoMessage() {}
 
 func (x *AgentMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[9]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -976,7 +1117,7 @@ func (x *AgentMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentMessage.ProtoReflect.Descriptor instead.
 func (*AgentMessage) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{9}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AgentMessage) GetSensorId() string {
@@ -1052,7 +1193,7 @@ type PlatformCommand struct {
 
 func (x *PlatformCommand) Reset() {
 	*x = PlatformCommand{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[10]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1064,7 +1205,7 @@ func (x *PlatformCommand) String() string {
 func (*PlatformCommand) ProtoMessage() {}
 
 func (x *PlatformCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[10]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1077,7 +1218,7 @@ func (x *PlatformCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformCommand.ProtoReflect.Descriptor instead.
 func (*PlatformCommand) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{10}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *PlatformCommand) GetCommandId() string {
@@ -1138,7 +1279,7 @@ type RouteRequest struct {
 
 func (x *RouteRequest) Reset() {
 	*x = RouteRequest{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[11]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1150,7 +1291,7 @@ func (x *RouteRequest) String() string {
 func (*RouteRequest) ProtoMessage() {}
 
 func (x *RouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[11]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1163,7 +1304,7 @@ func (x *RouteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RouteRequest.ProtoReflect.Descriptor instead.
 func (*RouteRequest) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{11}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RouteRequest) GetStreamId() string {
@@ -1186,7 +1327,7 @@ type Route struct {
 
 func (x *Route) Reset() {
 	*x = Route{}
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[12]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1198,7 +1339,7 @@ func (x *Route) String() string {
 func (*Route) ProtoMessage() {}
 
 func (x *Route) ProtoReflect() protoreflect.Message {
-	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[12]
+	mi := &file_starbeacon_sensor_v1_sensor_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1211,7 +1352,7 @@ func (x *Route) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Route.ProtoReflect.Descriptor instead.
 func (*Route) Descriptor() ([]byte, []int) {
-	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{12}
+	return file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Route) GetToken() string {
@@ -1253,7 +1394,14 @@ var File_starbeacon_sensor_v1_sensor_proto protoreflect.FileDescriptor
 
 const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\n" +
-	"!starbeacon/sensor/v1/sensor.proto\x12\x14starbeacon.sensor.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"e\n" +
+	"!starbeacon/sensor/v1/sensor.proto\x12\x14starbeacon.sensor.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"4\n" +
+	"\x19CertificateRenewalRequest\x12\x17\n" +
+	"\acsr_pem\x18\x01 \x01(\tR\x06csrPem\"\x1a\n" +
+	"\x18CertificateStatusRequest\"\x9a\x01\n" +
+	"\x13CertificateIdentity\x12\x1b\n" +
+	"\tchain_pem\x18\x01 \x01(\tR\bchainPem\x12-\n" +
+	"\x12fingerprint_sha256\x18\x02 \x01(\tR\x11fingerprintSha256\x127\n" +
+	"\tnot_after\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bnotAfter\"e\n" +
 	"\x12PacketArchiveChunk\x12#\n" +
 	"\rmanifest_json\x18\x01 \x01(\fR\fmanifestJson\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x04R\x06offset\x12\x12\n" +
@@ -1375,13 +1523,15 @@ const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\x18COMMAND_KIND_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aCOMMAND_KIND_HEARTBEAT_ACK\x10\x01\x12\x15\n" +
 	"\x11COMMAND_KIND_TASK\x10\x02\x12\x1c\n" +
-	"\x18COMMAND_KIND_RECEIPT_ACK\x10\x032\xe6\x03\n" +
+	"\x18COMMAND_KIND_RECEIPT_ACK\x10\x032\xc6\x05\n" +
 	"\rSensorService\x12U\n" +
 	"\fUploadEvents\x12 .starbeacon.sensor.v1.EventBatch\x1a\x1f.starbeacon.sensor.v1.IngestAck(\x010\x01\x12X\n" +
 	"\aControl\x12\".starbeacon.sensor.v1.AgentMessage\x1a%.starbeacon.sensor.v1.PlatformCommand(\x010\x01\x12K\n" +
 	"\bGetRoute\x12\".starbeacon.sensor.v1.RouteRequest\x1a\x1b.starbeacon.sensor.v1.Route\x12l\n" +
 	"\x14DownloadReplaySample\x12).starbeacon.sensor.v1.ReplaySampleRequest\x1a'.starbeacon.sensor.v1.ReplaySampleChunk0\x01\x12i\n" +
-	"\x13UploadPacketArchive\x12(.starbeacon.sensor.v1.PacketArchiveChunk\x1a&.starbeacon.sensor.v1.PacketArchiveAck(\x01B5Z3github.com/kkx600/StarBeacon/api/sensor/v1;sensorv1b\x06proto3"
+	"\x13UploadPacketArchive\x12(.starbeacon.sensor.v1.PacketArchiveChunk\x1a&.starbeacon.sensor.v1.PacketArchiveAck(\x01\x12n\n" +
+	"\x10RenewCertificate\x12/.starbeacon.sensor.v1.CertificateRenewalRequest\x1a).starbeacon.sensor.v1.CertificateIdentity\x12n\n" +
+	"\x11CertificateStatus\x12..starbeacon.sensor.v1.CertificateStatusRequest\x1a).starbeacon.sensor.v1.CertificateIdentityB5Z3github.com/kkx600/StarBeacon/api/sensor/v1;sensorv1b\x06proto3"
 
 var (
 	file_starbeacon_sensor_v1_sensor_proto_rawDescOnce sync.Once
@@ -1396,55 +1546,63 @@ func file_starbeacon_sensor_v1_sensor_proto_rawDescGZIP() []byte {
 }
 
 var file_starbeacon_sensor_v1_sensor_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_starbeacon_sensor_v1_sensor_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_starbeacon_sensor_v1_sensor_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_starbeacon_sensor_v1_sensor_proto_goTypes = []any{
-	(AckStatus)(0),                // 0: starbeacon.sensor.v1.AckStatus
-	(AgentMessageKind)(0),         // 1: starbeacon.sensor.v1.AgentMessageKind
-	(CommandKind)(0),              // 2: starbeacon.sensor.v1.CommandKind
-	(*PacketArchiveChunk)(nil),    // 3: starbeacon.sensor.v1.PacketArchiveChunk
-	(*PacketArchiveAck)(nil),      // 4: starbeacon.sensor.v1.PacketArchiveAck
-	(*ReplaySampleRequest)(nil),   // 5: starbeacon.sensor.v1.ReplaySampleRequest
-	(*ReplaySampleChunk)(nil),     // 6: starbeacon.sensor.v1.ReplaySampleChunk
-	(*EventRecord)(nil),           // 7: starbeacon.sensor.v1.EventRecord
-	(*EventBatch)(nil),            // 8: starbeacon.sensor.v1.EventBatch
-	(*SequenceRange)(nil),         // 9: starbeacon.sensor.v1.SequenceRange
-	(*IngestAck)(nil),             // 10: starbeacon.sensor.v1.IngestAck
-	(*RejectedRecord)(nil),        // 11: starbeacon.sensor.v1.RejectedRecord
-	(*AgentMessage)(nil),          // 12: starbeacon.sensor.v1.AgentMessage
-	(*PlatformCommand)(nil),       // 13: starbeacon.sensor.v1.PlatformCommand
-	(*RouteRequest)(nil),          // 14: starbeacon.sensor.v1.RouteRequest
-	(*Route)(nil),                 // 15: starbeacon.sensor.v1.Route
-	(*timestamppb.Timestamp)(nil), // 16: google.protobuf.Timestamp
+	(AckStatus)(0),                    // 0: starbeacon.sensor.v1.AckStatus
+	(AgentMessageKind)(0),             // 1: starbeacon.sensor.v1.AgentMessageKind
+	(CommandKind)(0),                  // 2: starbeacon.sensor.v1.CommandKind
+	(*CertificateRenewalRequest)(nil), // 3: starbeacon.sensor.v1.CertificateRenewalRequest
+	(*CertificateStatusRequest)(nil),  // 4: starbeacon.sensor.v1.CertificateStatusRequest
+	(*CertificateIdentity)(nil),       // 5: starbeacon.sensor.v1.CertificateIdentity
+	(*PacketArchiveChunk)(nil),        // 6: starbeacon.sensor.v1.PacketArchiveChunk
+	(*PacketArchiveAck)(nil),          // 7: starbeacon.sensor.v1.PacketArchiveAck
+	(*ReplaySampleRequest)(nil),       // 8: starbeacon.sensor.v1.ReplaySampleRequest
+	(*ReplaySampleChunk)(nil),         // 9: starbeacon.sensor.v1.ReplaySampleChunk
+	(*EventRecord)(nil),               // 10: starbeacon.sensor.v1.EventRecord
+	(*EventBatch)(nil),                // 11: starbeacon.sensor.v1.EventBatch
+	(*SequenceRange)(nil),             // 12: starbeacon.sensor.v1.SequenceRange
+	(*IngestAck)(nil),                 // 13: starbeacon.sensor.v1.IngestAck
+	(*RejectedRecord)(nil),            // 14: starbeacon.sensor.v1.RejectedRecord
+	(*AgentMessage)(nil),              // 15: starbeacon.sensor.v1.AgentMessage
+	(*PlatformCommand)(nil),           // 16: starbeacon.sensor.v1.PlatformCommand
+	(*RouteRequest)(nil),              // 17: starbeacon.sensor.v1.RouteRequest
+	(*Route)(nil),                     // 18: starbeacon.sensor.v1.Route
+	(*timestamppb.Timestamp)(nil),     // 19: google.protobuf.Timestamp
 }
 var file_starbeacon_sensor_v1_sensor_proto_depIdxs = []int32{
-	16, // 0: starbeacon.sensor.v1.PacketArchiveAck.expires_at:type_name -> google.protobuf.Timestamp
-	16, // 1: starbeacon.sensor.v1.EventRecord.event_time:type_name -> google.protobuf.Timestamp
-	16, // 2: starbeacon.sensor.v1.EventRecord.observed_at:type_name -> google.protobuf.Timestamp
-	7,  // 3: starbeacon.sensor.v1.EventBatch.records:type_name -> starbeacon.sensor.v1.EventRecord
-	9,  // 4: starbeacon.sensor.v1.IngestAck.accepted_ranges:type_name -> starbeacon.sensor.v1.SequenceRange
-	0,  // 5: starbeacon.sensor.v1.IngestAck.status:type_name -> starbeacon.sensor.v1.AckStatus
-	9,  // 6: starbeacon.sensor.v1.IngestAck.quarantined_ranges:type_name -> starbeacon.sensor.v1.SequenceRange
-	11, // 7: starbeacon.sensor.v1.IngestAck.rejected_records:type_name -> starbeacon.sensor.v1.RejectedRecord
-	1,  // 8: starbeacon.sensor.v1.AgentMessage.kind:type_name -> starbeacon.sensor.v1.AgentMessageKind
-	16, // 9: starbeacon.sensor.v1.AgentMessage.observed_at:type_name -> google.protobuf.Timestamp
-	2,  // 10: starbeacon.sensor.v1.PlatformCommand.kind:type_name -> starbeacon.sensor.v1.CommandKind
-	16, // 11: starbeacon.sensor.v1.PlatformCommand.expires_at:type_name -> google.protobuf.Timestamp
-	16, // 12: starbeacon.sensor.v1.Route.expires_at:type_name -> google.protobuf.Timestamp
-	8,  // 13: starbeacon.sensor.v1.SensorService.UploadEvents:input_type -> starbeacon.sensor.v1.EventBatch
-	12, // 14: starbeacon.sensor.v1.SensorService.Control:input_type -> starbeacon.sensor.v1.AgentMessage
-	14, // 15: starbeacon.sensor.v1.SensorService.GetRoute:input_type -> starbeacon.sensor.v1.RouteRequest
-	5,  // 16: starbeacon.sensor.v1.SensorService.DownloadReplaySample:input_type -> starbeacon.sensor.v1.ReplaySampleRequest
-	3,  // 17: starbeacon.sensor.v1.SensorService.UploadPacketArchive:input_type -> starbeacon.sensor.v1.PacketArchiveChunk
-	10, // 18: starbeacon.sensor.v1.SensorService.UploadEvents:output_type -> starbeacon.sensor.v1.IngestAck
-	13, // 19: starbeacon.sensor.v1.SensorService.Control:output_type -> starbeacon.sensor.v1.PlatformCommand
-	15, // 20: starbeacon.sensor.v1.SensorService.GetRoute:output_type -> starbeacon.sensor.v1.Route
-	6,  // 21: starbeacon.sensor.v1.SensorService.DownloadReplaySample:output_type -> starbeacon.sensor.v1.ReplaySampleChunk
-	4,  // 22: starbeacon.sensor.v1.SensorService.UploadPacketArchive:output_type -> starbeacon.sensor.v1.PacketArchiveAck
-	18, // [18:23] is the sub-list for method output_type
-	13, // [13:18] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	19, // 0: starbeacon.sensor.v1.CertificateIdentity.not_after:type_name -> google.protobuf.Timestamp
+	19, // 1: starbeacon.sensor.v1.PacketArchiveAck.expires_at:type_name -> google.protobuf.Timestamp
+	19, // 2: starbeacon.sensor.v1.EventRecord.event_time:type_name -> google.protobuf.Timestamp
+	19, // 3: starbeacon.sensor.v1.EventRecord.observed_at:type_name -> google.protobuf.Timestamp
+	10, // 4: starbeacon.sensor.v1.EventBatch.records:type_name -> starbeacon.sensor.v1.EventRecord
+	12, // 5: starbeacon.sensor.v1.IngestAck.accepted_ranges:type_name -> starbeacon.sensor.v1.SequenceRange
+	0,  // 6: starbeacon.sensor.v1.IngestAck.status:type_name -> starbeacon.sensor.v1.AckStatus
+	12, // 7: starbeacon.sensor.v1.IngestAck.quarantined_ranges:type_name -> starbeacon.sensor.v1.SequenceRange
+	14, // 8: starbeacon.sensor.v1.IngestAck.rejected_records:type_name -> starbeacon.sensor.v1.RejectedRecord
+	1,  // 9: starbeacon.sensor.v1.AgentMessage.kind:type_name -> starbeacon.sensor.v1.AgentMessageKind
+	19, // 10: starbeacon.sensor.v1.AgentMessage.observed_at:type_name -> google.protobuf.Timestamp
+	2,  // 11: starbeacon.sensor.v1.PlatformCommand.kind:type_name -> starbeacon.sensor.v1.CommandKind
+	19, // 12: starbeacon.sensor.v1.PlatformCommand.expires_at:type_name -> google.protobuf.Timestamp
+	19, // 13: starbeacon.sensor.v1.Route.expires_at:type_name -> google.protobuf.Timestamp
+	11, // 14: starbeacon.sensor.v1.SensorService.UploadEvents:input_type -> starbeacon.sensor.v1.EventBatch
+	15, // 15: starbeacon.sensor.v1.SensorService.Control:input_type -> starbeacon.sensor.v1.AgentMessage
+	17, // 16: starbeacon.sensor.v1.SensorService.GetRoute:input_type -> starbeacon.sensor.v1.RouteRequest
+	8,  // 17: starbeacon.sensor.v1.SensorService.DownloadReplaySample:input_type -> starbeacon.sensor.v1.ReplaySampleRequest
+	6,  // 18: starbeacon.sensor.v1.SensorService.UploadPacketArchive:input_type -> starbeacon.sensor.v1.PacketArchiveChunk
+	3,  // 19: starbeacon.sensor.v1.SensorService.RenewCertificate:input_type -> starbeacon.sensor.v1.CertificateRenewalRequest
+	4,  // 20: starbeacon.sensor.v1.SensorService.CertificateStatus:input_type -> starbeacon.sensor.v1.CertificateStatusRequest
+	13, // 21: starbeacon.sensor.v1.SensorService.UploadEvents:output_type -> starbeacon.sensor.v1.IngestAck
+	16, // 22: starbeacon.sensor.v1.SensorService.Control:output_type -> starbeacon.sensor.v1.PlatformCommand
+	18, // 23: starbeacon.sensor.v1.SensorService.GetRoute:output_type -> starbeacon.sensor.v1.Route
+	9,  // 24: starbeacon.sensor.v1.SensorService.DownloadReplaySample:output_type -> starbeacon.sensor.v1.ReplaySampleChunk
+	7,  // 25: starbeacon.sensor.v1.SensorService.UploadPacketArchive:output_type -> starbeacon.sensor.v1.PacketArchiveAck
+	5,  // 26: starbeacon.sensor.v1.SensorService.RenewCertificate:output_type -> starbeacon.sensor.v1.CertificateIdentity
+	5,  // 27: starbeacon.sensor.v1.SensorService.CertificateStatus:output_type -> starbeacon.sensor.v1.CertificateIdentity
+	21, // [21:28] is the sub-list for method output_type
+	14, // [14:21] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_starbeacon_sensor_v1_sensor_proto_init() }
@@ -1458,7 +1616,7 @@ func file_starbeacon_sensor_v1_sensor_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_starbeacon_sensor_v1_sensor_proto_rawDesc), len(file_starbeacon_sensor_v1_sensor_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

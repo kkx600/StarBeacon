@@ -49,6 +49,8 @@ var historyCategories = []historyCategory{
 	{"decision_continuous_runs", "expires_at", "true"},
 	{"decision_triage_triggers", "expires_at", `state<>'pending'`},
 	{"rule_sync_runs", "expires_at", `finished_at IS NOT NULL`},
+	{"probe_enrollments", "retain_until", `true`},
+	{"probe_certificates", "retain_until", `state<>'signing' AND (not_after IS NULL OR not_after<=now())`},
 }
 
 type HistorySweep struct {
@@ -152,6 +154,10 @@ func (p *Postgres) sweepTenantHistory(ctx context.Context, tenant string, budget
 		if err := tx.QueryRow(ctx, `SELECT next_category FROM retention_maintenance WHERE tenant_id=$1 FOR UPDATE SKIP LOCKED`, tenant).Scan(&next); errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		} else if err != nil {
+			return err
+		}
+		// CA 调用期限为 15 秒；进程崩溃遗留的签发不重试，转为未知状态保留核查依据。
+		if _, err := tx.Exec(ctx, `WITH picked AS(SELECT id FROM probe_certificates WHERE tenant_id=$1 AND state='signing' AND created_at<now()-interval '1 minute' ORDER BY created_at,id LIMIT 16 FOR UPDATE SKIP LOCKED) UPDATE probe_certificates p SET state='unknown' FROM picked WHERE p.tenant_id=$1 AND p.id=picked.id`, tenant); err != nil {
 			return err
 		}
 		if next < 0 || next >= len(historyCategories) {

@@ -10,6 +10,17 @@ service SensorService {
   rpc GetRoute(RouteRequest) returns (Route);
   rpc DownloadReplaySample(ReplaySampleRequest) returns (stream ReplaySampleChunk);
   rpc UploadPacketArchive(stream PacketArchiveChunk) returns (PacketArchiveAck);
+  rpc RenewCertificate(CertificateRenewalRequest) returns (CertificateIdentity);
+  rpc CertificateStatus(CertificateStatusRequest) returns (CertificateIdentity);
+}
+
+// 续签复用已验证的 mTLS 身份；新的私钥与 CSR 在探针本机持久生成。
+message CertificateRenewalRequest { string csr_pem = 1; }
+message CertificateStatusRequest {}
+message CertificateIdentity {
+ string chain_pem = 1;
+ string fingerprint_sha256 = 2;
+ google.protobuf.Timestamp not_after = 3;
 }
 
 // 首个消息仅包含冻结目录，后续消息仅含连续存储偏移和有界原包归档字节。

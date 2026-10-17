@@ -37,7 +37,7 @@ export const workspaces:WorkspaceSpec[]=[
   {id:'rule-studio',title:'规则生成',group:'ai',pages:['rule-studio']},
   {id:'mcp',title:'MCP 服务',group:'ai',pages:['mcp']},
   {id:'reports',title:'安全报告',group:'reports',pages:['reports','report-schedules']},
-  {id:'sensors',title:'探针管理',group:'sensors',pages:['sensors','sensor-groups']},
+  {id:'sensors',title:'探针管理',group:'sensors',pages:['sensors','sensor-groups','probe-identity']},
   {id:'releases',title:'版本发布',group:'sensors',pages:['releases']},
   {id:'data-sources',title:'数据接入',group:'system',pages:['data-sources','syslog-input','imports','flow-sources','parsers','data-quality','replays']},
   {id:'logs',title:'日志检索',group:'system',pages:['logs']},

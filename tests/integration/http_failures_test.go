@@ -3,9 +3,11 @@
 package integration
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -21,9 +23,11 @@ import (
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/notify"
 	"github.com/kkx600/StarBeacon/internal/platform"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/retention"
 	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
 func authenticatedFaultHTTP(t *testing.T, ctx context.Context, authDB *store.Postgres, api *platform.API, username, password string) *liveHTTP {
@@ -53,7 +57,7 @@ func TestPlatformHTTPDependencyFailuresNeverBecomeEmptySuccess(t *testing.T) {
 	require(t, err)
 	vault, err := secrets.New(store.Token())
 	require(t, err)
-	api := &platform.API{DB: broken, Signer: signer, Vault: vault, MCP: &mcpserver.Server{Info: mcpserver.Info{Issuer: "https://issuer.example.com"}}}
+	api := &platform.API{DB: broken, Authority: newProbeTestAuthority(t), Signer: signer, Vault: vault, MCP: &mcpserver.Server{Info: mcpserver.Info{Issuer: "https://issuer.example.com"}}}
 	client := authenticatedFaultHTTP(t, ctx, f.Runtime, api, tenant, password)
 	for _, path := range []string{
 		"/sensors", "/tasks", "/rule-packages", "/rule-packages/rules_owned/1", "/replay/samples",
@@ -61,6 +65,7 @@ func TestPlatformHTTPDependencyFailuresNeverBecomeEmptySuccess(t *testing.T) {
 		"/notifications/channels", "/notifications/deliveries", "/models/providers",
 		"/analysis/jobs", "/analysis/jobs/job_owned", "/analysis/jobs/job_owned/report", "/analysis/threads", "/analysis/threads/thread_owned",
 		"/retention-policies", "/mcp/bindings", "/audits/operations", "/audits/logins",
+		"/sensor-enrollments", "/sensors/sensor_owned/certificates",
 	} {
 		t.Run("GET"+path, func(t *testing.T) {
 			requestClient := *client
@@ -74,6 +79,9 @@ func TestPlatformHTTPDependencyFailuresNeverBecomeEmptySuccess(t *testing.T) {
 	channelChange := store.ChannelChange{ID: "channel_owned", Name: connection.Name, Kind: connection.Kind, Enabled: &enabled, Severities: connection.Severities, Connection: &connection}
 	candidate := retention.Candidate{Category: "alerts", Days: 90, ExpectedRevision: 1, ApplyMode: "future"}
 	binding := mcpaccess.Change{ID: "binding_owned", Name: "分析服务", Subject: "subject_owned", OAuthClientID: "client_owned", Scopes: []string{"alerts:read"}, Enabled: true, ExpiresAt: time.Now().UTC().Add(time.Hour), RequestsPerMinute: 60}
+	probeID := transport.SensorIdentity{TenantID: tenant, SensorID: "sensor_owned", RegistrationID: "registration_owned"}
+	token, err := probepki.NewCredential(probeID, "enrollment_owned")
+	require(t, err)
 	type request struct {
 		method, path string
 		input        any
@@ -96,12 +104,28 @@ func TestPlatformHTTPDependencyFailuresNeverBecomeEmptySuccess(t *testing.T) {
 		{"POST", "/mcp/bindings", binding},
 		{"DELETE", "/mcp/bindings/binding_owned", map[string]any{"expected_revision": 1}},
 		{"POST", "/alerts/search", model.SearchRequest{Start: time.Now().UTC().Add(-time.Hour), End: time.Now().UTC()}},
+		{"POST", "/sensor-enrollments", probepki.EnrollmentInput{Token: token, Name: "证书故障验收", TTLSeconds: 3600}},
+		{"POST", "/sensor-enrollments/enrollment_owned/revoke", map[string]any{}},
+		{"POST", "/sensor-certificates/certificate_owned/revoke", map[string]any{}},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			requestClient := *client
 			requestClient.t = t
 			requestClient.request(tc.method, tc.path, "failure_owned_key", tc.input, nil, 503)
 		})
+	}
+	csr, _, err := probepki.NewCSR(probeID)
+	require(t, err)
+	// 设备交换不继承浏览器会话；数据库不可用时也不能把 CA 响应当作登记成功。
+	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	t.Cleanup(server.Close)
+	body, err := json.Marshal(probepki.Exchange{Token: token, CSR: csr})
+	require(t, err)
+	response, err := http.Post(server.URL+"/api/v1/sensor-enrollments/exchange", "application/json", bytes.NewReader(body))
+	require(t, err)
+	response.Body.Close()
+	if response.StatusCode != http.StatusServiceUnavailable {
+		t.Fatal("设备交换在存储故障时未明确失败", response.StatusCode)
 	}
 	before := ownedBusinessSnapshot(t, ctx, f.Owner, tenant)
 	// 业务依赖恢复后读回真实空数据；失败请求没有持久化半成品或审计成功记录。

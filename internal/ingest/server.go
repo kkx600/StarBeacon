@@ -14,6 +14,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
@@ -36,6 +37,7 @@ type Server struct {
 	Packets       packetarchive.ObjectStorage
 	PacketStaging string
 	PacketQuota   int64
+	Authority     probepki.Authority
 }
 
 // 单进程最多四个样本传输，避免大文件读取挤占控制信号和事件接入。
@@ -128,7 +130,11 @@ func (s *Server) identity(ctx context.Context) (transport.SensorIdentity, error)
 	if e != nil {
 		return id, status.Error(codes.Unauthenticated, "未验证采集器身份")
 	}
-	if e = s.DB.SensorActive(ctx, id); e != nil {
+	cert, e := transport.PeerCertificate(ctx)
+	if e != nil {
+		return id, status.Error(codes.Unauthenticated, "未验证采集器证书")
+	}
+	if e = s.DB.SensorCertificateActive(ctx, id, probepki.Digest(cert.Raw), cert.NotAfter); e != nil {
 		if errors.Is(e, store.ErrSensorInactive) {
 			return id, status.Error(codes.PermissionDenied, "采集器未注册或已停用")
 		}
@@ -237,6 +243,12 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 		defer stop()
 	}
 	dispatch := func() error {
+		check, stopCheck := context.WithTimeout(ctx, 3*time.Second)
+		_, checkErr := s.identity(check)
+		stopCheck()
+		if checkErr != nil {
+			return checkErr
+		}
 		if !s.TasksEnabled {
 			return nil
 		}

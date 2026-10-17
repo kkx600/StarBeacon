@@ -74,7 +74,7 @@ func TestLocalManagementAuthenticationNetworkConfigurationAndStorageFailure(t *t
 		}
 		return data
 	}
-	for _, path := range []string{"/api/local/v1/network/interfaces", "/api/local/v1/capture-config", "/api/local/v1/health"} {
+	for _, path := range []string{"/api/local/v1/network/interfaces", "/api/local/v1/capture-config", "/api/local/v1/health", "/api/local/v1/identity"} {
 		request("GET", path, "", 401)
 	}
 	request("POST", "/api/local/v1/auth/login", `{"username":"unknown","password":"local-test-password"}`, 401)
@@ -107,6 +107,14 @@ func TestLocalManagementAuthenticationNetworkConfigurationAndStorageFailure(t *t
 		}
 	}
 	request("GET", "/api/local/v1/health", "", 200)
+	request("GET", "/api/local/v1/identity?extra=1", "", 400)
+	var identityStatus struct {
+		Mode   string `json:"mode"`
+		Sensor string `json:"sensor_id"`
+	}
+	if err := json.Unmarshal(request("GET", "/api/local/v1/identity", "", 200), &identityStatus); err != nil || identityStatus.Mode != "static" || identityStatus.Sensor != "sensor_local" {
+		t.Fatal("本机静态身份回执不符", err)
+	}
 	initial := request("GET", "/api/local/v1/capture-config", "", 200)
 	if !strings.Contains(string(initial), `"interfaces":[]`) || !strings.Contains(string(initial), `"not_applied"`) {
 		t.Fatal("初始目标不应宣称捕获已生效", string(initial))

@@ -17,6 +17,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/outbound"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/searchfilter"
 	"github.com/kkx600/StarBeacon/internal/secrets"
@@ -42,6 +43,7 @@ type API struct {
 	Jobs           *river.Client[pgx.Tx]
 	JobsReady      func() bool
 	MCP            *mcpserver.Server
+	Authority      probepki.Authority
 	overviewFlight singleflight.Group
 	exportMu       sync.Mutex
 	exportActive   map[string]bool
@@ -54,6 +56,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/sensors", a.Auth.Require(false, a.sensors))
 	m.HandleFunc("PATCH /api/v1/sensors/{id}", a.Auth.Require(true, a.setSensor))
 	a.registerSensorManagement(m)
+	a.registerProbeCertificates(m)
 	m.HandleFunc("POST /api/v1/alerts/search", a.Auth.Require(false, a.alerts))
 	a.registerSearchExports(m)
 	m.HandleFunc("POST /api/v1/overview", a.Auth.Require(false, a.overview))

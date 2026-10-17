@@ -3,6 +3,7 @@
     "/login",
     "/sensors",
     "/sensors?view=groups",
+    "/sensors?view=identity",
     "/sensors?view=tasks",
     "/rules",
     "/rules?view=applications",

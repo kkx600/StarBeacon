@@ -9,7 +9,7 @@
 
 `/healthz`、`/readyz`、`/metrics` 是运维接口，HTTP 只监听回环。外部同源入口仅放行该端对应的 `/api/` 路由，监控接口另由受控管理入口访问。Go 不内置前端静态页；同源代理须保留原始 Origin，并将该端 `SB_ALLOWED_ORIGIN` 配置为实际外部来源（无路径，生产为 HTTPS）。就绪检查代表当前依赖可用，不证明 Suricata 捕获质量、队列无积压或生产容量合格。
 
-[采集器 Protobuf](proto/starbeacon/sensor/v1/sensor.proto) 定义五种 RPC：`UploadEvents` 与 `GetRoute` 由事件接入进程提供，`Control`、`DownloadReplaySample` 与 `UploadPacketArchive` 由主平台 gRPC 服务提供。原包上传使用独立连接及有界传输额度，与控制连接分开。mTLS 证书唯一绑定租户、探针和注册代次；每个控制帧及样本流核验注册启用状态，不接受消息自报租户。
+[采集器 Protobuf](proto/starbeacon/sensor/v1/sensor.proto) 定义七种 RPC：`UploadEvents` 与 `GetRoute` 由事件接入进程提供，`Control`、`DownloadReplaySample` 与 `UploadPacketArchive` 由主平台 gRPC 服务提供。`RenewCertificate` 由主平台提供，`CertificateStatus` 在主平台和事件接入端核对当前实际指纹。原包上传使用独立连接及有界传输额度，与控制连接分开。mTLS 证书唯一绑定租户、探针和注册代次；每个控制帧及样本流核验注册启用状态，不接受消息自报租户。
 
 控制连接使用受限 `sensor.command.v1` JSON：租户、探针、注册代次、任务身份、种类、投递期限和固定业务载荷；不传 shell 命令。Ed25519 签名覆盖 `StarBeacon/sensor.command.v1\x00` 加原始 JSON，`payload_sha256` 是原始载荷的 32 字节 SHA-256。设备核对预置信任公钥和身份后同步保存接受状态，回执采用 `sensor.receipt.v1`，最多 64 KiB；平台 ACK 精确确认原始回执字节摘要。断线重传不重复执行，终态回执不可改写。签名密钥与 mTLS 私钥独立；设备不持有平台命令私钥。
 
@@ -50,3 +50,5 @@ HTTP Raw 的两端二进制入口为 `POST /api/v1/replay/samples/http` 和 `POS
 `GET /api/v1/tasks/{id}` 为管理员读取本租户指定任务档案，独立于最近 200 项列表。`expires_at` 是执行截止，`retain_until` 是操作留存策略在创建时冻结的记录保留截止，默认 180 天；已过留存期、跨租户与已删除对象统一返回 404。读取原联动授权时核对命令摘要、原注册代次和绝对期限，不依赖当前设备在线、ES 或当前签名密钥；详情不返回管理地址、凭据或完整命令。查询不接受额外参数，预算 5 秒；只有从未投递的到期任务可以终止为 `expired`，不变更已经投递或完成的原回执。
 
 `GET /api/local/v1/tasks/{id}` 为本地管理员独立读取指定任务档案，链接为 `/network?view=tasks&task=<id>`；受理后的重放入口打开原任务，不依赖最近 200 项列表。新任务接收时冻结 `retain_until`，默认 180 天；`SB_TASK_RETENTION_DAYS=1–3650` 只影响后续本地任务，平台仍使用其租户操作留存策略。`retention_protected` 标明未获平台确认、仍在执行或未取得独立核实结果的任务暂不清理；该保护不表示执行成功或联动授权。到期且可清理的记录不对外展示，详情返回 404；存储或绑定损坏返回 503。只读列表每次最多扫描 1000 条历史索引，返回最多 200 项；指定主键不受该窗口影响。物理清理在接收任务时有界执行，尚无本地周期清理调度；不返回完整命令、规则原文或凭据。
+
+生产探针注册使用 `/api/v1/sensor-enrollments` 与设备专用 `/exchange`；目录、令牌撤销、指定探针证书及吊销入口见 OpenAPI。设备交换拒绝浏览器上下文，仅接受固定令牌与 CSR；未知签发不盲目重签。采集器 `/api/local/v1/identity` 只读本机指纹和续签窗口。证书记录按操作策略留存，默认 180 天；证书认证有效期默认 24 小时，两者独立。部署、恢复及实际测试范围见[探针注册与证书](../docs/探针注册与证书.md)。

@@ -9,6 +9,7 @@ require (
 	github.com/alecthomas/participle/v2 v2.1.4
 	github.com/elastic/elastic-transport-go/v8 v8.9.0
 	github.com/elastic/go-elasticsearch/v9 v9.5.2
+	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/gopacket/gopacket v1.7.2
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.1

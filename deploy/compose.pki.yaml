@@ -1,0 +1,27 @@
+services:
+  step-ca:
+    image: cr.smallstep.com/smallstep/step-ca:0.30.2@sha256:a2b17872915c193259b75a5474c398326f41bd199f0842093e52cf4182bc8270
+    profiles: [pki]
+    user: "${SB_STEP_CA_UID:-1000}:${SB_STEP_CA_GID:-1000}"
+    entrypoint: [/usr/local/bin/step-ca]
+    command: [--password-file, /home/step/secrets/password, /home/step/config/ca.json]
+    read_only: true
+    cap_drop: [ALL]
+    # 官方 ELF 标记低端口文件能力，保留对应边界能力以通过内核执行检查。
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    tmpfs: [/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777]
+    volumes:
+      - ${SB_STEP_CA_DIRECTORY:?请设置独立 CA 运行目录}/config:/home/step/config:ro
+      - ${SB_STEP_CA_DIRECTORY}/certs:/home/step/certs:ro
+      - ${SB_STEP_CA_DIRECTORY}/secrets:/home/step/secrets:ro
+      - ${SB_STEP_CA_DIRECTORY}/templates:/home/step/templates:ro
+      - ${SB_STEP_CA_DIRECTORY}/db:/home/step/db
+    healthcheck:
+      test: [CMD, step, ca, health, --ca-url, "https://localhost:9000", --root, /home/step/certs/root_ca.crt]
+      interval: 10s
+      timeout: 3s
+      retries: 12

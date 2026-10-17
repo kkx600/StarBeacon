@@ -333,7 +333,8 @@
       "group": "sensors",
       "pages": [
         "sensors",
-        "sensor-groups"
+        "sensor-groups",
+        "probe-identity"
       ]
     },
     {
@@ -5952,6 +5953,54 @@
           "title": "加载失败",
           "url": "/page/governance?state=error",
           "image": "governance/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "probe-identity",
+      "title": "注册与证书",
+      "group": "sensors",
+      "kind": "table",
+      "description": "核对探针注册凭据、固定 CSR 签发结果、自动续签及平台与 CA 的独立吊销状态。",
+      "requirements": [
+        "SB-OPS-001"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/probe-identity?state=data",
+          "image": "probe-identity/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/probe-identity?state=empty",
+          "image": "probe-identity/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/probe-identity?state=detail",
+          "image": "probe-identity/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/probe-identity?state=action",
+          "image": "probe-identity/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/probe-identity?state=loading",
+          "image": "probe-identity/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/probe-identity?state=error",
+          "image": "probe-identity/error.jpg"
         }
       ]
     },

@@ -1,0 +1,414 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "探针注册、实际时钟续签、指纹吊销、当前工程回归与专属 Docker 部署；不授予完整产品或正式发行资格",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "source": {
+    "sha256": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "execution_commit": "0366a0caca154c42bdc035a2571eb69ea900695a",
+    "clean_commit_at_execution": false,
+    "go": "1.26.8"
+  },
+  "backend": {
+    "status": "passed",
+    "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+    "tests": {
+      "unit": 463,
+      "integration": 114,
+      "capture": 1
+    },
+    "coverage": {
+      "covered": 18591,
+      "total": 20634,
+      "percentage": 90.0988659494039,
+      "minimum": 90
+    },
+    "original_scope_and_exclusions_unchanged": true,
+    "stages": [
+      {
+        "event": "die",
+        "id": "2403e834c11b5cd521837334ea6be5d7f4390217ab314793c99ffca6c5c2b561",
+        "name": "sbacc_26361d91f488b0fd-runner-run-6fd098260961",
+        "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+        "source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+        "stage": "functional",
+        "started_at": "2026-10-17T08:01:24.156521912Z",
+        "docker_event_exit_code": "0",
+        "time_nano": 1792225514053664742,
+        "actual_exit_code": 0,
+        "running": false,
+        "oom_killed": false
+      },
+      {
+        "event": "die",
+        "id": "5db289678b3fb604f593b328637d57464029400e12d1e3b16fe1d56ba768ae68",
+        "name": "sbacc_26361d91f488b0fd-capture-runner-run-6afe76d41c6c",
+        "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+        "source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+        "stage": "capture",
+        "started_at": "2026-10-17T08:27:04.021707516Z",
+        "docker_event_exit_code": "0",
+        "time_nano": 1792225698313618853,
+        "actual_exit_code": 0,
+        "running": false,
+        "oom_killed": false
+      },
+      {
+        "event": "die",
+        "id": "9e9b04c9448d72bb35ba01cea957c61282e8a45aea9d2184632d97fab05a774a",
+        "name": "sbacc_26361d91f488b0fd-runner-run-b901a1d58c31",
+        "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+        "source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+        "stage": "combined",
+        "started_at": "2026-10-17T08:28:33.710227804Z",
+        "docker_event_exit_code": "0",
+        "time_nano": 1792225757558202082,
+        "actual_exit_code": 0,
+        "running": false,
+        "oom_killed": false
+      }
+    ],
+    "archive": {
+      "path": ".local/acceptance/pki177-reports.tar.gz",
+      "sha256": "50fd829e922d5ec1192ec16f1ac6dcecc1a58789ade7e76b35aa980d8690903c",
+      "bytes": 7397082
+    }
+  },
+  "frontend": {
+    "status": "passed",
+    "source_sha256": "c26fb959d45c77226f3cf30ee5ffa6f90700aefbc94cb89c7f03b62cf12e9086",
+    "tests": 565,
+    "tool_tests": 9,
+    "test_files": 49,
+    "coverage": {
+      "statements": 95.48872180451127,
+      "branches": 93.00289435600578,
+      "functions": 92.12290502793296,
+      "lines": 98.95907262834162
+    },
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 0.297
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 117.707
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 12.124
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 6.903
+      }
+    ]
+  },
+  "probe_pki": {
+    "actual_programs": {
+      "schema_version": 1,
+      "status": "passed",
+      "scope": "actual_go_programs_pki_and_synthetic_eve_pipeline",
+      "source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+      "roles": [
+        "platform",
+        "ingest",
+        "worker",
+        "agent"
+      ],
+      "roles_alive": true,
+      "initial_fingerprint_sha256": "90e3d05457bae46e4719993310d4c3e4b8faf51390dbc6c21768642a42ae843e",
+      "renewed_fingerprint_sha256": "f1090a9cfa1c07e19019e20c6ebb9393dc0c4b5e19412f6189ece8be9ff9a385",
+      "renewal_seconds": 178.407,
+      "ca_revocation": "confirmed",
+      "indexed_events": 3,
+      "probe_ca_root_and_intermediate_private_keys_not_mounted": true,
+      "shared_test_role_filesystem": true,
+      "native_capture_qualification": false,
+      "production_tls_ha_qualification": false,
+      "finished_at": "2026-10-17T08:33:14.493330+00:00",
+      "role_exit_codes": {
+        "platform": 0,
+        "ingest": 0,
+        "worker": 0,
+        "agent": 0
+      },
+      "binaries": {
+        "starbeacon": "6534b41881b4a836139c72bda64871c31aabd996d1cf0aba35158e71d1ca1607",
+        "starbeacon-ingest": "798ad373fda9d99baa12910773241b6c92a871d52e795d02564e7fa1b4a44875",
+        "starbeacon-worker": "2ce12eacd834f442a71dd94958d0c5ac8a33ac8e16b792a42999b047f44c3720",
+        "starbeacon-agent": "ee5a02d3d3e65e2c118824032c4643fff4b28064f2cb87d2601441a5ea8c3ea3",
+        "starbeaconctl": "5ecbb0bcd591f48fbb10a40b62479903b9068b7ee53d97b8d603ff80d88e217c"
+      }
+    },
+    "execution": {
+      "source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+      "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+      "container_id": "2a9d9f895c9f45183431ff7c0c37542a5db44a19967f1c95cd2547e418afe43d",
+      "actual_exit_code": 0,
+      "running": false,
+      "oom_killed": false,
+      "fixture_sha256": "56f1f91eb892b504c74787002d1d8c946b02439341e3f92a7e9d54a0c61d3c0a",
+      "project": "sbacc_26361d91f488b0fd_pki_programs_910c7197",
+      "directory": "/tmp/starbeacon-acceptance-sbacc_26361d91f488b0fd/program-pki-bd8cee62188caf9d-910c7197"
+    },
+    "raw_archive": {
+      "path": ".local/acceptance/pki178-programs-raw.tar.gz",
+      "sha256": "a104c00a9fc44baf39ffd7da06fbb1b8cdb9dd8a67181ac31df657b020808f67",
+      "bytes": 376953,
+      "private_keys_credentials_and_wal_not_archived": true
+    },
+    "ca_image": "sha256:2fd7d0628d738548c4fce200028b57c507b2d06262f4d64cb0c56edc0050027e",
+    "ca_version": "0.30.2",
+    "ca_cli_fixture_version": "0.31.0",
+    "ca_image_scope": "官方发行二进制经摘要核对后构建的专属工程容器；不等于官方生产镜像",
+    "official_production_image_qualification": false,
+    "official_image_pull": {
+      "status": "unavailable",
+      "image": "cr.smallstep.com/smallstep/step-ca:0.30.2@sha256:a2b17872915c193259b75a5474c398326f41bd199f0842093e52cf4182bc8270",
+      "exit_code": 124,
+      "scope": "official_image_pull_only",
+      "finished_at": "2026-10-17T07:14:05.302669+00:00"
+    }
+  },
+  "deployment": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_engineering_instance_not_production_release",
+    "backend_source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "frontend_source": "c26fb959d45c77226f3cf30ee5ffa6f90700aefbc94cb89c7f03b62cf12e9086",
+    "frontend_artifact": "d360f6a4d9d0a72bdad9e08b675f6b201579aa1795cb783739ab7e35d300441e",
+    "runtime_project": "sbacc_cf08cb9c52292287_app101",
+    "before_container": "f4c048ff0ebad8d1bc00aaa844fc824873eaffb4b490f3542f560abd5f005638",
+    "after_container": "957637ac5b710b490dacdeb44193ed809b4db1b22b0ea8764facc2babc5e2d42",
+    "original_runtime_unchanged": true,
+    "identity_files_and_role_configuration_sha256_preserved": true,
+    "init": true,
+    "migration_container": "aedd0e0a89aedab07e3b8f09448ac56ed0fedc51f8eb865ce280c8ec2de3f29a",
+    "migration_actual_exit_code": 0,
+    "database_backup_sha256": "951724f4a018187bb859eed360b7048b88010288a627cc17eb364d657e6a6e59",
+    "persistent_mounts_preserved": true,
+    "storage_limitation": "engineering_persistent_volume_testing_not_production_capacity_qualification"
+  },
+  "runtime": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "engineering_runtime_readiness_and_static_artifact",
+    "backend_source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "frontend_artifact": "d360f6a4d9d0a72bdad9e08b675f6b201579aa1795cb783739ab7e35d300441e",
+    "container_id": "957637ac5b710b490dacdeb44193ed809b4db1b22b0ea8764facc2babc5e2d42",
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "programs": {
+      "starbeacon": "6534b41881b4a836139c72bda64871c31aabd996d1cf0aba35158e71d1ca1607",
+      "starbeacon-ingest": "798ad373fda9d99baa12910773241b6c92a871d52e795d02564e7fa1b4a44875",
+      "starbeacon-worker": "2ce12eacd834f442a71dd94958d0c5ac8a33ac8e16b792a42999b047f44c3720",
+      "starbeacon-agent": "ee5a02d3d3e65e2c118824032c4643fff4b28064f2cb87d2601441a5ea8c3ea3",
+      "starbeaconctl": "5ecbb0bcd591f48fbb10a40b62479903b9068b7ee53d97b8d603ff80d88e217c"
+    },
+    "frontend_files": 81,
+    "running_roles": {
+      "starbeacon": {
+        "pid": 8,
+        "sha256": "6534b41881b4a836139c72bda64871c31aabd996d1cf0aba35158e71d1ca1607"
+      },
+      "starbeacon-ingest": {
+        "pid": 9,
+        "sha256": "798ad373fda9d99baa12910773241b6c92a871d52e795d02564e7fa1b4a44875"
+      },
+      "starbeacon-worker": {
+        "pid": 10,
+        "sha256": "2ce12eacd834f442a71dd94958d0c5ac8a33ac8e16b792a42999b047f44c3720"
+      },
+      "starbeacon-agent": {
+        "pid": 19,
+        "sha256": "ee5a02d3d3e65e2c118824032c4643fff4b28064f2cb87d2601441a5ea8c3ea3"
+      }
+    }
+  },
+  "runtime_after_cleanup": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "engineering_runtime_readiness_and_static_artifact",
+    "backend_source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "frontend_artifact": "d360f6a4d9d0a72bdad9e08b675f6b201579aa1795cb783739ab7e35d300441e",
+    "container_id": "957637ac5b710b490dacdeb44193ed809b4db1b22b0ea8764facc2babc5e2d42",
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "programs": {
+      "starbeacon": "6534b41881b4a836139c72bda64871c31aabd996d1cf0aba35158e71d1ca1607",
+      "starbeacon-ingest": "798ad373fda9d99baa12910773241b6c92a871d52e795d02564e7fa1b4a44875",
+      "starbeacon-worker": "2ce12eacd834f442a71dd94958d0c5ac8a33ac8e16b792a42999b047f44c3720",
+      "starbeacon-agent": "ee5a02d3d3e65e2c118824032c4643fff4b28064f2cb87d2601441a5ea8c3ea3",
+      "starbeaconctl": "5ecbb0bcd591f48fbb10a40b62479903b9068b7ee53d97b8d603ff80d88e217c"
+    },
+    "frontend_files": 81,
+    "running_roles": {
+      "starbeacon": {
+        "pid": 8,
+        "sha256": "6534b41881b4a836139c72bda64871c31aabd996d1cf0aba35158e71d1ca1607"
+      },
+      "starbeacon-ingest": {
+        "pid": 9,
+        "sha256": "798ad373fda9d99baa12910773241b6c92a871d52e795d02564e7fa1b4a44875"
+      },
+      "starbeacon-worker": {
+        "pid": 10,
+        "sha256": "2ce12eacd834f442a71dd94958d0c5ac8a33ac8e16b792a42999b047f44c3720"
+      },
+      "starbeacon-agent": {
+        "pid": 19,
+        "sha256": "ee5a02d3d3e65e2c118824032c4643fff4b28064f2cb87d2601441a5ea8c3ea3"
+      }
+    }
+  },
+  "program_binding": {
+    "status": "passed",
+    "scope": "live_role_programs_and_database_schema_match_frozen_source",
+    "backend_source": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+    "container_id": "957637ac5b710b490dacdeb44193ed809b4db1b22b0ea8764facc2babc5e2d42",
+    "program_count": 5,
+    "running_roles": 4,
+    "schema_version": 43,
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "frontend_files_verified": 81,
+    "production_ca_configured": false,
+    "active_identity_mode": "existing_static_identity_preserved"
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "owned_probe_pki_qualification_project",
+    "containers_removed": 11,
+    "dependency_volumes_removed": 4,
+    "archive": {
+      "path": ".local/acceptance/pki181-preserved-sources-reports.tar.gz",
+      "sha256": "5f9c80f1aeb2e8647f8f207dd7184b76e6edd4d29c5f349594ea3ab849d97b33",
+      "bytes": 13014127
+    },
+    "online_instances_unchanged": true,
+    "current_image_and_evidence_preserved": true,
+    "global_prune": false,
+    "allocated_bytes_removed": 4138975232,
+    "temporary_roots_removed": 1,
+    "profiles_unloaded": [
+      "sbacc_26361d91f488b0fd_runner"
+    ]
+  },
+  "deployed_ui": {
+    "status": "passed",
+    "scope": "deployed_default_viewport_and_readonly_pki_states_not_all_routes",
+    "platform": {
+      "caUnconfigured": true,
+      "contentWidth": 1280,
+      "tableRegions": 0,
+      "viewport": 1280
+    },
+    "collector": {
+      "contentWidth": 1280,
+      "identityVisible": true,
+      "tableRegions": 1,
+      "viewport": 1280
+    },
+    "credential_creation": "disabled_without_CA_configuration",
+    "certificate_query_invalid_input": "rejected_with_explanation",
+    "current_collector_identity": "static",
+    "screenshot_files": [
+      "pki189-platform-identity.png",
+      "pki189-collector-identity.png"
+    ]
+  },
+  "prototype": {
+    "platform_workspaces": 42,
+    "platform_views": 121,
+    "collector_workspaces": 5,
+    "base_images": 767,
+    "supplemental_images": 60,
+    "total_images": 827,
+    "targeted_pc_widths": [
+      1024,
+      1280,
+      1366,
+      1440,
+      1600,
+      1920,
+      2560
+    ],
+    "scope": "定向注册表单及通信身份状态核对，不授予全路由完整交互资格"
+  },
+  "local_checks": {
+    "quality_tests": 68,
+    "acceptance_script_tests": 69,
+    "go_vet": true,
+    "api_operations": {
+      "platform": 120,
+      "collector": 18
+    }
+  },
+  "preserved_failures": [
+    {
+      "scope": "前一冻结来源覆盖率未达门槛",
+      "source": "763b4fdd7211c0a3844a59d84ff4c62d5fbe2d68ff2ef65b2f53cd8d113a75cf",
+      "coverage": {
+        "covered": 18534,
+        "total": 20633,
+        "percentage": 89.82697620316968,
+        "minimum": 90
+      },
+      "archive": {
+        "path": ".local/acceptance/pki148-reports.tar.gz",
+        "sha256": "50d6e4d5d3678333b849c0dc1b2d0444aee9c4c95138269038375bcc90949dbf",
+        "bytes": 6994053
+      }
+    },
+    {
+      "scope": "后继完整回归覆盖率未达门槛",
+      "source": "adddaedbbe24599385bb7365169da03ac12f672c48b02d7329e8689b4eb3905f",
+      "coverage": {
+        "covered": 18566,
+        "total": 20634,
+        "percentage": 89.97770669768343,
+        "minimum": 90
+      },
+      "archive": {
+        "path": ".local/acceptance/pki170-reports.tar.gz",
+        "sha256": "0216abb1d7aeefe3115883eba4083c6f9ca5ec15ebea0f953b681cbcc35798b1",
+        "bytes": 7218808
+      }
+    },
+    {
+      "scope": "首次 SQL 参数类型推断错误、CLI 覆盖工具输出混入 JSON、前端组件导入缺失及本机旧 Go PATH；原日志分别保留并复核修正后的来源"
+    }
+  ],
+  "remaining": [
+    "官方 CA 容器部署资格、生产 CA 高可用与灾备",
+    "静态身份迁移及服务端证书自动轮换",
+    "通用 CRL/OCSP 与 CA 未知回执自动对账",
+    "完整需求清单、真实外部产品效果、海量容量、生产 TLS/HA 及全路由交互验收"
+  ],
+  "finished_at": "2026-10-17T08:45:49.985038+00:00"
+}

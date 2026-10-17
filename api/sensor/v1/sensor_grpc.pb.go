@@ -24,6 +24,8 @@ const (
 	SensorService_GetRoute_FullMethodName             = "/starbeacon.sensor.v1.SensorService/GetRoute"
 	SensorService_DownloadReplaySample_FullMethodName = "/starbeacon.sensor.v1.SensorService/DownloadReplaySample"
 	SensorService_UploadPacketArchive_FullMethodName  = "/starbeacon.sensor.v1.SensorService/UploadPacketArchive"
+	SensorService_RenewCertificate_FullMethodName     = "/starbeacon.sensor.v1.SensorService/RenewCertificate"
+	SensorService_CertificateStatus_FullMethodName    = "/starbeacon.sensor.v1.SensorService/CertificateStatus"
 )
 
 // SensorServiceClient is the client API for SensorService service.
@@ -35,6 +37,8 @@ type SensorServiceClient interface {
 	GetRoute(ctx context.Context, in *RouteRequest, opts ...grpc.CallOption) (*Route, error)
 	DownloadReplaySample(ctx context.Context, in *ReplaySampleRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ReplaySampleChunk], error)
 	UploadPacketArchive(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PacketArchiveChunk, PacketArchiveAck], error)
+	RenewCertificate(ctx context.Context, in *CertificateRenewalRequest, opts ...grpc.CallOption) (*CertificateIdentity, error)
+	CertificateStatus(ctx context.Context, in *CertificateStatusRequest, opts ...grpc.CallOption) (*CertificateIdentity, error)
 }
 
 type sensorServiceClient struct {
@@ -113,6 +117,26 @@ func (c *sensorServiceClient) UploadPacketArchive(ctx context.Context, opts ...g
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SensorService_UploadPacketArchiveClient = grpc.ClientStreamingClient[PacketArchiveChunk, PacketArchiveAck]
 
+func (c *sensorServiceClient) RenewCertificate(ctx context.Context, in *CertificateRenewalRequest, opts ...grpc.CallOption) (*CertificateIdentity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CertificateIdentity)
+	err := c.cc.Invoke(ctx, SensorService_RenewCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sensorServiceClient) CertificateStatus(ctx context.Context, in *CertificateStatusRequest, opts ...grpc.CallOption) (*CertificateIdentity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CertificateIdentity)
+	err := c.cc.Invoke(ctx, SensorService_CertificateStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SensorServiceServer is the server API for SensorService service.
 // All implementations must embed UnimplementedSensorServiceServer
 // for forward compatibility.
@@ -122,6 +146,8 @@ type SensorServiceServer interface {
 	GetRoute(context.Context, *RouteRequest) (*Route, error)
 	DownloadReplaySample(*ReplaySampleRequest, grpc.ServerStreamingServer[ReplaySampleChunk]) error
 	UploadPacketArchive(grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]) error
+	RenewCertificate(context.Context, *CertificateRenewalRequest) (*CertificateIdentity, error)
+	CertificateStatus(context.Context, *CertificateStatusRequest) (*CertificateIdentity, error)
 	mustEmbedUnimplementedSensorServiceServer()
 }
 
@@ -146,6 +172,12 @@ func (UnimplementedSensorServiceServer) DownloadReplaySample(*ReplaySampleReques
 }
 func (UnimplementedSensorServiceServer) UploadPacketArchive(grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]) error {
 	return status.Error(codes.Unimplemented, "method UploadPacketArchive not implemented")
+}
+func (UnimplementedSensorServiceServer) RenewCertificate(context.Context, *CertificateRenewalRequest) (*CertificateIdentity, error) {
+	return nil, status.Error(codes.Unimplemented, "method RenewCertificate not implemented")
+}
+func (UnimplementedSensorServiceServer) CertificateStatus(context.Context, *CertificateStatusRequest) (*CertificateIdentity, error) {
+	return nil, status.Error(codes.Unimplemented, "method CertificateStatus not implemented")
 }
 func (UnimplementedSensorServiceServer) mustEmbedUnimplementedSensorServiceServer() {}
 func (UnimplementedSensorServiceServer) testEmbeddedByValue()                       {}
@@ -218,6 +250,42 @@ func _SensorService_UploadPacketArchive_Handler(srv interface{}, stream grpc.Ser
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SensorService_UploadPacketArchiveServer = grpc.ClientStreamingServer[PacketArchiveChunk, PacketArchiveAck]
 
+func _SensorService_RenewCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CertificateRenewalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SensorServiceServer).RenewCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SensorService_RenewCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SensorServiceServer).RenewCertificate(ctx, req.(*CertificateRenewalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SensorService_CertificateStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CertificateStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SensorServiceServer).CertificateStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SensorService_CertificateStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SensorServiceServer).CertificateStatus(ctx, req.(*CertificateStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SensorService_ServiceDesc is the grpc.ServiceDesc for SensorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +296,14 @@ var SensorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRoute",
 			Handler:    _SensorService_GetRoute_Handler,
+		},
+		{
+			MethodName: "RenewCertificate",
+			Handler:    _SensorService_RenewCertificate_Handler,
+		},
+		{
+			MethodName: "CertificateStatus",
+			Handler:    _SensorService_CertificateStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

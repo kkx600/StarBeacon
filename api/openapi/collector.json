@@ -1619,6 +1619,95 @@
           }
         ]
       }
+    },
+    "/api/local/v1/identity": {
+      "get": {
+        "summary": "读取本机平台通信身份",
+        "description": "仅本地管理员，只读当前内存中发布的托管证书摘要及续签窗口；静态模式不提供托管证书元数据。拒绝查询参数，不提供私钥、CSR、令牌或证书链。本机证书有效不代表平台当前允许通信。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeLocalIdentity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
     }
   },
   "components": {
@@ -3411,6 +3500,53 @@
           "transport",
           "mode"
         ]
+      },
+      "ProbeLocalIdentity": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "managed",
+              "static"
+            ]
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "fingerprint_sha256": {
+            "type": "string"
+          },
+          "not_before": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "not_after": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "renew_after": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "mode",
+          "sensor_id",
+          "registration_id",
+          "fingerprint_sha256",
+          "not_before",
+          "not_after",
+          "renew_after"
+        ],
+        "additionalProperties": false
       }
     }
   }

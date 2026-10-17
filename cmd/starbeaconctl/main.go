@@ -13,6 +13,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/buildinfo"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/store"
 )
 
@@ -22,7 +23,7 @@ func run() error {
 		return nil
 	}
 	if len(os.Args) < 2 {
-		return fmt.Errorf("用法: starbeaconctl migrate|bootstrap|inspect-admin|recover-admin|dev-pki|provision-agent|runtime-role|command-keys")
+		return fmt.Errorf("用法: starbeaconctl migrate|bootstrap|inspect-admin|recover-admin|dev-pki|enroll-agent|provision-agent|runtime-role|command-keys")
 	}
 	command := os.Args[1]
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
@@ -39,6 +40,10 @@ func run() error {
 	expectedRevision := flags.Int64("expected-revision", 0, "恢复前核对的账号修订")
 	requestID := flags.String("request-id", "", "恢复请求标识，同一请求确认时保持不变")
 	reason := flags.String("reason", "", "管理员恢复原因，不得包含密码")
+	platformURL := flags.String("platform-url", "", "平台 HTTPS 来源")
+	tokenFile := flags.String("token-file", "", "私有注册令牌文件")
+	caFile := flags.String("ca-file", "", "预置信任的探针 CA 根证书")
+	platformCAFile := flags.String("platform-ca-file", "", "预置信任的平台 HTTPS CA 根证书")
 	if e := flags.Parse(os.Args[2:]); e != nil {
 		return e
 	}
@@ -57,6 +62,27 @@ func run() error {
 			return e
 		}
 		return control.GenerateKeys(filepath.Join(*dir, "command.key"), filepath.Join(*dir, "command.pub"))
+	}
+	if command == "enroll-agent" {
+		token, err := probepki.ReadTokenFile(*tokenFile)
+		if err != nil {
+			return err
+		}
+		credential, err := probepki.ParseCredential(token)
+		if err != nil {
+			return err
+		}
+		identity, err := probepki.OpenLocal(*dir, *caFile, credential.Identity)
+		if err != nil {
+			return err
+		}
+		defer identity.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err = identity.Enroll(ctx, *platformURL, *platformCAFile, token); err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(identity.Status())
 	}
 	dsn := os.Getenv("SB_MIGRATION_DATABASE_URL")
 	if dsn == "" {

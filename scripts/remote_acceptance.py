@@ -14,7 +14,8 @@ import tarfile
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SOURCE_PATHS = ("go.mod", "go.sum", "cmd", "internal", "migrations", "api/sensor", "tests", "scripts/check_go_coverage.py", "deploy/Dockerfile.acceptance", "deploy/Dockerfile.acceptance.dockerignore", "deploy/security")
+SOURCE_PATHS = ("go.mod", "go.sum", "cmd", "internal", "migrations", "api/sensor", "tests", "scripts/check_go_coverage.py", "scripts/init_step_ca.py", "deploy/step-ca", "deploy/Dockerfile.acceptance", "deploy/Dockerfile.acceptance.dockerignore", "deploy/security")
+STEP_CA_IMAGE = "cr.smallstep.com/smallstep/step-ca:0.30.2@sha256:a2b17872915c193259b75a5474c398326f41bd199f0842093e52cf4182bc8270"
 
 DEPENDENCY_IMAGES = {
     "postgres": "public.ecr.aws/docker/library/postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722",
@@ -29,12 +30,24 @@ def configure_runner(state, definition):
         definition["services"][name]["image"] = image
         definition["services"][name]["platform"] = "linux/amd64"
     runner = definition["services"]["runner"]
+    if state.get("step_ca_image"):
+        definition["services"]["step-ca"] = step_ca_service(state)
+        runner.setdefault("environment",{}).update(SB_TEST_STEP_CA_URL="https://step-ca:9000",SB_TEST_STEP_CA_ROOT="/run/probe-ca/root_ca.crt",SB_TEST_STEP_CA_JWK="/run/probe-ca/provisioner.jwk")
+        runner.setdefault("depends_on",{})["step-ca"]={"condition":"service_healthy"}
+        mounts=runner.setdefault("volumes",[])
+        for name in ("root_ca.crt","provisioner.jwk"):
+            mount=state["directory"]+"/pki/platform/"+name+":/run/probe-ca/"+name+":ro"
+            if mount not in mounts:mounts.append(mount)
     runner["platform"] = "linux/amd64"
     # 原生隔离器的已退出后代由 PID 1 回收，不让长期观测耗尽容器 PID 配额。
     runner["init"] = True
     runner["security_opt"] = ["no-new-privileges:true", "seccomp=" + state["directory"] + "/bubblewrap-seccomp.json", "apparmor=" + state["project"] + "_runner", "systempaths=unconfined"]
     capture = json.loads(json.dumps(runner))
     capture.pop("build", None)
+    if state.get("step_ca_image"):
+        for key in ("SB_TEST_STEP_CA_URL","SB_TEST_STEP_CA_ROOT","SB_TEST_STEP_CA_JWK"):
+            capture.get("environment",{}).pop(key,None)
+        capture["volumes"]=[v for v in capture.get("volumes",[]) if ":/run/probe-ca/" not in v]
     capture["user"] = "0:0"
     # UID 0 的隔离用户命名空间映射要求 SETFCAP；验证子进程使用 --cap-drop ALL。
     capture["cap_add"] = ["NET_RAW", "SETFCAP"]
@@ -76,7 +89,7 @@ def verify_native_host(state):
 def verify_architecture(state):
     """拒绝通过模拟运行依赖，避免把模拟器错误当成产品错误。"""
     verify_native_host(state)
-    for image in [*DEPENDENCY_IMAGES.values(), image_name(state)]:
+    for image in [*DEPENDENCY_IMAGES.values(), image_name(state), *([state["step_ca_image"]] if state.get("step_ca_image") else [])]:
         observed = ssh(state["host"], ["docker", "image", "inspect", "--format", "{{.Os}}/{{.Architecture}}", image], stdout=subprocess.PIPE, timeout=15).stdout.decode().strip()
         if observed != "linux/amd64":
             raise ValueError("验收依赖的原生架构不一致")
@@ -283,7 +296,26 @@ def run_backend(state):
         compose(state, ["rm", "-f", "-v", "capture-fixture"], timeout=30)
     compose(state, ["run", "--rm", "--no-deps", "--entrypoint", "python3", "runner", "/source/tests/acceptance/combine_backend.py"], timeout=180)
 
-def stage(host, path):
+def step_ca_service(state):
+    base=state["directory"]+"/pki/ca"
+    return {"image":state["step_ca_image"],"platform":"linux/amd64","user":"1000:1000","entrypoint":["/usr/local/bin/step-ca"],"command":["--password-file","/home/step/secrets/password","/home/step/config/ca.json"],"read_only":True,"cap_drop":["ALL"],"cap_add":["NET_BIND_SERVICE"],"security_opt":["no-new-privileges:true"],"pids_limit":128,"mem_limit":"512m","cpus":"1","tmpfs":["/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"],"volumes":[base+"/"+name+":/home/step/"+name+("" if name=="db" else ":ro") for name in ("config","certs","secrets","templates","db")],"healthcheck":{"test":["CMD","step","ca","health","--ca-url","https://localhost:9000","--root","/home/step/certs/root_ca.crt"],"interval":"3s","timeout":"3s","retries":30}}
+
+def prepare_step_ca(state,image=STEP_CA_IMAGE):
+    try:
+        ssh(state["host"],["docker","image","inspect",image],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
+    except subprocess.CalledProcessError:
+        ssh(state["host"],["docker","pull",image],timeout=180)
+    metadata=json.loads(ssh(state["host"],["docker","image","inspect",image],stdout=subprocess.PIPE,timeout=15).stdout)
+    if len(metadata)!=1 or metadata[0].get("Os")!="linux" or metadata[0].get("Architecture")!="amd64":
+        raise ValueError("探针 CA 验收要求已核验的原生 Linux amd64 镜像")
+    version=ssh(state["host"],["docker","run","--rm","--network","none","--cap-drop","ALL","--cap-add","NET_BIND_SERVICE","--security-opt","no-new-privileges:true","--entrypoint","step-ca",metadata[0]["Id"],"--version"],stdout=subprocess.PIPE,timeout=30).stdout.decode()
+    if not re.search(r"\b0\.30\.2\b",version):raise ValueError("探针 CA 版本必须为 0.30.2")
+    state["step_ca_image"]=metadata[0]["Id"]
+    state["step_ca_requested_image"]=image
+    state["step_ca_version"]=version.strip()
+    ssh(state["host"],["python3",state["directory"]+"/scripts/init_step_ca.py","--directory",state["directory"]+"/pki","--image",state["step_ca_image"],"--uid","1000","--gid","1000","--platform-uid","65532","--platform-gid","65532"],stdout=subprocess.DEVNULL,timeout=210)
+
+def stage(host, path, step_ca_image=STEP_CA_IMAGE):
     if path.exists() or not re.fullmatch(r"[A-Za-z0-9_.-]+", host) or host.startswith("-"):
         raise ValueError("状态文件已经存在或 SSH 主机标识无效")
     project = "sbacc_" + secrets.token_hex(8)
@@ -332,6 +364,7 @@ def stage(host, path):
         file.write("\n")
     path.chmod(0o600)
     configure_security(state)
+    prepare_step_ca(state,step_ca_image)
     configure_runner(state, definition)
     ssh(host, ["tee", directory + "/compose.json"], input=(json.dumps(definition, indent=2) + "\n").encode(), stdout=subprocess.DEVNULL, timeout=15)
     path.write_text(json.dumps(state, indent=2) + "\n")
@@ -373,10 +406,11 @@ def main():
     parser.add_argument("--build-location", choices=("remote", "local", "loaded"), default="remote")
     parser.add_argument("--host", default="home_dev")
     parser.add_argument("--download-modules", action="store_true", help="缓存构建时下载锁定模块，并验证 Go 模块摘要")
+    parser.add_argument("--step-ca-image",default=STEP_CA_IMAGE,help="独立 CA 镜像；验收可指定已校验上游发行文件构建的预载镜像，并记录实际镜像身份")
     parser.add_argument("--state", type=pathlib.Path, default=ROOT / ".local/acceptance/remote.json")
     args = parser.parse_args()
     if args.action == "stage":
-        stage(args.host, args.state)
+        stage(args.host, args.state,args.step_ca_image)
         return
     if args.action == "sync":
         sync(args.state)
@@ -397,7 +431,7 @@ def main():
         elif args.build_location == "remote":
             ssh(state["host"], ["docker", "build", "--builder", "default", "--progress", "plain", "--build-arg", "SB_SOURCE_SHA256=" + state["workspace_sha256"], "--build-arg", "SB_SOURCE_COMMIT=" + state["commit"], "-f", source + "/deploy/Dockerfile.acceptance", "-t", image_name(state), source], timeout=1800)
         verify_image(state)
-        compose(state, ["up", "-d", "--wait", "--wait-timeout", "300", "postgres", "redis", "nats", "elasticsearch"])
+        compose(state, ["up", "-d", "--wait", "--wait-timeout", "300", "postgres", "redis", "nats", "elasticsearch", *(["step-ca"] if state.get("step_ca_image") else [])])
         verify_architecture(state)
         run_backend(state)
     elif args.action == "status":

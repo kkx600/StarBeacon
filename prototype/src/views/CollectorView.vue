@@ -16,6 +16,7 @@ import {formatQuantity} from '../../../web/packages/shared/src/utils/format'
 import CollectorForm from '../components/CollectorForm.vue'
 import CollectorResponsesPreview from '../components/CollectorResponsesPreview.vue'
 import ProtocolCapabilitiesDialog from '../../../web/packages/shared/src/components/ProtocolCapabilitiesDialog.vue'
+import ProbeIdentitySummary from '../../../web/packages/shared/src/components/ProbeIdentitySummary.vue'
 import {protocolObservation} from '../data/protocols'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview();const {state:collector,device}=useCollector()
 const page=computed(()=>collectorPages.find(item=>item.id===route.params.id))
@@ -26,6 +27,7 @@ watch(()=>[page.value?.id,route.query.view],()=>{const tabs=pageTabs[page.value?
 function changeTab(value:string|number){const next=String(value);const tabs=pageTabs[page.value?.id??'']??[];if(!tabs.includes(next)||next===localTab.value)return;void router.push({query:{...route.query,view:next===tabs[0]?undefined:next}})}
 const protocolsOpen=ref(false)
 const protocolExample=protocolObservation()
+const identityExample={mode:'managed' as const,sensor_id:'probe_office_01',registration_id:'reg_office_example',fingerprint_sha256:'34a890f1698b34dd865b8afea927fca870f8d7d9f71550affd7f6d3809573d99',not_before:'2026-10-17T06:00:00Z',renew_after:'2026-10-17T22:00:00Z',not_after:'2026-10-18T06:00:00Z'}
 const protocolReport=computed(()=>state.value==='empty'?undefined:state.value==='error'||state.value==='loading'?{schema_version:1,state:state.value==='loading'?'pending':'unavailable',source:'unavailable',capture_active:false,observed_at:protocolExample.observed_at,error_code:state.value==='loading'?'inspection_pending':'native_protocol_inventory_unavailable',protocols:[],limits:[]}:protocolExample)
 const serviceId=ref('suricata')
 const defaultActions:Record<string,CollectorAction>={overview:'service',network:'network',connection:'connection',updates:'rule-sync',maintenance:'maintenance'}
@@ -68,6 +70,7 @@ function clearFilters(){keyword.value='';statusFilter.value='全部状态'}
       <template v-else-if="page.id==='network'">
 
         <template v-if="localTab==='interfaces'">
+          <section class="panel collector-section"><div class="panel-heading"><h2>平台通信身份</h2><a-tag>合成示例</a-tag></div><ProbeIdentitySummary :identity="identityExample" :now="Date.parse('2026-10-17T06:30:00Z')" /></section>
           <section class="panel collector-config-strip"><div><span>管理口</span><b>{{collector.network.interface}} · {{collector.network.ipv4}}</b></div><div><span>IPv4 网关</span><b>{{collector.network.gateway}}</b></div><div><span>DNS</span><b>{{collector.network.dns}}</b></div><div><span>变更确认窗口</span><b>{{collector.network.rollbackSeconds}} 秒</b></div></section>
           <section class="panel filter-panel"><div class="collector-filter"><a-input v-model:value="keyword" aria-label="检索网卡" placeholder="网卡、MAC、IP 或用途" allow-clear/><a-select v-model:value="statusFilter" aria-label="网卡链路状态" :options="['全部状态','链路正常','链路断开','本机回环'].map(value=>({value,label:value}))"/><a-button @click="clearFilters">清除筛选</a-button></div></section>
           <section class="panel table-panel"><div class="table-toolbar"><h2>本机网卡 <span class="muted">{{interfaces.length}} 张</span></h2><a-button @click="openAction('capture')">选择镜像网卡</a-button></div><a-table :columns="nicColumns" :data-source="interfaces" row-key="id" :pagination="false" :scroll="{x:990}" size="middle"><template #bodyCell="{column,record}"><template v-if="column.key==='identity'"><button class="record-link" @click="showDetail(record)">{{record.name}}</button><small class="row-id">{{record.mac}}</small></template><StatusTag v-else-if="column.key==='status'" :value="record.status"/><template v-else-if="column.key==='address'">{{record.ipv4}}<small class="row-id">IPv6：{{record.ipv6}}</small></template><template v-else-if="column.key==='speed'">{{formatQuantity(record.speed)}}<small class="row-id">MTU {{record.mtu}}</small></template><span v-else-if="column.dataIndex==='rx'" class="tabular">{{formatQuantity(record.rx)}}</span><a-button v-else-if="column.key==='action'" type="link" size="small" @click="showDetail(record)">查看</a-button></template><template #emptyText><a-empty :description="hasFilters?'暂无符合条件的网卡':'尚未发现可用网卡'"><a-button v-if="hasFilters" @click="clearFilters">清除筛选</a-button></a-empty></template></a-table></section>

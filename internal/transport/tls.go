@@ -42,15 +42,29 @@ func SensorURI(i SensorIdentity) string {
 }
 func PeerIdentity(ctx context.Context) (SensorIdentity, error) {
 	var id SensorIdentity
+	cert, err := PeerCertificate(ctx)
+	if err != nil {
+		return id, err
+	}
+	return CertificateIdentity(cert)
+}
+
+func PeerCertificate(ctx context.Context) (*x509.Certificate, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return id, fmt.Errorf("未提供 TLS 身份")
+		return nil, fmt.Errorf("未提供 TLS 身份")
 	}
 	v, ok := p.AuthInfo.(credentials.TLSInfo)
 	if !ok || len(v.State.VerifiedChains) == 0 || len(v.State.VerifiedChains[0]) == 0 {
-		return id, fmt.Errorf("未验证 TLS 身份")
+		return nil, fmt.Errorf("未验证 TLS 身份")
 	}
-	cert := v.State.VerifiedChains[0][0]
+	return v.State.VerifiedChains[0][0], nil
+}
+func CertificateIdentity(cert *x509.Certificate) (SensorIdentity, error) {
+	var id SensorIdentity
+	if cert == nil {
+		return id, fmt.Errorf("缺少证书")
+	}
 	if len(cert.URIs) != 1 {
 		return id, fmt.Errorf("证书身份不唯一")
 	}

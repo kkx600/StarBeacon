@@ -13072,6 +13072,727 @@
           }
         }
       }
+    },
+    "/api/v1/sensor-enrollments": {
+      "get": {
+        "summary": "读取探针注册目录",
+        "description": "当前租户管理员专用；响应不含令牌原文、CSR 或私钥。ca_configured 表示签发适配器已配置，不代表 CA 在线或功能验收通过。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "$ref": "#/components/schemas/ProbeEnrollment"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    },
+                    "ca_configured": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "next_cursor",
+                    "ca_configured"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "上一页 next_cursor；每页最多 20 项，拒绝重复和未知参数。"
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建探针注册凭据",
+        "description": "最多 24 KiB 严格 JSON，拒绝重复或未知字段。凭据 ID 和全部输入组成精确幂等绑定；相同 ID 不同输入为 409。租户每日最多 10000 项、单探针最多 4 项未到期凭据。仅允许新托管探针，或名称及注册身份完全一致的已有托管探针；不能覆盖开发探针。默认留存采用操作策略，180 天。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeEnrollment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeEnrollmentInput"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/sensor-enrollments/exchange": {
+      "post": {
+        "summary": "交换探针注册证书",
+        "description": "仅设备凭据认证，拒绝浏览器 Origin 或 Sec-Fetch-Site；最多 16 个并行请求、24 KiB 严格 JSON、15 秒业务预算。首次提交先持久绑定 CSR，再请求独立 CA；只返回经根、用途、公钥和身份核验并持久登记的证书。相同 CSR 在令牌有效期内可重取同一证书；在途或未知签发返回 409，不盲目重签。平台不会接收探针私钥。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeIssuedCertificate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeExchange"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sensor-enrollments/{id}/revoke": {
+      "post": {
+        "summary": "撤销注册令牌",
+        "description": "只撤销该注册凭据及其证书领取权限，不影响已签发证书；重复撤销保持幂等。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": {
+                      "const": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "revoked"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/sensors/{id}/certificates": {
+      "get": {
+        "summary": "读取探针证书目录",
+        "description": "仅当前租户指定探针；包含签发中、签发结果待核实及已签发记录，开发静态证书不在目录中。未签发记录的指纹与序列号为空、时间为零值；不得据此显示有效期。目录无证书链、CSR 或私钥。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "$ref": "#/components/schemas/ProbeCertificate"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "next_cursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "上一页 next_cursor；每页最多 20 项，拒绝重复和未知参数。"
+          }
+        ]
+      }
+    },
+    "/api/v1/sensor-certificates/{id}/revoke": {
+      "post": {
+        "summary": "吊销探针证书",
+        "description": "先以事务提交平台拒绝该指纹，再独立请求 CA 被动吊销；ca_revocation 为 pending/unknown 时不宣称 CA 已确认。已有控制流每五秒核验，数据和原包按后续消息核验。已确认吊销不会倒退；此接口不证明物理网络已阻断。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeCertificate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -23318,6 +24039,267 @@
             "$ref": "#/components/schemas/RuleSyncRun"
           }
         }
+      },
+      "ProbeEnrollment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revoked": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "created",
+              "unused",
+              "expired",
+              "revoked",
+              "signing",
+              "issued",
+              "unknown"
+            ]
+          },
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "csr_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "id",
+          "sensor_id",
+          "registration_id",
+          "created_at",
+          "expires_at",
+          "revoked",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "ProbeCertificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "fingerprint_sha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          },
+          "serial": {
+            "type": "string",
+            "pattern": "^([1-9][0-9]*|)$"
+          },
+          "not_before": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "not_after": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ca_revocation": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pending",
+              "confirmed",
+              "unknown"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "signing",
+              "issued",
+              "unknown"
+            ]
+          },
+          "csr_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "id",
+          "sensor_id",
+          "registration_id",
+          "fingerprint_sha256",
+          "serial",
+          "not_before",
+          "not_after",
+          "ca_revocation",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "ProbeEnrollmentInput": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 600,
+            "writeOnly": true,
+            "description": "客户端以 CSPRNG 生成 32 字节秘密，格式 sbe1.租户.探针.注册身份.凭据标识.base64url；只保存 SHA-256，不回显原文。"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400
+          }
+        },
+        "required": [
+          "token",
+          "name",
+          "ttl_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "ProbeExchange": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 600,
+            "writeOnly": true
+          },
+          "csr_pem": {
+            "type": "string",
+            "maxLength": 16384,
+            "description": "Ed25519 CSR；CN 和唯一 SPIFFE URI 与注册凭据一致；不接受额外用途或身份。"
+          }
+        },
+        "required": [
+          "token",
+          "csr_pem"
+        ],
+        "additionalProperties": false
+      },
+      "ProbeIssuedCertificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "fingerprint_sha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          },
+          "serial": {
+            "type": "string",
+            "pattern": "^([1-9][0-9]*|)$"
+          },
+          "not_before": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "not_after": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ca_revocation": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pending",
+              "confirmed",
+              "unknown"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "signing",
+              "issued",
+              "unknown"
+            ]
+          },
+          "csr_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "chain_pem": {
+            "type": "string",
+            "maxLength": 65536,
+            "description": "仅设备交换接口提供的已签发公开证书链；不含私钥。"
+          }
+        },
+        "required": [
+          "id",
+          "sensor_id",
+          "registration_id",
+          "fingerprint_sha256",
+          "serial",
+          "not_before",
+          "not_after",
+          "ca_revocation",
+          "state",
+          "chain_pem"
+        ],
+        "additionalProperties": false
       }
     }
   }

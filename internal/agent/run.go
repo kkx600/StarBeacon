@@ -13,6 +13,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/config"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"golang.org/x/sync/errgroup"
@@ -73,11 +74,26 @@ func upload(ctx context.Context, client sensorv1.SensorServiceClient, wal *WAL, 
 	}
 }
 func Run(ctx context.Context, c config.Config) error {
+	var identity *probepki.Local
+	if c.IdentityDir != "" {
+		var err error
+		identity, err = probepki.OpenLocal(c.IdentityDir, c.IdentityRoot, transport.SensorIdentity{TenantID: c.TenantID, SensorID: c.SensorID, RegistrationID: c.RegistrationID})
+		if err != nil {
+			return err
+		}
+		defer identity.Close()
+		if identity.Status().Fingerprint == "" {
+			return fmt.Errorf("探针尚未完成 CSR 注册")
+		}
+	}
 	wal, e := OpenWAL(c.StatePath, c.TenantID, c.SensorID, c.RegistrationID, c.WALBytes)
 	if e != nil {
 		return e
 	}
 	defer wal.Close()
+	if identity != nil {
+		wal.certificateStatus = identity.Status
+	}
 	publicKey, e := control.PublicKey(c.CommandPublicKey)
 	if e != nil {
 		return e
@@ -163,22 +179,30 @@ func Run(ctx context.Context, c config.Config) error {
 	if e != nil {
 		return e
 	}
-	data, e := grpc.NewClient(c.IngestAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(4*1024*1024)))
+	if identity != nil {
+		tlsConfig.Certificates = nil
+		tlsConfig.GetClientCertificate = identity.ClientCertificate
+	}
+	rawData, e := grpc.NewClient(c.IngestAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(4*1024*1024)))
 	if e != nil {
 		return e
 	}
+	data := transport.NewRotatingConn(rawData)
 	defer data.Close()
-	controlConnection, e := grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())))
+	rawControl, e := grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())))
 	if e != nil {
 		return e
 	}
+	controlConnection := transport.NewRotatingConn(rawControl)
 	defer controlConnection.Close()
-	var packetConnection *grpc.ClientConn
+	var packetConnection *transport.RotatingConn
 	if packets != nil {
-		packetConnection, e = grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1024*1024)))
+		var rawPacket *grpc.ClientConn
+		rawPacket, e = grpc.NewClient(c.PlatformAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig.Clone())), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1024*1024)))
 		if e != nil {
 			return e
 		}
+		packetConnection = transport.NewRotatingConn(rawPacket)
 		defer packetConnection.Close()
 	}
 	engine.ReplayClient = sensorv1.NewSensorServiceClient(controlConnection)
@@ -217,6 +241,11 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	auth := httpapi.NewAuth(local, nil, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 	group, run := errgroup.WithContext(ctx)
+	if identity != nil {
+		group.Go(func() error {
+			return runCertificateRenewal(run, c, identity, tlsConfig, wal, data, controlConnection, packetConnection)
+		})
+	}
 	group.Go(func() error { protocols.Run(run); return nil })
 	if engine.Response != nil {
 		group.Go(func() error { return engine.Response.Run(run) })
@@ -279,6 +308,9 @@ func Run(ctx context.Context, c config.Config) error {
 		cert, key := "", ""
 		if c.Mode == "production" {
 			cert, key = c.TLSCert, c.TLSKey
+			if c.HTTPTLSCert != "" {
+				cert, key = c.HTTPTLSCert, c.HTTPTLSKey
+			}
 		}
 		return httpapi.ServeWithClientIP(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key, c.HTTPClientIPs)
 	})

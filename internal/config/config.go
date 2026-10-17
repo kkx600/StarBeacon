@@ -46,6 +46,9 @@ type Config struct {
 	CredentialKey, OutboundNetworks, OutboundCA                               string
 	MCPIssuer, MCPIntrospectionURL, MCPClientID, MCPClientSecret              string
 	ResponseConnectorsFile                                                    string
+	ProbeCAURL, ProbeCARoot, ProbeCAProvisioner, ProbeCAJWK                   string
+	ProbeCertificateLifetime                                                  time.Duration
+	IdentityDir, IdentityRoot, HTTPTLSCert, HTTPTLSKey                        string
 }
 
 func Load(role string) (Config, error) {
@@ -97,6 +100,38 @@ func Load(role string) (Config, error) {
 		CredentialKey: env("CREDENTIAL_KEY", ""), OutboundNetworks: env("OUTBOUND_PRIVATE_NETWORKS", ""), OutboundCA: env("OUTBOUND_CA", ""),
 		MCPIssuer: env("MCP_ISSUER", ""), MCPIntrospectionURL: env("MCP_INTROSPECTION_URL", ""), MCPClientID: env("MCP_CLIENT_ID", ""), MCPClientSecret: env("MCP_CLIENT_SECRET", ""),
 		ResponseConnectorsFile: env("RESPONSE_CONNECTORS_FILE", ""),
+		ProbeCAURL:             env("PROBE_CA_URL", ""), ProbeCARoot: env("PROBE_CA_ROOT", ""), ProbeCAProvisioner: env("PROBE_CA_PROVISIONER", ""), ProbeCAJWK: env("PROBE_CA_JWK", ""),
+		IdentityDir: env("IDENTITY_DIR", ""), IdentityRoot: env("IDENTITY_ROOT", ""), HTTPTLSCert: env("HTTP_TLS_CERT", ""), HTTPTLSKey: env("HTTP_TLS_KEY", ""),
+	}
+	certSeconds, certErr := strconv.Atoi(env("PROBE_CERTIFICATE_SECONDS", "86400"))
+	if certErr != nil || certSeconds < 300 || certSeconds > 604800 {
+		return c, fmt.Errorf("探针证书有效期须为 300–604800 秒")
+	}
+	c.ProbeCertificateLifetime = time.Duration(certSeconds) * time.Second
+	if c.ProbeCAURL != "" || c.ProbeCARoot != "" || c.ProbeCAProvisioner != "" || c.ProbeCAJWK != "" {
+		if role != "platform" || c.ProbeCAURL == "" || c.ProbeCARoot == "" || c.ProbeCAProvisioner == "" || c.ProbeCAJWK == "" || !filepath.IsAbs(c.ProbeCARoot) || !filepath.IsAbs(c.ProbeCAJWK) {
+			return c, fmt.Errorf("独立 CA 仅在平台配置，要求完整 HTTPS 来源及绝对信任根和 JWK 路径")
+		}
+		u, err := url.Parse(c.ProbeCAURL)
+		if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+			return c, fmt.Errorf("独立 CA 地址须为 HTTPS 来源")
+		}
+	}
+	if (c.HTTPTLSCert == "") != (c.HTTPTLSKey == "") {
+		return c, fmt.Errorf("HTTP 服务证书和私钥须同时配置")
+	}
+	if c.IdentityDir != "" {
+		if role != "agent" || !filepath.IsAbs(c.IdentityDir) || !filepath.IsAbs(c.IdentityRoot) || c.TLSCert != "" || c.TLSKey != "" {
+			return c, fmt.Errorf("托管探针身份要求绝对目录和独立身份信任根，不能同时指定静态客户端证书")
+		}
+		c.TLSCert = filepath.Join(c.IdentityDir, "identity.pem")
+		c.TLSKey = c.TLSCert
+		if c.Mode == "production" && c.HTTPTLSCert == "" {
+			return c, fmt.Errorf("托管身份的本地 HTTPS 服务要求独立服务证书")
+		}
+	}
+	if c.IdentityRoot != "" && c.IdentityDir == "" {
+		return c, fmt.Errorf("身份信任根要求同时配置托管身份目录")
 	}
 	if c.Mode != "development" && c.Mode != "production" {
 		return c, fmt.Errorf("SB_MODE 必须为 development 或 production")

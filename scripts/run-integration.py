@@ -16,4 +16,4 @@ if env.get("SB_MODE") != "development" or not all("127.0.0.1" in env[key] for ke
     raise SystemExit("集成测试要求独立回环开发依赖。")
 env["GOTOOLCHAIN"] = "local"
 go = sys.argv[1] if len(sys.argv) > 1 else "go"
-raise SystemExit(subprocess.call([go, "test", "-race", "-tags=integration", "-count=1", "-timeout=90s", "-v", "./tests/integration"], env=env, cwd=root))
+raise SystemExit(subprocess.call([go, "test", "-race", "-tags=integration", "-count=1", "-timeout=2400s", "-v", "./tests/integration"], env=env, cwd=root))

@@ -2,8 +2,8 @@
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "renderer": "Codex in-app browser",
-  "baseStateCount": 761,
-  "supplementalCount": 54,
+  "baseStateCount": 767,
+  "supplementalCount": 60,
   "entries": [
     {
       "file": "overview/data.jpg",
@@ -14154,6 +14154,192 @@
       "sha256": "0ce020e020923c3231bf1223bd3376923bd9b0d9c0c76d91d0f3b32814e98363"
     },
     {
+      "file": "probe-identity/data.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=data",
+      "title": "注册与证书 · data",
+      "state": "data",
+      "capturedAt": "2026-10-17T06:12:53.567Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "3ba99e3ddb1a3566549f1f0bc8cfadd3395e03cd92389519da9339e094661bc4",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 105978,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "cb50eae039dfc23bd00104d9710ca942738964ec4267c007b1e543d2b84fbd8d"
+    },
+    {
+      "file": "probe-identity/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=empty",
+      "title": "注册与证书 · empty",
+      "state": "empty",
+      "capturedAt": "2026-10-17T06:12:53.974Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "3fbf1deb43097b09f101662634447718916efb73dc7f0eb7e1ed1669857cb28e",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 102564,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "81f97cec97b5018cc8d66ad4c2772d91643b62f907dffbe77d39e79dae0a1b58"
+    },
+    {
+      "file": "probe-identity/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=detail",
+      "title": "注册与证书 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T06:12:54.387Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "d2284b8901c6bb3509e2ac39cbb5481ce7f917e92d4488f598c4404abc420f21",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 103082,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "0620cb42684711355ff6087ab162441bcbcc80a24a361028d36d3af8e6b6c683"
+    },
+    {
+      "file": "probe-identity/action.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=action",
+      "title": "注册与证书 · action",
+      "state": "action",
+      "capturedAt": "2026-10-17T06:13:39.915Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "b3fbbc8d5485811c494c753c56183039b667b1000eef43e64c1e03f09ed1e956",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 108616,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "496d13e3a173eae65fc2d12347c598a332feaedd3214b39fb6cdc388cd27ecf2"
+    },
+    {
+      "file": "probe-identity/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=loading",
+      "title": "注册与证书 · loading",
+      "state": "loading",
+      "capturedAt": "2026-10-17T06:12:54.794Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "1db5d5040d6ee93ed65971d425592b3a281c18974e80811878f7468406170181",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 103812,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "ffeacf3f4501071749857ece9fe1b1e1ac04fdb35b35197968feae95c713e33a"
+    },
+    {
+      "file": "probe-identity/error.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?state=error",
+      "title": "注册与证书 · error",
+      "state": "error",
+      "capturedAt": "2026-10-17T06:12:55.202Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "bbe99638dfa415becd937339502fb11be8d42145abd001704bb113931f6f458e",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 104569,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "1ea0183cfe5147094850278829efbfa708c3cb307bc6bec434ff1dea80ebb090"
+    },
+    {
       "file": "rule-sync/data.jpg",
       "url": "http://127.0.0.1:4173/page/rule-sync?state=data",
       "title": "规则自动同步 · data",
@@ -16045,16 +16231,16 @@
     },
     {
       "file": "collector/network/data.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=data&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=data",
+      "title": "网络与采集 · data",
       "state": "data",
-      "capturedAt": "2026-10-14T09:26:34.382Z",
+      "capturedAt": "2026-10-17T06:21:09.562Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16065,25 +16251,27 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 94813,
+      "capturePngSha256": "fe39a866b5bd59c11c9d83965dea7de4aecb5770afd89f6c33911fc38310485d",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 191002,
       "image": {
         "width": 1280,
-        "height": 848
+        "height": 1218
       },
-      "sha256": "eef53313e8a5975bd0146f49b138196866681a7db194eefd2a6c76cd92cb9cbd"
+      "sha256": "0e98008ad9621219023db940b2e9f4a961388f6cd1a4ca4776f7c49cf27ad7dd"
     },
     {
       "file": "collector/network/empty.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=empty&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=empty",
+      "title": "网络与采集 · empty",
       "state": "empty",
-      "capturedAt": "2026-10-14T09:26:34.711Z",
+      "capturedAt": "2026-10-17T06:21:09.954Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16094,25 +16282,27 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 52338,
+      "capturePngSha256": "1934090820e3fd9b3c35283cf540f7ec0ed46d1ff7b510c7543e536f43a49490",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 79804,
       "image": {
         "width": 1280,
-        "height": 720
+        "height": 900
       },
-      "sha256": "dfd9104ebf5277c3ab0d5fa34b5cfd1dcbe917951d4ed88d5971905beb736227"
+      "sha256": "a83b5fe70ef8f24d3c73bd10917ded7d9351d6e6a73d41b38dda197c1ba1987c"
     },
     {
       "file": "collector/network/detail.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=detail&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=detail",
+      "title": "网络与采集 · detail",
       "state": "detail",
-      "capturedAt": "2026-10-14T09:26:36.132Z",
+      "capturedAt": "2026-10-17T06:21:11.586Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16123,25 +16313,27 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 83361,
+      "capturePngSha256": "0485422356d9f15f5c990ea7fa8b4ad3c2cef3b682b5423361b9ebf417a447c6",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 168177,
       "image": {
         "width": 1280,
-        "height": 848
+        "height": 1218
       },
-      "sha256": "db68992ee81468b1c0a375404f73a391bc11c19610e7277e0a3dddf11b69fe6e"
+      "sha256": "3367f3cb9d8b0f65ffe1f51aa3b9374cacfa6abc0f89b6fa587d62ac7234e58d"
     },
     {
       "file": "collector/network/action.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=action&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=action",
+      "title": "网络与采集 · action",
       "state": "action",
-      "capturedAt": "2026-10-14T09:26:37.651Z",
+      "capturedAt": "2026-10-17T06:21:13.211Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16152,25 +16344,27 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 94999,
+      "capturePngSha256": "cdad1647349b8473ba4b0b6402b4a699a44d7802cf551582826210842c810569",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 183307,
       "image": {
         "width": 1280,
-        "height": 848
+        "height": 1218
       },
-      "sha256": "53584f123bc8dd0d3956c54641b69ce009d4aa63e70ff45d2a2be75708c8a0c6"
+      "sha256": "5df8687b07247ac3b776b81985c9421956a9c7a483f61b61b3e27dda06636b84"
     },
     {
       "file": "collector/network/loading.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=loading&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=loading",
+      "title": "网络与采集 · loading",
       "state": "loading",
-      "capturedAt": "2026-10-14T09:26:39.369Z",
+      "capturedAt": "2026-10-17T06:21:13.615Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16181,25 +16375,27 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 54167,
+      "capturePngSha256": "7d622501ba22472823805158a347e86c402c7edf1109d03f77ffd21e6f4f97e4",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 81342,
       "image": {
         "width": 1280,
-        "height": 756
+        "height": 900
       },
-      "sha256": "e056bf4ccbce21cba82d1a4a0eaded003cde0d7ec82238ed6b0c4b9197845e80"
+      "sha256": "b9d76c7604a177ae10c36f49146232bdf2bf37e32c453b7a066b3c7f4de80138"
     },
     {
       "file": "collector/network/error.jpg",
-      "url": "http://127.0.0.1:4173/collector/network?state=error&capture=1",
-      "title": "网络与采集",
+      "url": "http://127.0.0.1:4173/collector/network?state=error",
+      "title": "网络与采集 · error",
       "state": "error",
-      "capturedAt": "2026-10-14T09:26:37.957Z",
+      "capturedAt": "2026-10-17T06:21:13.980Z",
       "renderer": "Codex in-app browser",
       "source": "合成数据组件页面截图",
       "stateVerified": true,
       "viewport": {
         "width": 1280,
-        "height": 720,
+        "height": 900,
         "scrollWidth": 1280
       },
       "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
@@ -16210,12 +16406,14 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
-      "bytes": 55234,
+      "capturePngSha256": "ffa1e027b1a835532740f61ed9d0441e06fb8ea35521bdee26cecf353a2c03be",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 83674,
       "image": {
         "width": 1280,
-        "height": 720
+        "height": 900
       },
-      "sha256": "0a75444fcbf6660c06cf0ebe3a9153667b3710e1aa6fadc18e3b4a6d3672c111"
+      "sha256": "51317d60f98104060f2787909c3240bc201ee82221396adc18a463d6cb4a5a9a"
     },
     {
       "file": "collector/connection/data.jpg",
@@ -18084,6 +18282,192 @@
         "height": 848
       },
       "sha256": "ec6b344d00fc732e2f57133155e8af31745b02afed8d37f91b45237956489b00"
+    },
+    {
+      "file": "supplemental/probe-certificates-data.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=data",
+      "title": "证书目录 · data",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:04.612Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "061e1de7c32b9eb907afb9a0e0d1076cd47d397f8114572668f74127d32302fc",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 111411,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "eef8772adb96fde39e3bd7dc7ce1604d05e4208df1cac1d7b2fcdbdf1b056e1f"
+    },
+    {
+      "file": "supplemental/probe-certificates-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=empty",
+      "title": "证书目录 · empty",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:05.000Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "b1cd4aaa5b74c24b484867ddf72544530a30d8d2a127b261443fa212e6793efb",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 101292,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "3e4317ce93138a1221438f845816a0877943ac8facf679d1a5c75efeaf3cead6"
+    },
+    {
+      "file": "supplemental/probe-certificates-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=detail",
+      "title": "证书目录 · detail",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:05.410Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "52928759fb383f758b4e921b1996505cef075c640b53bce5a3b8002e384c02ee",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 115155,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "08268cc1ecd9dd03054718a55ca0e3e851f20f7acd58c5d279596aacac72cc04"
+    },
+    {
+      "file": "supplemental/probe-certificates-action.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=action",
+      "title": "证书目录 · action",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:05.904Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "9d864c55cc859ccdbb10c1173fb8bc0c8088bce43e3942640cd40110fcc94bc1",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 106181,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "f57a952c3c6942503c928183f8bec551e974f1fafb68cb207b5af0395fcce30f"
+    },
+    {
+      "file": "supplemental/probe-certificates-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=loading",
+      "title": "证书目录 · loading",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:06.390Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "03cfb0f59dc3399a678d307af3e469372b89bcc57e7961780ce2c7246d269133",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 103450,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "fcb73fc669a2ebeb7d7ee25f39dd027ff87cbc57d7d0a637d1865d7db6a7485f"
+    },
+    {
+      "file": "supplemental/probe-certificates-error.jpg",
+      "url": "http://127.0.0.1:4173/page/probe-identity?view=certificates&state=error",
+      "title": "证书目录 · error",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T06:13:06.819Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "capturePngSha256": "a4b3603075a6d9cbdd4fbb73799e6e22447fcae5208714418a8aac85d2e13787",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 103268,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "22c6666795f182a2fbcab91237527b948919030f3173f88d9060677c3fbf9dc2"
     }
   ]
 }

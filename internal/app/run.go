@@ -31,6 +31,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/outbound"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/platform"
+	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -41,6 +42,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 func Main(role string) {
@@ -72,7 +74,7 @@ func serveGRPC(ctx context.Context, c config.Config, service *ingest.Server) err
 	if e != nil {
 		return e
 	}
-	s := grpc.NewServer(grpc.Creds(credentials.NewTLS(t)), grpc.MaxRecvMsgSize(4*1024*1024), grpc.MaxConcurrentStreams(16))
+	s := grpc.NewServer(grpc.Creds(credentials.NewTLS(t)), grpc.MaxRecvMsgSize(4*1024*1024), grpc.MaxConcurrentStreams(16), grpc.KeepaliveParams(keepalive.ServerParameters{MaxConnectionAge: 5 * time.Minute, MaxConnectionAgeGrace: 30 * time.Second}))
 	sensorv1.RegisterSensorServiceServer(s, service)
 	done := make(chan struct{})
 	go func() {
@@ -214,6 +216,12 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		auth := httpapi.NewAuth(db, redisClient, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 		wakeup := &control.Wakeup{}
 		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes, Vault: vault, Outbound: policy, Packets: packets, PacketStaging: packetStaging}
+		if c.ProbeCAURL != "" {
+			api.Authority, e = probepki.NewStep(probepki.StepConfig{URL: c.ProbeCAURL, RootFile: c.ProbeCARoot, Provisioner: c.ProbeCAProvisioner, JWKFile: c.ProbeCAJWK, Lifetime: c.ProbeCertificateLifetime})
+			if e != nil {
+				return e
+			}
+		}
 
 		if packets != nil {
 			group.Go(func() error {
@@ -362,7 +370,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			handler = m
 		}
 		group.Go(func() error {
-			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketQuota: c.PacketStorageBytes})
+			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketQuota: c.PacketStorageBytes, Authority: api.Authority})
 		})
 	case "ingest":
 		httpapi.Health(m, func(ctx context.Context) error {
@@ -395,6 +403,9 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		cert, key := "", ""
 		if c.Mode == "production" {
 			cert, key = c.TLSCert, c.TLSKey
+			if c.HTTPTLSCert != "" {
+				cert, key = c.HTTPTLSCert, c.HTTPTLSKey
+			}
 		}
 		return httpapi.ServeWithClientIP(run, c.HTTPAddr, handler, cert, key, c.HTTPClientIPs)
 	})

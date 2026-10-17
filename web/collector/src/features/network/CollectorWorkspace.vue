@@ -5,6 +5,7 @@ import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCa
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import HealthSummary from './HealthSummary.vue'
 import InterfaceTable from './InterfaceTable.vue'
+import CollectorIdentity from './CollectorIdentity.vue'
 import ResponseConnectors from '@starbeacon/shared/components/ResponseConnectors.vue'
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue'
 import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceState.vue'
@@ -26,7 +27,7 @@ async function submit(settings:CaptureSettings){try{if(await save(settings)){con
   <header class="page-header"><div><h1>网络与采集</h1><p class="page-description">读取本机接口、运行状态与采集目标，核对采集器的实际环境。</p></div><div class="filter-actions"><a-button @click="protocolsOpen=true">协议能力</a-button><a-button v-if="['interfaces','capture','responses'].includes(view)" :loading="pending" @click="refresh">刷新</a-button></div></header>
   <WorkspaceTabs :active="view" :items="views" label="网络与采集功能" @change="change" />
   <StatePanel v-if="['interfaces','capture','responses'].includes(view)" :loading="pending" :error="error" @retry="refresh">
-    <template v-if="view==='interfaces'"><HealthSummary v-if="health" :health="health" /><section class="panel"><div class="panel-header"><h2>网卡列表</h2><span>{{ interfaces.length }} 个接口</span></div><InterfaceTable :items="interfaces" /></section></template>
+    <template v-if="view==='interfaces'"><HealthSummary v-if="health" :health="health" /><CollectorIdentity v-if="session.current.value?.role==='admin'" /><section class="panel"><div class="panel-header"><h2>网卡列表</h2><span>{{ interfaces.length }} 个接口</span></div><InterfaceTable :items="interfaces" /></section></template>
     <ResponseConnectors v-else-if="view==='responses'" :items="health?.response_connectors??[]"/>
     <section v-else class="panel"><div class="panel-header"><h2>采集配置</h2></div><div class="panel-body"><CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" /></div></section>
   </StatePanel>
