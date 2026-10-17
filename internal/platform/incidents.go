@@ -22,11 +22,21 @@ func (a *API) registerIncidents(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/incidents/{id}", a.Auth.Require(true, a.incident))
 	m.HandleFunc("POST /api/v1/incidents/{id}", a.Auth.Require(true, a.changeIncident))
 	m.HandleFunc("GET /api/v1/incidents/{id}/history", a.Auth.Require(true, a.incidentHistory))
+	a.registerIncidentTasks(m)
 }
 
 func incidentFailure(w http.ResponseWriter, r *http.Request, err error) {
 	var linked *store.IncidentLinked
 	switch {
+	case errors.Is(err, incident.ErrTaskInput):
+		httpapi.Fail(w, r, 400, "invalid_incident_task", "请核对任务标题、说明、状态、负责人、截止时间和修订")
+	case errors.Is(err, store.ErrIncidentTasksPending):
+		httpapi.Fail(w, r, 409, "incident_tasks_pending", "事件仍有未完成的调查任务，请先完成或取消任务后结案")
+	case errors.Is(err, store.ErrIncidentTaskClosed):
+		httpapi.Fail(w, r, 409, "incident_task_readonly", "事件已结案，调查任务仅供查阅；需要继续调查时请先重开事件")
+	case errors.Is(err, store.ErrIncidentTaskQuota):
+		w.Header().Set("Retry-After", "60")
+		httpapi.Fail(w, r, 429, "incident_task_quota", "调查任务或今日变更额度已用尽，请核对任务与留存范围")
 	case errors.Is(err, incident.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_incident", "事件参数无效，请核对标题、分类、状态、责任人、关联告警和结案材料")
 	case errors.Is(err, pgx.ErrNoRows):

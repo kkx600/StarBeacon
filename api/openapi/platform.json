@@ -13793,6 +13793,706 @@
           }
         ]
       }
+    },
+    "/api/v1/incidents/{id}/tasks": {
+      "get": {
+        "summary": "读取事件协作任务",
+        "operationId": "incidentTasks",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "open",
+                "in_progress",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "参数无效或 JSON 字段歧义",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员身份及同源 CSRF 校验",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象、来源或续点不存在、到期或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订、告警身份、幂等输入或责任人冲突；alert_already_linked 返回当前租户既有调查标识",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "原请求或关闭事件已到保留期限，不能重建原操作",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "每租户最多 10,000 个事件、UTC 日最多 4,096 次变更，每事件最多 1,000 次修订，责任人最多 100 人；精确重试不计入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "服务不可用，提交结果需使用原键核对",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "经权限与来源核对的调查任务记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTaskPage"
+                }
+              }
+            }
+          }
+        },
+        "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。"
+      },
+      "post": {
+        "summary": "建立事件协作任务",
+        "operationId": "createIncidentTask",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "参数无效或 JSON 字段歧义",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员身份及同源 CSRF 校验",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象、来源或续点不存在、到期或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订、告警身份、幂等输入或责任人冲突；alert_already_linked 返回当前租户既有调查标识",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "原请求或关闭事件已到保留期限，不能重建原操作",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "每租户最多 10,000 个事件、UTC 日最多 4,096 次变更，每事件最多 1,000 次修订，责任人最多 100 人；精确重试不计入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "服务不可用，提交结果需使用原键核对",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "经权限与来源核对的调查任务记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTaskRecord"
+                }
+              }
+            }
+          }
+        },
+        "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentTaskCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{id}/tasks/{task}": {
+      "get": {
+        "summary": "读取调查任务详情",
+        "operationId": "incidentTask",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "参数无效或 JSON 字段歧义",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员身份及同源 CSRF 校验",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象、来源或续点不存在、到期或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订、告警身份、幂等输入或责任人冲突；alert_already_linked 返回当前租户既有调查标识",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "原请求或关闭事件已到保留期限，不能重建原操作",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "每租户最多 10,000 个事件、UTC 日最多 4,096 次变更，每事件最多 1,000 次修订，责任人最多 100 人；精确重试不计入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "服务不可用，提交结果需使用原键核对",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "经权限与来源核对的调查任务记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTaskRecord"
+                }
+              }
+            }
+          }
+        },
+        "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。"
+      },
+      "post": {
+        "summary": "记录调查任务进展",
+        "operationId": "changeIncidentTask",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "参数无效或 JSON 字段歧义",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员身份及同源 CSRF 校验",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象、来源或续点不存在、到期或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订、告警身份、幂等输入或责任人冲突；alert_already_linked 返回当前租户既有调查标识",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "原请求或关闭事件已到保留期限，不能重建原操作",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "每租户最多 10,000 个事件、UTC 日最多 4,096 次变更，每事件最多 1,000 次修订，责任人最多 100 人；精确重试不计入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "服务不可用，提交结果需使用原键核对",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "经权限与来源核对的调查任务记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTaskRecord"
+                }
+              }
+            }
+          }
+        },
+        "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentTaskChange"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{id}/tasks/{task}/history": {
+      "get": {
+        "summary": "读取调查任务历史",
+        "operationId": "incidentTaskHistory",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:|[1-9][0-9]{0,2}|1000)$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "参数无效或 JSON 字段歧义",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员身份及同源 CSRF 校验",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象、来源或续点不存在、到期或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订、告警身份、幂等输入或责任人冲突；alert_already_linked 返回当前租户既有调查标识",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "原请求或关闭事件已到保留期限，不能重建原操作",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "每租户最多 10,000 个事件、UTC 日最多 4,096 次变更，每事件最多 1,000 次修订，责任人最多 100 人；精确重试不计入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "服务不可用，提交结果需使用原键核对",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "经权限与来源核对的调查任务记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTaskPage"
+                }
+              }
+            }
+          }
+        },
+        "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。"
+      }
     }
   },
   "components": {
@@ -24552,6 +25252,234 @@
           }
         },
         "description": "当前托管进程中已持久化的原生 EVE 统计，保留实际采样与读取时间。原生采样五秒；首次、复位、超过二十秒的采样或接收间隔不提供可比较增量；超过二十秒的旧观测和非运行引擎显示未知。无单流覆盖、全 pass/threshold、驱动质量、投递链路或持久质量告警资格。"
+      },
+      "IncidentTaskSpec": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "description",
+          "status",
+          "priority",
+          "assignee_id",
+          "due_at",
+          "resolution"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in_progress",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                "maxLength": 64
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "截止时间可留空；保存实际时区对应的时间，不自动改变任务状态。"
+          },
+          "resolution": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "完成或取消任务时必填；重开任务时清空。"
+          }
+        }
+      },
+      "IncidentTaskRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "incident_id",
+          "incident_revision",
+          "revision",
+          "spec",
+          "assignee_name",
+          "note",
+          "actor_id",
+          "actor_name",
+          "created_at",
+          "recorded_at",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "incident_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "incident_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "spec": {
+            "$ref": "#/components/schemas/IncidentTaskSpec"
+          },
+          "assignee_name": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "actor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "actor_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IncidentTaskPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/IncidentTaskRecord"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "IncidentTaskCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "incident_revision",
+          "spec"
+        ],
+        "properties": {
+          "incident_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "spec": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IncidentTaskSpec"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "const": "open"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "基于当前事件修订建立协作任务，初始状态仅允许 open；已结案事件拒绝建立任务。相同请求键精确确认原回执，不续期或重复建立。"
+      },
+      "IncidentTaskChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "incident_revision",
+          "expected_revision",
+          "spec",
+          "note"
+        ],
+        "properties": {
+          "incident_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "spec": {
+            "$ref": "#/components/schemas/IncidentTaskSpec"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        }
       }
     }
   }

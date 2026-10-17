@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T18:02:45.316560+00:00",
+  "scope": "engineering_qualification_not_full_product_acceptance",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "build_parent_commit": "353c6fc38c63f469e529f0bdbf90c1fe8a6dcd43",
+    "clean_commit": false,
+    "backend_sha256": "f09d275359bcc49f459b9cbdc37dccd6f6923e572235e7b10d1b98ff3109490f",
+    "frontend_sha256": "6082b0a17427a2305df2aa1012ce3ab390de1c32c99a2ffa1ca7574a1537a2bb",
+    "runtime_backend_image": "sha256:d9fb55fa7fc5732739e038185446f36cfd7a25a92731a3b33cec2f5da7f8d342",
+    "runtime_frontend_dist_sha256": "dc8936a137a8aee3018b4513b9912d0807a80754b3e0206208e361db63c25491"
+  },
+  "capabilities": {
+    "incident_tasks": "事件内人工协作、负责人、截止时间、进展、完成和取消依据；独立修订、父子 CAS、原键确认、结案互斥、租户权限和分类留存。截止时间不触发 SLA 或设备动作。",
+    "maintenance_cleanup": "管理员默认预览和显式执行，按版本固化期限分批回收；保护当前、回退、未决、无来源目录；独立回收凭据和中断继续。",
+    "history_cleanup": "PG 批次候选显式物化并使用 ctid 数组定位，避免候选反复计算；保留 2 秒语句、500 毫秒锁和各层删除预算。",
+    "persistent_engineering_lab": "验收项目使用私有持久目录；已登记实例缺失身份、角色文件或 WAL 时拒绝启动，不以初始化替代丢失数据；实例和采集状态显式隔离。"
+  },
+  "backend": {
+    "environment": "remote_docker_linux_amd64",
+    "actual_exit_code": 0,
+    "tests": {
+      "unit": {
+        "pass": 484
+      },
+      "integration": {
+        "pass": 116
+      },
+      "native_capture": {
+        "pass": 1
+      }
+    },
+    "coverage": {
+      "covered": 19197,
+      "total": 21314,
+      "percentage": 90.06756122736229,
+      "minimum": 90
+    },
+    "test_failures_or_skips": 0,
+    "coverage_scope_or_minimum_relaxed": false,
+    "native_capture": {
+      "http_to_notification_acceptance_seconds": 0.46,
+      "request_to_archive_verified_seconds": 1.13,
+      "packets": 13,
+      "raw_bytes": 2184,
+      "compressed_bytes": 1069,
+      "observed_complete_tcp_handshakes": 1,
+      "indexed_http_events_across_rotation": 1665,
+      "missing_or_duplicate_events": 0,
+      "boundary": "有界真实 Docker 网卡样本，不授予生产吞吐、长期丢包率、TLS 解密、外部送达或设备封禁效果资格。"
+    },
+    "event_observer": {
+      "raw_driver_status": "failed",
+      "raw_driver_preserved": true,
+      "events": 5582,
+      "oom_events_observed": 0,
+      "actual_observer_exit_code": 143,
+      "stop_requested": true,
+      "controlled_sigterm_exit_code": 143,
+      "reconciliation": "原驱动仅接受 -15／0；Docker CLI 在明确停止后实际返回 143，独立受控复测一致。业务、抓包、合并和回传进程均为 0。原始失败和独立核对同时保留。",
+      "fixture_teardown_exit_code": 137,
+      "fixture_teardown_reason": "抓包用例通过后，Compose 停止专属流量夹具发送 SIGTERM，超时后 SIGKILL；未将夹具清理退出码作为用例退出码。"
+    }
+  },
+  "frontend": {
+    "tests": 589,
+    "tool_tests": 9,
+    "coverage": {
+      "statements": 95.52025550512691,
+      "branches": 93.02373723433618,
+      "functions": 92.14228829307142,
+      "lines": 98.96745230078564
+    },
+    "minimum_each": 90,
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "default_palette_and_white_grey_background_preserved": true
+  },
+  "collector_maintenance": {
+    "environment": "remote_native_linux_docker",
+    "steps": 33,
+    "actual_exit_code": 0,
+    "source_sha256": "f09d275359bcc49f459b9cbdc37dccd6f6923e572235e7b10d1b98ff3109490f",
+    "cleanup": {
+      "protected_current_and_previous": true,
+      "interrupted_cleanup_rejected": true,
+      "expired_releases_removed": 2,
+      "expired_receipts_removed": 4,
+      "logical_bytes_removed": 88545757,
+      "running_container_unchanged": true,
+      "repeat_noop": true
+    },
+    "wal_pending_before": 1,
+    "wal_pending_after": 1,
+    "wal_content_epoch_and_inode_preserved": true,
+    "expiry_fixture": "仅将专属版本及凭据固化时间回溯 181 天；未改宿主时钟，不是实际等待 180 天。",
+    "boundary": "当前工程程序与 Docker 后端的签名切换、恢复、回退和回收；不是当前 UPX ZIP 或真实宿主 systemd 验收。"
+  },
+  "ui": {
+    "real_task_flow_observations": 15,
+    "flow_scope": "创建、分派、启动、完成、未完成阻止结案、结案只读、重开、取消、历史及提交后父事件刷新。",
+    "final_deployment_readback": {
+      "task_revision": 6,
+      "incident_revision": 3,
+      "history_revisions": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "console_errors": 0
+    },
+    "pc_route_geometry": {
+      "platform_routes": 33,
+      "collector_views": 6,
+      "sizes": [
+        "1024x768",
+        "1280x720",
+        "1366x768",
+        "1440x900",
+        "1600x900",
+        "1920x1080",
+        "2560x1440"
+      ],
+      "observations": 273,
+      "page_horizontal_overflow": 0,
+      "multiple_business_tables_in_view": 0,
+      "frontend_source": "6082b0a17427a2305df2aa1012ce3ab390de1c32c99a2ffa1ca7574a1537a2bb",
+      "observed_backend_source": "81bf3425c7557adbfe29e09d963fbd1549ff06d2ea6fd3e45fd89cc916c81290",
+      "boundary": "布局绑定原实际来源，最终 f09 后端另做更新、重启和回读；几何检查不是全功能交互验收。"
+    },
+    "task_responsive_observations": {
+      "engineering": 21,
+      "prototype": 21,
+      "scope": "列表、详情、表单乘七档 PC 尺寸",
+      "backend_source": "f09d275359bcc49f459b9cbdc37dccd6f6923e572235e7b10d1b98ff3109490f",
+      "frontend_source": "6082b0a17427a2305df2aa1012ce3ab390de1c32c99a2ffa1ca7574a1537a2bb",
+      "current_source_rechecked": true
+    },
+    "gallery": {
+      "base": 767,
+      "supplemental": 76,
+      "total": 843,
+      "strict_check": "passed",
+      "encoding": "原始 JPEG，无像素改写",
+      "synthetic": true
+    }
+  },
+  "deployment": {
+    "scope": "independent_persistent_development_ui_review",
+    "backend_source": "f09d275359bcc49f459b9cbdc37dccd6f6923e572235e7b10d1b98ff3109490f",
+    "frontend_dist_sha256": "dc8936a137a8aee3018b4513b9912d0807a80754b3e0206208e361db63c25491",
+    "update_actual_exit_code": 0,
+    "restart_actual_exit_codes": [
+      0,
+      0
+    ],
+    "identity_digest_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "gateway_checks_after_cleanup": 12,
+    "legacy_lab": "原临时目录及身份文件已不存在，旧 PG 卷保留且未接管；当前是独立初始化的持久工程环境，不宣称恢复旧实例。",
+    "production_qualification": false
+  },
+  "checks": {
+    "quality_tests": 68,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 7,
+    "alignment_requirements": 107,
+    "platform_http_operations": 125,
+    "collector_http_operations": 18,
+    "go_vet": "passed",
+    "diff_check": "passed",
+    "gallery": "passed",
+    "theme": "passed"
+  },
+  "cleanup": {
+    "status": "passed",
+    "directories_removed": 5,
+    "allocated_directory_bytes_removed": 4905873408,
+    "global_prune": false,
+    "preserved": "在用工程实例、五个依赖、配置、身份、WAL、旧 PG 卷、源码与原始失败及成功报告；未清理其他项目。",
+    "local_duplicate_tool_extraction_bytes": 42663936,
+    "boundary": "数值为删除前目录分配量，不把程序回收的逻辑字节作为宿主即时可用空间。"
+  },
+  "failure_history": [
+    "原生测试遇到捕获维护忙的明确未保存 409；只对 capture_operation_in_progress 有界重试，不重试超时或其他冲突。",
+    "前一回归在任务留存测试触发 PG 2 秒超时；执行计划确认候选反复计算，保留失败与修复后的完整回归。",
+    "事件监督驱动误判明确停止的 143，原始失败与独立核对同时留证。",
+    "本机一次质量检查调用默认 Go 1.25.6；改用固定 Go 1.26.8 后 68 项通过，未改变用例期望。"
+  ],
+  "raw_evidence_archive": {
+    "local_path": ".local/acceptance/tasks349-evidence.tar.gz",
+    "bytes": 9536092,
+    "sha256": "50aedc34c7ae3eddcdcbf1f4d50f3fe708fdbf4a85f23322d9454dc48c853c0f",
+    "private": true
+  },
+  "post_archive_evidence": [
+    {
+      "local_path": ".local/acceptance/durable352-cleanup.json",
+      "sha256": "5d2104e369d2cdcc2f7e93c25f6a60b8dd9b5d461b2189ca7e8a9a91d70526ce"
+    },
+    {
+      "local_path": ".local/acceptance/durable353-gateway-after-cleanup.json",
+      "sha256": "29a2fc48d6597fcb05935eea859bb20ce87558e908dc09e3ecf1a996de182345"
+    },
+    {
+      "local_path": ".local/acceptance/tasks354-local-cleanup.json",
+      "sha256": "f4a0f1f0b0e98b1d4351de8e6845ebd94da659ae4defd261f0fe2fe3c84aa8e8"
+    },
+    {
+      "local_path": ".local/acceptance/tasks358-evidence.tar.gz",
+      "bytes": 2241146,
+      "sha256": "50ae9cee1a0a91b25d939c4d0981a105db9976864031f13bb82b1e6305408108",
+      "private": true
+    }
+  ],
+  "product_requirement_status": {
+    "total": 107,
+    "partial": 61,
+    "missing": 46,
+    "fully_accepted": 0
+  },
+  "remaining": [
+    "107 项复合需求尚未全项验收；事件附件、SLA、共享、外部工单、关联检测、情报、风险、文件与沙箱仍有缺口。",
+    "1–200+ 探针容量、应用流计量、海量会话／长连接导出、生产 TLS／HA／备份恢复与完整故障演练尚未完成。",
+    "真实模型领域效果、具体设备封禁、办公渠道、对象存储及客户 Agent 兼容须独立验收。",
+    "当前实际 Linux UPX ZIP 与完整产品发行门禁尚无资格，未发布正式 Release。"
+  ]
+}

@@ -181,7 +181,7 @@ func (m *Manager) Apply(ctx context.Context, archive string, envelope Envelope, 
 	if err := m.Runtime.Prepare(ctx, s.Current); err != nil {
 		return s, err
 	}
-	target, err := Stage(ctx, m.Root, archive, envelope, m.Key, m.now())
+	target, err := stage(ctx, m.Root, archive, envelope, m.Key, m.now(), m.RetentionDays)
 	if err != nil {
 		return s, err
 	}

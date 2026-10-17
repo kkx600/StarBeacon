@@ -243,6 +243,15 @@ func (p *Postgres) writeIncident(ctx context.Context, u model.Principal, id, key
 		} else {
 			id = RandomID("incident_")
 		}
+		if spec.Status == "closed" {
+			var unfinished bool
+			if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM incident_tasks WHERE tenant_id=$1 AND incident_id=$2 AND state IN('open','in_progress'))`, u.TenantID, id).Scan(&unfinished); err != nil {
+				return err
+			}
+			if unfinished {
+				return ErrIncidentTasksPending
+			}
+		}
 		if len(current.Alerts)+len(added) > incident.MaxAlerts {
 			return incident.ErrInput
 		}

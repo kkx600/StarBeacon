@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-17",
+  "review_date": "2026-10-18",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -493,7 +493,9 @@
         "internal/collectorupdate/cli.go",
         "internal/collectorupdate/privileges_linux.go",
         "internal/agent/maintenance_guard.go",
-        "cmd/starbeacon-agent/main.go"
+        "cmd/starbeacon-agent/main.go",
+        "internal/collectorupdate/cleanup.go",
+        "scripts/remote_review.py"
       ],
       "pages": [],
       "tests": [
@@ -517,9 +519,12 @@
         "internal/agent/maintenance_guard_test.go",
         "cmd/starbeacon-agent/main_test.go",
         "tests/acceptance/collector_update.py",
-        "tests/acceptance/fixtures/collector_wal/main.go"
+        "tests/acceptance/fixtures/collector_wal/main.go",
+        "internal/collectorupdate/cleanup_test.go",
+        "scripts/tests/test_remote_persistent_storage.py",
+        "internal/collectorupdate/cleanup_linux_test.go"
       ],
-      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。 现场部署管理员可通过独立 Go CLI 验签离线 Agent ZIP、按修订切换、失败恢复、显式历史回退与中断恢复；systemd 服务模板与 Docker 运行后端独立。仅检查兼容数据格式，保留 WAL 和身份，不修改管理网络、不升级系统镜像或检测引擎，不提供平台灰度或无损切换资格。"
+      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。 现场部署管理员可通过独立 Go CLI 验签离线 Agent ZIP、按修订切换、失败恢复、显式历史回退与中断恢复；systemd 服务模板与 Docker 运行后端独立。仅检查兼容数据格式，保留 WAL 和身份，不修改管理网络、不升级系统镜像或检测引擎，不提供平台灰度或无损切换资格。 管理员维护回收提供默认预览和显式执行，按冻结期限分批回收历史记录与制品，保护当前／回退版本和未决责任，独立凭据支持删除中断后继续；没有来源的旧目录不删除。远程工程项目使用专有持久目录，拒绝链接、共享权限与同名接管；历史临时目录丢失不初始化替代身份。当前来源的远程资格须单独核验。"
     },
     {
       "id": "overview",
@@ -765,7 +770,14 @@
         "internal/store/incidents.go",
         "internal/platform/incidents.go",
         "migrations/00026_incidents.sql",
-        "web/platform/src/features/incidents/IncidentsWorkspace.vue"
+        "web/platform/src/features/incidents/IncidentsWorkspace.vue",
+        "internal/incident/tasks.go",
+        "internal/store/incident_tasks.go",
+        "internal/platform/incident_tasks.go",
+        "migrations/00044_incident_tasks.sql",
+        "web/platform/src/features/incidents/IncidentTasksModal.vue",
+        "web/platform/src/features/incidents/IncidentTaskForm.vue",
+        "web/platform/src/features/incidents/useIncidentTasks.ts"
       ],
       "pages": [
         "platform:/incidents"
@@ -774,9 +786,13 @@
         "internal/incident/incident_test.go",
         "internal/platform/incidents_test.go",
         "tests/integration/incidents_test.go",
-        "web/tests/incidents.test.ts"
+        "web/tests/incidents.test.ts",
+        "internal/incident/tasks_test.go",
+        "internal/platform/incident_tasks_test.go",
+        "tests/integration/incident_tasks_test.go",
+        "web/tests/incident-tasks.test.ts"
       ],
-      "boundary": "管理员租户内手工线索、唯一告警关联、责任分派、版本调查、结构化结案、重开、分页时间线、同事务审计和分类期限。既有功能测试不授予自动分派、设备动作、附件协作、SLA 或攻击成功判定能力；同源码远程及七档交互验收待完成。 源码 ed596083 的事件调查定向远程用例通过，覆盖真实 PG/ES 的创建、分派、结案、重开、隔离、幂等、清理与故障回滚；不代替同源码全量和浏览器验收。"
+      "boundary": "管理员租户内手工线索、唯一告警关联、责任分派、版本调查、结构化结案、重开、分页时间线、同事务审计和分类期限。独立人工协作任务具备负责人、可选截止、状态、完成依据、取消、重开、CAS、原请求回执和独立历史；未完成任务阻止结案，已结案任务只读，活动调查保护历史，默认180天。代码与用例不授予同源码远程和浏览器全项验收资格；不含附件、私密共享、自动分派、SLA、外部工单或攻击成功判定。"
     },
     {
       "id": "users",
@@ -1784,13 +1800,18 @@
     },
     {
       "id": "SB-INC-002",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "incidents"
+      ],
+      "implemented": [
+        "独立人工协作任务、责任分派、可选截止、进展、完成依据、取消与重开；原请求确认、CAS、原子历史审计及结案限制。"
+      ],
       "remaining": [
-        "案件任务/笔记/附件/可观测对象",
-        "私密共享和附件访问"
+        "独立笔记、附件与可观测对象",
+        "私密共享和附件访问",
+        "同源码远程及浏览器全流程验收"
       ]
     },
     {
@@ -1801,10 +1822,11 @@
         "incidents"
       ],
       "implemented": [
-        "不可变人工调查修订、真实来源标识与摘要、责任人与记录时间、分页时间线"
+        "不可变人工调查修订、真实来源标识与摘要、责任人与记录时间、分页时间线",
+        "独立任务修订、负责人、截止和完成依据，活动事件保护与到期子表先行回收。"
       ],
       "remaining": [
-        "自动活动、案件任务及更多证据类型的统一时间线",
+        "自动活动及更多证据类型的统一时间线",
         "端到端和保留期限回收验收"
       ]
     },
@@ -2240,7 +2262,8 @@
         "完整验证资格绑定的手动单探针规则发布与独立中断核实；历史修订部署",
         "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执",
         "现场 CLI 的独立发布签名、ZIP/ELF/摘要与代次核对、持久 journal/CAS/幂等、Agent 程序切换、失败回退和中断恢复；只读维护准入保护 WAL、未知任务和有效封禁撤销责任",
-        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。"
+        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。",
+        "现场维护回收默认预览并显式执行，冻结默认 180 天期限，保护当前／回退版本与未决责任，分批回收历史制品及记录；独立凭据支持中断继续，同名待回收制品禁止重新暂存。"
       ],
       "remaining": [
         "多探针配置编排、规则渠道订阅与自动灰度",
@@ -2505,7 +2528,8 @@
         "ZIP/UPX 门禁脚本",
         "工程候选实际 Linux UPX ZIP 运行链路",
         "逐程序 Go SBOM、许可原文及所需编译源码入包",
-        "干净提交绑定的 GitHub 工程预览发行、两个实际 Linux UPX ZIP 及下载摘要回验"
+        "干净提交绑定的 GitHub 工程预览发行、两个实际 Linux UPX ZIP 及下载摘要回验",
+        "独立工程项目的持久目录及归属标记、身份与 WAL 缺失拒绝启动；按显式状态文件区分项目及工程实例。"
       ],
       "remaining": [
         "TUF 内容更新/权重来源",

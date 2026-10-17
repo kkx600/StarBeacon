@@ -110,41 +110,67 @@ func logCaptureEvidence(t *testing.T, path string) {
 
 func (c *liveHTTP) request(method, path, key string, body any, result any, status int) {
 	c.t.Helper()
-	var input io.Reader
-	contentType := "application/json"
-	if data, ok := body.([]byte); ok {
-		input = bytes.NewReader(data)
-		contentType = "application/octet-stream"
-	} else if body != nil {
-		data, err := json.Marshal(body)
-		require(c.t, err)
-		input = bytes.NewReader(data)
-	}
-	r, err := http.NewRequestWithContext(c.ctx, method, c.origin+c.prefix+path, input)
-	require(c.t, err)
-	r.Header.Set("Content-Type", contentType)
-	r.Header.Set("Origin", c.origin)
-	r.Header.Set("X-CSRF-Token", c.csrf)
-	r.Header.Set("Idempotency-Key", key)
-	if contentType == "application/octet-stream" {
-		r.Header.Set("X-Filename", "capture.pcap")
-	}
-	response, err := c.client.Do(r)
-	require(c.t, err)
-	defer response.Body.Close()
-	data, err := io.ReadAll(io.LimitReader(response.Body, 4*1024*1024))
-	require(c.t, err)
-	if response.StatusCode != status {
-		c.t.Fatalf("%s %s：实际状态 %d，预期 %d；%s", method, path, response.StatusCode, status, data)
-	}
-	if result != nil {
-		// HTTP 快照替换整个对象，不能将省略的可选字段沿用为上一次响应值。
-		value := reflect.ValueOf(result)
-		if value.Kind() != reflect.Pointer || value.IsNil() {
-			c.t.Fatal("响应目标必须为非空指针")
+	c.requestWithRetry(method, path, key, body, result, status, false)
+}
+
+// 原生轮转与配置应用互斥；只有明确未保存的忙碌回执可重试，超时和其他冲突均不重放。
+func (c *liveHTTP) configureCapture(body agent.CaptureSettings, result *agent.CaptureState) {
+	c.t.Helper()
+	c.requestWithRetry("PUT", "/capture-config", "", body, result, http.StatusOK, true)
+}
+
+func (c *liveHTTP) requestWithRetry(method, path, key string, body any, result any, status int, captureBusy bool) {
+	c.t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var input io.Reader
+		contentType := "application/json"
+		if data, ok := body.([]byte); ok {
+			input = bytes.NewReader(data)
+			contentType = "application/octet-stream"
+		} else if body != nil {
+			data, err := json.Marshal(body)
+			require(c.t, err)
+			input = bytes.NewReader(data)
 		}
-		value.Elem().SetZero()
-		require(c.t, json.Unmarshal(data, result))
+		r, err := http.NewRequestWithContext(c.ctx, method, c.origin+c.prefix+path, input)
+		require(c.t, err)
+		r.Header.Set("Content-Type", contentType)
+		r.Header.Set("Origin", c.origin)
+		r.Header.Set("X-CSRF-Token", c.csrf)
+		r.Header.Set("Idempotency-Key", key)
+		if contentType == "application/octet-stream" {
+			r.Header.Set("X-Filename", "capture.pcap")
+		}
+		response, err := c.client.Do(r)
+		require(c.t, err)
+		data, err := io.ReadAll(io.LimitReader(response.Body, 4*1024*1024))
+		require(c.t, err)
+		_ = response.Body.Close()
+		var failure struct {
+			Code string `json:"code"`
+		}
+		if captureBusy && response.StatusCode == http.StatusConflict && json.Unmarshal(data, &failure) == nil && failure.Code == "capture_operation_in_progress" && time.Now().Before(deadline) {
+			select {
+			case <-c.ctx.Done():
+				c.t.Fatal("配置重试已取消", c.ctx.Err())
+			case <-time.After(50 * time.Millisecond):
+			}
+			continue
+		}
+		if response.StatusCode != status {
+			c.t.Fatalf("%s %s：实际状态 %d，预期 %d；%s", method, path, response.StatusCode, status, data)
+		}
+		if result != nil {
+			// HTTP 快照替换整个对象，不能将省略的可选字段沿用为上一次响应值。
+			value := reflect.ValueOf(result)
+			if value.Kind() != reflect.Pointer || value.IsNil() {
+				c.t.Fatal("响应目标必须为非空指针")
+			}
+			value.Elem().SetZero()
+			require(c.t, json.Unmarshal(data, result))
+		}
+		return
 	}
 }
 
@@ -879,12 +905,12 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		previousPID, previousSHA := capture.PID, capture.ConfigSHA256
 		bad := *capture.AppliedSettings
 		bad.BPFFilter = "tcp port ???"
-		collectorHTTP.request("PUT", "/capture-config", "", bad, &capture, 200)
+		collectorHTTP.configureCapture(bad, &capture)
 		if capture.Status != "degraded" || capture.ErrorCode == "" || capture.PID != previousPID || capture.ConfigSHA256 != previousSHA || capture.AppliedRevision == capture.Revision {
 			t.Fatal("失败配置没有保留原进程和实际配置", capture)
 		}
 		good := *capture.AppliedSettings
-		collectorHTTP.request("PUT", "/capture-config", "", good, &capture, 200)
+		collectorHTTP.configureCapture(good, &capture)
 		if capture.Status != "running" || capture.Revision != capture.AppliedRevision {
 			t.Fatal("配置恢复没有真实启动", capture)
 		}

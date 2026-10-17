@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """在专属 Docker 容器验证采集器签名升级；仅在原生 Linux root 验收主机执行。"""
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -143,6 +144,12 @@ def main():
         duplicate = run("apply-2-confirm", [agent, "maintenance", "apply", "--config", deployment_path, "--archive", bundles[2][0], "--proof", bundles[2][1], "--request-id", "update_2", "--expected-revision", "1"])
         if json.loads(duplicate)["revision"] != 2 or inspect()["Id"] != second_id:
             raise ValueError("原请求确认重复替换了运行实例")
+        cleanup_command = [agent, "maintenance", "cleanup", "--config", deployment_path]
+        snapshot = (root / "state.json").read_bytes()
+        preview = json.loads(run("cleanup-active-preview", cleanup_command))
+        active = json.loads(run("cleanup-active-execute", [*cleanup_command, "--execute"]))
+        if preview["executed"] or active["releases_removed"] or active["receipts_removed"] or len(active["protected_releases"]) != 2 or inspect()["Id"] != second_id or (root / "state.json").read_bytes() != snapshot:
+            raise ValueError("维护回收影响了有效版本、冻结记录或运行实例")
         environment = (config / "agent.env").read_bytes()
         (config / "agent.env").write_bytes(environment + b"# changed outside maintenance\n")
         try:
@@ -184,6 +191,10 @@ def main():
                     process.wait(timeout=10)
         result["interrupt_exit_code"] = process.returncode
         raw = run("boot-refuses-interruption", [agent, "maintenance-boot", "--root", root], expected=1)
+        interrupted_state = (root / "state.json").read_bytes()
+        run("cleanup-refuses-interruption", [*cleanup_command, "--execute"], expected=1)
+        if (root / "state.json").read_bytes() != interrupted_state:
+            raise ValueError("回收改写了未知维护的恢复依据")
         recovered = json.loads(run("recover", [agent, "maintenance", "recover", "--config", deployment_path], timeout=180))
         if recovered["operation"]["phase"] != "restored" or recovered["current"]["proof"]["generation"] != 2:
             raise ValueError("中断恢复没有核验前版本")
@@ -208,6 +219,34 @@ def main():
             raise ValueError("受管业务目录之外仍有可写卷")
         if not observed["HostConfig"]["Init"] or not observed["HostConfig"]["ReadonlyRootfs"] or observed["HostConfig"]["NetworkMode"] != "none" or observed["HostConfig"]["Privileged"]:
             raise ValueError("隔离约束不匹配")
+        # 只对本轮专属档案构造一致的历史时间；不调整宿主时钟，不冒充实际经过 180 天。
+        timestamp_keys = {"issued_at", "expires_at", "staged_at", "retain_until", "started_at", "finished_at"}
+        def historical(value):
+            if isinstance(value, list):
+                return [historical(item) for item in value]
+            if not isinstance(value, dict):
+                return value
+            result = {}
+            for key, item in value.items():
+                if key in timestamp_keys and isinstance(item, str):
+                    item = (datetime.datetime.fromisoformat(item.replace('Z', '+00:00')) - datetime.timedelta(days=181)).isoformat()
+                result[key] = historical(item)
+            return result
+        historic_files = [root / "state.json", *(root / "operations").glob("*.json"), *(root / "releases").glob("*/.maintenance-retention.json")]
+        for file in historic_files:
+            file.write_text(json.dumps(historical(json.loads(file.read_text()))) + "\n")
+        result["expiry_fixture"] = {"shifted_days": 181, "actual_wall_clock_days_waited": 0, "files": len(historic_files), "scope": "dedicated_maintenance_metadata_only"}
+        current_id = inspect()["Id"]
+        preview = json.loads(run("cleanup-expired-preview", cleanup_command))
+        cleaned = json.loads(run("cleanup-expired-execute", [*cleanup_command, "--execute"]))
+        repeated = json.loads(run("cleanup-expired-repeat", [*cleanup_command, "--execute"]))
+        if len(preview["release_candidates"]) != 2 or cleaned["releases_removed"] != 2 or cleaned["receipts_removed"] != 4 or cleaned["logical_bytes_removed"] <= 0 or repeated["releases_removed"] or repeated["receipts_removed"] or inspect()["Id"] != current_id:
+            raise ValueError("到期回收、分离权限或重复执行不符合预期")
+        final_health = health("health-after-cleanup")
+        if final_health["version"] != "v0.1.0-maint.1" or final_health["wal_pending"] != 1:
+            raise ValueError("回收中断了运行版本或待传事件")
+        rolled = json.loads((root / "state.json").read_text())
+        result["maintenance_cleanup"] = {"protected_current_and_previous": True, "interrupted_cleanup_rejected": True, "expired_releases_removed": cleaned["releases_removed"], "expired_receipts_removed": cleaned["receipts_removed"], "logical_bytes_removed": cleaned["logical_bytes_removed"], "running_container_unchanged": True, "repeat_noop": True}
         run("stop-for-wal-inspection", ["docker", "stop", "--timeout", "45", container])
         final_wal = wal_inspect("inspect-retained-wal", "inspect")
         if final_wal != original_wal:

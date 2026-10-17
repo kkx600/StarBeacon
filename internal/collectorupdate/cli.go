@@ -26,7 +26,7 @@ import (
 // CLI 是现场管理员使用的独立入口；采集器服务不持有 Docker socket 或服务管理权限。
 func CLI(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("用法：maintenance status|render-unit|apply|rollback|recover|sign --config <部署配置>")
+		return errors.New("用法：maintenance status|render-unit|apply|rollback|recover|cleanup|sign --config <部署配置>")
 	}
 	operation := args[0]
 	flags := flag.NewFlagSet("maintenance "+operation, flag.ContinueOnError)
@@ -42,11 +42,15 @@ func CLI(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	commit := flags.String("commit", "", "完整源码提交")
 	arch := flags.String("arch", runtime.GOARCH, "Linux 架构")
 	keyDir := flags.String("key-dir", "", "独立发布密钥的私有目录")
+	execute := flags.Bool("execute", false, "实际回收已到期的维护记录和历史制品；cleanup 默认仅预览")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
 	if flags.NArg() != 0 {
 		return errors.New("维护命令不接受额外位置参数")
+	}
+	if *execute && operation != "cleanup" {
+		return errors.New("--execute 仅用于维护回收")
 	}
 	if operation == "sign" {
 		return signArchive(*archive, *keyPath, Proof{SchemaVersion: 1, Generation: *generation, Version: *version, Commit: *commit, Arch: *arch, DataSchema: 1}, stdout)
@@ -91,7 +95,18 @@ func CLI(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 	m := &Manager{Root: config.Root, Instance: config.Instance, Mode: config.Mode, BindingSHA256: binding, Key: key, Runtime: r, Guard: func(ctx context.Context) error { return GuardData(ctx, config.DataDir) }, RetentionDays: config.RetentionDays}
+	if operation == "cleanup" {
+		return executeCleanup(ctx, m, *execute, stdout)
+	}
 	return executeMaintenance(ctx, m, operation, *archive, *proofPath, *id, *revision, stdout)
+}
+
+func executeCleanup(ctx context.Context, m *Manager, execute bool, stdout io.Writer) error {
+	report, err := m.Cleanup(ctx, execute)
+	if report.SchemaVersion != 0 {
+		err = errors.Join(err, json.NewEncoder(stdout).Encode(report))
+	}
+	return err
 }
 
 func (c Config) binding() (string, error) {

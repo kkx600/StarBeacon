@@ -37,7 +37,7 @@ var historyCategories = []historyCategory{
 	{"rule_generation_jobs", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded')) AND NOT EXISTS(SELECT 1 FROM rule_packages p WHERE p.tenant_id=h.tenant_id AND p.generation_id=h.id)`},
 	{"alert_triage_jobs", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded'))`},
 	{"incident_changes", "expires_at", `NOT EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state<>'closed')`},
-	{"incidents", "expires_at", `state='closed' AND NOT EXISTS(SELECT 1 FROM incident_changes c WHERE c.tenant_id=h.tenant_id AND c.incident_id=h.id)`},
+	{"incidents", "expires_at", `state='closed' AND NOT EXISTS(SELECT 1 FROM incident_changes c WHERE c.tenant_id=h.tenant_id AND c.incident_id=h.id) AND NOT EXISTS(SELECT 1 FROM incident_tasks t WHERE t.tenant_id=h.tenant_id AND t.incident_id=h.id)`},
 	{"user_management_requests", "expires_at", "true"},
 	{"sensor_management_requests", "expires_at", "true"},
 	{"saved_search_changes", "expires_at", "true"},
@@ -51,6 +51,8 @@ var historyCategories = []historyCategory{
 	{"rule_sync_runs", "expires_at", `finished_at IS NOT NULL`},
 	{"probe_enrollments", "retain_until", `true`},
 	{"probe_certificates", "retain_until", `state<>'signing' AND (not_after IS NULL OR not_after<=now())`},
+	{"incident_task_changes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed')`},
+	{"incident_tasks", "expires_at", `state IN('completed','cancelled') AND EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed') AND NOT EXISTS(SELECT 1 FROM incident_task_changes c WHERE c.tenant_id=h.tenant_id AND c.task_id=h.id)`},
 }
 
 type HistorySweep struct {
@@ -182,14 +184,16 @@ func (p *Postgres) sweepTenantHistory(ctx context.Context, tenant string, budget
 					scope = "true"
 				}
 				// 标识符和条件均为内部常量；租户与上限始终绑定，不授予历史 UPDATE。
-				query := fmt.Sprintf(`WITH picked AS(SELECT h.ctid FROM %s h WHERE %s AND h.%s<=now() AND (%s) ORDER BY h.%s,h.ctid LIMIT $2) DELETE FROM %s h USING picked WHERE h.ctid=picked.ctid`, category.table, scope, category.expiry, category.predicate, category.expiry, category.table)
+				// 固定有界候选并以独立数组读取，避免 RLS 下的连接计划逐行重算整个候选集。
+				// 删除仍重新执行目标表的 RLS、到期与引用保护，不扩大单表预算。
+				query := fmt.Sprintf(`WITH picked AS MATERIALIZED(SELECT h.ctid FROM %s h WHERE %s AND h.%s<=now() AND (%s) ORDER BY h.%s,h.ctid LIMIT $2) DELETE FROM %s h WHERE h.ctid=ANY(ARRAY(SELECT ctid FROM picked))`, category.table, scope, category.expiry, category.predicate, category.expiry, category.table)
 				batch.Queue(query, tenant, limit)
 			}
 			results := tx.SendBatch(ctx, batch)
 			for range size {
 				tag, err := results.Exec()
 				if err != nil {
-					return errors.Join(err, results.Close())
+					return fmt.Errorf("清理历史分类 %s: %w", historyCategories[next].table, errors.Join(err, results.Close()))
 				}
 				category := historyCategories[next]
 				counts[category.table] += tag.RowsAffected()

@@ -16,6 +16,29 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE_PATHS = ("go.mod", "go.sum", "cmd", "internal", "migrations", "api/sensor", "tests", "scripts/check_go_coverage.py", "scripts/init_step_ca.py", "deploy/step-ca", "deploy/Dockerfile.acceptance", "deploy/Dockerfile.acceptance.dockerignore", "deploy/security")
 STEP_CA_IMAGE = "cr.smallstep.com/smallstep/step-ca:0.30.2@sha256:a2b17872915c193259b75a5474c398326f41bd199f0842093e52cf4182bc8270"
+PERSISTENT_DIRECTORY = "/var/lib/starbeacon-acceptance"
+
+# 工程实例的配置、设备身份和挂载依据必须跨宿主临时目录回收保留。
+PREPARE_DIRECTORY = r'''
+import json,os,pathlib,re,stat,sys
+base=pathlib.Path(sys.argv[1]);project=sys.argv[2]
+if not base.is_absolute() or str(base)!=os.path.normpath(str(base)) or not re.fullmatch(r'sbacc_[a-f0-9]{16}',project):
+ raise ValueError('持久验收目录标识无效')
+try:base.mkdir(mode=0o700)
+except FileExistsError:pass
+info=base.lstat()
+if not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.geteuid() or stat.S_IMODE(info.st_mode)&0o077:
+ raise ValueError('验收父目录必须为当前部署账号专有的普通目录')
+directory=base/project
+directory.mkdir(mode=0o700)
+with (directory/'owner.json').open('x') as output:
+ os.fchmod(output.fileno(),0o600)
+ json.dump({'schema_version':1,'project':project,'storage':'persistent'},output)
+ output.write('\n');output.flush();os.fsync(output.fileno())
+fd=os.open(directory,os.O_RDONLY|os.O_DIRECTORY)
+try:os.fsync(fd)
+finally:os.close(fd)
+'''
 
 DEPENDENCY_IMAGES = {
     "postgres": "public.ecr.aws/docker/library/postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722",
@@ -224,7 +247,7 @@ def ssh(host, arguments, **options):
 
 def read_state(path):
     state = json.loads(path.read_text())
-    if not isinstance(state, dict) or any(not isinstance(state.get(key), str) for key in ("host", "project", "directory", "commit", "workspace_sha256")) or not re.fullmatch(r"[A-Za-z0-9_.-]+", state["host"]) or state["host"].startswith("-") or not re.fullmatch(r"sbacc_[a-f0-9]{16}", state["project"]) or state["directory"] != "/tmp/starbeacon-acceptance-" + state["project"] or not re.fullmatch(r"[a-f0-9]{40}", state["commit"]) or not re.fullmatch(r"[a-f0-9]{64}", state["workspace_sha256"]):
+    if not isinstance(state, dict) or any(not isinstance(state.get(key), str) for key in ("host", "project", "directory", "commit", "workspace_sha256")) or not re.fullmatch(r"[A-Za-z0-9_.-]+", state["host"]) or state["host"].startswith("-") or not re.fullmatch(r"sbacc_[a-f0-9]{16}", state["project"]) or state["directory"] not in ("/tmp/starbeacon-acceptance-" + state["project"], PERSISTENT_DIRECTORY + "/" + state["project"]) or not re.fullmatch(r"[a-f0-9]{40}", state["commit"]) or not re.fullmatch(r"[a-f0-9]{64}", state["workspace_sha256"]):
         raise ValueError("验收项目标识无效，拒绝操作其他目录或 Compose 项目")
     return state
 
@@ -334,7 +357,7 @@ def stage(host, path, step_ca_image=STEP_CA_IMAGE):
     if path.exists() or not re.fullmatch(r"[A-Za-z0-9_.-]+", host) or host.startswith("-"):
         raise ValueError("状态文件已经存在或 SSH 主机标识无效")
     project = "sbacc_" + secrets.token_hex(8)
-    directory = "/tmp/starbeacon-acceptance-" + project
+    directory = PERSISTENT_DIRECTORY + "/" + project
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     clean = not subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()
     with tempfile.TemporaryDirectory(prefix="starbeacon-staging-") as scratch:
@@ -368,7 +391,7 @@ def stage(host, path, step_ca_image=STEP_CA_IMAGE):
             definition_path = work / "compose.json"
             definition_path.write_text(json.dumps(definition, indent=2) + "\n")
             output.add(definition_path, arcname="compose.json")
-        ssh(host, ["mkdir", "-m", "700", directory])
+        ssh(host, ["python3", "-c", PREPARE_DIRECTORY, PERSISTENT_DIRECTORY, project], timeout=15)
         with archive.open("rb") as file:
             ssh(host, ["tar", "-xzf", "-", "--no-same-owner", "-C", directory], stdin=file)
         ssh(host, ["chmod", "777", directory + "/reports"])
@@ -379,6 +402,8 @@ def stage(host, path, step_ca_image=STEP_CA_IMAGE):
         file.write("\n")
     path.chmod(0o600)
     configure_security(state)
+    # 后续镜像或 CA 初始化失败时仍保留本项目已加载策略的归属，不接管同名外部策略。
+    path.write_text(json.dumps(state, indent=2) + "\n")
     prepare_step_ca(state,step_ca_image)
     configure_runner(state, definition)
     ssh(host, ["tee", directory + "/compose.json"], input=(json.dumps(definition, indent=2) + "\n").encode(), stdout=subprocess.DEVNULL, timeout=15)

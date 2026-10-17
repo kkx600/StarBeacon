@@ -62295,6 +62295,448 @@
       "capturePngSha256": "2b10d87c2adeea7b6eae7c483bc4ee390132729d7dcb18ce521049066d74f441",
       "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
       "bytes": 198140
+    },
+    {
+      "file": "incidents/data.jpg",
+      "title": "事件调查 · 有数据",
+      "state": "data",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&capture=1",
+      "capturedAt": "2026-10-17T16:38:16.000Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "7c2a757dbe00567e28da03133711aa26e8e06e9c380cf1968213f28068c13028",
+      "bytes": 63295
+    },
+    {
+      "file": "incidents/empty.jpg",
+      "title": "事件调查 · 无数据",
+      "state": "empty",
+      "url": "http://127.0.0.1:4173/page/incidents?state=empty&capture=1",
+      "capturedAt": "2026-10-17T16:38:31.079Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "2d96e82a504b2fa706ed9a469489d20dcfe7d3a28e8962facbc60c6baed4698c",
+      "bytes": 60284
+    },
+    {
+      "file": "incidents/loading.jpg",
+      "title": "事件调查 · 加载中",
+      "state": "loading",
+      "url": "http://127.0.0.1:4173/page/incidents?state=loading&capture=1",
+      "capturedAt": "2026-10-17T16:38:31.587Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "a93d24a85713e68e10f2f5851f7b2dd6e4fe64d593c2233cc54840cd6f16f64e",
+      "bytes": 66505
+    },
+    {
+      "file": "incidents/error.jpg",
+      "title": "事件调查 · 加载失败",
+      "state": "error",
+      "url": "http://127.0.0.1:4173/page/incidents?state=error&capture=1",
+      "capturedAt": "2026-10-17T16:38:32.031Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "fe46b0d5d1f0ed6e010c7c93c40c5b8243571d43af176a4dbf9a2676174bcc70",
+      "bytes": 61140
+    },
+    {
+      "file": "incidents/detail.jpg",
+      "title": "事件调查 · 查看详情",
+      "state": "detail",
+      "url": "http://127.0.0.1:4173/page/incidents?state=detail&capture=1",
+      "capturedAt": "2026-10-17T16:38:32.600Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "3e974fb3c31061ead3ef66a3bd8ab3da83304e1cc6bf42c75c3ae63794d0c3fa",
+      "bytes": 63184
+    },
+    {
+      "file": "incidents/action.jpg",
+      "title": "事件调查 · 操作表单",
+      "state": "action",
+      "url": "http://127.0.0.1:4173/page/incidents?state=action&capture=1",
+      "capturedAt": "2026-10-17T16:38:33.223Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "a8829a550e2f170ad44be6ff1a069d10517dcdae59dc8febf905d895699957d1",
+      "bytes": 57626
+    },
+    {
+      "file": "supplemental/incident-tasks-data.jpg",
+      "title": "协作任务 · 列表",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=data&capture=1",
+      "capturedAt": "2026-10-17T16:38:53.647Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "d898ebb0290b4e4606cfa484d1fe4cd81e602c465e0b3a39db0de60fc3479eee",
+      "bytes": 53585
+    },
+    {
+      "file": "supplemental/incident-tasks-empty.jpg",
+      "title": "协作任务 · 无数据",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=empty&capture=1",
+      "capturedAt": "2026-10-17T16:38:54.158Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "c80648fe16665b69a2b8a1473d1ab5d6907f431548acdf3b4161f134545710fa",
+      "bytes": 46641
+    },
+    {
+      "file": "supplemental/incident-tasks-loading.jpg",
+      "title": "协作任务 · 加载中",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=loading&capture=1",
+      "capturedAt": "2026-10-17T16:38:54.615Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "ffc1b29680b0f17f1e6d6c52e8dc019515704d63c6148bee00f4a93be6df9970",
+      "bytes": 42833
+    },
+    {
+      "file": "supplemental/incident-tasks-error.jpg",
+      "title": "协作任务 · 加载失败",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=error&capture=1",
+      "capturedAt": "2026-10-17T16:38:55.173Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "6a8edbf95c7ec8dd4c5e65a14b74594ae22f2b037031f08e1fce909c1132619b",
+      "bytes": 46769
+    },
+    {
+      "file": "supplemental/incident-tasks-closed.jpg",
+      "title": "协作任务 · 结案查阅",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=closed&capture=1",
+      "capturedAt": "2026-10-17T16:38:55.676Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "a1ad4873a31a4a76e6fc7033a835254fbc3d6cb9be032b4e037f949028e7288a",
+      "bytes": 58244
+    },
+    {
+      "file": "supplemental/incident-tasks-unknown.jpg",
+      "title": "协作任务 · 原提交核对",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=unknown&capture=1",
+      "capturedAt": "2026-10-17T16:38:56.213Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "a7a0226198fa218ba3838bf1d67b36a5b85a409f9361f2800e561fd9534e0e34",
+      "bytes": 64405
+    },
+    {
+      "file": "supplemental/incident-tasks-create.jpg",
+      "title": "协作任务 · 建立任务",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&capture=1",
+      "capturedAt": "2026-10-17T16:38:57.101Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "e14867bc41ef9cdc1e61716c69ebcace37e6484fc4ff7ed294f628d6fb61103d",
+      "bytes": 59118
+    },
+    {
+      "file": "supplemental/incident-tasks-validation.jpg",
+      "title": "协作任务 · 表单校验",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&capture=1",
+      "capturedAt": "2026-10-17T16:39:10.118Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "c4fdb4f8628b29050a34b2e46101c3afcbe23cd036af8841272271bbdcb9fa93",
+      "bytes": 62813
+    },
+    {
+      "file": "supplemental/incident-tasks-detail.jpg",
+      "title": "协作任务 · 详情与历史",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&capture=1",
+      "capturedAt": "2026-10-17T16:39:11.392Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "4597bf3e4c3cf28c9393a87bb00b5ab110a79136dddaac8595683bed945a0c81",
+      "bytes": 67117
+    },
+    {
+      "file": "supplemental/incident-tasks-edit.jpg",
+      "title": "协作任务 · 进展记录",
+      "state": "supplemental",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&capture=1",
+      "capturedAt": "2026-10-17T16:39:11.942Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件调查与协作任务组件；可见业务内容、单层弹窗与页面边界核对",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "captureJpegSha256": "013abf1f76eb6d7e3fd4bdc01f0955cc04b738aeb0ae19f34eaf34fb54c3d5c6",
+      "bytes": 61486
+    },
+    {
+      "file": "supplemental/incident-tasks-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/incidents?state=data&panel=tasks&task_state=data&capture=1",
+      "title": "协作任务 · 详情与历史",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T17:00:54.328Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成事件协作任务详情，复用工程组件，核对建立时间、最近说明与独立历史",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "a2a250af1511475eec5a8762edb5e2a338e17ec2b6480dca048a2dce1a1c1062",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 67840
     }
   ],
   "errors": []

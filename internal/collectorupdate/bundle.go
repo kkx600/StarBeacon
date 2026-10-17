@@ -116,7 +116,14 @@ func (r Release) validate() error {
 
 // Stage 先核对整个 ZIP 的签名摘要，再在独立目录中有界解包；既有版本不覆盖。
 func Stage(ctx context.Context, root, archive string, envelope Envelope, key ed25519.PublicKey, now time.Time) (Release, error) {
+	return stage(ctx, root, archive, envelope, key, now, 180)
+}
+
+func stage(ctx context.Context, root, archive string, envelope Envelope, key ed25519.PublicKey, now time.Time, retentionDays int) (Release, error) {
 	var result Release
+	if retentionDays < 1 || retentionDays > 3650 {
+		return result, errors.New("维护制品保留期必须为 1–3650 天")
+	}
 	if err := envelope.Verify(key, now); err != nil {
 		return result, err
 	}
@@ -154,6 +161,9 @@ func Stage(ctx context.Context, root, archive string, envelope Envelope, key ed2
 	target := filepath.Join(base, result.Directory)
 	if _, err = os.Lstat(target); !errors.Is(err, os.ErrNotExist) {
 		return Release{}, errors.New("同名制品目录已存在，禁止覆盖")
+	}
+	if _, err = os.Lstat(filepath.Join(root, "reclaim", result.Directory+".json")); !errors.Is(err, os.ErrNotExist) {
+		return Release{}, errors.New("同名制品仍有未完成回收，禁止重新暂存")
 	}
 	scratch, err := os.MkdirTemp(base, ".stage-")
 	if err != nil {
@@ -224,6 +234,10 @@ func Stage(ctx context.Context, root, archive string, envelope Envelope, key ed2
 		return Release{}, errors.New("采集器程序长度与来源清单不一致")
 	}
 	if err = verifyBinary(filepath.Join(scratch, "bin/starbeacon-agent"), result); err != nil {
+		return Release{}, err
+	}
+	// 过期依据随完整制品一起发布，暂存后尚未执行切换的制品也能独立回收。
+	if err = atomicJSON(filepath.Join(scratch, releaseRetentionFile), releaseRetention{SchemaVersion: 1, Release: result, StagedAt: now, RetainUntil: now.AddDate(0, 0, retentionDays)}); err != nil {
 		return Release{}, err
 	}
 	if err = os.Chmod(scratch, 0755); err != nil {

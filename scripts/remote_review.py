@@ -16,6 +16,39 @@ import remote_acceptance as acceptance
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 STATE = ROOT / '.local/acceptance/review.json'
+REMOTE_STATE = ROOT / '.local/acceptance/remote.json'
+CAPTURE_STATE = None
+
+EXISTING_IDENTITY_PROBE = r'''
+import json,pathlib,stat,sys
+root=pathlib.Path(sys.argv[1]);database=sys.argv[2];tenant=sys.argv[3]
+def file(name):
+ p=root/name
+ if p.resolve(strict=True)!=p or not stat.S_ISREG(p.lstat().st_mode) or p.stat().st_size==0:
+  raise ValueError('工程实例身份或持久文件缺失，拒绝自动初始化')
+ return p
+settings=json.loads(file('config.json').read_text())
+ready=json.loads(file('data/ready.json').read_text())
+if settings.get('database')!=database or settings.get('tenant')!=tenant or ready.get('tenant')!=tenant or ready.get('scope')!='development_ui_review':
+ raise ValueError('已有工程身份与项目归属不同')
+for name in ['platform','agent','ingest','worker']:
+ values=json.loads(file('data/'+name+'.json').read_text())
+ if name=='agent':
+  if values.get('SB_TENANT_ID')!=tenant:raise ValueError('采集器租户身份不同')
+  wal=pathlib.PurePosixPath(values.get('SB_STATE_PATH',''))
+  if not wal.is_absolute() or not wal.is_relative_to('/data') or '..' in wal.parts or wal==pathlib.PurePosixPath('/data'):
+   raise ValueError('采集器持久路径越界')
+  file('data/'+str(wal.relative_to('/data')))
+for name in ['pki/ca.crt','pki/server.crt','pki/server.key','trust/command.key','trust/command.pub','sensor/agent.crt','sensor/agent.key']:
+ file('data/'+name)
+print(json.dumps({'existing_identity_verified':True,'wal_present':True}))
+'''
+
+
+def verify_existing_identity(state, review):
+    result = acceptance.ssh(state['host'], ['python3', '-c', EXISTING_IDENTITY_PROBE, review['directory'], review['database'], 'review_' + review['name'].removeprefix('review-')], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+    if json.loads(result.stdout) != {'existing_identity_verified': True, 'wal_present': True}:
+        raise ValueError('已有工程身份未核验，拒绝启动')
 
 
 def frontend_files():
@@ -62,7 +95,7 @@ http {
 
 def read_review():
     result = json.loads(STATE.read_text())
-    state = acceptance.read_state(ROOT / '.local/acceptance/remote.json')
+    state = acceptance.read_state(REMOTE_STATE)
     if result.get('project') != state['project'] or not re.fullmatch(r'review-[a-f0-9]{16}', result.get('name', '')) or result.get('directory') != state['directory'] + '/' + result['name']:
         raise ValueError('界面验收标识无效，拒绝操作其他目录')
     if result.get('database') != 'sbui_' + result['name'].removeprefix('review-'):
@@ -150,7 +183,7 @@ def write_review(value):
 
 def managed_capture_metadata(state, review):
     """只接管本实例先前登记的独立采集器，保留原有 WAL、凭据与原包目录。"""
-    path = ROOT / '.local/acceptance/capture-ui.json'
+    path = CAPTURE_STATE if CAPTURE_STATE is not None else ROOT / '.local/acceptance/capture-ui.json'
     if not path.exists():
         return None
     if path.is_symlink() or path.stat().st_size > 16384:
@@ -246,7 +279,7 @@ def update(state, review):
     write_review(review)
     if capture:
         capture.update(source_sha256=state['workspace_sha256'], frontend_sha256=digest, runtime_bundle=directory)
-        capture_path = ROOT / '.local/acceptance/capture-ui.json'
+        capture_path = CAPTURE_STATE if CAPTURE_STATE is not None else ROOT / '.local/acceptance/capture-ui.json'
         with tempfile.NamedTemporaryFile(mode='w', dir=capture_path.parent, prefix='.capture-ui-', delete=False) as file:
             replacement = pathlib.Path(file.name)
             os.chmod(replacement, 0o600)
@@ -291,7 +324,7 @@ print(json.dumps(rows,ensure_ascii=False))
 def deploy():
     if STATE.exists():
         raise ValueError('界面验收状态已经存在；请先核对当前环境')
-    state = acceptance.read_state(ROOT / '.local/acceptance/remote.json')
+    state = acceptance.read_state(REMOTE_STATE)
     backend = backend_image(state)
     files, digest = frontend_files()
     metadata = json.loads(acceptance.ssh(state['host'], ['docker', 'image', 'inspect', 'nginx:alpine'], stdout=subprocess.PIPE, timeout=15).stdout)
@@ -332,9 +365,14 @@ def deploy():
 
 
 def main():
+    global STATE, REMOTE_STATE, CAPTURE_STATE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('deploy', 'update', 'verify-gateway', 'start', 'tunnel', 'status', 'stop'))
+    parser.add_argument('--state', type=pathlib.Path, default=REMOTE_STATE, help='独立远程验收项目状态')
+    parser.add_argument('--review', type=pathlib.Path, default=STATE, help='该项目独立工程实例状态')
+    parser.add_argument('--capture', type=pathlib.Path, help='该实例的独立采集器状态；未登记时使用独立的不存在路径')
     arguments = parser.parse_args()
+    REMOTE_STATE, STATE, CAPTURE_STATE = arguments.state, arguments.review, arguments.capture
     if arguments.action == 'deploy':
         deploy()
     else:
@@ -357,10 +395,8 @@ def main():
                 raise ValueError('验收容器地址不是私网')
             os.execvp('ssh', ['ssh', '-N', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-o', 'ServerAliveInterval=15', '-L', f'127.0.0.1:5184:{address}:8080', '-L', f'127.0.0.1:5185:{address}:8081', state['host']])
         elif arguments.action == 'start':
-            ready = acceptance.ssh(state['host'], ['python3', '-c', 'import pathlib;print(pathlib.Path(' + repr(review['directory'] + '/data/ready.json') + ').is_file())'], stdout=subprocess.PIPE, timeout=15)
-            if ready.stdout.strip() != b'True':
-                acceptance.verify_image(state)
-                compose(state, review, ['run', '--rm', '--no-deps', 'review-init'])
+            # 已登记实例缺少身份或 WAL 时按丢失处理，不通过初始化掩盖数据丢失。
+            verify_existing_identity(state, review)
             compose(state, review, ['up', '-d', '--wait', '--wait-timeout', '120', '--no-deps', 'review', 'review-web'])
         else:
             if arguments.action == 'status':
