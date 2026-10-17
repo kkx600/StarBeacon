@@ -69,6 +69,10 @@ async function workspace(component:Component,path:string){const url=new URL('htt
  })
 
  describe('资产工作区',()=>{
+ it('切换账号清除资产编辑和旧列表，查看身份不能进入发现查询',async()=>{
+  const{wrapper,router}=await workspace(InventoryWorkspace,'/assets?view=groups');await click('创建资产组');expect(document.body.textContent).toContain('创建资产组');user.value={...principal,id:'another_admin'};await flushPromises();expect(document.body.querySelector('.ant-modal')).toBeNull()
+  user.value={...principal,role:'viewer'};await router.push('/assets?view=discovery');await flushPromises();expect(wrapper.text()).toContain('需要管理员权限');expect(wrapper.text()).not.toContain('执行发现');wrapper.unmount()
+ })
  it('名称筛选、游标翻页和页签切换保持单一列表，编辑失败保留草稿',async()=>{
   request.mockImplementation((path:string,options?:{method?:string})=>options?.method==='POST'?Promise.reject(new Error('修订冲突')):Promise.resolve(path.includes('/history')?{items:[group]}:{items:[group],next_cursor:'group_1'}));const{wrapper,router}=await workspace(InventoryWorkspace,'/assets?view=groups');await click('下一页');expect(request.mock.lastCall?.[0]).toContain('cursor=group_1');await click('上一页');await wrapper.get('.inventory-search input').setValue('办公区');await wrapper.get('form').trigger('submit');await flushPromises();await vi.waitFor(()=>expect(request.mock.lastCall?.[0]).toContain('keyword=%E5%8A%9E%E5%85%AC%E5%8C%BA'));await click('重置')
   await click('编辑');await click('保存');await vi.waitFor(()=>expect(document.body.textContent).toContain('修订冲突'));await click('取消');await click('办公区');expect(document.body.textContent).toContain('历史修订');(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();await click('网段定义');expect(router.currentRoute.value.query.view).toBe('networks');expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(wrapper.get('input').element.value).toBe('')

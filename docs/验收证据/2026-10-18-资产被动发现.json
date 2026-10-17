@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T21:02:57.209088+00:00",
+  "scope": "bounded_passive_address_discovery_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "c89788d5906bc2fbe85c7eeab273b2bce6d6c60aafde4ccccc8a0e70763e8db1",
+    "frontend_sha256": "3e63be763b1d563a31227ccb22d28b1c0e29033283810d76dd3ee1ba99a805c0",
+    "build_parent_commit": "3680bc2790b31e223696ca4eb90800f66389d977",
+    "build_clean_commit": false,
+    "source_scope_or_gate_relaxed": false
+  },
+  "capabilities": [
+    "按当前探针注册、使用中网段修订和不超过 24 小时窗口查询已有流记录；最多 512 个地址，超限不截断。",
+    "查询租户索引族中的实际事件时间，兼容跨日积压与离线流记录；仅把完整零分片、显式空命中视为无分区。",
+    "两个方向分别计数，保留纳秒、长整数及代表记录；MAC 只观测，不自动推定身份。",
+    "当前权限、会话及注册前后重验，租户额度与事务审计；人工登记沿用独立资产修订和默认 180 天历史。"
+  ],
+  "backend": {
+    "environment": "remote_docker_linux_amd64",
+    "actual_exit_code": 0,
+    "tests": {
+      "unit": 494,
+      "integration": 117,
+      "native_capture": 1
+    },
+    "test_failures": 0,
+    "test_skips": 0,
+    "coverage": {
+      "covered": 19430,
+      "total": 21561,
+      "percentage": 90.11641389545939,
+      "minimum": 90
+    },
+    "coverage_scope_or_minimum_relaxed": false,
+    "native_capture": {
+      "http_to_notification_acceptance_seconds": 1.974,
+      "request_to_archive_verified_seconds": 2.317,
+      "packets": 12,
+      "raw_bytes": 2068,
+      "compressed_bytes": 1067,
+      "observed_complete_tcp_handshakes": 1,
+      "indexed_http_events_across_rotation": 1665,
+      "missing_or_duplicate_events": 0,
+      "boundary": "独立 Docker 网卡的有界样本；不授予生产吞吐、长期丢包率、TLS 解密、外部送达或设备封禁效果资格。"
+    },
+    "event_observer": {
+      "events": 6683,
+      "oom_events_observed": 0,
+      "qualification_container_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "actual_observer_exit_code": 143,
+      "stop_requested": true,
+      "fixture_teardown_exit_codes": [
+        137
+      ],
+      "fixture_teardown_reason": "测试通过后 Compose 对专属流量夹具执行停止超时清理，未将该退出码作为用例退出码。"
+    }
+  },
+  "frontend": {
+    "tests": 758,
+    "ant_binding_cases_included": 138,
+    "tool_tests": 9,
+    "coverage": {
+      "statements": 95.47701433514582,
+      "branches": 92.96943526077862,
+      "functions": 92.03332465503775,
+      "lines": 98.90158172231986
+    },
+    "minimum_each": 90,
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "default_palette_and_white_grey_background_preserved": true,
+    "timeout_scope_relaxed": false
+  },
+  "ui": {
+    "browser": "in_app_browser",
+    "pc_widths": [
+      1024,
+      1280,
+      1366,
+      1440,
+      1920,
+      2560,
+      3840
+    ],
+    "current_engineering_layout_observations": 42,
+    "discovery_list_detail_form_observations": 21,
+    "asset_group_network_catalog_observations": 21,
+    "prototype_state_layout_observations": 63,
+    "page_horizontal_overflows": 0,
+    "double_business_tables": 0,
+    "discovery_action_column_within_width": true,
+    "registration_and_database_readback": "passed",
+    "default_history_and_discovery_audit_retention_days": 180,
+    "synthetic_gallery": {
+      "base": 767,
+      "supplemental": 85,
+      "total": 852,
+      "strict_check": "passed"
+    },
+    "boundary": "原型为合成数据；真实工程以原生离线 PCAP 经上报链路产生的已有流记录查询，不作为在线吞吐或全路由完整交互验收。"
+  },
+  "deployment": {
+    "scope": "owned_persistent_development_environment",
+    "backend_source": "c89788d5906bc2fbe85c7eeab273b2bce6d6c60aafde4ccccc8a0e70763e8db1",
+    "frontend_dist_sha256": "01cdd1a0b7777125a2af2eeec13fbe13b5d88b54bb0060fba8b45abfdc028964",
+    "programs_verified": 5,
+    "running_roles_verified": 4,
+    "ready_endpoints_verified": 4,
+    "static_files_verified": 82,
+    "gateway_checks_after_cleanup": 12,
+    "identity_digest_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "production_qualification": false
+  },
+  "checks": {
+    "quality_tests": 68,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 7,
+    "alignment_requirements": 107,
+    "platform_http_operations": 126,
+    "collector_http_operations": 18,
+    "go_vet": "passed",
+    "diff_check": "passed",
+    "gallery": "passed",
+    "theme": "passed"
+  },
+  "cleanup": {
+    "scope": "owned_idle_go_compilation_caches_only",
+    "directories": 2,
+    "logical_bytes_removed": 2974646198,
+    "allocated_file_bytes_before_removal": 3045187584,
+    "in_use_data_and_evidence_preserved": true,
+    "global_prune": false,
+    "boundary": "逻辑大小与逐文件分配量不等同宿主文件系统即时释放空间。"
+  },
+  "failure_history": [
+    "最初定向执行漏设真实依赖地址而跳过；进程退出 0 被独立作废，后续要求真实用例通过且无跳过。",
+    "早期查询按事件日期选上传分区，真实旧 PCAP 揭露漏查；原来源 87f1aa68 的全回归被明确停止并独立归档。",
+    "负排除模式的 HEAD 404 不能判定自身索引不存在；原来源 f564b1af 被停止并归档，当前采用真实搜索结果和严格零分片解析。",
+    "一次原归档与同步并行导致归档失败；保留失败，并独立核对原源码及已回传报告重新归档。",
+    "工具链 PATH、全目录或长交互共享 5 秒期限造成准备／前端失败；使用固定工具链并按独立行为拆分测试，保留原断言与单例期限。",
+    "辅助制品核对两次执行超时、一次误用主机挂载路径；原失败保留，采用未启动的专属容器读取镜像文件，并按实际容器挂载独立通过。"
+  ],
+  "raw_evidence_archive": {
+    "local_path": ".local/acceptance/discovery459-evidence.tar.gz",
+    "bytes": 38895210,
+    "sha256": "64a18343b06cd830dba1d162f2680919f928621d230ca05263447df125b7bb51",
+    "private": true
+  },
+  "post_archive_evidence": [
+    {
+      "path": ".local/acceptance/discovery460-cleanup.json",
+      "bytes": 939,
+      "sha256": "6dafa30cfc1b29ea5259d5f522617c4e00539cd1c314d9364f26343f5ba71098",
+      "private": true
+    },
+    {
+      "path": ".local/acceptance/discovery461-event-summary.json",
+      "bytes": 966,
+      "sha256": "94d12febee4644430767775cae4c887d5dbb9ce05c220ecd711ef12278bc56d5",
+      "private": true
+    },
+    {
+      "path": ".local/acceptance/discovery462-postcleanup-runtime.json",
+      "bytes": 15438,
+      "sha256": "3d88d4f14f1da5a34794e86414c9033ac92c8da4d564f6a9395a16732797e58b",
+      "private": true
+    }
+  ],
+  "product_requirement_status": {
+    "total": 107,
+    "partial": 61,
+    "missing": 46,
+    "fully_accepted": 0
+  },
+  "remaining": [
+    "持续资产发现、水位、观测快照、跨探针去重、资产身份融合、DHCP／ARP／NDP、NAT／账号关联、动态分组、外部资产源及生命周期尚未交付。",
+    "107 项复合需求尚未完整验收，关联检测、情报、风险治理、文件与沙箱等仍有缺口。",
+    "1–200+ 探针容量、生产 TLS／HA／备份恢复、真实外部模型／设备／办公渠道／对象存储及当前 Linux UPX ZIP 的完整发行验收尚未完成。"
+  ]
+}

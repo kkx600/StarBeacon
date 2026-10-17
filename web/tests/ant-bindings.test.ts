@@ -14,22 +14,21 @@ function components(directory:string):string[]{
 }
 
 describe('界面组件绑定',()=>{
- it('主平台、采集器与共享组件中的 Ant 标签均有实际组件绑定',()=>{
-  const app=registerAnt(createApp({})),unregistered:string[]=[]
-  const files=['platform/src','collector/src','packages/shared/src'].flatMap(path=>components(resolve(root,path)))
-  expect(files.length).toBeGreaterThan(90)
-  for(const file of files){
-   const {descriptor}=parse(readFileSync(file,'utf8'),{filename:file})
-   if(!descriptor.template)continue
-   const bindings=descriptor.scriptSetup?compileScript(descriptor,{id:file}).bindings:{}
-   const template=compileTemplate({source:descriptor.template.content,filename:file,id:file,compilerOptions:{bindingMetadata:bindings}})
-   expect(template.errors,`${file} 的模板应可编译`).toEqual([])
-   // 编译器已消除局部绑定；剩余标签必须由生产入口的组件注册表解析。
-   for(const match of template.code.matchAll(/_resolveComponent\("(a-[a-z0-9-]+)"\)/g)){
-    const tag=match[1]!,name=tag.split('-').map(part=>part[0]!.toUpperCase()+part.slice(1)).join('')
-    if(!app.component(name))unregistered.push(`${file.slice(root.length)}: ${tag}`)
-   }
+ const files=['platform/src','collector/src','packages/shared/src'].flatMap(path=>components(resolve(root,path)))
+ const app=registerAnt(createApp({}))
+ it('双端与共享组件目录均纳入检查',()=>{expect(files.length).toBeGreaterThan(90)})
+ // 每个组件独立编译与断言，保留相同单例期限，避免全目录共用一次业务用例预算。
+ for(const file of files)it(`组件绑定：${file.slice(root.length)}`,()=>{
+  const {descriptor}=parse(readFileSync(file,'utf8'),{filename:file})
+  if(!descriptor.template)return
+  const bindings=descriptor.scriptSetup?compileScript(descriptor,{id:file}).bindings:{}
+  const template=compileTemplate({source:descriptor.template.content,filename:file,id:file,compilerOptions:{bindingMetadata:bindings}})
+  expect(template.errors,`${file} 的模板应可编译`).toEqual([])
+  const unregistered:string[]=[]
+  for(const match of template.code.matchAll(/_resolveComponent\("(a-[a-z0-9-]+)"\)/g)){
+   const tag=match[1]!,name=tag.split('-').map(part=>part[0]!.toUpperCase()+part.slice(1)).join('')
+   if(!app.component(name))unregistered.push(tag)
   }
-  expect(unregistered).toEqual([])
+  expect(unregistered,`${file.slice(root.length)} 的 Ant 标签应有生产组件绑定`).toEqual([])
  })
 })

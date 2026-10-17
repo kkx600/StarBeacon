@@ -78,6 +78,7 @@ func (a *API) Handler() http.Handler {
 	a.registerReplay(m)
 	a.registerPacketArchives(m)
 	a.registerInventory(m)
+	a.registerDiscovery(m)
 	a.registerNotifications(m)
 	a.registerModels(m)
 	a.registerAnalysis(m)

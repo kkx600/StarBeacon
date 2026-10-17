@@ -16,6 +16,7 @@
     "/assets",
     "/assets?view=groups",
     "/assets?view=networks",
+    "/assets?view=discovery",
     "/operations",
     "/operations?view=operations",
     "/operations?view=logins",

@@ -14493,6 +14493,127 @@
         },
         "description": "调查任务属于当前租户的事件协作，不是采集器执行命令。管理员权限、事件及任务修订在同一事务核对；原请求精确确认不重做操作。完成或取消需要说明；仍有未完成任务时禁止事件结案。任务与历史默认保留 180 天，活动事件继续保护其材料。"
       }
+    },
+    "/api/v1/inventory/discovery": {
+      "post": {
+        "summary": "按探针与网段发现流量地址",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "会话、权限、参数或依赖错误，具体含义见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "租户存在进行中的查询或每分钟 6 次预算已耗尽；Retry-After 为 60 秒。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "合并地址超过 512 个，需缩短时间或缩小前缀。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryQuery"
+              }
+            }
+          }
+        },
+        "description": "仅管理员可按当前探针注册代次和使用中的网段修订查询已有 flow 文档。半开窗口不超过 24 小时；读取当前租户索引族并排除同前缀的其他租户，按实际事件时间过滤和分片预过滤，兼容跨日上传与离线重放，源、目的方向分别计数，计数不等于设备或会话数。合并地址最多 512 个，超限拒绝全部交付；超时、分片失败、范围变化和撤权均不提供部分结果。每租户最多一个并发查询、每 UTC 自然分钟 6 次查询尝试。不会自动登记、合并或认定资产身份，MAC 仅是方向端点原始观测。available 仅表示当前租户存在流量分区，absent 表示其流量分区不存在；均不证明捕获覆盖。结果交付前核对范围并写入默认 180 天操作审计。"
+      }
     }
   },
   "components": {
@@ -25478,6 +25599,268 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2048
+          }
+        }
+      },
+      "DiscoveryQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "network_id",
+          "network_revision",
+          "sensor_id",
+          "registration_id",
+          "prefix",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "network_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "必须是已保存网段的同族标准 CIDR 或其子网段。"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "事件时间窗口起点，年份不早于 2000；包含该时刻。"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "事件时间窗口终点，年份不晚于 2100；不包含该时刻，窗口须大于 0 且不超过 24 小时。"
+          }
+        }
+      },
+      "DiscoveryScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "network_id",
+          "network_revision",
+          "network_name",
+          "network_domain",
+          "network_prefix",
+          "sensor_id",
+          "sensor_name",
+          "registration_id"
+        ],
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "network_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "network_name": {
+            "type": "string"
+          },
+          "network_domain": {
+            "type": "string"
+          },
+          "network_prefix": {
+            "type": "string"
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "sensor_name": {
+            "type": "string"
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          }
+        }
+      },
+      "DiscoveryWitness": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "timestamp",
+          "observed_at",
+          "generation_id",
+          "sequence",
+          "raw_sha256",
+          "flow_id",
+          "side",
+          "source",
+          "destination"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generation_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "sequence": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "flow_id": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "source",
+              "destination"
+            ]
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [],
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "mac": {
+                "type": "string"
+              }
+            }
+          },
+          "destination": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [],
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "mac": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "DiscoveryAddress": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ip",
+          "source_records",
+          "destination_records",
+          "first",
+          "last"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string"
+          },
+          "source_records": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "destination_records": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "first": {
+            "$ref": "#/components/schemas/DiscoveryWitness"
+          },
+          "last": {
+            "$ref": "#/components/schemas/DiscoveryWitness"
+          }
+        }
+      },
+      "DiscoveryResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "query",
+          "scope",
+          "queried_at",
+          "addresses",
+          "source_excluded",
+          "destination_excluded",
+          "partition_status"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "query": {
+            "$ref": "#/components/schemas/DiscoveryQuery"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/DiscoveryScope"
+          },
+          "queried_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "addresses": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryAddress"
+            }
+          },
+          "source_excluded": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "destination_excluded": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "partition_status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "absent"
+            ]
           }
         }
       }

@@ -62737,6 +62737,949 @@
       "captureJpegSha256": "a2a250af1511475eec5a8762edb5e2a338e17ec2b6480dca048a2dce1a1c1062",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
       "bytes": 67840
+    },
+    {
+      "file": "assets/data.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=data&capture=1",
+      "title": "资产列表 · 有数据",
+      "state": "data",
+      "capturedAt": "2026-10-17T19:26:41.529Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "8ba7960728d7f4c29ba429063c10ae994fc2f416ccd158aad73dba05b6e095cc",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 114993
+    },
+    {
+      "file": "assets/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=empty&capture=1",
+      "title": "资产列表 · 无数据",
+      "state": "empty",
+      "capturedAt": "2026-10-17T19:26:43.816Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "35bae6b6bf1eba97f59df3392c3b74bef403c116ccfd93f2fb905238f17f3fa4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 69938
+    },
+    {
+      "file": "assets/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=detail&capture=1",
+      "title": "资产列表 · 查看详情",
+      "state": "detail",
+      "capturedAt": "2026-10-17T19:26:45.989Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "f76d93781a1435ad778ace6f3191730880beb6b4a0d2329cdd23a3e04a42df30",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 92935
+    },
+    {
+      "file": "assets/action.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=action&capture=1",
+      "title": "资产列表 · 操作表单",
+      "state": "action",
+      "capturedAt": "2026-10-17T19:26:48.177Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "3968315ffdf01b079899d919e5656d141d9c403a292aa429e7475ee090a1f36d",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 96768
+    },
+    {
+      "file": "assets/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=loading&capture=1",
+      "title": "资产列表 · 加载中",
+      "state": "loading",
+      "capturedAt": "2026-10-17T19:26:50.248Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "c80fa7cbe01509c0d46c404ebf3bb73043c1122ca10f91a67d9ede6291e1e664",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 72086
+    },
+    {
+      "file": "assets/error.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?state=error&capture=1",
+      "title": "资产列表 · 加载失败",
+      "state": "error",
+      "capturedAt": "2026-10-17T19:26:53.046Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "aa1536dcba428ca4cb0d1aef76047147e3134be53828ae79f65cf34a5b4ddf06",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 70867
+    },
+    {
+      "file": "supplemental/asset-discovery-data.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=data&capture=1",
+      "title": "资产被动发现 · 地址列表",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:26:55.069Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "bf5e394999a5fb1a898aef3019516713c55b4344a4b1c2c54c1d4bdc26e0af67",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 110129
+    },
+    {
+      "file": "supplemental/asset-discovery-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&capture=1",
+      "title": "资产被动发现 · 无地址观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:26:56.939Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "cb16414ea6e226f678ae6709631956281739e83e88d0d03179e947fd5133cb48",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106675
+    },
+    {
+      "file": "supplemental/asset-discovery-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=detail&capture=1",
+      "title": "资产被动发现 · 地址观测证据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:26:59.036Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "3d099b25ac38bf59744aacc85254f15a5fd54914a87c288c19fdeee3ddb75a78",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106607
+    },
+    {
+      "file": "supplemental/asset-discovery-action.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=action&capture=1",
+      "title": "资产被动发现 · 资产登记",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:27:01.153Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "761ebda150aa53aacf3e9034120855b2019f1a7764e2ffe60ab3303f0fa8734a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 85437
+    },
+    {
+      "file": "supplemental/asset-discovery-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=loading&capture=1",
+      "title": "资产被动发现 · 读取中",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:27:03.247Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "258582e10753d8d6a789f3f8a497d50f0c9e7b62083280ad7f70f1d14735ba8f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 88559
+    },
+    {
+      "file": "supplemental/asset-discovery-error.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&capture=1",
+      "title": "资产被动发现 · 查询失败",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:27:05.284Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "d3912503f7a4a06343a432d7d753cebd75995d5266fe831a392a49c06b4fd62e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 93235
+    },
+    {
+      "file": "supplemental/asset-discovery-absent.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&result=absent&capture=1",
+      "title": "资产被动发现 · 日期分区缺失",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:27:07.724Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "dbee1e6cff7ec1843862f610be85d1792e58735edb33c33e869dbef95cf2f19e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106166
+    },
+    {
+      "file": "supplemental/asset-discovery-limit.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&result=limit&capture=1",
+      "title": "资产被动发现 · 地址上限",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:27:09.731Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成资产目录与被动地址观测，复用工程证据和登记组件，核对列表、空状态、失败及弹窗",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "e0e4cb19e96b06906c44b3d52d658366b2fdde2dd0f5366a14d75ce0b23b464e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 94163
+    },
+    {
+      "file": "supplemental/asset-discovery-data.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=data&capture=1",
+      "title": "资产被动发现 · 地址列表",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:35.051Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "a28c494f1e58dcc26c1a02fdefb57da7184459606bf0cd758fbbe330a3b1fb04",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 110160
+    },
+    {
+      "file": "supplemental/asset-discovery-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&capture=1",
+      "title": "资产被动发现 · 无地址观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:36.767Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "cb16414ea6e226f678ae6709631956281739e83e88d0d03179e947fd5133cb48",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106675
+    },
+    {
+      "file": "supplemental/asset-discovery-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=detail&capture=1",
+      "title": "资产被动发现 · 地址观测证据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:38.638Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "ac8da2517986257bcb8916f1b0ad7a7d06def0a1a404118d18a962923b4fe429",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106775
+    },
+    {
+      "file": "supplemental/asset-discovery-action.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=action&capture=1",
+      "title": "资产被动发现 · 资产登记",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:40.464Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "abed4e2554e05eb406b832586d310dcfef0120c6fbc11b005cdcb914271124df",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 85465
+    },
+    {
+      "file": "supplemental/asset-discovery-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=loading&capture=1",
+      "title": "资产被动发现 · 读取中",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:42.216Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "258582e10753d8d6a789f3f8a497d50f0c9e7b62083280ad7f70f1d14735ba8f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 88559
+    },
+    {
+      "file": "supplemental/asset-discovery-error.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&capture=1",
+      "title": "资产被动发现 · 查询失败",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:43.914Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "d3912503f7a4a06343a432d7d753cebd75995d5266fe831a392a49c06b4fd62e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 93235
+    },
+    {
+      "file": "supplemental/asset-discovery-absent.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&result=absent&capture=1",
+      "title": "资产被动发现 · 日期分区缺失",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:45.547Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "dbee1e6cff7ec1843862f610be85d1792e58735edb33c33e869dbef95cf2f19e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 106166
+    },
+    {
+      "file": "supplemental/asset-discovery-limit.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&result=limit&capture=1",
+      "title": "资产被动发现 · 地址上限",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:47.176Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "e0e4cb19e96b06906c44b3d52d658366b2fdde2dd0f5366a14d75ce0b23b464e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 94163
+    },
+    {
+      "file": "supplemental/asset-discovery-large-count.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=data&result=large&capture=1",
+      "title": "资产被动发现 · 大整数计数",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T19:43:48.915Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成被动地址观测；复用工程组件，核对采集器读取时间、登记约束及大整数换行",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "f63749ae069a431c4074acac1af487409905250e62e6b5e1efb78ebae8458ee0",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 113128
+    },
+    {
+      "file": "supplemental/asset-discovery-absent.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&result=absent&capture=1",
+      "title": "资产被动发现 · 流量分区缺失",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:02:19.637Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成租户无流量分区状态，区分索引族存在性与事件时间窗口，不查询工程服务",
+      "stateVerified": true,
+      "viewport": {
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "9f02be1e5cc67adf19dbb1088856e6cc58a5eda672bf7ff6374f772b7a96f66c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 109869
+    },
+    {
+      "file": "supplemental/asset-discovery-data.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=data&capture=1",
+      "title": "资产被动发现 · 地址列表",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:46.364Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "left": 1079,
+            "right": 1139.5625,
+            "text": "证据"
+          },
+          {
+            "left": 1147.5625,
+            "right": 1236.6875,
+            "text": "登记资产"
+          }
+        ],
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "56218c5aa39a53a1ef466c391bbb9b137b6daa4f43caf1e2b926201211bb36fa",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 112219
+    },
+    {
+      "file": "supplemental/asset-discovery-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&capture=1",
+      "title": "资产被动发现 · 无地址观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:46.923Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "2686e0c2a06639ae95b8d383599633eae4eadea4b29635e183735cc86ec4098a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 110760
+    },
+    {
+      "file": "supplemental/asset-discovery-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=detail&capture=1",
+      "title": "资产被动发现 · 地址观测证据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:47.519Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "left": 1079,
+            "right": 1139.5625,
+            "text": "证据"
+          },
+          {
+            "left": 1147.5625,
+            "right": 1236.6875,
+            "text": "登记资产"
+          }
+        ],
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "461a402725c7b36d8ec10874d0e55f5abe8c7f27cbcdb2389a4e47dd82351986",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 114191
+    },
+    {
+      "file": "supplemental/asset-discovery-action.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=action&capture=1",
+      "title": "资产被动发现 · 资产登记",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:48.180Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "left": 1079,
+            "right": 1139.5625,
+            "text": "证据"
+          },
+          {
+            "left": 1147.5625,
+            "right": 1236.6875,
+            "text": "登记资产"
+          }
+        ],
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "72431d39eaaa417112601d27af6349459b98b1e2724795010397178e95c73553",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 75161
+    },
+    {
+      "file": "supplemental/asset-discovery-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=loading&capture=1",
+      "title": "资产被动发现 · 读取中",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:48.683Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "1f70a97f2e82692bed0981ee3b77b73abcff58f6ef376bfbafe33402ca331127",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 92493
+    },
+    {
+      "file": "supplemental/asset-discovery-error.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&capture=1",
+      "title": "资产被动发现 · 查询失败",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:49.187Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "c066b977897966a9d204b3aa398fc2a0a6ab109ae35486ab0eb221ae5ce4c29a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 97763
+    },
+    {
+      "file": "supplemental/asset-discovery-absent.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=empty&result=absent&capture=1",
+      "title": "资产被动发现 · 流量分区缺失",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:49.693Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "bd7e494dc143a47714a448bf15a94772ec3b4f2fdd2b99ce2cb2b5f3f098428d",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 110542
+    },
+    {
+      "file": "supplemental/asset-discovery-limit.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=error&result=limit&capture=1",
+      "title": "资产被动发现 · 地址上限",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:50.227Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "businessTables": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "bf96449b68ec2b588a8efe42a42856eb537deb6ba1fe457f0e76ff494e74d638",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 98304
+    },
+    {
+      "file": "supplemental/asset-discovery-large-count.jpg",
+      "url": "http://127.0.0.1:4173/page/assets?view=discovery&state=data&result=large&capture=1",
+      "title": "资产被动发现 · 大整数计数",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T20:28:50.733Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成地址观测，固定地址与操作列，复用工程证据与登记组件；不查询或写入工程数据",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "left": 1079,
+            "right": 1139.5625,
+            "text": "证据"
+          },
+          {
+            "left": 1147.5625,
+            "right": 1236.6875,
+            "text": "登记资产"
+          }
+        ],
+        "businessTables": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "e43f7e3b8c8cab9b91d8cb7587d88295cd98cb0e0d292aeec53b85cf40f8a6a5",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 115997
     }
   ],
   "errors": []

@@ -3,9 +3,9 @@ import {reactive,shallowRef} from 'vue'
 import {Modal as AModal,Select as ASelect,Switch as ASwitch} from 'ant-design-vue'
 import {createDraft,criticalityNames,purposeNames,inventoryObjectNames,type InventoryKind,type InventoryRecord,type InventoryData} from './inventory'
 import GroupSelector from './GroupSelector.vue'
-const props=defineProps<{kind:InventoryKind;record:InventoryRecord|null;pending:boolean;error:string}>()
+const props=defineProps<{kind:InventoryKind;record:InventoryRecord|null;draft?:InventoryData;groups?:{value:string;label:string}[];pending:boolean;error:string}>()
 const emit=defineEmits<{save:[data:InventoryData,id:string];close:[]}>()
-const form=reactive(createDraft(props.kind,props.record?.data)),id=props.record?.id??`obj_${crypto.randomUUID().replaceAll('-','')}`
+const form=reactive(createDraft(props.kind,props.record?.data??props.draft)),id=props.record?.id??`obj_${crypto.randomUUID().replaceAll('-','')}`
 const interfaceKeys=shallowRef((form.interfaces??[]).map(()=>crypto.randomUUID()))
 const ipText=reactive((form.interfaces??[]).map(iface=>iface.ips.join('\n')))
 const rules={name:[{required:true,message:'请输入名称',trigger:'blur'},{max:128,message:'名称不能超过 128 个字符'}],network_domain:[{required:true,message:'请输入网络域',trigger:'blur'}],prefix:[{required:true,message:'请输入 IPv4 或 IPv6 网段',trigger:'blur'}]}
@@ -17,11 +17,12 @@ function submit(){if(props.pending)return;const data=JSON.parse(JSON.stringify(f
   <a-modal :title="`${record?'编辑':'创建'}${inventoryObjectNames[kind]}`" open :width="760" :footer="null" :mask-closable="!pending" :closable="!pending" :keyboard="!pending" @cancel="emit('close')">
     <a-form :model="form" :rules="rules" layout="vertical" :disabled="pending" @finish="submit">
       <a-alert v-if="error" :message="error" type="error" show-icon class="section-gap" />
+      <a-alert v-if="draft&&kind==='assets'" type="info" show-icon message="观测地址仅作为登记线索。请确认资产名称、接口与归属；MAC 未自动带入，避免把网关地址登记为设备接口。" class="section-gap"/>
       <div class="inventory-fields">
         <a-form-item label="名称" name="name"><a-input v-model:value="form.name" :maxlength="128" /></a-form-item>
         <a-form-item v-if="kind!=='networks'" label="责任人" name="owner"><a-input v-model:value="form.owner" :maxlength="128" /></a-form-item>
         <a-form-item v-if="kind!=='groups'" label="网络域" name="network_domain"><a-input v-model:value="form.network_domain" :maxlength="128" placeholder="同一地址空间的稳定名称" /></a-form-item>
-        <a-form-item v-if="kind!=='groups'" label="资产组" html-for="inventory-group"><GroupSelector input-id="inventory-group" :model-value="form.group_id??''" :disabled="pending" @update:model-value="form.group_id=$event" /></a-form-item>
+        <a-form-item v-if="kind!=='groups'" label="资产组" html-for="inventory-group"><a-select v-if="groups" id="inventory-group" v-model:value="form.group_id" :options="groups" placeholder="选择资产组"/><GroupSelector v-else input-id="inventory-group" :model-value="form.group_id??''" :disabled="pending" @update:model-value="form.group_id=$event" /></a-form-item>
         <a-form-item v-if="kind==='assets'" label="重要性" html-for="inventory-criticality"><a-select id="inventory-criticality" aria-label="重要性" v-model:value="form.criticality" :options="Object.entries(criticalityNames).map(([value,label])=>({value,label}))" /></a-form-item>
         <a-form-item v-if="kind==='networks'" label="网段" name="prefix"><a-input v-model:value="form.prefix" placeholder="192.0.2.0/24 或 2001:db8::/32" /></a-form-item>
         <a-form-item v-if="kind==='networks'" label="用途" html-for="inventory-purpose"><a-select id="inventory-purpose" aria-label="用途" v-model:value="form.purpose" :options="Object.entries(purposeNames).map(([value,label])=>({value,label}))" /></a-form-item>

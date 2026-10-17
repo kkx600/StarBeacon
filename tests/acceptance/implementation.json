@@ -325,21 +325,32 @@
         "internal/inventory/inventory.go",
         "internal/store/inventory.go",
         "internal/platform/inventory.go",
-        "migrations/00006_inventory.sql"
+        "migrations/00006_inventory.sql",
+        "internal/discovery/discovery.go",
+        "internal/store/discovery.go",
+        "internal/platform/discovery.go",
+        "web/platform/src/features/inventory/DiscoveryWorkspace.vue",
+        "web/packages/shared/src/components/DiscoveryPanel.vue"
       ],
       "pages": [
         "platform:/assets",
         "platform:/assets?view=groups",
-        "platform:/assets?view=networks"
+        "platform:/assets?view=networks",
+        "platform:/assets?view=discovery"
       ],
       "tests": [
         "internal/inventory/inventory_test.go",
         "tests/integration/inventory_test.go",
         "web/tests/inventory-components.test.ts",
         "tests/integration/storage_failures_test.go",
-        "tests/integration/http_failures_test.go"
+        "tests/integration/http_failures_test.go",
+        "internal/discovery/discovery_test.go",
+        "internal/store/discovery_test.go",
+        "internal/platform/discovery_test.go",
+        "tests/integration/discovery_test.go",
+        "web/tests/discovery.test.ts"
       ],
-      "boundary": "人工登记、显式使用状态、多接口/IP/6 字节 MAC、CIDR、不可变修订、CAS 和历史查询；没有自动发现、地址租约、业务拓扑或被监测账号身份关联。"
+      "boundary": "人工登记、多接口/IP/MAC、CIDR、CAS 与不可变历史；支持按当前探针注册和网段修订、24 小时以内窗口查询已有 flow 的被动地址观测，双向分别计数，最多 512 个地址且超限不截断。地址与 MAC 观测不证明设备身份、地址租约或归属；没有持续自动建档、DHCP/NAT 身份融合、业务拓扑或被监测账号身份关联。"
     },
     {
       "id": "operations",
@@ -1268,10 +1279,11 @@
         "inventory"
       ],
       "implemented": [
-        "人工登记、启停、编辑和不可变历史"
+        "人工登记、启停、编辑和不可变历史",
+        "当前探针注册、网段修订和 24 小时窗口内的有界流量地址发现；人工确认后独立登记"
       ],
       "remaining": [
-        "被动发现/外源导入幂等",
+        "持续发现水位、观测保存和外源导入幂等",
         "认领/维护/退役/恢复完整状态机",
         "保全依赖检查"
       ]
