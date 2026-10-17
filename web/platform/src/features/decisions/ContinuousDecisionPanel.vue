@@ -36,4 +36,4 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
   </StatePanel>
  </section>
 </template>
-<style scoped>.continuous-panel{margin:12px 0;padding:12px;border:1px solid var(--border-color,#e5e7eb);border-radius:8px}.continuous-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.continuous-heading h3{margin:0}.continuous-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.continuous-detail dd{margin:0;overflow-wrap:anywhere}.continuous-detail dt{color:var(--text-secondary,#4b5563)}</style>
+<style scoped>.continuous-panel{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px}.continuous-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.continuous-heading h3{margin:0}.continuous-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.continuous-detail dd{margin:0;overflow-wrap:anywhere}.continuous-detail dt{color:var(--muted)}</style>

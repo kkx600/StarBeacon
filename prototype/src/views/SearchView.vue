@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import {SearchOutlined,QuestionCircleOutlined,DownloadOutlined,PlusOutlined,DeleteOutlined} from '@ant-design/icons-vue'
 import type {PageSpec,PreviewState,BusinessRecord} from '../models'
 import {packetRows,createFixtures,hasPacketEvidence} from '../data/fixtures'
@@ -13,6 +13,7 @@ import PacketWorkbench from '../components/PacketWorkbench.vue'
 import StatusTag from '../components/StatusTag.vue'
 import SavedQueries from '../components/SavedQueries.vue'
 import type {QuerySnapshot} from '../components/SavedQueries.vue'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const defaultMode=props.page.id==='packets'?'packet':props.page.id==='payloads'?'session':'alert'
 const mode=ref(defaultMode);const query=ref('ip.src == 198.51.100.24 and http.request.method == "GET"');const executed=ref('');const error=ref('');const help=ref(false);const detail=ref(false);const formOpen=ref(false);const editorMode=ref('dsl')

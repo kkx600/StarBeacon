@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,ref} from 'vue'
 import {CopyOutlined,DownloadOutlined} from '@ant-design/icons-vue'
-import {message} from 'ant-design-vue'
 import type {PacketRecord} from '../data/fixtures'
 import {exportJson} from '../composables/useRecords'
 import StatusTag from './StatusTag.vue'
+const message=useFeedback()
 const props=defineProps<{packets:PacketRecord[];compact?:boolean}>()
 const selectedId=ref('4');const decode=ref('utf8');const byte=ref(-1);const activeLayer=ref('http')
 const packet=computed(()=>props.packets.find(p=>p.id===selectedId.value)??props.packets[0])

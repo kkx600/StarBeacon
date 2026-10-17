@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onMounted,reactive,ref,watch} from 'vue'
-import {Table,message,Select as ASelect,Checkbox as ACheckbox} from 'ant-design-vue'
+import {Table,Select as ASelect,Checkbox as ACheckbox} from 'ant-design-vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {assessmentStatuses,assessmentVerdicts,assessmentOutcomes,initialAssessment,assessmentInputError,type AssessmentSpec} from './assessment'
 import {useAssessment} from './useAssessment'
+const message=useFeedback()
 const props=defineProps<{eventId:string;digest:string}>()
 const emit=defineEmits<{locked:[value:boolean]}>()
 const state=useAssessment(props.eventId,props.digest)

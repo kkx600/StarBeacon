@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,onMounted,ref,shallowRef,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import type {ApiClient} from '../../../web/packages/shared/src/api'
 import {applicationCategories,appDigest,orderedDefinition,orderedObservation,changeError,type AppChange,type AppCondition,type AppDefinition,type AppObservation,type AppResult,type AppRule} from '../../../web/platform/src/features/applications/applicationRules'
 import ApplicationRuleForm from '../../../web/platform/src/features/applications/ApplicationRuleForm.vue'
@@ -10,6 +10,7 @@ import type {AppSnapshot,AppTarget} from '../../../web/platform/src/features/app
 import type {PreviewState} from '../models'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
+const message=useFeedback()
 const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>()
 const records=shallowRef<AppRule[]>([]),ready=ref(false),loadError=ref(''),keyword=ref(''),active=ref('')
 const editing=ref(false),editRecord=shallowRef<AppRule|null>(null),busy=ref(false),error=ref(''),detail=shallowRef<AppRule|null>(null),testing=ref(false),testRecord=shallowRef<AppRule|null>(null),revision=ref<number|string>(1)
@@ -82,4 +83,4 @@ onMounted(async()=>{try{const examples=[['files','业务文件服务（示例）
  <ApplicationDeploymentForm v-else-if="deploying" :pending="false" :busy="false" :unconfirmed="false" error="" :targets="deploymentTargets" :snapshot="deploymentSnapshot" :selected="deploymentSelected" :task-id="deploymentTask" @close="close" @refresh="deploy" @choose="deploymentSelected=$event" @submit="submitDeployment" @confirm="error='原型不执行工程请求。'" @task="message.info('此任务为合成示例，未调用工程平台或探针。')"/>
  <a-modal v-else-if="detail" :open="true" title="应用识别规则详情" :width="800" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" @cancel="close"><a-alert type="info" show-icon message="此修订与摘要属于合成示例，不来自工程平台。" class="modal-notice"/><a-alert v-if="error" type="error" show-icon :message="error" class="modal-notice"/><form class="application-preview-revision" @submit.prevent="selectRevision"><label for="prototype-application-revision">读取修订</label><a-input-number id="prototype-application-revision" v-model:value="revision" :min="1" :max="records.find(row=>row.id===detail?.id)?.revision??1"/><a-button html-type="submit">读取</a-button></form><a-descriptions bordered :column="1" size="small"><a-descriptions-item label="规则 / 修订">{{detail.name}} / {{detail.revision}}</a-descriptions-item><a-descriptions-item label="状态">{{detail.active?'启用':'停用'}}</a-descriptions-item><a-descriptions-item label="定义 SHA-256"><span class="technical">{{detail.definition_sha256}}</span></a-descriptions-item><a-descriptions-item label="维护说明">{{detail.description||'未填写'}}</a-descriptions-item></a-descriptions><pre class="application-preview-definition">{{JSON.stringify(detail.definition,null,2)}}</pre></a-modal>
 </template>
-<style scoped>.application-preview-actions,.application-preview-revision{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.application-preview-revision{margin-bottom:12px}.application-preview-definition{padding:12px;background:var(--bg-soft,#f8f9fa);border:1px solid var(--border,#e5e7eb);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}.technical{overflow-wrap:anywhere}</style>
+<style scoped>.application-preview-actions,.application-preview-revision{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.application-preview-revision{margin-bottom:12px}.application-preview-definition{padding:12px;background:var(--table-header);border:1px solid var(--line);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}.technical{overflow-wrap:anywhere}</style>

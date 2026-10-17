@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import {useFeedback} from '../composables/useFeedback'
 import {computed,shallowRef,useId,watch} from 'vue'
-import {message,Radio,Pagination as APagination} from 'ant-design-vue'
+import {Radio,Pagination as APagination} from 'ant-design-vue'
 import {byteNeedle,decodeUTF8,eveBytes,findBytes,hexRows,highlightedHex,type ByteSearch} from '../evidence'
+const message=useFeedback()
 const ARadioGroup=Radio.Group,ARadioButton=Radio.Button
 const props=defineProps<{original:string;source?:'eve'|'frame'}>()
 const mode=shallowRef('hex'),page=shallowRef(1)
@@ -55,5 +57,5 @@ async function copy() {try {await navigator.clipboard.writeText(rendered.value);
 .byte-search-input {flex:1 1 200px;min-width:160px}
 .byte-error {color:var(--danger);margin:0 0 var(--related-gap)}
 .byte-matches {font-size:12px}
-.byte-content mark {background:#fff1b8;color:#614700;outline:1px solid #d48806;border-radius:2px}
+.byte-content mark {background:var(--warning-surface);color:var(--text);outline:1px solid var(--warning-border);border-radius:2px}
 </style>

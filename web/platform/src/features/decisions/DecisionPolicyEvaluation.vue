@@ -56,4 +56,4 @@ onScopeDispose(()=>{stopped=true;read?.abort();attempt=undefined})
   </div>
  </a-modal>
 </template>
-<style scoped>.policy-evaluation-input{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.policy-evaluation-input .ant-input{flex:1;min-width:200px}.policy-evaluation-detail{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px}.policy-evaluation-detail dt{color:var(--text-secondary,#4b5563)}.policy-evaluation-detail dd{margin:0;overflow-wrap:anywhere}</style>
+<style scoped>.policy-evaluation-input{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.policy-evaluation-input .ant-input{flex:1;min-width:200px}.policy-evaluation-detail{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px}.policy-evaluation-detail dt{color:var(--muted)}.policy-evaluation-detail dd{margin:0;overflow-wrap:anywhere}</style>

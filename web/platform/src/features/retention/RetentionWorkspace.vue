@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,ref,watch} from 'vue'
-import {Checkbox,InputNumber,Modal,Table,message} from 'ant-design-vue'
+import {Checkbox,InputNumber,Modal,Table} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import {scopeNames,type RetentionPolicy} from './retention'
 import {useRetention} from './useRetention'
+const message=useFeedback()
 const state=useRetention(),{data,pending,error,actionError,busy,checking,preview,unconfirmed}=state
 const selected=ref<RetentionPolicy|null>(null),days=ref<number|undefined>(180),confirmed=ref(false),open=ref(false)
 const rows=computed(()=>data.value?.items.map(policy=>({...policy,...data.value!.catalog.find(category=>category.id===policy.category)}))??[])

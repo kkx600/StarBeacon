@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
-import {Modal as AModal,Select as ASelect,InputNumber as AInputNumber,Checkbox as ACheckbox,message} from 'ant-design-vue'
+import {Modal as AModal,Select as ASelect,InputNumber as AInputNumber,Checkbox as ACheckbox} from 'ant-design-vue'
 import type {Sensor} from '@starbeacon/shared/types.ts'
 import type {ResponseConnector} from '@starbeacon/shared/response.ts'
 import {readyConnector} from '@starbeacon/shared/response.ts'
 import {readSensorDirectory} from '@starbeacon/shared/sensors.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
+const message=useFeedback()
 const props=defineProps<{sensor:Sensor|null}>()
 const emit=defineEmits<{close:[];submitted:[]}>()
 const connectors=shallowRef<ResponseConnector[]>([]),pending=shallowRef(false),saving=shallowRef(false),error=shallowRef(''),unconfirmed=shallowRef(false)

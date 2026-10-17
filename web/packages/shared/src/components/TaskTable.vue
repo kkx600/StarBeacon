@@ -64,5 +64,5 @@ const statusClass=(state:string)=>state==='succeeded'?'status-online':state==='f
   </a-modal>
 </template>
 <style scoped>
-.application-installation h3{margin:0 0 8px;font-size:16px}.application-installation dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;margin:12px 0}.application-installation dt{color:var(--text-secondary,#4b5563)}.application-installation dd{margin:0;overflow-wrap:anywhere}
+.application-installation h3{margin:0 0 8px;font-size:16px}.application-installation dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;margin:12px 0}.application-installation dt{color:var(--muted)}.application-installation dd{margin:0;overflow-wrap:anywhere}
 </style>

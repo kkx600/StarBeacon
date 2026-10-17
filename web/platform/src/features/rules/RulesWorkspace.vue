@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import { computed, onMounted, onScopeDispose, reactive, shallowRef } from 'vue'
-import { Table as ATable, Modal as AModal, Select as ASelect, message } from 'ant-design-vue'
+import { Table as ATable, Modal as AModal, Select as ASelect} from 'ant-design-vue'
 import type { RulePackage, Sensor } from '@starbeacon/shared/types.ts'
 import { formatTime } from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
@@ -16,6 +17,7 @@ import {useRuleRelease} from './useRuleRelease'
 import RuleGenerationWorkspace from './RuleGenerationWorkspace.vue'
 import ApplicationRulesWorkspace from '../applications/ApplicationRulesWorkspace.vue'
 import RuleSyncWorkspace from './RuleSyncWorkspace.vue'
+const message=useFeedback()
 const release=useRuleRelease()
 const {view,change}=useWorkspaceView(session.current.value?.role==='admin'?['packages','samples','tasks','generation','applications','sync']:['packages','applications'])
 const canEdit=computed(()=>session.current.value?.role==='admin')

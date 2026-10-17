@@ -5,12 +5,10 @@
 .ant-form-item .ant-form-item-explain,
 .field-hint {font-size: 12px; line-height: 1.65; margin-top: 4px}
 .ant-form-item .ant-form-item-extra {color: var(--muted); min-height: 0}
-.ant-form-item .ant-form-item-explain-error {color: var(--danger)}
 .ant-input-number-input {font-variant-numeric: tabular-nums}
 .ant-alert {padding: 10px 12px; border-radius: 8px}
 .ant-alert .ant-alert-message {font-size: 13px; line-height: 1.7}
 .ant-alert .ant-alert-description {font-size: 12px; line-height: 1.7}
-.ant-alert-info .ant-alert-message {color: var(--record-text)}
 .ant-modal .ant-modal-title {font-size: 18px; line-height: 1.5; font-weight: 600}
 .ant-modal .ant-modal-content {display: flex; flex-direction: column; max-height: calc(100dvh - 128px)}
 .ant-modal .ant-modal-header {margin-bottom: 16px; padding-right: 28px; flex-shrink: 0}
@@ -19,10 +17,6 @@
 .ant-modal .ant-modal-close {color: var(--muted); border-radius: 6px}
 .ant-modal .ant-modal-close:hover {background: var(--row-hover); color: var(--text)}
 .ant-table-wrapper .ant-table-thead > tr > th {font-weight: 600}
-.ant-select .ant-select-arrow,
-.ant-picker .ant-picker-suffix,
-.ant-input-affix-wrapper .ant-input-clear-icon {color: var(--text-placeholder)}
-.ant-select-disabled .ant-select-arrow {color: var(--text-disabled)}
 .form-section-title {grid-column: 1 / -1; margin: 4px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.5}
 .form-section-title:first-child {padding-top: 0; border-top: 0}
 /* 滚动条是导航辅助，不与表单边界或主要动作争夺注意力。 */

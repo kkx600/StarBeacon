@@ -21,5 +21,5 @@ const record=computed(()=>props.attribution&&validApplicationAttribution(props.a
  </section>
 </template>
 <style scoped>
-.application-evidence{margin:12px 0}.application-evidence h2{font-size:16px;margin:0 0 8px}.application-facts{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px}.application-facts dt{color:var(--text-secondary,#4b5563)}.application-facts dd{margin:0;overflow-wrap:anywhere}.application-evidence-list{padding-left:20px}.application-evidence-list li{margin:4px 0;overflow-wrap:anywhere}.technical{overflow-wrap:anywhere}
+.application-evidence{margin:12px 0}.application-evidence h2{font-size:16px;margin:0 0 8px}.application-facts{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px}.application-facts dt{color:var(--muted)}.application-facts dd{margin:0;overflow-wrap:anywhere}.application-evidence-list{padding-left:20px}.application-evidence-list li{margin:4px 0;overflow-wrap:anywhere}.technical{overflow-wrap:anywhere}
 </style>

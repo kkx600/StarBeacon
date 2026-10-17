@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
-import {Checkbox as ACheckbox,Descriptions as ADescriptions,Modal as AModal,Radio as ARadio,Select as ASelect,Table as ATable,message} from 'ant-design-vue'
+import {Checkbox as ACheckbox,Descriptions as ADescriptions,Modal as AModal,Radio as ARadio,Select as ASelect,Table as ATable} from 'ant-design-vue'
 import type {ReplaySample,RulePackage} from '@starbeacon/shared/types.ts'
 import type {ModelProvider} from '../models/models'
 import {formatTime} from '@starbeacon/shared/types.ts'
@@ -11,6 +12,7 @@ import {session} from '../../session'
 import {checkClass,resultNames} from '../models/models'
 import {generationCodes,generationStates,generationWorking,sourceNames,validGenerationSample,type GenerationSource} from './generation'
 import {useRuleGeneration} from './useRuleGeneration'
+const message=useFeedback()
 const ADescriptionsItem=ADescriptions.Item,ARadioGroup=ARadio.Group
 const emit=defineEmits<{adopted:[value:RulePackage];samples:[]}>()
 const generation=useRuleGeneration()

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {ref,shallowRef} from 'vue'
-import {message,Table as ATable,Tag as ATag,Select as ASelect} from 'ant-design-vue'
+import {Table as ATable,Tag as ATag,Select as ASelect} from 'ant-design-vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
@@ -9,6 +10,7 @@ import {userRoles,type UserInput,type UserRecord} from './user'
 import UserForm from './UserForm.vue'
 import UserDetail from './UserDetail.vue'
 import PasswordDialog from './PasswordDialog.vue'
+const message=useFeedback()
 const passwordRecord=shallowRef<UserRecord|null>(null)
 const state=useUsers()
 const {page,pending,error,cursors,selected,detailPending,detailError,busy,unconfirmed,actionError}=state

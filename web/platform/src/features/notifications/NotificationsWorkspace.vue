@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,shallowRef,watch} from 'vue'
-import {Select,message} from 'ant-design-vue'
+import {Select} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
 import {useWorkspaceView} from '@starbeacon/shared/utils/useWorkspaceView.ts'
@@ -10,6 +11,7 @@ import ChannelTable from './ChannelTable.vue'
 import ChannelForm from './ChannelForm.vue'
 import DeliveryTable from './DeliveryTable.vue'
 import DeliveryDetail from './DeliveryDetail.vue'
+const message=useFeedback()
 const {view,change}=useWorkspaceView(['channels','deliveries'])
 const state=useNotifications(view)
 const {channels,deliveries,available,development,pending,error,busy,actionError,cursors,nextCursor}=state

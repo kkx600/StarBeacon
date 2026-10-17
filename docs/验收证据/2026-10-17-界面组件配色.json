@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "scope": "frontend_component_color_alignment_not_full_product_acceptance",
+  "status": "passed",
+  "frontend_source_sha256": "2045b1b61e76d126840cdb2d88568fd82c0a93215cdb0953b4c5c246b9e37f20",
+  "tests": {
+    "components": 573,
+    "tools": 9,
+    "test_files": 51,
+    "coverage_percent": {
+      "statements": 95.53844807978305,
+      "branches": 93.05804050669147,
+      "functions": 92.21424627277747,
+      "lines": 98.9805375347544
+    },
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "prototype_build": "passed",
+    "prototype_filter_tests": 3,
+    "gallery_integrity_tests": 4
+  },
+  "theme": {
+    "library": "ant-design-vue",
+    "version": "4.2.6",
+    "algorithm": "defaultAlgorithm",
+    "seeds": {
+      "primary": "#5d87ff",
+      "success": "#60c041",
+      "warning": "#f9901f",
+      "error": "#e13c39",
+      "info": "#38c0fc"
+    },
+    "workspace": "#f7f7f7",
+    "surface": "#ffffff",
+    "warning_background": "#fff9eb",
+    "warning_border": "#ffd899",
+    "ordinary_links": "#5d87ff",
+    "scanned_source_files": 288,
+    "text_contrast_pairs": 54,
+    "chart_contrast_pairs": 9,
+    "all_controls_wcag_aa_claimed": false,
+    "reference_exceptions": [
+      "primary_button_white_text",
+      "ordinary_primary_links",
+      "placeholder_text",
+      "control_borders",
+      "some_status_colors",
+      "library_preset_states"
+    ]
+  },
+  "gallery": {
+    "renderer": "Codex in-app browser",
+    "base": 767,
+    "supplemental": 66,
+    "unique_files": 833,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "horizontal_overflow": 0,
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "theme_inputs": [
+      "prototype/src/theme.ts",
+      "prototype/src/styles.css",
+      "web/packages/shared/src/theme.ts",
+      "web/packages/shared/src/controls.css"
+    ],
+    "freshness_required": true,
+    "strict_provenance": "passed"
+  },
+  "responsive": {
+    "status": "passed",
+    "scope": "targeted_collector_form_and_prototype_decision_modal_not_all_routes_all_sizes",
+    "viewports": [
+      [
+        1440,
+        900
+      ],
+      [
+        1024,
+        600
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "observations": 6,
+    "horizontal_overflow": 0,
+    "initial_wrong_tab_observations_excluded": true
+  },
+  "remote_deployment": {
+    "status": "not_completed",
+    "mutation_started": false,
+    "reason": "Docker 容器身份查询超时，后继 SSH 握手超时；驱动均在上传和配置变更前停止。",
+    "logs": [
+      "color246-deploy-driver.log",
+      "color246-deploy-retry.log",
+      "color253-deploy-driver.log"
+    ]
+  },
+  "evidence": {
+    "frontend": ".local/acceptance/color251-frontend/",
+    "captures": ".local/acceptance/color252-gallery/captures.json",
+    "layouts": ".local/acceptance/color245-ui/",
+    "gallery_provenance": "prototype/public/screenshots/provenance.json"
+  },
+  "limitations": [
+    "合成原型页面不证明后端流程已经完成。",
+    "本机构建预览不构成远程部署验收。",
+    "本轮没有创建正式发行版本。"
+  ]
+}

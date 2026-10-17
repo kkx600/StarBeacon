@@ -36,4 +36,4 @@ function submit(){
   </a-form>
  </a-modal>
 </template>
-<style scoped>.user-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.user-actions{display:flex;gap:var(--related-gap);justify-content:flex-end;flex-wrap:wrap}.user-hint{font-size:12px;color:var(--text-secondary);margin:6px 0 0}@media(max-width:700px){.user-form-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.user-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.user-actions{display:flex;gap:var(--related-gap);justify-content:flex-end;flex-wrap:wrap}.user-hint{font-size:12px;color:var(--muted);margin:6px 0 0}@media(max-width:700px){.user-form-grid{grid-template-columns:minmax(0,1fr)}}</style>

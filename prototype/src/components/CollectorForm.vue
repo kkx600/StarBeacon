@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,nextTick,reactive,ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import type {FormInstance} from 'ant-design-vue'
 import type {CollectorAction,CollectorTask} from '../data/collector'
 import {validateManagement,validateCapture,validateConnection,validateMaintenance} from '../data/collector'
 import {useCollector} from '../composables/useCollector'
+const message=useFeedback()
 const props=defineProps<{open:boolean;action:CollectorAction;serviceId?:string}>()
 const emit=defineEmits<{close:[];requested:[task:CollectorTask]}>()
 const {state,device,request}=useCollector();const formRef=ref<FormInstance>();const errors=ref<string[]>([]);const checked=ref('')

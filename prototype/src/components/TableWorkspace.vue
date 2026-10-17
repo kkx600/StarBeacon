@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {palette} from '../theme'
 import {computed,ref,watch} from 'vue'
-import {message,Modal} from 'ant-design-vue'
+import {Modal} from 'ant-design-vue'
 import {useRouter} from 'vue-router'
 import {PlusOutlined,SearchOutlined,ReloadOutlined,DownloadOutlined,SettingOutlined,FilterOutlined} from '@ant-design/icons-vue'
 import type {BusinessRecord,PageSpec,PreviewState} from '../models'
@@ -22,6 +23,7 @@ import type {QuerySnapshot} from './SavedQueries.vue'
 import SensorHealthSettings from './SensorHealthSettings.vue'
 import {healthFor,sensorMetrics} from '../data/sensorHealth'
 import {sensorThresholds} from '../composables/useSensorHealth'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState;embedded?:boolean;localArchives?:boolean}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const {records,save,updateStatus}=useRecords(props.page)
 const router=useRouter()

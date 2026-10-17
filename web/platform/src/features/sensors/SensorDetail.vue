@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import { computed,onScopeDispose,shallowRef,watch } from 'vue'
 import { session } from '../../session'
-import { message, Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue'
+import { Modal as AModal, Descriptions as ADescriptions} from 'ant-design-vue'
 const ADescriptionsItem = ADescriptions.Item
 import type { Sensor } from '@starbeacon/shared/types.ts'
 import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCapabilitiesDialog.vue'
@@ -10,6 +11,7 @@ import {basicApplicationState} from '@starbeacon/shared/application.ts'
 import {formatBytes} from '@starbeacon/shared/utils/format.ts'
 import {packetStates} from '@starbeacon/shared/packetArchives.ts'
 import { captureStates,formatTime, formatPercent, formatHealthErrors, taskNames } from '@starbeacon/shared/types.ts'
+const message=useFeedback()
 const props=defineProps<{sensor: Sensor | null}>()
 const emit = defineEmits<{close: [];submitted:[];configure:[sensor:Sensor];respond:[sensor:Sensor];certificates:[sensor:Sensor]}>()
 const pending=shallowRef(false)
@@ -81,5 +83,5 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
   <DetectionQualityDialog :open="qualityOpen&&sensor!==null" :capture="capture" :online="sensor?.status==='online'" @close="qualityOpen=false" />
 </template>
 <style scoped>
-.capture-digest{font-family:var(--font-mono,monospace);overflow-wrap:anywhere}
+.capture-digest{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
 </style>

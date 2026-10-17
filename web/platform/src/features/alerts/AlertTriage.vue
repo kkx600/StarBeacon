@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onMounted,onScopeDispose,reactive,ref,shallowRef,watch} from 'vue'
-import {Descriptions as ADescriptions,Select as ASelect,Checkbox as ACheckbox,message} from 'ant-design-vue'
+import {Descriptions as ADescriptions,Select as ASelect,Checkbox as ACheckbox} from 'ant-design-vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
@@ -8,6 +9,7 @@ import {router} from '../../router'
 import {checkClass,resultNames} from '../models/models'
 import {triageCodes,triageStates,triageVerdicts,triageOutcomes,triageRecommendations,triageWorking,validTriageProviders,type TriageProvider} from './triage'
 import {useAlertTriage} from './useAlertTriage'
+const message=useFeedback()
 const ADescriptionsItem=ADescriptions.Item
 const props=defineProps<{eventId:string;digest:string}>(),emit=defineEmits<{locked:[value:boolean]}>()
 const state=useAlertTriage(props.eventId,props.digest)
@@ -98,5 +100,5 @@ onScopeDispose(()=>{stopped=true;providerEpoch++;providerRead?.abort()})
  </div>
 </template>
 <style scoped>
-.triage-content{min-width:0}.triage-history,.triage-model-row,.triage-answer-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.triage-history .ant-select{flex:1 1 300px;min-width:0}.triage-model-row{align-items:flex-start}.triage-model-row .ant-form-item{flex:1 1 280px;min-width:0}.triage-model-row>.ant-btn{margin-top:30px}.triage-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}.triage-answer h3{font-size:14px;margin:12px 0 4px}.triage-facts{display:grid;grid-template-columns:minmax(85px,135px) minmax(0,1fr);margin:8px 0;gap:6px 12px}.triage-facts dt{color:var(--text-secondary,#595959)}.triage-facts dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.triage-material summary{cursor:pointer;padding:8px 0;font-weight:600}.triage-content p,.triage-content li,.triage-content .technical{overflow-wrap:anywhere}.triage-answer-heading strong{font-size:16px}.filter-actions h2{font-size:16px;margin:0 auto 0 0}@media(max-width:680px){.triage-model-row>.ant-btn{margin-top:0}.triage-facts{grid-template-columns:85px minmax(0,1fr)}}
+.triage-content{min-width:0}.triage-history,.triage-model-row,.triage-answer-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.triage-history .ant-select{flex:1 1 300px;min-width:0}.triage-model-row{align-items:flex-start}.triage-model-row .ant-form-item{flex:1 1 280px;min-width:0}.triage-model-row>.ant-btn{margin-top:30px}.triage-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}.triage-answer h3{font-size:14px;margin:12px 0 4px}.triage-facts{display:grid;grid-template-columns:minmax(85px,135px) minmax(0,1fr);margin:8px 0;gap:6px 12px}.triage-facts dt{color:var(--muted)}.triage-facts dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.triage-material summary{cursor:pointer;padding:8px 0;font-weight:600}.triage-content p,.triage-content li,.triage-content .technical{overflow-wrap:anywhere}.triage-answer-heading strong{font-size:16px}.filter-actions h2{font-size:16px;margin:0 auto 0 0}@media(max-width:680px){.triage-model-row>.ant-btn{margin-top:0}.triage-facts{grid-template-columns:85px minmax(0,1fr)}}
 </style>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import {PlusOutlined,CheckOutlined,SaveOutlined,PlayCircleOutlined,ArrowDownOutlined,SettingOutlined} from '@ant-design/icons-vue'
 import type {PageSpec,PreviewState} from '../models'
 import PageHeader from '../components/PageHeader.vue'
 import StatePanel from '../components/StatePanel.vue'
 import RecordForm from '../components/RecordForm.vue'
 import StatusTag from '../components/StatusTag.vue'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const nodes=ref([{id:'trigger',name:'高危告警触发',type:'触发器',note:'严重级别、租户与场景匹配'},{id:'evidence',name:'证据与资格检查',type:'条件',note:'完整性、校准版本与保护名单'},{id:'approval',name:'人工审批',type:'人工节点',note:'绑定证据快照与目标范围'},{id:'action',name:'采集器执行动作',type:'动作',note:'有界 TTL、幂等键与凭据引用'},{id:'verify',name:'回读与效果观察',type:'核验',note:'接受、配置和效果分别记录'},{id:'compensate',name:'到期撤销与补偿',type:'补偿',note:'租约到期、结果未知与回读'}])
 const selected=ref('approval');const nodeName=ref('人工审批');const timeout=ref(900);const errorPath=ref('暂停并通知值班组');const mode=ref('审批');const status=ref('草稿');const detail=ref(false);const formOpen=ref(false)

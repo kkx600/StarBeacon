@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import {useFeedback} from '../composables/useFeedback'
 import {readSensorDirectory} from '../sensors'
 import { computed,inject,onMounted,onScopeDispose,reactive,shallowRef } from 'vue'
 import {routeLocationKey,routerKey} from 'vue-router'
-import { Table as ATable,Modal as AModal,Select as ASelect,Radio as ARadio,message } from 'ant-design-vue'
+import { Table as ATable,Modal as AModal,Select as ASelect,Radio as ARadio} from 'ant-design-vue'
 import type { ApiClient } from '../api'
 import type { ReplaySample,RulePackage,Sensor,SensorTask,Principal } from '../types'
 import { formatTime } from '../types'
@@ -13,6 +14,7 @@ import {formatBytes} from '../utils/format'
 import {inspectRules} from '../utils/ruleSyntax'
 import {importError,type ImportKind} from '../utils/sample'
 import {useTaskDetail} from '../useTaskDetail'
+const message=useFeedback()
 const ARadioGroup=ARadio.Group
 const emit=defineEmits<{tasks:[id?:string]}>()
 const props=withDefaults(defineProps<{api:ApiClient;principal?:Principal|null;local?:boolean;view?:'samples'|'tasks'}>(),{view:'samples'})

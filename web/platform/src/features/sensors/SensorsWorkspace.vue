@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,reactive,ref,shallowRef,watch} from 'vue'
-import {message,Select as ASelect} from 'ant-design-vue'
+import {Select as ASelect} from 'ant-design-vue'
 import type {Sensor} from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import SensorTable from './SensorTable.vue'
@@ -18,6 +19,7 @@ import type {ManagementInput,ManagementTarget,SensorGroup} from './management'
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
 import {useWorkspaceView} from '@starbeacon/shared/utils/useWorkspaceView.ts'
 import {session} from '../../session'
+const message=useFeedback()
 const admin=computed(()=>session.current.value?.role==='admin')
 const {view,change:changeView}=useWorkspaceView(admin.value?['devices','groups','tasks','identity']:['devices','groups'])
 const views=computed(()=>[{key:'devices',label:'探针列表'},{key:'groups',label:'探针分组'},...(admin.value?[{key:'identity',label:'注册与证书'},{key:'tasks',label:'任务记录'}]:[])])

@@ -42,5 +42,5 @@ test('两端与原型采用 History，API 与资源不会被 SPA 回退覆盖',a
 test('工程与原型语义色一致，语法文本在白灰底上可读',()=>{
  assert.deepEqual(actual,prototype)
  const luminance=hex=>{const c=hex.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(x=>x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4);return c[0]*0.2126+c[1]*0.7152+c[2]*0.0722}
- for(const key of ['link','success','muted','text','syntaxVariable','syntaxOption','syntaxNumber'])for(const base of ['surface','tableHeader']){const values=[luminance(actual[key]),luminance(actual[base])].sort((a,b)=>b-a);assert.ok((values[0]+0.05)/(values[1]+0.05)>=4.5,key)}
+ for(const key of ['syntaxKeyword','syntaxString','muted','text','syntaxVariable','syntaxOption','syntaxNumber'])for(const base of ['surface','tableHeader']){const values=[luminance(actual[key]),luminance(actual[base])].sort((a,b)=>b-a);assert.ok((values[0]+0.05)/(values[1]+0.05)>=4.5,key)}
 })

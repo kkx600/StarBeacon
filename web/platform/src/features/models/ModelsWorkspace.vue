@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,shallowRef} from 'vue'
-import {Table,Popconfirm,message} from 'ant-design-vue'
+import {Table,Popconfirm} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {useModels} from './useModels'
 import {providerNames,checkNames,checkClass,type ModelProvider,type ModelChange} from './models'
 import ProviderForm from './ProviderForm.vue'
 import CheckDetail from './CheckDetail.vue'
+const message=useFeedback()
 const state=useModels()
 const {items,available,pending,error,busy,actionError}=state
 const editing=shallowRef<ModelProvider|null>(null),editorOpen=shallowRef(false),selectedID=shallowRef('')

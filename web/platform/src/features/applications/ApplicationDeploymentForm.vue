@@ -27,5 +27,5 @@ const target=computed(()=>props.targets.find(row=>row.id===props.selected))
  </a-modal>
 </template>
 <style scoped>
-.deployment-select{width:100%;margin-top:8px}.deployment-facts{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;margin:12px 0}.deployment-facts dt{color:var(--text-secondary,#4b5563)}.deployment-facts dd{margin:0;overflow-wrap:anywhere}.deployment-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:12px}.technical{overflow-wrap:anywhere}
+.deployment-select{width:100%;margin-top:8px}.deployment-facts{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;margin:12px 0}.deployment-facts dt{color:var(--muted)}.deployment-facts dd{margin:0;overflow-wrap:anywhere}.deployment-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:12px}.technical{overflow-wrap:anywhere}
 </style>

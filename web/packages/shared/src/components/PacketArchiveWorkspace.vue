@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import {Table as ATable,message} from 'ant-design-vue'
+import {useFeedback} from '../composables/useFeedback'
+import {Table as ATable} from 'ant-design-vue'
 import {computed,onScopeDispose,ref,shallowRef,watch} from 'vue'
 import type {TableRowSelection} from 'ant-design-vue/es/table/interface'
 import type {ApiClient} from '../api'
@@ -11,6 +12,7 @@ import StatePanel from './StatePanel.vue'
 import PacketArchiveDetail from './PacketArchiveDetail.vue'
 import SessionExportDialog from './SessionExportDialog.vue'
 import PacketInspector from './PacketInspector.vue'
+const message=useFeedback()
 const props=defineProps<{api:ApiClient;local?:boolean}>()
 const {page,pending,error,selected,detailPending,detailError,history,view,close,refresh,filter,next,previous}=usePacketArchives(props.api,props.local)
 const sensor=ref(''),downloading=shallowRef(''),downloadError=shallowRef('')

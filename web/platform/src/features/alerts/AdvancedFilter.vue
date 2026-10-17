@@ -67,8 +67,8 @@ watch(suggestions, items => { if (active.value >= items.length) active.value = 0
 .advanced-filter {grid-column:1/-1;min-width:0;margin-bottom:var(--panel-inset)}
 .advanced-label {display:flex;justify-content:space-between;align-items:center;gap:var(--related-gap);margin-bottom:var(--related-gap)}
 .advanced-filter .page-description {margin:var(--label-gap) 0 0;line-height:1.6}
-.filter-suggestions {display:grid;gap:2px;margin-top:4px;padding:4px;border:1px solid #d9dfe8;border-radius:8px;background:#fff;max-height:248px;overflow:auto}
-.filter-suggestions button {display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:6px 10px;border:0;border-radius:4px;background:transparent;color:#344054;text-align:left;cursor:pointer;overflow-wrap:anywhere}
-.filter-suggestions button.selected,.filter-suggestions button:hover {background:#eef3ff;color:#244bbb}
-.filter-suggestions button:focus-visible {outline:2px solid #4b6bdb;outline-offset:-2px}
+.filter-suggestions {display:grid;gap:2px;margin-top:4px;padding:4px;border:1px solid var(--control-border);border-radius:8px;background:var(--surface);max-height:248px;overflow:auto}
+.filter-suggestions button {display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:6px 10px;border:0;border-radius:4px;background:transparent;color:var(--text);text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.filter-suggestions button.selected,.filter-suggestions button:hover {background:var(--selection-surface);color:var(--selection-text)}
+.filter-suggestions button:focus-visible {outline:2px solid var(--primary);outline-offset:-2px}
 </style>

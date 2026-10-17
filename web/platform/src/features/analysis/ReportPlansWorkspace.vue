@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {shallowRef} from 'vue'
-import {Table,Popconfirm,message} from 'ant-design-vue'
+import {Table,Popconfirm} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import {useModels} from '../models/useModels'
@@ -10,6 +11,7 @@ import {useReportPlans} from './useReportPlans'
 import {planCodes,planRunState,type ReportPlan,type ReportPlanChange,type ReportPlanRun} from './plans'
 import ReportPlanForm from './ReportPlanForm.vue'
 import AnalysisDetail from './AnalysisDetail.vue'
+const message=useFeedback()
 const state=useReportPlans(),models=useModels(),analysis=useAnalysis('reports')
 const {items,available,modelsAvailable,pending,error,busy,actionError,unconfirmed,runs,next,runsPending,runsError}=state
 const editing=shallowRef<ReportPlan|null>(null),editorOpen=shallowRef(false),selected=shallowRef<ReportPlan|null>(null),detailOpen=shallowRef(false),viewing=shallowRef('')

@@ -26,7 +26,7 @@ const language = StreamLanguage.define({
   },
 })
 const colors = HighlightStyle.define([
-  {tag: tags.keyword, color: 'var(--link)', fontWeight: '600'}, {tag: tags.string, color: 'var(--success)'},
+  {tag: tags.keyword, color: 'var(--syntax-keyword)', fontWeight: '600'}, {tag: tags.string, color: 'var(--syntax-string)'},
   {tag: tags.variableName, color: 'var(--syntax-variable)'}, {tag: tags.propertyName, color: 'var(--syntax-option)'},
   {tag: tags.number, color: 'var(--syntax-number)'}, {tag: tags.comment, color: 'var(--muted)'}, {tag: tags.operator, color: 'var(--text)'},
 ])

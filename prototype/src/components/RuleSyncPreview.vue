@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,shallowRef,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import type {Sensor} from '../../../web/packages/shared/src/types'
 import type {PreviewState} from '../models'
 import type {RuleSyncChange,RuleSyncPlan} from '../../../web/platform/src/features/rules/sync'
@@ -8,6 +8,7 @@ import {syncStates,syncCodes} from '../../../web/platform/src/features/rules/syn
 import RuleSyncForm from '../../../web/platform/src/features/rules/RuleSyncForm.vue'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
+const message=useFeedback()
 const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>()
 const at='2026-10-17T01:00:00Z'
 const example:RuleSyncPlan={id:'sync_example',revision:2,spec:{name:'办公网规则同步（示例）',enabled:true,sensor_id:'sensor_example',registration_id:'registration_example',package_id:'rules_example',package_revision:3,positive_sample_id:'sample_positive',negative_sample_id:'sample_negative',interval_seconds:60},created_by:'admin_example',updated_at:at,next_at:at,processed_revision:1,run:{id:'sync_run_example',plan_revision:2,spec:{name:'办公网规则同步（示例）',enabled:true,sensor_id:'sensor_example',registration_id:'registration_example',package_id:'rules_example',package_revision:3,positive_sample_id:'sample_positive',negative_sample_id:'sample_negative',interval_seconds:60},created_by:'admin_example',state:'positive_replay',code:'',stage:1,tasks:['task_validation','task_positive','',''],expected_sha256:'a'.repeat(64),created_at:at,expires_at:'2027-04-15T01:00:00Z'}}

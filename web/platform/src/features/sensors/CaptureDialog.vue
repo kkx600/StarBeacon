@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,shallowRef,watch} from 'vue'
-import {Modal as AModal,message} from 'ant-design-vue'
+import {Modal as AModal} from 'ant-design-vue'
 import type {CaptureConfig,CaptureSettings,NetworkInterface,Sensor} from '@starbeacon/shared/types.ts'
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
 import {readSensorDirectory} from '@starbeacon/shared/sensors.ts'
+const message=useFeedback()
 const props=defineProps<{sensor:Sensor|null}>()
 const emit=defineEmits<{close:[];submitted:[]}>()
 const capture=shallowRef<CaptureConfig|null>(null),interfaces=shallowRef<NetworkInterface[]>([])

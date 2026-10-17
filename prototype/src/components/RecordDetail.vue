@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import {CheckCircleOutlined,ClockCircleOutlined,LinkOutlined} from '@ant-design/icons-vue'
 import type {BusinessRecord,PageSpec} from '../models'
 import {evidenceFor,exampleRule,packetRows,hasPacketEvidence,responseFor} from '../data/fixtures'
@@ -12,6 +12,7 @@ import StatePanel from './StatePanel.vue'
 import SensorDetail from './SensorDetail.vue'
 import PcapDetail from './PcapDetail.vue'
 import AlertTriage from './AlertTriage.vue'
+const message=useFeedback()
 const props=defineProps<{open:boolean;page:PageSpec;record?:BusinessRecord;localArchive?:boolean}>()
 const emit=defineEmits<{close:[];action:[];respond:[]}>()
 const activeTab=ref('0');const completed=ref<string[]>([]);const note=ref('');const notes=ref<string[]>([])

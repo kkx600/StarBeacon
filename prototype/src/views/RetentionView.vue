@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {formatBytes} from '../../../web/packages/shared/src/utils/format'
 import {computed,ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import {DownloadOutlined,SettingOutlined,LockOutlined} from '@ant-design/icons-vue'
 import type {PageSpec,PreviewState} from '../models'
 import {useRecords,exportCsv} from '../composables/useRecords'
 import PageHeader from '../components/PageHeader.vue'
 import StatePanel from '../components/StatePanel.vue'
 import StatusTag from '../components/StatusTag.vue'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const {records,save}=useRecords(props.page);const tab=ref('policies');const open=ref(false);const detail=ref(false);const selected=ref(records.value[0]!);const category=ref('全量 PCAP');const days=ref(180);const checked=ref(false);const reason=ref('');const throughput=ref(1);const replicas=ref(1);const estimateDays=ref(180)
 const estimate=computed(()=>throughput.value*1e9/8*86400*estimateDays.value*replicas.value/1e15)

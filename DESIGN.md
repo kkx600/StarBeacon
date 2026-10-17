@@ -2,48 +2,50 @@
 name: "星烽 StarBeacon"
 description: "以记录、证据与受控操作为中心的安全运营控制台设计系统。"
 colors:
-  primary: "#4269e1"
-  primary-hover: "#365ac8"
-  primary-active: "#2d4cad"
+  primary: "#5d87ff"
+  primary-hover: "#85a9ff"
+  primary-active: "#4366d9"
   action: "#5d87ff"
-  action-hover: "#4a75e8"
-  action-active: "#3d66d4"
-  link: "#365ac8"
+  action-hover: "#85a9ff"
+  action-active: "#4366d9"
+  link: "#5d87ff"
   surface: "#ffffff"
   workspace: "#f7f7f7"
   line: "#e8e8e8"
   control-border: "#e4e7ed"
-  control-hover: "#5d87ff"
-  selection-border: "#8a8f99"
+  control-hover: "#85a9ff"
+  control-disabled: "#f5f5f5"
+  text-disabled: "#bfbfbf"
+  scrollbar: "#e0e3e9"
+  navigation-shadow: "#29394a1c"
   text: "#29343d"
   muted: "#6b6b6b"
   text-placeholder: "#a8abb2"
-  field-label: "#626873"
-  record-text: "#374151"
+  field-label: "#6b6b6b"
+  record-text: "#29343d"
   table-header: "#fafafa"
   row-hover: "#fafafa"
   nav-selected: "#f0f0f0"
   tab-selected: "#f3f3f3"
-  selection-surface: "#e9e9e9"
-  selection-text: "#2d4cad"
-  success: "#087a43"
-  success-dot: "#079454"
-  warning: "#a65a00"
-  warning-dot: "#cd7100"
-  danger: "#cc2640"
-  danger-dot: "#e83855"
+  selection-surface: "#f0f6ff"
+  selection-text: "#4366d9"
+  success: "#44992c"
+  success-dot: "#60c041"
+  warning: "#d46e0f"
+  warning-dot: "#f9901f"
+  danger: "#ba2528"
+  danger-dot: "#e13c39"
   status-surface: "#f3f3f3"
-  status-text: "#626c7f"
-  success-surface: "#eff8f2"
-  warning-surface: "#fff7e9"
-  danger-surface: "#fff0ef"
-  info-surface: "#f4f4f4"
-  info-text: "#365ac8"
+  status-text: "#6b6b6b"
+  success-surface: "#f6fff0"
+  warning-surface: "#fff9eb"
+  danger-surface: "#fff3f0"
+  info-surface: "#f0fdff"
+  info-text: "#29343d"
+  info-dot: "#38c0fc"
+  warning-border: "#ffd899"
   teal: "#0095ad"
   violet: "#8950e9"
-  syntax-variable: "#7434bb"
-  syntax-option: "#8a4700"
-  syntax-number: "#b42340"
   chart-orange: "#d97900"
   chart-neutral: "#6d83a5"
   chart-grid: "#ededed"
@@ -60,6 +62,11 @@ colors:
   screen-violet: "#b298ff"
   screen-amber: "#ffd174"
   screen-danger: "#ffa0b2"
+  syntax-variable: "#7434bb"
+  syntax-option: "#8a4700"
+  syntax-number: "#b42340"
+  syntax-keyword: "#4366d9"
+  syntax-string: "#087a43"
 typography:
   page-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
@@ -238,37 +245,37 @@ components:
 
 **Key Characteristics:**
 
-- 白色导航、指标与结构面板，纯浅灰工作区与认证背景；明亮操作蓝与深蓝链接分别表达动作和记录入口。
+- 白色导航、指标与结构面板，纯浅灰工作区与认证背景；参考主色同时表达动作、链接与选择状态。
 - 桌面优先，表格、表单、详情和操作弹窗使用一致的空间与状态语言。
 - 系统中文字体、等宽技术字段和等宽数字分别承担阅读、取证与数值比较。
 - 证据不足、不可观测、运行模式与生命周期各自保持独立含义。
 
-颜色取值依据为 [主题文件](prototype/src/theme.ts)，共享样式依据为 [实际样式](prototype/src/styles.css)。[应用入口](prototype/src/main.ts)在挂载前把调色板写入根级 CSS 变量，覆盖主平台、采集器和挂载到 body 的弹窗、通知；[应用主题](prototype/src/App.vue)将同一配置交给 Ant Design Vue。组件配置按固定版本 4.2.6 的实际接口使用 Menu.colorItemText、colorItemBgSelected 等取值；Map Token 显式指定 colorPrimaryBg、colorPrimaryBgHover 和 colorInfoBg、colorInfoBgHover、colorInfoBorder，表格选中行、下拉选项与信息提示据此使用纯灰背景。其余未独立核实的组件派生态继续由该版本的主题生成。
+颜色取值依据为 [主题文件](prototype/src/theme.ts)，共享样式依据为 [实际样式](prototype/src/styles.css)。[应用入口](prototype/src/main.ts)在挂载前把调色板写入根级 CSS 变量，覆盖主平台、采集器和挂载到 body 的弹窗、通知；[应用主题](prototype/src/App.vue)将同一配置交给 Ant Design Vue。组件配置按固定版本 4.2.6 的实际接口使用 Menu.colorItemText、colorItemBgSelected 等取值；基础色采用参考前端的主蓝、成功绿、警示橙、错误红与信息青；提示底色、边框、按钮、链接、开关、选择标记和交互状态统一由 defaultAlgorithm 生成，不把较深的业务文字色作为组件基础色。链接全局 Token 使用同源主蓝，避免默认链接跟随信息青而与记录入口分离。导航选中项仍使用纯灰表面；表格与下拉选中项使用组件默认派生浅底，页面工作区和面板保持原白灰背景。原型不覆盖 Alert 底色或图标色。
 
 工程的 [共享主题](web/packages/shared/src/theme.ts)保留同一角色配色，`applyPalette` 将其写入根级 CSS 变量；[共享样式](web/packages/shared/src/styles.css)沿用六项空间变量。[规则编辑器](web/packages/shared/src/components/RuleEditor.vue)由两端工程与原型直接复用，基础诊断依据为[受控规则检查](web/packages/shared/src/utils/ruleSyntax.ts)，数值表示依据为[容量与速率工具](web/packages/shared/src/utils/format.ts)。PCAP 重放依据 [功能与部署边界](docs/PCAP重放与规则验证.md)、[样本工作区](web/packages/shared/src/components/ReplayWorkspace.vue)、[检测结果](web/packages/shared/src/components/ReplayResult.vue)和[任务详情](web/packages/shared/src/components/TaskTable.vue)记录。既有原型导航数量、局部布局与评审数据只适用于原型；工程组件的局部差异不重定义共用 token。
 
-设计依据为用户指定布局、产品约束、实际代码和截图。配色回归脚本核对 54 组正文与业务文字组合（对比度至少 4.5:1）、18 组选择标记、焦点与图形组合（至少 3:1）及静态截图目录的角色颜色一致性；静态检查不替代所有交互状态的可访问性验收。2026-10-13 的 800 张原型图均来自内置浏览器实际渲染，保留来源、视口、主题摘要和 SHA-256。159 项响应式 DOM 观察覆盖全部 124 个工作区的 1024×600 操作状态，以及七个代表表单的五档尺寸。代表页面另做人工视觉和操作检查；数量与来源不推定逐图人工视觉、性能或生产验收。侧车色带属于设计面板预览，不是界面 token。
+设计依据为用户指定布局、产品约束、实际代码和截图。配色回归脚本核对组件基础色、实际派生表面、三个入口的颜色变量、局部覆盖和上下文消息；54 组中性正文、规则语法与业务文字组合对比度至少 4.5:1，9 组图表组合至少 3:1。参考主色链接、主按钮、部分状态色、控件边界及占位提示另行记录实际对比度，不声明全界面 AA。静态检查不替代所有交互状态的可访问性验收。2026-10-17 的 833 张原型图均来自内置浏览器按当前共享主题实际渲染，保留来源、视口、主题摘要和 SHA-256。159 项响应式 DOM 观察覆盖全部 124 个工作区的 1024×600 操作状态，以及七个代表表单的五档尺寸。代表页面另做人工视觉和操作检查；数量与来源不推定逐图人工视觉、性能或生产验收。侧车色带属于设计面板预览，不是界面 token。操作消息通过组件库 App 与 useMessage 上下文继承主题，不依赖根级 CSS 变量改变静态 API 的内部主题。
 
 ## Colors
 
-纯浅灰工作区与白色导航、指标和面板支撑持续阅读；表头、辅助区域、选中项及普通信息提示使用无蓝色调的灰底，亮蓝动作、深蓝链接、鲜明状态色和图表色共同构成清晰层次。精确值以 frontmatter 为准；这里只说明用途。
+纯浅灰工作区与白色导航、指标和面板支撑持续阅读；表头与辅助区域使用灰底；按钮、链接、选中项和提示采用组件默认算法与参考基础色，图表延续共享系列色。精确值以 frontmatter 为准；这里只说明用途。
 
 ### Primary
 
-- **强调蓝**（primary）：键盘焦点轮廓、选中字节、图表与信息状态圆点。
-- **动作蓝**（action）：主按钮背景，采用参考界面的明亮蓝色；与正文链接及证据选中字节分别配置。
-- **动作悬停与按下**（action-hover、action-active）：主按钮交互背景；正文链接继续使用 primary-hover、primary-active。
-- **链接蓝**（link）：记录入口、普通链接、选中导航与页签文字；与动作背景分别取用，保证浅色底上的文字可读。
-- **文本选择字色**（selection-text）：与纯灰文本选择底成对使用，保持选中文本可读。
+- **强调蓝**（primary）：组件主色、键盘焦点轮廓和图表，取参考主色。
+- **动作蓝**（action）：主按钮背景，采用参考界面的明亮蓝色；与链接、选择控件共用同一主色来源。
+- **动作悬停与按下**（action-hover、action-active）：主按钮交互背景；与 primary-hover、primary-active 同源，由默认算法生成。
+- **链接蓝**（link）：记录入口、普通链接、选中导航与页签文字；沿用组件默认主色，不再独立指定另一套蓝色。
+- **文本选择字色**（selection-text）：与默认派生的浅色文本选择底成对使用，保持选中文本可读。
 
 ### Secondary
 
 - **成功绿**（success）、**健康绿圆点**（success-dot）与**成功浅底**（success-surface）：确定的成功或健康状态。文字和圆点使用各自取值。
-- **关注琥珀**（warning）、**关注琥珀圆点**（warning-dot）与**关注浅底**（warning-surface）：当前风险、等待核对、异常状态或会影响操作的限制；Ant 警示主题使用圆点色，警示标签文字使用文字色。
-- **风险玫红**（danger）、**风险玫红圆点**（danger-dot）与**风险浅底**（danger-surface）：严重风险与明确失败。
-- **信息蓝文字**（info-text）与**信息灰底**（info-surface）：研判等信息状态及普通信息提示使用纯灰背景；信息文字和圆点分别取信息蓝文字与操作蓝。
+- **关注琥珀**（warning）、**关注琥珀圆点**（warning-dot）与**关注浅底**（warning-surface）：当前风险、等待核对、异常状态或会影响操作的限制；Ant 警示使用参考基础色，业务标签使用同一算法的活动文字色。
+- **风险红**（danger）、**风险红圆点**（danger-dot）与**风险浅底**（danger-surface）：严重风险与明确失败。
+- **信息文字**（info-text）与**信息浅底**（info-surface）：信息提示正文使用中性深灰，底色、边框和图标、信息状态圆点由信息青基础色生成。
 - **中性标签底**（status-surface）与**中性标签文字**（status-text）：纯灰背景承载不需要成功、警示或风险强调的业务状态。
-- **规则变量紫**（syntax-variable）、**规则选项棕**（syntax-option）与**规则数字玫红**（syntax-number）：规则编辑器中的变量、选项名与数字。关键词使用链接蓝，字符串使用成功绿，注释使用辅助灰，运算符使用正文色；语法着色不表示规则已经通过引擎验证。
+- **规则变量紫**（syntax-variable）、**规则选项棕**（syntax-option）与**规则数字玫红**（syntax-number）：规则编辑器中的变量、选项名与数字。关键词使用 syntax-keyword，字符串使用 syntax-string，注释使用辅助灰，运算符使用正文色；语法着色不表示规则已经通过引擎验证。
 
 **The 文字与颜色 Rule.** 颜色辅助定位状态；严重级别、生命周期、执行结果与证据缺口必须同时有可读文字。未知、不完整与不可观测写出原因，只有满足对应业务状态的记录才呈现成功含义。
 
@@ -414,27 +421,27 @@ components:
 
 ## Components
 
-主控平台、采集器和交互原型共用 `web/packages/shared/src/theme.ts` 与 `controls.css`；原型主题仅重新导出共享定义。工作区、导航、面板、表头及选中底色沿用现有白灰值。主动作采用 `#5d87ff`，正文使用中性深灰 `#29343d`；说明文字与禁用内容各自使用独立语义色。输入框、数字输入、选择器、日期和密码控件由 Ant Design Vue 统一派生状态，不使用常态边框覆盖错误、悬停或焦点。
+主控平台、采集器和交互原型共用 `web/packages/shared/src/theme.ts` 与 `controls.css`；原型主题仅重新导出共享定义。工作区、导航、面板和表头沿用现有白灰值，控件选中项使用组件默认派生色。主动作采用 `#5d87ff`，正文使用中性深灰 `#29343d`；说明文字与禁用内容各自使用独立语义色。输入框、数字输入、选择器、日期和密码控件由 Ant Design Vue 统一派生状态，不使用常态边框覆盖错误、悬停或焦点。
 
-表单标签使用 13px 中等字重，帮助与校验文字使用 12px、1.65 行高。弹窗标题 18px，底部操作区以细分隔线与内容区区分；长表单在内容区滚动，决策策略的关闭、校验与保存保持可见。决策表单按基本信息、判断条件、模型与执行范围、表达式与保护范围组织；授权字段与业务限制原意不变。
+表单标签使用 14px 常规字重，帮助与校验文字使用 12px、1.65 行高。弹窗标题 18px，底部操作区以细分隔线与内容区区分；长表单在内容区滚动，决策策略的关闭、校验与保存保持可见。决策表单按基本信息、判断条件、模型与执行范围、表达式与保护范围组织；授权字段与业务限制原意不变。
 
 ### Buttons
 
 主按钮表达可执行的主要动作，主题高度为 34px；背景、文字、圆角与内边距见 button-primary。悬停与按下背景分别采用 button-primary-hover、button-primary-active；文字保持面板白。记录链接保持透明背景、13px 字号、500 字重和零内边距，悬停出现下划线；链接与记录入口的下划线偏移为 3px。检索示例按钮为白底细边框，悬停时边框与文字转为主色；它是辅助输入入口。
 
-按钮与链接的键盘焦点采用源码中的 2px 主色轮廓及 3px 外偏移。主色悬停与按下以主题文件显式配置为准；其余 Ant 禁用与内部焦点反馈继续由固定组件版本及主题生成，不补造没有独立采样的状态色。
+按钮与链接的键盘焦点采用源码中的 2px 主色轮廓及 3px 外偏移。主色悬停与按下由默认算法生成；其余 Ant 禁用与内部焦点反馈继续由固定组件版本及主题生成，不补造没有独立采样的状态色。
 
 主按钮实际过渡为 all、0.2s，缓动为 cubic-bezier(0.645, 0.045, 0.355, 1)。选中菜单项的 border-color、background、padding 过渡分别为 0.3s、0.3s、0.2s，缓动分别为 ease、ease、cubic-bezier(0.215, 0.61, 0.355, 1)。不存在独立的布局宽度或主区边距动画规则。
 
 ### Inputs / Fields
 
-字段名称与控件分开，Ant 纵向表单标签为 14px、常规字重；帮助说明为 12px 并解释单位、业务条件与影响。筛选栏标签仍为局部 12px。普通输入、选择和数值控件沿用 App 主题的高度、圆角与正文；正常控件边界使用 control-border，选择器与默认按钮也保持这一边界；复选框、单选框使用 selection-border。未独立采样的 Ant 悬停、禁用与内部焦点状态继续由固定主题派生。
+字段名称与控件分开，Ant 纵向表单标签为 14px、常规字重；帮助说明为 12px 并解释单位、业务条件与影响。筛选栏标签仍为局部 12px。普通输入、选择和数值控件沿用 App 主题的高度、圆角与正文；正常控件边界使用 control-border，选择器与默认按钮也保持这一边界；复选框、单选框沿用组件默认边界与状态。未独立采样的 Ant 悬停、禁用与内部焦点状态继续由固定主题派生。
 
 筛选标签与控件的 4px 距离用于关联同一条件；普通表单列间隔为 12px，字段组底部距离取 panel-inset。Ant 表单内部标签、帮助与校验反馈仍由既有组件规则组织，不将筛选区的标签距离推广到全部表单内部。
 
-正常输入与选择占位使用 text-placeholder；按源码颜色计算，白底占位文字对比度为 2.30:1，普通输入轮廓为 1.24:1，主按钮白字为 3.29:1。这三项采用用户参考图的轻量视觉，不纳入正文 4.5:1 门槛；当前风格不能宣称全界面达到 WCAG AA。正文、业务提示和重要状态继续执行各自对比度检查。禁用状态不复用正常占位规则。占位提示不承担唯一字段说明。输入、文本区域与可编辑内容的光标使用主色；原生文本选择使用 selection 系列配色。
+正常输入与选择占位使用 text-placeholder；按源码颜色计算，白底占位文字对比度为 2.30:1，普通输入轮廓为 1.24:1，主按钮白字为 3.29:1。主色链接同样为 3.29:1，成功与关注标签的活动文字分别约为 3.51:1、3.31:1。以上采用用户明确选择的参考配色与组件默认规则，不纳入中性正文 4.5:1 门槛；组件预设标签和部分开关状态也不等同于全界面 WCAG AA 合规。正文、提示内容和规则语法继续执行各自对比度检查。禁用状态不复用正常占位规则。占位提示不承担唯一字段说明。输入、文本区域与可编辑内容的光标使用主色；原生文本选择使用 selection 系列配色。
 
-未选中且可操作的开关使用辅助灰背景，悬停使用字段标签色，白色“关闭”文字保持可辨识；禁用与已选中状态继续沿用组件主题。
+开关的未选中、悬停、禁用与已选中状态均使用组件默认算法，保留可读的业务状态名称，不由局部样式重画背景。
 
 检索表达式编辑框是已实现的独立样式：浅灰底、细边框、左侧行号、等宽内容，文本区域内边距为 9px 12px、13px 字号、1.9 行高；行号采用辅助灰，帮助对齐且保持可读；其内部不再叠加第二层边框或焦点投影。侧车保留这一实际输入片段，不推定普通 Ant 输入框的所有派生态。
 
@@ -446,7 +453,7 @@ components:
 
 ### Chips
 
-状态标签由短文字与 6px 圆点组成，间隔 5px。标签背景、文字与圆点按语义配对，文字色和圆点色分别取用；中性、成功、警示、危险与信息状态的含义由对应业务对象决定。标签本身不暗示点击能力。
+状态标签由短文字与 6px 圆点组成，间隔 5px。组件预设标签沿用库默认色板；业务标签的背景、活动文字与基础色圆点按同一语义配对，中性、成功、警示、危险与信息状态的含义由对应业务对象决定。标签本身不暗示点击能力。
 
 租户使用启用／停用；决策策略使用启用／待验证／停用。严重级别、处理阶段与运行模式各自使用对应名称。未知、不完整与不可观测保留原因，不通过颜色暗示确定成功。
 

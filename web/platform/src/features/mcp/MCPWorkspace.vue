@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {shallowRef} from 'vue'
-import {Table,Modal,Popconfirm,message} from 'ant-design-vue'
+import {Table,Modal,Popconfirm} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {useMCP} from './useMCP'
 import {bindingState,scopeNames,type Scope,type Binding,type BindingChange} from './mcp'
 import BindingForm from './BindingForm.vue'
+const message=useFeedback()
 const state=useMCP(),{items,info,pending,error,busy,actionError}=state
 const editing=shallowRef<Binding|null>(null),editorOpen=shallowRef(false),toolsOpen=shallowRef(false)
 const columns=[{title:'服务身份',key:'name',width:180},{title:'授权主体 / OAuth 客户端',key:'identity',width:270},{title:'只读权限',key:'scopes',width:190},{title:'状态',key:'state',width:90},{title:'到期时间',key:'expiry',width:190},{title:'调用上限',key:'budget',width:110},{title:'操作',key:'actions',fixed:'right' as const,width:150}]
@@ -24,4 +26,4 @@ function date(value:string){const at=new Date(value);return Number.isFinite(at.g
   <BindingForm v-if="editorOpen&&info" :record="editing" :issuer="info.issuer" :pending="busy" :error="actionError" @save="save" @close="editorOpen=false" />
   <Modal v-if="toolsOpen" :open="true" title="MCP 工具目录" :width="680" :footer="null" @cancel="toolsOpen=false"><ul class="mcp-tools"><li v-for="tool in info?.tools??[]" :key="tool.name"><strong>{{tool.title}}</strong><code>{{tool.name}}</code><p>{{tool.description}}</p><span class="muted">需要权限：{{scopeNames[tool.scope]??tool.scope}}</span></li></ul><p class="page-description">工具只执行已实现的有界查询，不能直接访问数据库、运行命令或执行封禁。调用结果与错误写入操作日志。</p></Modal>
 </template>
-<style scoped>.mcp-connection{display:grid;gap:var(--related-gap);padding:var(--panel-inset);margin-bottom:var(--section-gap)}.mcp-connection>div{display:grid;grid-template-columns:80px minmax(0,1fr);gap:var(--related-gap)}.mcp-connection code,.mcp-identity{overflow-wrap:anywhere;word-break:break-word}.mcp-scope{display:block}.mcp-tools{padding-left:20px}.mcp-tools li{margin-bottom:var(--section-gap)}.mcp-tools code{display:block;color:var(--text-secondary);overflow-wrap:anywhere}.mcp-tools p{margin:var(--related-gap) 0}</style>
+<style scoped>.mcp-connection{display:grid;gap:var(--related-gap);padding:var(--panel-inset);margin-bottom:var(--section-gap)}.mcp-connection>div{display:grid;grid-template-columns:80px minmax(0,1fr);gap:var(--related-gap)}.mcp-connection code,.mcp-identity{overflow-wrap:anywhere;word-break:break-word}.mcp-scope{display:block}.mcp-tools{padding-left:20px}.mcp-tools li{margin-bottom:var(--section-gap)}.mcp-tools code{display:block;color:var(--muted);overflow-wrap:anywhere}.mcp-tools p{margin:var(--related-gap) 0}</style>

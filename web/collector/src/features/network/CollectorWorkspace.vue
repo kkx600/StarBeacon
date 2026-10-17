@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { message } from 'ant-design-vue'
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import { defineAsyncComponent,shallowRef } from 'vue'
 import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCapabilitiesDialog.vue'
 import DetectionQualityDialog from '@starbeacon/shared/components/DetectionQualityDialog.vue'
@@ -16,6 +16,7 @@ import { session } from '../../session'
 import { useCollector } from './useCollector'
 import type {CaptureSettings} from '@starbeacon/shared/types.ts'
 import {captureErrors} from '@starbeacon/shared/types.ts'
+const message=useFeedback()
 const ReplayWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/ReplayWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const PacketArchiveWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/PacketArchiveWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const {view,change}=useWorkspaceView(['interfaces','capture','archives','samples','tasks','responses'])

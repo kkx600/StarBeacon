@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,reactive,ref} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
-import {message} from 'ant-design-vue'
 import {SafetyCertificateOutlined,UserOutlined,LockOutlined,ArrowLeftOutlined,CheckCircleOutlined} from '@ant-design/icons-vue'
 import type {FormInstance} from 'ant-design-vue'
+const message=useFeedback()
 const route=useRoute();const router=useRouter();const mode=computed(()=>String(route.params.mode));const formRef=ref<FormInstance>();const busy=ref(false)
 const form=reactive({account:'analyst@example.test',password:'',code:'',remember:true,email:''})
 const title=computed(()=>mode.value==='mfa'?'多因素认证':mode.value==='reset'?'找回密码':mode.value==='expired'?'会话已过期':'登录星烽 StarBeacon')

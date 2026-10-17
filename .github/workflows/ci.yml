@@ -64,7 +64,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - run: pnpm --dir prototype install --frozen-lockfile
-      - run: node --test prototype/scripts/preview-filter.test.mjs
+      - run: node --test prototype/scripts/preview-filter.test.mjs prototype/scripts/check-screenshots.test.mjs
       - run: pnpm --dir prototype check:coverage
       - run: pnpm --dir prototype check:workspaces
       - run: pnpm --dir prototype check:collector

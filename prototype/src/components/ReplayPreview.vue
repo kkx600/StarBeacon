@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,ref,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
-import {message} from 'ant-design-vue'
 import type {PreviewState} from '../models'
 import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.vue'
 import {inspectRules} from '../../../web/packages/shared/src/utils/ruleSyntax'
@@ -10,6 +10,7 @@ import {exampleRule} from '../data/fixtures'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
 import StatusTag from './StatusTag.vue'
+const message=useFeedback()
 const props=defineProps<{state:PreviewState;tasks?:boolean;local?:boolean;embedded?:boolean}>()
 const emit=defineEmits<{state:[value:PreviewState];view:[value:string]}>()
 const router=useRouter(),route=useRoute()

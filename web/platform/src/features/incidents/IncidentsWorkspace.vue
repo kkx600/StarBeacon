@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {ref,shallowRef} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
-import {message,Select as ASelect,Tag as ATag,Table as ATable} from 'ant-design-vue'
+import {Select as ASelect,Tag as ATag,Table as ATable} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import IncidentForm from './IncidentForm.vue'
 import IncidentDetail from './IncidentDetail.vue'
 import {validIncidentRef,incidentStatuses,incidentCategories,incidentSeverities,type IncidentRecord,type IncidentRef,type IncidentInput} from './incident'
 import {useIncidents} from './useIncidents'
+const message=useFeedback()
 const route=useRoute(),router=useRouter(),state=useIncidents()
 const {page,pending,error,cursors,selected,detailPending,detailError,history,historyNext,historyPending,historyError,assignees,assigneePending,assigneeError,busy,unconfirmed,actionError,linkedID}=state
 const status=ref(''),severity=ref(''),detailOpen=ref(false),editorOpen=ref(false),editing=shallowRef<IncidentRecord|null>(null),draft=shallowRef<IncidentInput|undefined>(),seed=shallowRef<IncidentRef|undefined>()

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
-import {Table as ATable,Modal as AModal,InputNumber as AInputNumber,Select as ASelect,Tag as ATag,message} from 'ant-design-vue'
+import {Table as ATable,Modal as AModal,InputNumber as AInputNumber,Select as ASelect,Tag as ATag} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import {session} from '../../session'
@@ -11,6 +12,7 @@ import ApplicationRuleTest from './ApplicationRuleTest.vue'
 import ApplicationDeploymentForm from './ApplicationDeploymentForm.vue'
 import {useApplicationDeployment} from './useApplicationDeployment'
 import {router} from '../../router'
+const message=useFeedback()
 const model=useApplicationRules(),canEdit=computed(()=>session.current.value?.role==='admin'),filter=reactive({keyword:'',active:''})
 const editing=shallowRef(false),editRecord=shallowRef<AppRule|null>(null),detail=shallowRef<AppRule|null>(null),detailTarget=shallowRef<AppRule|null>(null),detailError=shallowRef(''),detailPending=shallowRef(false),revision=shallowRef<number|null>(null)
 const testing=shallowRef(false),testRecord=shallowRef<AppRule|null>(null)
@@ -69,4 +71,4 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
   </template></StatePanel>
  </a-modal>
 </template>
-<style scoped>.application-rule-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.application-rule-toolbar>.ant-input{width:220px}.application-rule-toolbar>.ant-select{width:130px}.application-row-actions,.application-pagination,.application-revision{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.application-pagination{justify-content:flex-end;padding:12px}.application-pagination>span{flex:1;min-width:180px}.application-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.application-detail dd{margin:0;overflow-wrap:anywhere}.application-detail dt{color:var(--text-secondary,#4b5563)}.application-definition{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-muted,#f8f9fa);padding:12px;border:1px solid var(--border-color,#e5e7eb);border-radius:8px}.application-revision{margin-bottom:12px}</style>
+<style scoped>.application-rule-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.application-rule-toolbar>.ant-input{width:220px}.application-rule-toolbar>.ant-select{width:130px}.application-row-actions,.application-pagination,.application-revision{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.application-pagination{justify-content:flex-end;padding:12px}.application-pagination>span{flex:1;min-width:180px}.application-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.application-detail dd{margin:0;overflow-wrap:anywhere}.application-detail dt{color:var(--muted)}.application-definition{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--table-header);padding:12px;border:1px solid var(--line);border-radius:8px}.application-revision{margin-bottom:12px}</style>

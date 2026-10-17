@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import {message,Modal as AModal} from 'ant-design-vue'
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
+import {Modal as AModal} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
 import {usePasswordChange,type PasswordInput} from './usePasswordChange'
 import type {UserRecord} from './user'
 import PasswordForm from './PasswordForm.vue'
+const message=useFeedback()
 const props=defineProps<{record?:UserRecord;own:boolean}>()
 const emit=defineEmits<{close:[];changed:[]}>()
 const state=usePasswordChange(props.record??null,props.own)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,ref} from 'vue'
-import {Select,Checkbox,Modal,Table,Input,message} from 'ant-design-vue'
+import {Select,Checkbox,Modal,Table,Input} from 'ant-design-vue'
 import {useRouter} from 'vue-router'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
@@ -9,6 +10,7 @@ import {checkClass} from '../models/models'
 import {blankRequest,stateNames,working,type AnalysisJob} from './analysis'
 import {useAnalysis} from './useAnalysis'
 import AnalysisDetail from './AnalysisDetail.vue'
+const message=useFeedback()
 const router=useRouter(),models=useModels(),state=useAnalysis('chat'),{conversation,loading,detailError,busy,actionError,unconfirmed,threads,next,pending,error}=state
 const ATextarea=Input.TextArea
 const question=ref(''),provider=ref(''),hours=ref(24),allowed=ref(false),historyOpen=ref(false),detail=ref<AnalysisJob|null>(null),selectedConversation=ref('')
@@ -29,4 +31,4 @@ async function cancel(id:string){const job=await state.cancel(id);if(job?.cancel
  <Modal :open="historyOpen" title="对话记录" :width="760" :footer="null" @cancel="historyOpen=false"><StatePanel :loading="pending&&!threads.length" :error="error" :empty="threads.length===0" description="暂无对话记录。" @retry="state.refresh()"><div class="table-wrap"><Table :data-source="[...threads]" :columns="[{title:'对话主题',dataIndex:'title',width:300},{title:'最后活动',key:'time',width:190},{title:'操作',key:'action',width:90}]" row-key="id" :pagination="false" :scroll="{x:580}"><template #bodyCell="{column,record}"><template v-if="column.key==='time'">{{formatTime(record.updated_at)}}</template><a-button v-else-if="column.key==='action'" type="link" size="small" @click="choose(record.id)">查看</a-button></template></Table></div><a-button v-if="next" :loading="pending" class="section-gap" @click="state.refresh(next,true)">查看更多对话</a-button></StatePanel></Modal>
  <AnalysisDetail :open="!!detail" :job="detail" :loading="false" error="" :busy="busy" @close="detail=null" @cancel="cancel"/>
 </template>
-<style scoped>.assistant-context,.assistant-conversation,.assistant-composer{margin-bottom:12px}.assistant-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}.assistant-fields>div{display:grid;gap:4px}.assistant-fields label{font-size:12px;color:var(--muted)}.assistant-empty{min-height:200px;display:grid;align-content:center;justify-items:center;text-align:center;padding:16px}.assistant-turn{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}.assistant-question{margin:0 0 0 12%;background:#f5f5f5;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}.assistant-response p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.assistant-response>div+div{margin:8px 0}.assistant-send{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.assistant-composer>.muted,.assistant-context>.muted{font-size:12px;margin-bottom:0}@media(max-width:860px){.assistant-fields{grid-template-columns:1fr}.assistant-send{align-items:flex-start;flex-wrap:wrap}.assistant-question{margin-left:0}}</style>
+<style scoped>.assistant-context,.assistant-conversation,.assistant-composer{margin-bottom:12px}.assistant-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}.assistant-fields>div{display:grid;gap:4px}.assistant-fields label{font-size:12px;color:var(--muted)}.assistant-empty{min-height:200px;display:grid;align-content:center;justify-items:center;text-align:center;padding:16px}.assistant-turn{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}.assistant-question{margin:0 0 0 12%;background:var(--control-disabled);border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}.assistant-response p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.assistant-response>div+div{margin:8px 0}.assistant-send{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.assistant-composer>.muted,.assistant-context>.muted{font-size:12px;margin-bottom:0}@media(max-width:860px){.assistant-fields{grid-template-columns:1fr}.assistant-send{align-items:flex-start;flex-wrap:wrap}.assistant-question{margin-left:0}}</style>

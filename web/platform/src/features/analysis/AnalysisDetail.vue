@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,ref,watch,onScopeDispose} from 'vue'
-import {Modal,Table,message} from 'ant-design-vue'
+import {Modal,Table} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import {checkClass,resultNames} from '../models/models'
 import {countText} from '../overview/overview'
 import {analysisCodes,analysisFacts,kindNames,stateNames,totalAlerts,working,type AnalysisJob} from './analysis'
 import {session} from '../../session'
+const message=useFeedback()
 const props=defineProps<{open:boolean;job:AnalysisJob|null;loading:boolean;error:string;busy:boolean}>()
 const emit=defineEmits<{close:[];retry:[];cancel:[id:string]}>()
 const exporting=ref(false)
@@ -34,4 +36,4 @@ async function download(){if(!props.job||exporting.value)return;const control=ne
   </template></StatePanel>
  </Modal>
 </template>
-<style scoped>.analysis-statistics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.analysis-statistics>div{display:grid;gap:4px;border:1px solid var(--line);border-top:3px solid var(--primary);padding:12px;background:#fff}.analysis-statistics span{color:var(--muted);font-size:12px}.analysis-statistics strong{font-size:24px;overflow-wrap:anywhere}.analysis-narrative p{white-space:pre-wrap;overflow-wrap:anywhere}.analysis-narrative>div{padding:8px 0;border-bottom:1px solid var(--line)}h2{font-size:16px;margin:12px 0 8px}.analysis-metadata{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,2fr);gap:8px;margin:12px 0}.analysis-metadata dt{color:var(--muted)}.analysis-metadata dd{margin:0;overflow-wrap:anywhere}@media(max-width:640px){.analysis-statistics{grid-template-columns:1fr}.analysis-metadata{grid-template-columns:1fr}}</style>
+<style scoped>.analysis-statistics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.analysis-statistics>div{display:grid;gap:4px;border:1px solid var(--line);border-top:3px solid var(--primary);padding:12px;background:var(--surface)}.analysis-statistics span{color:var(--muted);font-size:12px}.analysis-statistics strong{font-size:24px;overflow-wrap:anywhere}.analysis-narrative p{white-space:pre-wrap;overflow-wrap:anywhere}.analysis-narrative>div{padding:8px 0;border-bottom:1px solid var(--line)}h2{font-size:16px;margin:12px 0 8px}.analysis-metadata{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,2fr);gap:8px;margin:12px 0}.analysis-metadata dt{color:var(--muted)}.analysis-metadata dd{margin:0;overflow-wrap:anywhere}@media(max-width:640px){.analysis-statistics{grid-template-columns:1fr}.analysis-metadata{grid-template-columns:1fr}}</style>

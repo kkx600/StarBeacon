@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,ref,shallowRef,watch} from 'vue'
-import {Modal as AModal,Select as ASelect,InputNumber as AInputNumber,Checkbox as ACheckbox,message} from 'ant-design-vue'
+import {Modal as AModal,Select as ASelect,InputNumber as AInputNumber,Checkbox as ACheckbox} from 'ant-design-vue'
 import {useRouter} from 'vue-router'
 import type {Sensor} from '@starbeacon/shared/types.ts'
 import {formatTime} from '@starbeacon/shared/types.ts'
@@ -10,6 +11,7 @@ import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
 import {validEvaluation,type EvaluationRecord} from './decisionEvaluations'
 import {eligibleDecisionResponse,eligibleResponseSensor,validDecisionResponse,type DecisionResponseRecord,type DecisionResponseRequest} from './decisionResponses'
+const message=useFeedback()
 const props=defineProps<{record:EvaluationRecord}>()
 const emit=defineEmits<{close:[]}>(),router=useRouter()
 const sensors=shallowRef<Sensor[]>([]),existing=shallowRef<DecisionResponseRecord|null>(null),pending=ref(false),saving=ref(false),error=ref(''),unconfirmed=ref(false),now=ref(Date.now())
@@ -82,4 +84,4 @@ onScopeDispose(()=>{stopped=true;clearInterval(timer);controller?.abort()})
   </StatePanel>
  </a-modal>
 </template>
-<style scoped>.decision-response-context{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;margin:12px 0}.decision-response-context dt{color:var(--text-secondary)}.decision-response-context dd{margin:0;overflow-wrap:anywhere}.decision-response-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.decision-response-grid .ant-input-number{width:100%}@media(max-width:600px){.decision-response-grid{grid-template-columns:1fr}}</style>
+<style scoped>.decision-response-context{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;margin:12px 0}.decision-response-context dt{color:var(--muted)}.decision-response-context dd{margin:0;overflow-wrap:anywhere}.decision-response-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.decision-response-grid .ant-input-number{width:100%}@media(max-width:600px){.decision-response-grid{grid-template-columns:1fr}}</style>

@@ -2,6 +2,10 @@ import {readFile,writeFile,readdir} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
 
 const root=new URL('../public/screenshots/',import.meta.url)
+const themeInputs=['prototype/src/theme.ts','prototype/src/styles.css','web/packages/shared/src/theme.ts','web/packages/shared/src/controls.css']
+const themeHash=createHash('sha256')
+for(const file of themeInputs){themeHash.update(file+'\0');themeHash.update(await readFile(new URL('../../'+file,import.meta.url)));themeHash.update('\0')}
+const themeSha256=themeHash.digest('hex')
 const manifest=JSON.parse(await readFile(new URL('../public/page-manifest.json',import.meta.url),'utf8'))
 const log=JSON.parse(await readFile(new URL('capture-log.json',root),'utf8'))
 const expected=[...manifest.pages.flatMap(p=>p.states.map(s=>s.image)),...(manifest.collector?.pages??[]).flatMap(p=>p.states.map(s=>s.image)),...[...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>`boundary/${p.id}.jpg`)]
@@ -34,6 +38,7 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
   try{
     const source=log.entries.findLast(e=>e.file===file)
     if(!source||!source.stateVerified||source.renderer!=='Codex in-app browser')throw new Error('缺少已核对的浏览器截图来源')
+    if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)throw new Error('截图主题与当前全局主题不同，需要从浏览器重新捕获')
     const bytes=await readFile(new URL(file,root))
     const size=dimensions(bytes)
     if(!size.width||!size.height||bytes.length<1000)throw new Error('图像为空或尺寸无效')

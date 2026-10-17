@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {reactive,ref} from 'vue'
-import {message} from 'ant-design-vue'
 import {sensorThresholds} from '../composables/useSensorHealth'
 import {defaultSensorThresholds,type SensorThresholds} from '../data/sensorHealth'
+const message=useFeedback()
 const open=ref(false)
 const draft=reactive({...sensorThresholds})
 const error=ref('')

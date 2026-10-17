@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {computed,ref,watch} from 'vue'
-import {message} from 'ant-design-vue'
 import {useRouter} from 'vue-router'
 import {PlusOutlined,SendOutlined,RobotOutlined,UserOutlined,LinkOutlined,CheckCircleOutlined} from '@ant-design/icons-vue'
 import type {PageSpec,PreviewState} from '../models'
@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader.vue'
 import StatePanel from '../components/StatePanel.vue'
 import StatusTag from '../components/StatusTag.vue'
 import RecordForm from '../components/RecordForm.vue'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineEmits<{state:[value:PreviewState]}>();const router=useRouter()
 interface ChatMessage{role:'user'|'assistant';text:string;refs?:{label:string;page:string}[]}
 const conversations=ref(['今日高危告警研判','总部异常外连核对','规则验证结果分析']);const active=ref('今日高危告警研判');const model=ref('本地安全模型');const input=ref('');const sending=ref(false);const toolOpen=ref(false);const formOpen=ref(false)

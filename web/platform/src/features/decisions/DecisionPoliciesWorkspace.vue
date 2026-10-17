@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
 import {useRoute} from 'vue-router'
-import {Table as ATable,Modal as AModal,InputNumber as AInputNumber,Select as ASelect,Tag as ATag,message} from 'ant-design-vue'
+import {Table as ATable,Modal as AModal,InputNumber as AInputNumber,Select as ASelect,Tag as ATag} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {formatTime} from '@starbeacon/shared/types.ts'
 import {session} from '../../session'
@@ -10,6 +11,7 @@ import {useDecisionPolicies} from './useDecisionPolicies'
 import DecisionPolicyForm from './DecisionPolicyForm.vue'
 import DecisionPolicyEvaluation from './DecisionPolicyEvaluation.vue'
 import AutomaticTriagePanel from './AutomaticTriagePanel.vue'
+const message=useFeedback()
 const triggerTarget=shallowRef<PolicyRecord|null>(null)
 const model=useDecisionPolicies(),route=useRoute(),canEdit=computed(()=>session.current.value?.role==='admin'),filter=reactive({keyword:'',active:''})
 const editing=shallowRef(false),editRecord=shallowRef<PolicyRecord|null>(null),detail=shallowRef<PolicyRecord|null>(null),detailTarget=shallowRef<PolicyRecord|null>(null),detailError=shallowRef(''),detailPending=shallowRef(false),revision=shallowRef<number|null>(null),evaluation=shallowRef<PolicyRecord|null>(null)
@@ -68,4 +70,4 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
  </a-modal>
  <a-modal :open="!!triggerTarget" title="自动研判记录" :width="1100" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" @cancel="triggerTarget=null"><AutomaticTriagePanel v-if="triggerTarget" :record="triggerTarget"/></a-modal>
 </template>
-<style scoped>.policy-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.policy-toolbar>.ant-input{width:220px}.policy-toolbar>.ant-select{width:130px}.policy-row-actions,.policy-pagination,.policy-revision{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.policy-pagination{justify-content:flex-end;padding:12px}.policy-pagination>span{flex:1;min-width:180px}.policy-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.policy-detail dd{margin:0;overflow-wrap:anywhere}.policy-detail dt{color:var(--text-secondary,#4b5563)}.policy-definition{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-muted,#f8f9fa);padding:12px;border:1px solid var(--border-color,#e5e7eb);border-radius:8px}.policy-revision{margin-bottom:12px}</style>
+<style scoped>.policy-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.policy-toolbar>.ant-input{width:220px}.policy-toolbar>.ant-select{width:130px}.policy-row-actions,.policy-pagination,.policy-revision{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.policy-pagination{justify-content:flex-end;padding:12px}.policy-pagination>span{flex:1;min-width:180px}.policy-detail{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}.policy-detail dd{margin:0;overflow-wrap:anywhere}.policy-detail dt{color:var(--muted)}.policy-definition{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--table-header);padding:12px;border:1px solid var(--line);border-radius:8px}.policy-revision{margin-bottom:12px}</style>

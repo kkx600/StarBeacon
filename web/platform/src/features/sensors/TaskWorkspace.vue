@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import { computed,inject,onMounted,onScopeDispose,shallowRef,watch } from 'vue'
 import {routeLocationKey,routerKey} from 'vue-router'
-import { message } from 'ant-design-vue'
 import type { Sensor, SensorTask } from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import TaskTable from '@starbeacon/shared/components/TaskTable.vue'
@@ -9,6 +9,7 @@ import { session } from '../../session'
 import {readSensorDirectory} from '@starbeacon/shared/sensors.ts'
 import {readyConnector} from '@starbeacon/shared/response.ts'
 import {useTaskDetail} from './useTaskDetail'
+const message=useFeedback()
 const props = defineProps<{sensorId?:string}>()
 const route=inject(routeLocationKey,undefined),router=inject(routerKey,undefined)
 const {detail,refresh:refreshDetail}=useTaskDetail(computed(()=>route?.query.task),()=>props.sensorId)

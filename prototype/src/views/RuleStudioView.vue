@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import {ref,watch,computed} from 'vue'
-import {message} from 'ant-design-vue'
 import {useRouter} from 'vue-router'
 import {UploadOutlined,ThunderboltOutlined,SaveOutlined,PlayCircleOutlined} from '@ant-design/icons-vue'
 import type {PageSpec,PreviewState} from '../models'
@@ -11,6 +11,7 @@ import PageHeader from '../components/PageHeader.vue'
 import StatePanel from '../components/StatePanel.vue'
 import RecordForm from '../components/RecordForm.vue'
 import StatusTag from '../components/StatusTag.vue'
+const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState}>();const emit=defineEmits<{state:[value:PreviewState]}>();const router=useRouter()
 const allowContext=ref(false)
 const inputMode=ref('natural');const description=ref('检测从外部访问业务服务器 /admin/login 的 GET 请求，要求已建立的客户端到服务端会话。');const raw=ref('GET /admin/login HTTP/1.1\r\nHost: service.example.test\r\nUser-Agent: ExampleClient/1.0\r\n\r\n');const fileName=ref('example-admin-session.pcapng');const model=ref('本地安全模型');const rule=ref(exampleRule);const generated=ref(true);const busy=ref(false);const tested=ref(false);const detail=ref(false);const formOpen=ref(false);const resultTab=ref('rule')
