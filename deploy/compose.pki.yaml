@@ -13,7 +13,10 @@ services:
     pids_limit: 128
     mem_limit: 512m
     cpus: 1
-    tmpfs: [/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+      # 覆盖镜像声明的父卷；运行账号不能写入父目录，持久数据只落入 db。
+      - /home/step:rw,noexec,nosuid,nodev,size=1m,mode=0555
     volumes:
       - ${SB_STEP_CA_DIRECTORY:?请设置独立 CA 运行目录}/config:/home/step/config:ro
       - ${SB_STEP_CA_DIRECTORY}/certs:/home/step/certs:ro

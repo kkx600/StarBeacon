@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "官方独立 CA 单节点部署与探针证书生命周期工程验证",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "source": {
+    "go_source_sha256": "bd8cee62188caf9d9bb7b606996f437b645e87a3b5624f349a6b90945245888b",
+    "runner_image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+    "frozen_build_parent_commit": "0366a0caca154c42bdc035a2571eb69ea900695a",
+    "frozen_build_clean_commit": false,
+    "repository_main_at_test": "1be139dbb410e93f8f4fcfa451c68696cca7c666",
+    "runtime_source_bytes_identical_to_current": true,
+    "distribution_helper_sha256": "60ab755b7d337db83d587ab9a911522e8efe7d9a83f11519612cbd48c8ccb9c3",
+    "ca_deployment_sha256": "a2468514148e2eb353b036fd08adb138e8a5d07033dae3490387a04619fc5078"
+  },
+  "image_distribution": {
+    "workflow_run_id": "39019748343",
+    "workflow_commit": "1be139dbb410e93f8f4fcfa451c68696cca7c666",
+    "requested_image": "cr.smallstep.com/smallstep/step-ca:0.30.2@sha256:a2b17872915c193259b75a5474c398326f41bd199f0842093e52cf4182bc8270",
+    "export_image_id": "sha256:b4dfb147207bec7553b84b620e5d383589e8e9fb02a25130e7a4b27592a2d01e",
+    "image_id": "sha256:010723b55edbd75a4680d4406bc72da5c1d81db47909d8faad008ba683b7da57",
+    "content_identity": {
+      "config_digest": "sha256:b4dfb147207bec7553b84b620e5d383589e8e9fb02a25130e7a4b27592a2d01e",
+      "save_manifest_digest": "sha256:010723b55edbd75a4680d4406bc72da5c1d81db47909d8faad008ba683b7da57",
+      "load_ids": [
+        "sha256:010723b55edbd75a4680d4406bc72da5c1d81db47909d8faad008ba683b7da57",
+        "sha256:b4dfb147207bec7553b84b620e5d383589e8e9fb02a25130e7a4b27592a2d01e"
+      ]
+    },
+    "archive_sha256": "8583b0be5d8a7679a8be1e794b90b886c934a9c9a96bc76a87818c85899747ce",
+    "artifact_zip_sha256": "sha256:74166601acedcb0e7a8bb3b876cfd09bcad865959dfd0e369b1f3b61d0556bea",
+    "artifact_id": 12096491256,
+    "workflow_url": "https://github.com/kkx600/StarBeacon/actions/runs/39019748343",
+    "github_artifact_zip_and_inner_archive_both_verified": true,
+    "all_seven_layer_contents_verified": true,
+    "image_filesystem_not_exported_or_rebuilt": true
+  },
+  "ca_runtime": {
+    "image_id": "sha256:010723b55edbd75a4680d4406bc72da5c1d81db47909d8faad008ba683b7da57",
+    "container_id": "c717880ca346b6ea476dfa21e7edb6e4c011ae3474e4802ff54941ac98ea4a07",
+    "health": "healthy",
+    "version": "Smallstep CA/0.30.2 (linux/amd64)\nRelease Date: 2026-03-23 00:18 UTC",
+    "user": "1000:1000",
+    "read_only": true,
+    "cap_add": [
+      "CAP_NET_BIND_SERVICE"
+    ],
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ],
+    "memory": 536870912,
+    "nano_cpus": 1000000000,
+    "pids_limit": 128,
+    "host_ports": {},
+    "mounts": [
+      {
+        "destination": "/home/step/certs",
+        "read_only": true
+      },
+      {
+        "destination": "/home/step/secrets",
+        "read_only": true
+      },
+      {
+        "destination": "/home/step/templates",
+        "read_only": true
+      },
+      {
+        "destination": "/home/step/db",
+        "read_only": false
+      },
+      {
+        "destination": "/home/step/config",
+        "read_only": true
+      }
+    ],
+    "root_private_key_not_mounted": true,
+    "status": "passed",
+    "ca_container_id": "c717880ca346b6ea476dfa21e7edb6e4c011ae3474e4802ff54941ac98ea4a07",
+    "ca_image_id": "sha256:010723b55edbd75a4680d4406bc72da5c1d81db47909d8faad008ba683b7da57",
+    "restart_count": 0,
+    "oom_killed": false,
+    "tmpfs": {
+      "/home/step": "rw,noexec,nosuid,nodev,size=1m,mode=0555",
+      "/tmp": "rw,noexec,nosuid,nodev,size=16m,mode=1777"
+    },
+    "no_anonymous_volume": true,
+    "parent_non_writable": true,
+    "readonly_bind_creation_refused": true,
+    "permissions": [
+      "555 0 0 /home/step",
+      "700 1000 1000 /home/step/db",
+      "700 1000 1000 /home/step/config",
+      "700 1000 1000 /home/step/secrets"
+    ],
+    "parent_owner_uid": 0,
+    "parent_mode": "0555",
+    "persistent_writable_destinations": [
+      "/home/step/db"
+    ],
+    "offline_root_and_platform_authorization_not_mounted": true,
+    "host_ports_exposed": false
+  },
+  "tests": {
+    "status": "passed",
+    "scope": "5 个真实 PG 事务与权限用例、1 个官方独立 CA 生命周期用例",
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      {
+        "name": "TestProbeEnrollmentHTTPTransactionProofIsolationAndRevocation",
+        "seconds": 9.44
+      },
+      {
+        "name": "TestProbeEnrollmentSigningOutcomesAndConcurrentBinding",
+        "seconds": 5.38
+      },
+      {
+        "name": "TestProbeRevocationDoesNotHoldCertificateRowWhileWaitingForSigner",
+        "seconds": 4.62
+      },
+      {
+        "name": "TestProbeCertificateFinalizationSerializesWithCredentialAuthorityChanges",
+        "seconds": 9.66
+      },
+      {
+        "name": "TestProbeCertificateDirectoriesPaginateWithoutDuplicateOrPrivateMaterials",
+        "seconds": 6.89
+      },
+      {
+        "name": "TestProbePKIRealStepCAEnrollmentAutomaticRenewalAndLiveRevocation",
+        "seconds": 193.89
+      }
+    ],
+    "race_enabled": true,
+    "actual_cli_enrollment": true,
+    "real_clock_renewal_seconds": 179.391,
+    "clock_or_certificate_dates_fast_forwarded": false,
+    "old_existing_control_connection_denied_after_revocation": true,
+    "new_certificate_independently_accepted": true,
+    "disabled_probe_denied": true,
+    "container": {
+      "scope": "actual",
+      "container_id": "e87db9ab9e8d1c383b26996d30fb45c2f943dd3028520f38d3eb6a435f7bfe78",
+      "image_id": "sha256:d2a28df7ef2e858983f779929957fb3ba9a800991434868cdc32e653cd6645d2",
+      "actual_exit_code": 0,
+      "running": false,
+      "oom_killed": false
+    },
+    "runtime_compilation_preparation_counted_as_test": false,
+    "overall_go_coverage_source": "2026-10-17-探针注册与证书.json",
+    "overall_go_coverage_unchanged_source": {
+      "covered_statements": 18591,
+      "total_statements": 20634,
+      "percentage": 90.0988659494039
+    },
+    "subset_does_not_replace_or_inflate_full_regression": true
+  },
+  "deployment": {
+    "engineering_primary_updated_in_previous_record": true,
+    "engineering_primary_ca_configured": false,
+    "engineering_primary_uses_static_identity": true,
+    "four_roles_ready_after_cleanup": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "running_roles_bound_to_program_files": 4,
+    "frontend_files_verified": 81,
+    "protected_instances_unchanged": true,
+    "isolated_ca_project_is_removed": true
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "owned_official_probe_ca_qualification_project",
+    "project": "sbacc_pki197_6d217ccfb936a456",
+    "containers_removed": 4,
+    "dependency_volumes_removed": 1,
+    "ca_test_keys_removed": true,
+    "archive": {
+      "path": ".local/acceptance/pki201-evidence.tar.gz",
+      "sha256": "a38e42a3396ca09a38b819a1e6bb06afda91ce9562c5019e170990e19b62a306",
+      "bytes": 61546
+    },
+    "online_instances_unchanged": true,
+    "official_image_preserved": true,
+    "frozen_backend_image_preserved": true,
+    "global_prune": false,
+    "removed": true,
+    "directory_allocated_bytes": 1007669248,
+    "finished_at": "2026-10-17T09:31:40.294152+00:00"
+  },
+  "preserved_failures": [
+    {
+      "scope": "官方 registry 直接拉取及本机转取",
+      "result": "网络超时，保留失败记录；成功分发改经本仓库固定摘要的手动工作流"
+    },
+    {
+      "scope": "gh run download",
+      "result": "180 秒下载超时；GitHub MCP 取得原始 ZIP 后核对 GitHub 制品摘要和内部归档摘要"
+    },
+    {
+      "scope": "跨 Docker 存储后端导入",
+      "result": "原单一 ID 断言拒绝导入；按配置摘要、OCI 保存清单和全部层内容完成精确绑定"
+    },
+    {
+      "scope": "只读挂载探测",
+      "result": "权限谓词不能证明只读文件系统的写入结果；实际创建探测被拒绝，挂载标志及属主同时核对"
+    }
+  ],
+  "remaining": [
+    "CA 高可用、离线恢复、备份灾备和跨故障域验收",
+    "静态身份迁移、服务端证书与签发授权密钥轮换",
+    "通用 CRL/OCSP 以及 CA 未知回执自动对账",
+    "当前全需求、生产 TLS、真实外部服务、海量容量和全路由交互验收"
+  ],
+  "historical_identifiers_only": "测试容器、卷与专属目录已清理；编号和路径用于历史证据核对，不是在线地址",
+  "finished_at": "2026-10-17T09:34:29.361494+00:00"
+}

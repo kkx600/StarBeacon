@@ -9,6 +9,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import tarfile
 
 from init_step_ca import IMAGE
 
@@ -57,6 +58,83 @@ def verify_image(metadata):
     if not isinstance(layers, list) or not 1 <= len(layers) <= 64 or any(not SHA.fullmatch(str(layer)) for layer in layers):
         raise ValueError("官方 CA 镜像层记录无效")
     return {key: metadata[key] for key in ("Id", "Os", "Architecture", "RepoDigests", "RootFS")}
+
+
+def archive_identity(archive, image):
+    small, digests, sizes = {}, {}, {}
+    total = 0
+    # Docker save 的外层只包含普通元数据和层文件，不展开镜像文件系统。
+    with tarfile.open(archive, "r|gz") as bundle:
+        for member in bundle:
+            name = pathlib.PurePosixPath(member.name)
+            if name.is_absolute() or ".." in name.parts or member.name in sizes or not (member.isdir() or member.isfile()):
+                raise ValueError("镜像归档成员不符合约束")
+            if member.isdir():
+                continue
+            if len(sizes) >= 512 or member.size < 0:
+                raise ValueError("镜像归档成员数量无效")
+            total += member.size
+            if total > 2 * 1024 ** 3:
+                raise ValueError("镜像归档展开体积超限")
+            digest, data = hashlib.sha256(), bytearray()
+            with bundle.extractfile(member) as source:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(block)
+                    if member.size <= 1024 * 1024:
+                        data.extend(block)
+            digests[member.name], sizes[member.name] = "sha256:" + digest.hexdigest(), member.size
+            if member.size <= 1024 * 1024:
+                small[member.name] = bytes(data)
+    def document(name):
+        if name not in small:
+            raise ValueError("镜像归档缺少受限元数据")
+        return json.loads(small[name])
+    saved = document("manifest.json")
+    if not isinstance(saved, list) or len(saved) != 1 or not isinstance(saved[0], dict):
+        raise ValueError("镜像归档必须包含唯一的 Docker 保存记录")
+    row = saved[0]
+    config_name, layers = row.get("Config"), row.get("Layers")
+    if not isinstance(config_name, str) or not isinstance(layers, list) or any(not isinstance(layer, str) for layer in layers):
+        raise ValueError("镜像配置或层引用无效")
+    config = document(config_name)
+    config_digest = digests[config_name]
+    if (not isinstance(config, dict) or config.get("os") != "linux" or config.get("architecture") != "amd64"
+            or config.get("rootfs") != {"type": "layers", "diff_ids": image["RootFS"]["Layers"]}
+            or [digests.get(layer) for layer in layers] != image["RootFS"]["Layers"]):
+        raise ValueError("镜像配置或层内容与来源记录不同")
+    identifiers = {config_digest}
+    manifest_digest = None
+    if "index.json" in small:
+        index = document("index.json")
+        descriptors = index.get("manifests") if isinstance(index, dict) else None
+        if not isinstance(descriptors, list) or len(descriptors) != 1 or not isinstance(descriptors[0], dict):
+            raise ValueError("镜像归档必须包含唯一 OCI 清单")
+        descriptor = descriptors[0]
+        manifest_digest = descriptor.get("digest")
+        if not SHA.fullmatch(str(manifest_digest)):
+            raise ValueError("镜像 OCI 清单摘要无效")
+        name = "blobs/sha256/" + manifest_digest.split(":")[1]
+        manifest = document(name)
+        if digests[name] != manifest_digest or descriptor.get("size") != sizes[name] or not isinstance(manifest, dict):
+            raise ValueError("镜像 OCI 清单内容摘要不同")
+        configuration, references = manifest.get("config"), manifest.get("layers")
+        if (not isinstance(configuration, dict) or configuration.get("digest") != config_digest
+                or configuration.get("size") != sizes[config_name] or not isinstance(references, list)
+                or any(not isinstance(layer, dict) for layer in references)
+                or [layer.get("digest") for layer in references] != image["RootFS"]["Layers"]
+                or [layer.get("size") for layer in references] != [sizes[layer] for layer in layers]):
+            raise ValueError("镜像 OCI 清单未绑定实际配置和全部层")
+        identifiers.add(manifest_digest)
+    if image["Id"] not in identifiers:
+        raise ValueError("来源引擎的镜像 ID 未绑定归档内容")
+    return {"config_digest": config_digest, "save_manifest_digest": manifest_digest, "load_ids": sorted(identifiers)}
+
+
+def verify_loaded(metadata, verified):
+    if (not isinstance(metadata, dict) or metadata.get("Id") not in verified.get("content_identity", {}).get("load_ids", [])
+            or any(metadata.get(key) != verified.get(key) for key in ("Os", "Architecture", "RootFS"))):
+        raise ValueError("导入后的镜像内容身份不同")
+    return metadata["Id"]
 
 
 def export(directory):
@@ -119,6 +197,7 @@ def verify(directory, origin, repository, commit, run_id):
             or expected["size"] != archive.stat().st_size or not re.fullmatch(r"[a-f0-9]{64}", str(expected.get("sha256", "")))
             or expected["sha256"] != sha256(archive)):
         raise ValueError("镜像归档内容摘要不符")
+    image["content_identity"] = archive_identity(archive, image)
     return image
 
 
@@ -138,8 +217,8 @@ def main():
             export(args.directory)
         else:
             image = verify(args.directory, json.loads(args.origin.read_text()), args.repository, args.commit, args.run_id)
-            print(json.dumps({"status": "verified", "image_id": image["Id"], "platform": "linux/amd64"}))
-    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            print(json.dumps({"status": "verified", "image_id": image["Id"], "platform": "linux/amd64", "content_identity": image["content_identity"]}))
+    except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, subprocess.SubprocessError) as error:
         print("探针 CA 镜像分发未完成：" + (str(error) if isinstance(error, ValueError) else type(error).__name__))
         raise SystemExit(1)
 

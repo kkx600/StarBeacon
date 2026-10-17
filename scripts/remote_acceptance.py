@@ -298,7 +298,15 @@ def run_backend(state):
 
 def step_ca_service(state):
     base=state["directory"]+"/pki/ca"
-    return {"image":state["step_ca_image"],"platform":"linux/amd64","user":"1000:1000","entrypoint":["/usr/local/bin/step-ca"],"command":["--password-file","/home/step/secrets/password","/home/step/config/ca.json"],"read_only":True,"cap_drop":["ALL"],"cap_add":["NET_BIND_SERVICE"],"security_opt":["no-new-privileges:true"],"pids_limit":128,"mem_limit":"512m","cpus":"1","tmpfs":["/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"],"volumes":[base+"/"+name+":/home/step/"+name+("" if name=="db" else ":ro") for name in ("config","certs","secrets","templates","db")],"healthcheck":{"test":["CMD","step","ca","health","--ca-url","https://localhost:9000","--root","/home/step/certs/root_ca.crt"],"interval":"3s","timeout":"3s","retries":30}}
+    return {
+        "image":state["step_ca_image"],"platform":"linux/amd64","user":"1000:1000",
+        "entrypoint":["/usr/local/bin/step-ca"],"command":["--password-file","/home/step/secrets/password","/home/step/config/ca.json"],
+        "read_only":True,"cap_drop":["ALL"],"cap_add":["NET_BIND_SERVICE"],"security_opt":["no-new-privileges:true"],
+        "pids_limit":128,"mem_limit":"512m","cpus":"1",
+        "tmpfs":["/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777","/home/step:rw,noexec,nosuid,nodev,size=1m,mode=0555"],
+        "volumes":[base+"/"+name+":/home/step/"+name+("" if name=="db" else ":ro") for name in ("config","certs","secrets","templates","db")],
+        "healthcheck":{"test":["CMD","step","ca","health","--ca-url","https://localhost:9000","--root","/home/step/certs/root_ca.crt"],"interval":"3s","timeout":"3s","retries":30},
+    }
 
 def prepare_step_ca(state,image=STEP_CA_IMAGE):
     try:

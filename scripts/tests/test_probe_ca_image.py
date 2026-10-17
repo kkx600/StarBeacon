@@ -7,6 +7,7 @@ import json
 import os
 import pathlib
 import sys
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
@@ -18,19 +19,41 @@ import probe_ca_image as image
 class ProbeCAImageTest(unittest.TestCase):
     def setUp(self):
         self.commit, self.run_id, self.repository = "a" * 40, "123", "owned/project"
-        self.metadata = {"Id": "sha256:" + "1" * 64, "Os": "linux", "Architecture": "amd64",
+        self.layer = b"fixed layer content"
+        self.layer_digest = "sha256:" + hashlib.sha256(self.layer).hexdigest()
+        self.config = json.dumps({"os": "linux", "architecture": "amd64", "rootfs": {"type": "layers", "diff_ids": [self.layer_digest]}}).encode()
+        self.config_digest = "sha256:" + hashlib.sha256(self.config).hexdigest()
+        self.metadata = {"Id": self.config_digest, "Os": "linux", "Architecture": "amd64",
                          "RepoDigests": [image.IMAGE.split(":0.30.2@")[0] + "@" + image.IMAGE.split("@")[1]],
-                         "RootFS": {"Type": "layers", "Layers": ["sha256:" + "2" * 64]}}
+                         "RootFS": {"Type": "layers", "Layers": [self.layer_digest]}}
         self.run = {"id": 123, "head_sha": self.commit, "head_branch": "main", "status": "completed", "conclusion": "success",
                     "event": "workflow_dispatch", "head_repository": {"full_name": self.repository}, "path": image.WORKFLOW}
         self.artifacts = {"artifacts": [{"name": image.ARTIFACT, "expired": False,
                                         "workflow_run": {"id": 123, "head_sha": self.commit, "head_branch": "main"}}]}
 
+    def archive(self, directory, oci=False, corrupt_layer=False):
+        config_name = "blobs/sha256/" + self.config_digest.split(":")[1] if oci else self.config_digest.split(":")[1] + ".json"
+        layer_name = "blobs/sha256/" + self.layer_digest.split(":")[1] if oci else "layer/layer.tar"
+        members = {config_name: self.config, layer_name: b"different content" if corrupt_layer else self.layer,
+                   "manifest.json": json.dumps([{"Config": config_name, "Layers": [layer_name]}]).encode()}
+        manifest_digest = None
+        if oci:
+            manifest = json.dumps({"schemaVersion": 2, "config": {"digest": self.config_digest, "size": len(self.config)},
+                                   "layers": [{"digest": self.layer_digest, "size": len(self.layer)}]}).encode()
+            manifest_digest = "sha256:" + hashlib.sha256(manifest).hexdigest()
+            members["blobs/sha256/" + manifest_digest.split(":")[1]] = manifest
+            members["index.json"] = json.dumps({"schemaVersion": 2, "manifests": [{"digest": manifest_digest, "size": len(manifest)}]}).encode()
+        with tarfile.open(directory / image.ARCHIVE, "w:gz") as target:
+            for name, data in members.items():
+                member = tarfile.TarInfo(name); member.size = len(data)
+                target.addfile(member, io.BytesIO(data))
+        return manifest_digest
+
     def test_same_commit_distribution_and_archive_are_required(self):
         with tempfile.TemporaryDirectory() as scratch:
             directory = pathlib.Path(scratch).resolve()
-            content = b"archive bytes bound to trusted workflow"
-            (directory / image.ARCHIVE).write_bytes(content)
+            self.archive(directory)
+            content = (directory / image.ARCHIVE).read_bytes()
             report = {"schema_version": 1, "scope": "official_probe_ca_image_distribution", "repository": self.repository,
                       "commit": self.commit, "run_id": self.run_id, "workflow": image.WORKFLOW,
                       "requested_image": image.IMAGE, "image": self.metadata,
@@ -38,7 +61,9 @@ class ProbeCAImageTest(unittest.TestCase):
             record = directory / "image.json"
             record.write_text(json.dumps(report))
             origin = {"run": self.run, "artifacts": self.artifacts}
-            self.assertEqual(image.verify(directory, origin, self.repository, self.commit, self.run_id), self.metadata)
+            observed = image.verify(directory, origin, self.repository, self.commit, self.run_id)
+            self.assertEqual({key: observed[key] for key in self.metadata}, self.metadata)
+            self.assertEqual(observed["content_identity"]["load_ids"], [self.config_digest])
             for key, value in (("commit", "b" * 40), ("requested_image", "other/image:latest"), ("run_id", "124"), ("archive", None)):
                 invalid = {**report, key: value}; record.write_text(json.dumps(invalid))
                 with self.subTest(key=key), self.assertRaises(ValueError):
@@ -52,6 +77,21 @@ class ProbeCAImageTest(unittest.TestCase):
             (directory / image.ARCHIVE).symlink_to(outside)
             with self.assertRaises(ValueError):
                 image.verify(directory, origin, self.repository, self.commit, self.run_id)
+
+    def test_classic_and_oci_store_identifiers_bind_the_same_configuration_and_layers(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            directory = pathlib.Path(scratch).resolve()
+            manifest = self.archive(directory, oci=True)
+            identity = image.archive_identity(directory / image.ARCHIVE, self.metadata)
+            self.assertEqual(identity["config_digest"], self.config_digest)
+            self.assertEqual(identity["save_manifest_digest"], manifest)
+            verified = {**self.metadata, "content_identity": identity}
+            for identifier in (self.config_digest, manifest):
+                self.assertEqual(image.verify_loaded({**self.metadata, "Id": identifier}, verified), identifier)
+            for altered in ({**self.metadata, "Id": "sha256:" + "f" * 64}, {**self.metadata, "RootFS": {"Type": "layers", "Layers": []}}):
+                with self.assertRaises(ValueError): image.verify_loaded(altered, verified)
+            self.archive(directory, oci=True, corrupt_layer=True)
+            with self.assertRaises(ValueError): image.archive_identity(directory / image.ARCHIVE, self.metadata)
 
     def test_other_workflows_repositories_commits_and_expired_material_are_rejected(self):
         image.verify_origin(self.run, self.artifacts, self.repository, self.commit, self.run_id)

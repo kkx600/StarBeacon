@@ -59,6 +59,7 @@ class ProbeCAInitializationTests(unittest.TestCase):
         self.assertNotIn('privileged', service)
         self.assertEqual(service['cap_drop'], ['ALL'])
         self.assertEqual(service['cap_add'], ['NET_BIND_SERVICE'])
+        self.assertIn('/home/step:rw,noexec,nosuid,nodev,size=1m,mode=0555', service['tmpfs'])
         for mount in service['volumes']:
             source, target, *flags = mount.split(':')
             self.assertTrue(source.startswith(directory + '/pki/ca/'))
