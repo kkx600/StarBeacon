@@ -233,6 +233,7 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	if capture != nil {
 		reader.CanSwitch = capture.CanSwitchSource
+		reader.ObserveStats = capture.ObserveStats
 	}
 	defer reader.Close()
 	local, e := NewLocalIdentity(wal, c.LocalPassword)

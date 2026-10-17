@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import {formatQuantity} from '../../../web/packages/shared/src/utils/format'
-import {computed} from 'vue'
+import {computed,shallowRef,watch} from 'vue'
 import type {BusinessRecord} from '../models'
 import {healthFor} from '../data/sensorHealth'
 import {sensorThresholds} from '../composables/useSensorHealth'
 import StatusTag from './StatusTag.vue'
 import {collectorDevice} from '../data/collector'
+import DetectionQualityPreview from './DetectionQualityPreview.vue'
 const props=defineProps<{record:BusinessRecord;tab:string}>()
 const health=computed(()=>healthFor(props.record,sensorThresholds))
 const observable=computed(()=>health.value!=='不可观测')
 const execution=computed(()=>props.record.role==='执行采集器')
+const qualityOpen=shallowRef(false)
+watch(()=>[props.record.id,props.tab],()=>{qualityOpen.value=false})
 function metric(key:string,suffix=''){return observable.value&&props.record[key]!=null?key==='bps'?formatQuantity(props.record[key]):`${props.record[key]}${suffix}`:'不可观测'}
 </script>
 <template>
@@ -37,6 +40,7 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
       <a-descriptions-item label="事件输出速率">{{execution?'不适用（执行角色）':metric('eps')}}</a-descriptions-item><a-descriptions-item label="CPU / 内存 / 磁盘阈值">{{sensorThresholds.cpu}}% / {{sensorThresholds.memory}}% / {{sensorThresholds.disk}}%</a-descriptions-item>
     </a-descriptions>
     <p class="field-hint">丢包阈值 {{sensorThresholds.drop}}%；心跳超时 {{sensorThresholds.heartbeat}} 秒。当前为单次合成快照，未提供实时趋势。</p>
+    <a-button @click="qualityOpen=true">检测质量</a-button>
   </template>
   <template v-else-if="tab==='采集与版本'">
     <a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small">
@@ -55,4 +59,5 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
     <a-empty v-else description="探针尚未上报运行记录。"/>
     <p class="field-hint">当前示例未提供历史资源序列或外部任务回执。探针编辑记录应在操作日志中查询。</p>
   </template>
+  <DetectionQualityPreview :open="qualityOpen" @close="qualityOpen=false" />
 </template>

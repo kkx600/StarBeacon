@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/detectionquality"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"go.yaml.in/yaml/v3"
 )
@@ -30,23 +31,24 @@ type CaptureSettings control.CaptureSettings
 
 type CaptureState struct {
 	CaptureSettings
-	Managed            bool              `json:"managed"`
-	Status             string            `json:"status"`
-	Revision           uint64            `json:"revision"`
-	AppliedRevision    uint64            `json:"applied_revision"`
-	AppliedSettings    *CaptureSettings  `json:"applied_settings,omitempty"`
-	UpdatedAt          time.Time         `json:"updated_at"`
-	ObservedAt         time.Time         `json:"observed_at"`
-	ConfigSHA256       string            `json:"config_sha256,omitempty"`
-	SettingsSHA256     string            `json:"settings_sha256"`
-	CountersObservedAt *time.Time        `json:"counters_observed_at,omitempty"`
-	SpoolBytes         string            `json:"spool_bytes,omitempty"`
-	SpoolBudget        string            `json:"spool_budget,omitempty"`
-	Rotations          string            `json:"rotations,omitempty"`
-	RotationPending    bool              `json:"rotation_pending"`
-	ErrorCode          string            `json:"error_code,omitempty"`
-	PID                int               `json:"pid,omitempty"`
-	Counters           map[string]string `json:"counters,omitempty"`
+	Managed            bool                     `json:"managed"`
+	Status             string                   `json:"status"`
+	Revision           uint64                   `json:"revision"`
+	AppliedRevision    uint64                   `json:"applied_revision"`
+	AppliedSettings    *CaptureSettings         `json:"applied_settings,omitempty"`
+	UpdatedAt          time.Time                `json:"updated_at"`
+	ObservedAt         time.Time                `json:"observed_at"`
+	ConfigSHA256       string                   `json:"config_sha256,omitempty"`
+	SettingsSHA256     string                   `json:"settings_sha256"`
+	CountersObservedAt *time.Time               `json:"counters_observed_at,omitempty"`
+	SpoolBytes         string                   `json:"spool_bytes,omitempty"`
+	SpoolBudget        string                   `json:"spool_budget,omitempty"`
+	Rotations          string                   `json:"rotations,omitempty"`
+	RotationPending    bool                     `json:"rotation_pending"`
+	ErrorCode          string                   `json:"error_code,omitempty"`
+	PID                int                      `json:"pid,omitempty"`
+	Counters           map[string]string        `json:"counters,omitempty"`
+	Quality            *detectionquality.Report `json:"quality,omitempty"`
 }
 
 func (s *CaptureSettings) normalize() error {
@@ -106,6 +108,7 @@ type CaptureSupervisor struct {
 	active    *captureProcess
 	retry     time.Time
 	rotations uint64
+	quality   detectionquality.Tracker
 }
 
 func NewCaptureSupervisor(engine *Engine) (*CaptureSupervisor, error) {
@@ -181,6 +184,7 @@ func NewCaptureSupervisor(engine *Engine) (*CaptureSupervisor, error) {
 	s.state.AppliedSettings = nil
 	s.state.Status, s.state.ConfigSHA256, s.state.ErrorCode = "stopped", "", ""
 	s.state.ObservedAt, s.state.Counters, s.state.CountersObservedAt = time.Now().UTC(), nil, nil
+	s.state.Quality = nil
 	// 暂存与轮转状态须从本次磁盘和原生进程重新观测，不能沿用持久配置中的旧快照。
 	s.state.SpoolBytes, s.state.SpoolBudget, s.state.Rotations, s.state.RotationPending = "", "", "", false
 	engine.Capture = s
@@ -214,7 +218,18 @@ func (s *CaptureSupervisor) Snapshot() CaptureState {
 		v.Counters[key] = value
 	}
 	v.SettingsSHA256 = control.CaptureSettingsDigest(control.CaptureSettings(v.CaptureSettings))
+	quality := s.quality.Snapshot(time.Now().UTC(), s.active != nil && s.state.Status == "running")
+	v.Quality = &quality
 	return v
+}
+
+// 质量观测仅来自托管读取器已持久提交的原生 EVE；不采用控制接口中没有采样时间的缓存计数。
+func (s *CaptureSupervisor) ObserveStats(payload []byte, observed time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.active != nil && s.state.Status == "running" {
+		s.quality.Observe(payload, observed)
+	}
 }
 
 func (s *CaptureSupervisor) Ready() bool {
@@ -452,6 +467,7 @@ func (s *CaptureSupervisor) launch(ctx context.Context, raw []byte, revision uin
 	command.Stdout, command.Stderr, command.WaitDelay = io.Discard, io.Discard, 2*time.Second
 	command.SysProcAttr = captureProcessAttributes()
 	done := make(chan struct{})
+	started := time.Now().UTC()
 	if err := startCaptureProcess(command, done); err != nil {
 		return err
 	}
@@ -460,6 +476,7 @@ func (s *CaptureSupervisor) launch(ctx context.Context, raw []byte, revision uin
 	s.active = process
 	s.state.Status, s.state.PID, s.state.ConfigSHA256 = "starting", command.Process.Pid, process.sha
 	s.state.Counters, s.state.CountersObservedAt = nil, nil
+	s.quality.Start(store.RandomID("engine_"), process.sha, started)
 	s.mu.Unlock()
 	if err := durableFile(c.SuricataPIDFile, []byte(strconv.Itoa(command.Process.Pid))); err != nil {
 		return err
@@ -644,32 +661,7 @@ func (s *CaptureSupervisor) Run(ctx context.Context) error {
 
 // Suricata 8 的总计数使用嵌套对象。只保留实际出现的 uint64，不把线程计数或缺测补成零。
 func captureCounters(raw json.RawMessage) (map[string]string, bool) {
-	var root map[string]json.RawMessage
-	if json.Unmarshal(raw, &root) != nil || root == nil {
-		return nil, false
-	}
-	counters := map[string]string{}
-	for _, key := range []string{"capture.kernel_packets", "capture.kernel_drops", "decoder.pkts", "decoder.bytes", "flow.active", "tcp.reassembly_gap", "tcp.segment_memcap_drop"} {
-		value := raw
-		for _, part := range strings.Split(key, ".") {
-			var object map[string]json.RawMessage
-			if json.Unmarshal(value, &object) != nil {
-				value = nil
-				break
-			}
-			value = object[part]
-		}
-		if len(value) == 0 {
-			continue
-		}
-		var number json.Number
-		if value[0] != '"' && json.Unmarshal(value, &number) == nil {
-			if _, err := strconv.ParseUint(number.String(), 10, 64); err == nil {
-				counters[key] = number.String()
-			}
-		}
-	}
-	return counters, true
+	return detectionquality.Extract(raw)
 }
 
 func (s *CaptureSupervisor) Close(ctx context.Context) {

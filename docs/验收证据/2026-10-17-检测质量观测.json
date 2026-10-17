@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "托管 Suricata 原生总量的探针区间检测质量与双端只读展示",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 0,
+    "accepted": 0
+  },
+  "source": {
+    "go_source_sha256": "f10796930e88086be421d81af964c19c408f6acaf9ca0dbd912648f1815e5fd2",
+    "frontend_source_sha256": "43cc7b7cfba8dea67e065b509a0352eae7031780372c37ce9c67edef3f8de960",
+    "runner_image_id": "sha256:da7a0c09049198a34b081938422174b27de3c44d8ae93040ac88abf77e604f66",
+    "build_parent_commit": "5ae9d96bb1b8e54e820b66d809fd445f3b42f38f",
+    "build_clean_commit": false,
+    "qualification_uses_frozen_dirty_source_not_clean_release_commit": true
+  },
+  "backend": {
+    "status": "passed",
+    "environment": "remote_docker",
+    "unit_tests": 468,
+    "real_dependency_tests": 114,
+    "native_af_packet_tests": 1,
+    "test_failures": 0,
+    "test_skips": 0,
+    "race_enabled": true,
+    "coverage": {
+      "covered": 18685,
+      "total": 20726,
+      "percentage": 90.15246550226769,
+      "minimum": 90
+    },
+    "coverage_scope_or_exclusions_changed": false,
+    "reports_archive": {
+      "path": ".local/acceptance/quality220-reports.tar.gz",
+      "sha256": "8c60c76bca8778a512ad76d20bff7d8f96a64a85a34642f3e7e376a246f7ae7a",
+      "bytes": 7363884
+    },
+    "reports_directory": ".local/acceptance/quality220-complete/reports",
+    "execution": {
+      "status": "passed",
+      "scope": "successful_driver_and_original_go_stage_reports_with_partial_historical_docker_events",
+      "driver_actual_exit_code": 0,
+      "reported_docker_exits": [
+        {
+          "container_id": "6ef5c6a57de2e1130dfdec7b516c47f4e3bc0506f68e1b2a1ef6013efa330f5e",
+          "service": "runner",
+          "action": "die",
+          "exit_code": "0"
+        }
+      ],
+      "event_sha256": "3100ac5a5de0d069412492ff1f337532211aaad14f71fea1c8935a0d237911f5",
+      "historical_docker_events_complete": false,
+      "limitation": "历史 Docker 事件为运行结束后查询，环形缓冲未保留全部五个准备与执行容器；只将留存的退出事件列为直接容器证据。完整阶段结论依据成功的 Compose 调用、同源原始 Go 日志及验收报告，不推定缺失事件。"
+    }
+  },
+  "native_quality_cases": [
+    {
+      "case": "ordinary",
+      "alerts": 1,
+      "alert_queue_overflow": 0,
+      "alerts_suppressed": 0
+    },
+    {
+      "case": "noalert",
+      "alerts": 0,
+      "alert_queue_overflow": 0,
+      "alerts_suppressed": 1
+    },
+    {
+      "case": "overflow",
+      "alerts": 15,
+      "alert_queue_overflow": 49,
+      "alerts_suppressed": 0
+    }
+  ],
+  "live_capture": {
+    "scope": "单个隔离 Docker 网卡与 HTTP 样本，非吞吐或生产 SLA",
+    "quality_assertions": [
+      "当前引擎原生 EVE stats 在 WAL 成功后形成连续区间",
+      "原生采样时间、区间起点和独立运行标识齐备",
+      "平台心跳中的质量与实际检测配置摘要相同"
+    ],
+    "http_request_to_notification_acceptance_seconds": 0.569,
+    "captured_packets": 13,
+    "pcapng_original_bytes": 2184,
+    "compressed_object_bytes": 1092,
+    "complete_handshakes_observed": 1,
+    "request_to_original_packet_download_verification_seconds": 1.226,
+    "actual_http_events_indexed_across_rotation": 1665,
+    "event_loss_or_duplicates_observed": false,
+    "notification_acceptance_is_not_external_delivery_or_blocking_proof": true
+  },
+  "frontend": {
+    "status": "passed",
+    "tests": 570,
+    "tool_tests": 9,
+    "test_files": 50,
+    "coverage": {
+      "statements": 95.52474552474553,
+      "branches": 93.05704673967504,
+      "functions": 92.20779220779221,
+      "lines": 98.97268269904272
+    },
+    "typecheck_and_both_builds_passed": true,
+    "qualification": {
+      "path": ".local/acceptance/quality217-frontend/frontend.json",
+      "sha256": "cd9e1499fd1cebad08eebb7ed9eaba5e98ff883659e9e9ad071add2af69cdd70",
+      "bytes": 48545
+    },
+    "component_geometry_pc_widths": [
+      1024,
+      1280,
+      1366,
+      1440,
+      1600,
+      1920,
+      2560
+    ],
+    "additional_narrow_width": 390,
+    "geometry_scope": "合成质量弹窗的七档 PC 与一档窄屏定向几何检查，不是全路由完整交互验收",
+    "live_ui": {
+      "collector": {
+        "url": "http://127.0.0.1:5195/network",
+        "scope": "专属工程实例外部 EVE 模式的真实未知状态；非托管捕获故障注入",
+        "refreshed": true,
+        "bodyWidth": 1280,
+        "height": 720,
+        "modalCount": 1,
+        "modalText": "检测质量尚未观测尚未取得可核对的原生统计。外部 EVE、缺测和无告警均不能据此判断检测覆盖。捕获质量质量未知检查覆盖质量未知告警输出质量未知策略影响质量未知范围为探针采样区间，不能定位到每条会话。策略抑制与旁路单独展示；未覆盖全部 pass、阈值策略和驱动计数。此处不代表事件上报、索引或通知送达质量。刷新观测关 闭",
+        "width": 1280
+      },
+      "platform": {
+        "url": "http://127.0.0.1:5194/sensors",
+        "scope": "专属工程实例在线探针外部 EVE 模式的真实未知状态",
+        "bodyWidth": 1280,
+        "height": 720,
+        "modalText": "检测质量尚未观测尚未取得可核对的原生统计。外部 EVE、缺测和无告警均不能据此判断检测覆盖。捕获质量质量未知检查覆盖质量未知告警输出质量未知策略影响质量未知范围为探针采样区间，不能定位到每条会话。策略抑制与旁路单独展示；未覆盖全部 pass、阈值策略和驱动计数。此处不代表事件上报、索引或通知送达质量。关 闭",
+        "width": 1280
+      }
+    },
+    "live_ui_scope": "常驻工程实例为外部 EVE 模式；双端显示真实未知，原生连续观测由独立 AF_PACKET 测试证明",
+    "prototype_base_images": 767,
+    "prototype_supplemental_images": 66,
+    "prototype_total_images": 833,
+    "prototype_base_images_recaptured_this_run": 12,
+    "prototype_supplemental_images_captured_this_run": 6,
+    "all_gallery_provenance_and_jpeg_checks_passed": true,
+    "all_gallery_images_manually_inspected": false
+  },
+  "local_checks": {
+    "quality_tests": 68,
+    "acceptance_tool_tests": 76,
+    "go_vet_passed": true,
+    "go_format_passed": true,
+    "alignment_passed": true,
+    "prototype_build_passed": true,
+    "prototype_workspace_collector_theme_coverage_checks_passed": true
+  },
+  "deployment": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_engineering_instance_not_production_release",
+    "backend_source": "f10796930e88086be421d81af964c19c408f6acaf9ca0dbd912648f1815e5fd2",
+    "frontend_source": "43cc7b7cfba8dea67e065b509a0352eae7031780372c37ce9c67edef3f8de960",
+    "frontend_artifact": "f574b19b255c11dce37b53b311a21285bde5d0a0ece99cb8948f16a7bf90977f",
+    "runtime_project": "sbacc_cf08cb9c52292287_app101",
+    "before_container": "957637ac5b710b490dacdeb44193ed809b4db1b22b0ea8764facc2babc5e2d42",
+    "after_container": "f97363a93807d44678cc495f0adb2ae9b2f99b80705cca994f336a50d831d7c3",
+    "original_runtime_unchanged": true,
+    "identity_files_and_role_configuration_sha256_preserved": true,
+    "init": true,
+    "migration_container": "f1a724cb58b7d21f14509a8befa80e64bef051108ccd8ece9aacaebee8166ce9",
+    "migration_actual_exit_code": 0,
+    "database_backup_sha256": "6fde1da81721f05346694ec44345146f1d3d269fc560f13528407512241e8bda",
+    "persistent_mounts_preserved": true,
+    "storage_limitation": "engineering_persistent_volume_testing_not_production_capacity_qualification",
+    "runner_image_id": "sha256:da7a0c09049198a34b081938422174b27de3c44d8ae93040ac88abf77e604f66",
+    "current_engineering_ca_configured": false,
+    "static_identity_retained": true,
+    "four_roles_ready": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "actual_running_roles": {
+      "starbeacon": {
+        "pid": 8,
+        "sha256": "8bbc90e9d737779d023704e56a3958d648b1ea69c4baf020f82841a1f7234858"
+      },
+      "starbeacon-ingest": {
+        "pid": 9,
+        "sha256": "261a340839307f7a837566cd814753d1df8a591fc7bdfc2b66d295329eebd724"
+      },
+      "starbeacon-worker": {
+        "pid": 14,
+        "sha256": "b7fb989525ed114469c8a2872c06a708fea123b769fdf11d7d51d26ad1249a38"
+      },
+      "starbeacon-agent": {
+        "pid": 16,
+        "sha256": "d209b47e2ef179420154321e1a37752596889c42f04900c244b6610648491016"
+      }
+    },
+    "image_programs": {
+      "starbeacon": "8bbc90e9d737779d023704e56a3958d648b1ea69c4baf020f82841a1f7234858",
+      "starbeacon-ingest": "261a340839307f7a837566cd814753d1df8a591fc7bdfc2b66d295329eebd724",
+      "starbeacon-worker": "b7fb989525ed114469c8a2872c06a708fea123b769fdf11d7d51d26ad1249a38",
+      "starbeacon-agent": "d209b47e2ef179420154321e1a37752596889c42f04900c244b6610648491016",
+      "starbeaconctl": "5ecbb0bcd591f48fbb10a40b62479903b9068b7ee53d97b8d603ff80d88e217c"
+    },
+    "frontend_files_verified": 81,
+    "post_cleanup_runtime": {
+      "path": ".local/acceptance/application232-post-cleanup.json",
+      "sha256": "e686fa4be435c7e36dd4202f2e09672fa6c41f98a6b855696839e65c102730cf",
+      "bytes": 1518
+    }
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "owned_detection_quality_qualification_project",
+    "containers_removed": 5,
+    "dependency_volumes_removed": 4,
+    "archive": {
+      "path": ".local/acceptance/quality229-preserved-sources-reports.tar.gz",
+      "sha256": "5bdb4059dcc7056e4bae21bcae2e7822fd013324e80502c4d2d3c9f5fd4c24a6",
+      "bytes": 8004593
+    },
+    "online_instances_unchanged": true,
+    "current_image_and_evidence_preserved": true,
+    "global_prune": false,
+    "allocated_bytes_removed": 2542895104,
+    "temporary_roots_removed": 1,
+    "profiles_unloaded": [
+      "sbacc_4c30d50ff3efeec8_runner"
+    ]
+  },
+  "preserved_failures": [
+    {
+      "scope": "cached_build",
+      "path": ".local/acceptance/quality209-remote.py",
+      "cause": "祖先镜像搜索未取得锁定依赖；使用已有且依赖摘要一致的验证镜像离线重建，未改变依赖版本"
+    },
+    {
+      "scope": "first_full_run_precondition",
+      "cause": "数字开头 NATS 随机令牌经环境变量展开后产生词法歧义；只停止本项目执行器，实际退出 143，不计通过",
+      "archive": {
+        "path": ".local/acceptance/quality214-reports.tar.gz",
+        "sha256": "7be95448daa3120c3762249062b7627c6641e837b7b005eb15453f11b4346d84",
+        "bytes": 5423111
+      },
+      "correction": "NATS_TOKEN 使用 sb_ 前缀及独立的 24 字节随机值；真实认证后从头执行同源完整回归"
+    },
+    {
+      "scope": "local_toolchain",
+      "cause": "本机默认 Go 1.25 与 Node 22 不符合仓库要求；指定 Go 1.26.8 与 Node 24.19.0 后检查通过"
+    },
+    {
+      "scope": "container_observation",
+      "cause": "辅助 Docker 查询出现 20／45 秒超时，实际网卡执行稍后启动；未重启宿主 Docker 或其它实例",
+      "observation": {
+        "path": ".local/acceptance/quality230-runner-observation.log",
+        "sha256": "3d9ca94f6da19f08866a87a1775de1847175f08e28aa48954660db0bcd9ad422",
+        "bytes": 1932
+      }
+    },
+    {
+      "scope": "postprocess_verification",
+      "cause": "本地汇总脚本的 None 布尔计数报错，以及五条历史退出事件完整性断言失败；未改动业务用例、覆盖率或通过报告，后者明确记录历史事件不完整"
+    }
+  ],
+  "remaining": [
+    "单流或事务覆盖归因、完整异常策略与驱动截断矩阵",
+    "持久质量事件目录、质量通知及与原包记录器和事件交付质量关联",
+    "持续大流量、多网卡、生产 TLS 与高可用资格",
+    "真实外部防火墙、EDR、模型与办公服务的完整效果验收",
+    "静态身份迁移、CA 灾备和轮换",
+    "其余需求矩阵中的部分与待实现范围"
+  ],
+  "formal_release_created": false,
+  "finished_at": "2026-10-17T11:59:33.850286+00:00",
+  "historical_identifiers_only": true
+}

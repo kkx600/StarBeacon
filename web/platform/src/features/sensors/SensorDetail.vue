@@ -5,6 +5,7 @@ import { message, Modal as AModal, Descriptions as ADescriptions } from 'ant-des
 const ADescriptionsItem = ADescriptions.Item
 import type { Sensor } from '@starbeacon/shared/types.ts'
 import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCapabilitiesDialog.vue'
+import DetectionQualityDialog from '@starbeacon/shared/components/DetectionQualityDialog.vue'
 import {basicApplicationState} from '@starbeacon/shared/application.ts'
 import {formatBytes} from '@starbeacon/shared/utils/format.ts'
 import {packetStates} from '@starbeacon/shared/packetArchives.ts'
@@ -13,6 +14,7 @@ const props=defineProps<{sensor: Sensor | null}>()
 const emit = defineEmits<{close: [];submitted:[];configure:[sensor:Sensor];respond:[sensor:Sensor];certificates:[sensor:Sensor]}>()
 const pending=shallowRef(false)
 const protocolsOpen=shallowRef(false)
+const qualityOpen=shallowRef(false)
 const applicationState=computed(()=>basicApplicationState(props.sensor?.health.application_rules)?props.sensor!.health.application_rules:null)
 const capture=computed(()=>props.sensor?.health.capture)
 const captureStatus=computed(()=>capture.value?.status ? captureStates[capture.value.status]??'状态无法识别' : props.sensor?.health.capture_status==='eve_reader_only'?'外部 EVE 文件':'尚未观测')
@@ -32,7 +34,7 @@ async function diagnostics() {
   } catch(e){if(!current.signal.aborted)message.error(e instanceof Error?e.message:'任务提交失败')}
   finally{if(!current.signal.aborted)pending.value=false}
 }
-watch(()=>`${props.sensor?.id??''}/${props.sensor?.registration_id??''}`,()=>{controller?.abort();pending.value=false;protocolsOpen.value=false;key=undefined;keySensor=''})
+watch(()=>`${props.sensor?.id??''}/${props.sensor?.registration_id??''}`,()=>{controller?.abort();pending.value=false;protocolsOpen.value=false;qualityOpen.value=false;key=undefined;keySensor=''})
 onScopeDispose(()=>{stopped=true;controller?.abort()})
 </script>
 <template>
@@ -40,7 +42,7 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
     <div v-if="sensor" class="detail-content">
       <a-alert type="info" show-icon message="健康数据为最后一次宿主机观测；网络接口计数不等同于镜像捕获吞吐。" class="section-gap" />
       <a-alert v-if="sensor.status !== 'online'" type="warning" show-icon message="探针当前未在线，以下健康信息为历史观测，不能确认设备当前状态。" class="section-gap" />
-      <div class="filter-actions section-gap"><a-button @click="protocolsOpen=true">协议能力</a-button><a-button v-if="session.current.value?.role==='admin'" @click="emit('certificates',sensor)">注册与证书</a-button><span class="page-description">按本探针最后观测的引擎与配置核对六层能力。</span></div>
+      <div class="filter-actions section-gap"><a-button @click="protocolsOpen=true">协议能力</a-button><a-button @click="qualityOpen=true">检测质量</a-button><a-button v-if="session.current.value?.role==='admin'" @click="emit('certificates',sensor)">注册与证书</a-button><span class="page-description">按本探针最后观测的引擎与配置核对能力及限制。</span></div>
       <div v-if="session.current.value?.role==='admin'" class="filter-actions section-gap"><a-button type="primary" :loading="pending" :disabled="!sensor.active||!sensor.health.task_capabilities?.includes('diagnostics')" @click="diagnostics">运行诊断</a-button><a-button v-if="sensor.health.capture?.managed" :disabled="pending||!sensor.active||sensor.status!=='online'||!sensor.health.task_capabilities?.includes('capture.configure')" @click="emit('configure',sensor)">采集配置</a-button><a-button v-if="sensor.health.task_capabilities?.includes('response.block')" :disabled="pending||!sensor.active||sensor.status!=='online'" @click="emit('respond',sensor)">限时封禁</a-button><span class="page-description">任务通过独立控制连接下发，结果以设备回执为准。</span></div>
       <a-descriptions bordered :column="1" size="small">
         <a-descriptions-item label="名称">{{ sensor.name }}</a-descriptions-item>
@@ -76,6 +78,7 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
     </div>
   </a-modal>
   <ProtocolCapabilitiesDialog :open="protocolsOpen&&sensor!==null" :name="sensor?.name" :report="sensor?.health.protocol_capabilities" :capture="capture" @close="protocolsOpen=false" />
+  <DetectionQualityDialog :open="qualityOpen&&sensor!==null" :capture="capture" :online="sensor?.status==='online'" @close="qualityOpen=false" />
 </template>
 <style scoped>
 .capture-digest{font-family:var(--font-mono,monospace);overflow-wrap:anywhere}

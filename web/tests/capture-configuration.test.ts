@@ -8,6 +8,7 @@ import CaptureDialog from '../platform/src/features/sensors/CaptureDialog.vue'
 import CaptureForm from '../packages/shared/src/components/CaptureForm.vue'
 import CaptureResult from '../packages/shared/src/components/CaptureResult.vue'
 import SensorDetail from '../platform/src/features/sensors/SensorDetail.vue'
+import DetectionQualityDialog from '../packages/shared/src/components/DetectionQualityDialog.vue'
 import {session} from '../platform/src/session'
 import {closedMessage,principal,sensor,click,deferred} from './fixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
@@ -59,6 +60,7 @@ describe('平台采集配置',()=>{
  })
  it('探针详情提供独立配置入口和本机接口信息，只读角色保留状态查看',async()=>{
   const wrapper=mount(SensorDetail,{props:{sensor:observed()},global,attachTo:document.body});expect(document.body.textContent).toContain(iface.mac);await click('采集配置');expect(wrapper.emitted('configure')?.[0]?.[0]).toMatchObject({id:sensor.id})
+  await click('检测质量');expect(wrapper.getComponent(DetectionQualityDialog).props('open')).toBe(true);wrapper.getComponent(DetectionQualityDialog).vm.$emit('close');await flushPromises();expect(wrapper.getComponent(DetectionQualityDialog).props('open')).toBe(false)
   await wrapper.setProps({sensor:{...observed(),status:'offline'}});const buttons=[...document.body.querySelectorAll<HTMLButtonElement>('button')];expect(buttons.find(b=>b.textContent==='采集配置')?.disabled).toBe(true)
   user.value={...principal,role:'viewer'};await flushPromises();expect([...document.body.querySelectorAll('button')].some(b=>b.textContent==='运行诊断')).toBe(false)
  })

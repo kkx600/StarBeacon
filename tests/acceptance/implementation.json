@@ -1095,6 +1095,31 @@
         "web/tests/collector-identity.test.ts"
       ],
       "boundary": "独立 step-ca 授权与客户端专用证书；平台仅存令牌摘要，探针本机持久 CSR 与私钥。签发前绑定、精确重取、未知结果不盲目重签；最后三分之一窗口自动续签并验证平台与接入端后原子切换。平台按已登记指纹、租户、探针启用状态与注册身份逐请求核验，控制流每五秒复核；平台拒绝与 CA 被动吊销确认分别记录。未知签发、过期及本机私钥丢失需管理员独立凭据和新私有目录恢复同一注册身份；不自动覆盖 WAL、原待办或已有身份。真实时钟续签、官方生产镜像、生产 CA 高可用及服务端证书轮换资格以独立验收记录为准，不以协议夹具代替。"
+    },
+    {
+      "id": "detection_quality",
+      "name": "原生检测质量区间观测",
+      "code": [
+        "internal/detectionquality/quality.go",
+        "internal/agent/capture.go",
+        "internal/agent/eve.go",
+        "internal/agent/run.go",
+        "web/packages/shared/src/detectionQuality.ts",
+        "web/packages/shared/src/components/DetectionQuality.vue",
+        "web/packages/shared/src/components/DetectionQualityDialog.vue"
+      ],
+      "pages": [
+        "platform:/sensors",
+        "collector:/network"
+      ],
+      "tests": [
+        "internal/detectionquality/quality_test.go",
+        "internal/agent/quality_observer_test.go",
+        "internal/agent/detection_quality_test.go",
+        "tests/integration/processes_test.go",
+        "web/tests/detection-quality.test.ts"
+      ],
+      "boundary": "托管进程运行标识及配置摘要绑定，只有原生 EVE 统计持久进入 WAL 后更新；25 项固定总计数以 uint64 字符串保留，累计、瞬时值和连续区间分别呈现。首次样本、计数下降、采样／接收超过 20 秒及时间回退不建立连续增量；停止和旧观测不保留活动质量。捕获损失、检查限制、告警溢出及策略影响分开显示，缺测不补零。原生 noalert 与队列溢出、实时捕获到心跳的实际资格以同源码独立记录为准。不提供每流归因、全部 pass／threshold／驱动映射、持久质量事件、通知衔接或生产压力资格。"
     }
   ],
   "requirements": [
@@ -2181,17 +2206,19 @@
       "acceptance": "pending",
       "capabilities": [
         "sensors",
-        "operations"
+        "operations",
+        "detection_quality"
       ],
       "implemented": [
         "CPU/内存/磁盘/接口计数/版本/队列",
         "缺测非零与最后观察时间",
         "采集器本机 Suricata 实际进程、配置摘要、捕获统计、观察时间和暂存占用",
-        "平台设备心跳及探针详情展示捕获状态、有效规则摘要和配置修订；离线明确为历史观测"
+        "平台设备心跳及探针详情展示捕获状态、有效规则摘要和配置修订；离线明确为历史观测",
+        "托管 EVE 统计的进程／配置绑定与持久后观察；捕获、检查、告警、策略四类区间及累计，缺测、复位、采样断档、停止和过期分态；双端检测质量弹窗"
       ],
       "remaining": [
-        "镜像缺失/丢包/旁路健康与站点告警衔接",
-        "统计复位、水位和多网卡质量矩阵验收"
+        "镜像源缺失、驱动丢包及站点质量告警衔接",
+        "全计数复位、水位、多网卡和高负载质量矩阵验收"
       ]
     },
     {
@@ -2597,15 +2624,18 @@
       "acceptance": "pending",
       "capabilities": [
         "pipeline",
-        "operations"
+        "operations",
+        "detection_quality"
       ],
       "implemented": [
         "原始 EVE 持久接入/索引",
-        "异常隔离/积压计数/缺测分态"
+        "异常隔离/积压计数/缺测分态",
+        "托管 EVE 统计的进程／配置绑定与持久后观察；捕获、检查、告警、策略四类区间及累计，缺测、复位、采样断档、停止和过期分态；双端检测质量弹窗"
       ],
       "remaining": [
-        "引擎抑制/旁路/事件溢出/统计复位",
-        "窗口缺口与观测覆盖归因"
+        "全部 pass／threshold 策略、驱动截断与解析错误映射",
+        "持久质量事件、窗口检索及通知衔接",
+        "多网卡和生产负载下的覆盖归因与恢复验收"
       ]
     },
     {

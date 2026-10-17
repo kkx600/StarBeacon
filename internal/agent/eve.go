@@ -25,13 +25,14 @@ import (
 var ErrRecordTooLarge = errors.New("EVE 记录超过允许上限，读取已暂停")
 
 type EVEReader struct {
-	WAL       *WAL
-	Path      string
-	file      *os.File
-	source    Source
-	Route     func(context.Context, string) (string, error)
-	CanSwitch func(context.Context, string) (bool, error)
-	Attribute func([]byte, time.Time) (json.RawMessage, error)
+	WAL          *WAL
+	Path         string
+	file         *os.File
+	source       Source
+	Route        func(context.Context, string) (string, error)
+	CanSwitch    func(context.Context, string) (bool, error)
+	Attribute    func([]byte, time.Time) (json.RawMessage, error)
+	ObserveStats func([]byte, time.Time)
 }
 
 func fileID(i os.FileInfo) string {
@@ -144,6 +145,13 @@ func (r *EVEReader) Poll(ctx context.Context) error {
 			return e
 		}
 		r.source = next
+		if r.ObserveStats != nil {
+			for _, entry := range entries {
+				if entry.Record.EventType == "stats" {
+					r.ObserveStats(entry.Record.Payload, entry.Record.ObservedAt.AsTime())
+				}
+			}
+		}
 		entries = nil
 		return nil
 	}

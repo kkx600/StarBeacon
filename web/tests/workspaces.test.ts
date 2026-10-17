@@ -20,6 +20,7 @@ import CollectorWorkspace from '../collector/src/features/network/CollectorWorks
 import CaptureForm from '../packages/shared/src/components/CaptureForm.vue'
 import InterfaceTable from '../collector/src/features/network/InterfaceTable.vue'
 import HealthSummary from '../collector/src/features/network/HealthSummary.vue'
+import DetectionQualityDialog from '../packages/shared/src/components/DetectionQualityDialog.vue'
 import {session} from '../platform/src/session'
 import {closedMessage,principal,sensor,task,click,button,deferred} from './fixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
@@ -92,6 +93,7 @@ async function workspace(component:Component,path:string){const url=new URL('htt
  it('网卡只展示一张表，保存明确显示待应用，失败保留配置',async()=>{
   const{wrapper,router}=await workspace(CollectorWorkspace,'/network');expect(wrapper.text()).toContain('2001:db8::1/64');expect(wrapper.text()).toContain('未获取');expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('采集配置');expect(router.currentRoute.value.query.view).toBe('capture');expect(wrapper.findAll('.ant-table')).toHaveLength(0);request.mockRejectedValueOnce(new Error('保存受阻'));await click('保存采集目标');expect(message.error).toHaveBeenCalledWith('保存受阻');request.mockResolvedValueOnce({interfaces:['eth0'],status:'not_applied'});await click('保存采集目标');expect(message.success).toHaveBeenCalledWith('采集目标保存成功，等待应用');await click('网卡与状态');request.mockRejectedValueOnce('offline');await click('刷新');expect(wrapper.text()).toContain('读取失败');await click('重试')
   await click('重放样本');await vi.waitFor(()=>expect(wrapper.text()).toContain('PCAP 重放'));await click('任务记录');expect(router.currentRoute.value.query.view).toBe('tasks')
+  await click('检测质量');const quality=wrapper.getComponent(DetectionQualityDialog);expect(quality.props('open')).toBe(true);request.mockRejectedValueOnce(new Error('质量观测读取超时'));quality.vm.$emit('refresh');await flushPromises();expect(document.body.textContent).toContain('质量观测读取超时');expect(document.body.textContent).toContain('刷新失败，保留上次观测');quality.vm.$emit('refresh');await flushPromises();expect(quality.props('error')).toBe('');quality.vm.$emit('close');await flushPromises();expect(quality.props('open')).toBe(false)
  })
  it('接口能力和已保存配置保持独立，回环与关闭接口无法选择',async()=>{
   const wrapper=mount(CaptureForm,{props:{interfaces:[iface,{...iface,name:'lo',loopback:true},{...iface,name:'down',up:false}],capture:{interfaces:['eth0'],status:'not_applied'},saving:false},global});const select=wrapper.getComponent(Select);expect(select.props('options')).toMatchObject([{disabled:false},{disabled:true},{disabled:true}]);await select.setValue(['eth0'],'value');await wrapper.get('form').trigger('submit');await flushPromises();expect(wrapper.emitted('save')).toEqual([[{interfaces:['eth0'],threads:1,bpf_filter:'',promiscuous:true}]]);await wrapper.setProps({capture:{interfaces:[],status:'not_applied'},saving:true});expect(select.props('value')).toEqual([]);expect(select.props('disabled')).toBe(true)

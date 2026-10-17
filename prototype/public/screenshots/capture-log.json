@@ -40169,6 +40169,474 @@
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "capturePngSha256": "b3fbbc8d5485811c494c753c56183039b667b1000eef43e64c1e03f09ed1e956",
       "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素"
+    },
+    {
+      "file": "protocols/data.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "协议能力 · 有数据",
+      "state": "data",
+      "capturedAt": "2026-10-17T11:19:23.657Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "5402b08f20edf570eb19e42b66659df68cb5a7e97766afc65d37c505c05e0951",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 248014
+    },
+    {
+      "file": "protocols/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=empty&capture=1",
+      "title": "协议能力 · 无数据",
+      "state": "empty",
+      "capturedAt": "2026-10-17T11:19:24.263Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "3779afc0dac378a124f6c03b462f4676bcc94220dfd3fd738b4d97b5b92e467d",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 117798
+    },
+    {
+      "file": "protocols/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=detail&capture=1",
+      "title": "协议能力 · 查看详情",
+      "state": "detail",
+      "capturedAt": "2026-10-17T11:19:26.006Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "357405f43be02d37f6e8443f0990444bb68dcb42dc9c52647e36301b0dba4992",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 215986
+    },
+    {
+      "file": "protocols/action.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=action&capture=1",
+      "title": "协议能力 · 操作表单",
+      "state": "action",
+      "capturedAt": "2026-10-17T11:19:27.832Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "5dfb0715cbd4a1c9739bfc1b6feff7bc0cc214cbd513f52a366930c804261884",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 228746
+    },
+    {
+      "file": "protocols/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=loading&capture=1",
+      "title": "协议能力 · 加载中",
+      "state": "loading",
+      "capturedAt": "2026-10-17T11:19:28.542Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "5ea5312e285f822bb2d56d27a446a022b3b4dcddb0c780759e552de901c4f3e2",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 119972
+    },
+    {
+      "file": "protocols/error.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=error&capture=1",
+      "title": "协议能力 · 加载失败",
+      "state": "error",
+      "capturedAt": "2026-10-17T11:19:29.002Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "ca38e70e82aa5e7e04ad026ae21b5388f832fe4148478ac0fd2d299a613b4161",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 117617
+    },
+    {
+      "file": "collector/network/data.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=data&capture=1",
+      "title": "网络与采集 · 有数据",
+      "state": "data",
+      "capturedAt": "2026-10-17T11:19:30.575Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "f97cee98f3f6d7cf2cddfbdac2547624a76d149040b6f1c1cf22628c1da34b24",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 225349
+    },
+    {
+      "file": "collector/network/empty.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=empty&capture=1",
+      "title": "网络与采集 · 无数据",
+      "state": "empty",
+      "capturedAt": "2026-10-17T11:19:31.083Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "687e46114daf509fa9e50ec13dadd4559612be34f2101a73bc22ba3f4eb28292",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 92575
+    },
+    {
+      "file": "collector/network/detail.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=detail&capture=1",
+      "title": "网络与采集 · 查看详情",
+      "state": "detail",
+      "capturedAt": "2026-10-17T11:19:32.814Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "d9842fec976cb6f49f76dba997510bf188d04f6bea4609a51f5e920260cd33f6",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 196654
+    },
+    {
+      "file": "collector/network/action.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=action&capture=1",
+      "title": "网络与采集 · 操作表单",
+      "state": "action",
+      "capturedAt": "2026-10-17T11:19:34.427Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "c029970258ab5a7c55382dfd15101c185cacb9c66a6617593c6e1ab8297aff6d",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 215523
+    },
+    {
+      "file": "collector/network/loading.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=loading&capture=1",
+      "title": "网络与采集 · 加载中",
+      "state": "loading",
+      "capturedAt": "2026-10-17T11:19:34.928Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "6eec07ee7561ad186e4dbec4c78b5caeb4e07fc9756e6a6f192ceaf8408cf201",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 97226
+    },
+    {
+      "file": "collector/network/error.jpg",
+      "url": "http://127.0.0.1:4173/collector/network?state=error&capture=1",
+      "title": "网络与采集 · 加载失败",
+      "state": "error",
+      "capturedAt": "2026-10-17T11:19:35.433Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "b90ba214945e5946a57c5707e93929ec997f5f5da0519118cb0a3bb3918fb342",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 97116
+    },
+    {
+      "file": "supplemental/detection-quality-observed.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 区间观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:04.008Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "7c703a0d3abd4ec3e90ab5fada3abfcae916f5c13ef7b8762e41786888b1abce",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 206260
+    },
+    {
+      "file": "supplemental/detection-quality-unavailable.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 尚未观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:06.161Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "58324e70a6ea2f804dcc82332f3778104116d02dd00fbcf82d67a0f6efe579c9",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 204985
+    },
+    {
+      "file": "supplemental/detection-quality-counter_reset.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 计数复位",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:08.308Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "291e77b09ca9d1a8d17f9e1040938f76dc25e57c5644df114813eb818948c810",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 214934
+    },
+    {
+      "file": "supplemental/detection-quality-stale.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 观测过期",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:10.568Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "5eb563ae883ed65b71444c799302257e476d4b641f3da3b347c5456b962d77b0",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 207862
+    },
+    {
+      "file": "supplemental/detection-quality-offline.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 探针离线",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:12.826Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "63bb8038e91c803ead529abcf635d54726596c5fac33810ad2618c71611b07c6",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 208583
+    },
+    {
+      "file": "supplemental/detection-quality-refresh_error.jpg",
+      "url": "http://127.0.0.1:4173/page/protocols?state=data&capture=1",
+      "title": "检测质量 · 刷新失败",
+      "state": "supplemental",
+      "capturedAt": "2026-10-17T11:22:15.075Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图；通过可见状态选择器切换",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "capturePngSha256": "72ed36e4db5c6a1217dc015aee28118dc7dd51c06b456482fd6b1ba765041f7f",
+      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
+      "bytes": 216497
     }
   ],
   "errors": []

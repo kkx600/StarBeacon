@@ -567,6 +567,9 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			if protocols.Source != "managed_configuration" || protocols.ConfigSHA256 != state.ConfigSHA256 {
 				return false
 			}
+			if state.Quality == nil || state.Quality.Source != "suricata_eve_stats" || state.Quality.EngineRunID == "" || state.Quality.ConfigSHA256 != state.ConfigSHA256 || state.Quality.State != "observed" || state.Quality.SampledAt == nil || state.Quality.IntervalStartedAt == nil {
+				return false
+			}
 		} else if protocols.Source != "offline_template" {
 			return false
 		}
