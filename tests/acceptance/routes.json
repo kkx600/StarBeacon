@@ -32,7 +32,8 @@
     "/reports?view=plans",
     "/retention",
     "/incidents",
-    "/users"
+    "/users",
+    "/rules?view=sync"
   ],
   "collector": [
     "/login",

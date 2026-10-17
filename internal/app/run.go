@@ -298,6 +298,25 @@ func Run(ctx context.Context, role string, c config.Config) error {
 					return nil
 				case <-timer.C:
 					call, cancel := context.WithTimeout(run, 10*time.Second)
+					next, _, err := api.SweepRuleSync(call, after)
+					cancel()
+					after = next
+					if err != nil && run.Err() == nil {
+						slog.Warn("规则同步阶段核对未完成，未确认任务保持原状态")
+					}
+				}
+			}
+		})
+		group.Go(func() error {
+			timer := time.NewTicker(time.Second)
+			defer timer.Stop()
+			after := ""
+			for {
+				select {
+				case <-run.Done():
+					return nil
+				case <-timer.C:
+					call, cancel := context.WithTimeout(run, 10*time.Second)
 					next, _, err := api.SweepContinuousDecisions(call, after)
 					cancel()
 					after = next

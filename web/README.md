@@ -37,6 +37,7 @@
 | RetentionWorkspace / useRetention | 十一类保留策略、未来对象影响预览、发布确认及未知结果原提交核对。 |
 | CollectorWorkspace / useCollector | 获取本机健康、网卡和目标配置，编排配置保存，不调用操作系统网络变更。 |
 | RulesWorkspace / RuleReleaseDialog | 不可变规则修订、选定探针装载与正反样本检查、固定修订发布、回滚和中断核实；受理与生效分别呈现。 |
+| RuleSyncWorkspace / RuleSyncForm / useRuleSync | 固定修订与注册代次的同步计划、在途停用、未知保存原提交核对和独立阶段任务；单表目录、详情与固定页脚表单。 |
 | ApplicationRulesWorkspace / ApplicationRuleForm / ApplicationRuleTest | 应用识别规则单表目录、不可变修订、条件表单与材料验证；名称候选、未知和冲突不代表真实流量归因或产品准确率。 |
 | RuleGenerationWorkspace / useRuleGeneration | 有界材料、当前模型修订与单次许可，私有历史、冻结请求确认、候选高亮、取消和精确采纳。 |
 | RuleEditor / inspectRules | 共用 CodeMirror 6 编辑器，提供行号、高亮、撤销、换行和基础结构错误定位；关键词、变量与引擎兼容由原生 Suricata 检查。 |
@@ -53,7 +54,7 @@
 
 采集器原包目录区分正在捕获、未封存的中断原件与完整归档。开始记录只核验身份、网卡、配置和暂存预留；包数、首尾包时间及完整性计数显示「尚未冻结」，不能把开始记录中的空值解释为零流量或零丢包。未封存记录不能下载或导出完整通信；完整目录与文件摘要仍须独立核验。
 
-平台 `/sensors` 通过「探针列表」「探针分组」与「任务记录」页签组织目录和任务，`view=devices`／`groups`／`tasks`；`/rules` 通过「规则包」「重放样本」「重放任务」页签分别展示数据，`view=packages`／`samples`／`tasks`。采集器 `/network` 分为「网卡与状态」「采集配置」「重放样本」「任务记录」，`view=interfaces`／`capture`／`samples`／`tasks`。资产管理 `/assets` 使用 `view=assets/groups/networks`；运行与审计 `/operations` 使用 `view=health/operations/logins`；通知中心 `/notifications` 使用 `view=channels/deliveries`；模型配置为 `/models`，智能助手为 `/assistant`，报告中心为 `/reports`（`view=records/plans`），态势总览／全屏分别为 `/overview`／`screen`，数据留存为 `/retention`。运行与审计、通知中心、模型配置、智能助手、报告中心和数据留存仅对管理员开放。每个视图只展示所属业务数据集，详情描述表不作为另一份业务列表。
+平台 `/sensors` 通过「探针列表」「探针分组」与「任务记录」页签组织目录和任务，`view=devices`／`groups`／`tasks`；`/rules` 通过「规则包」「重放样本」「重放任务」「AI 规则生成」「应用识别规则」「规则自动同步」页签分别展示数据，`view=packages`／`samples`／`tasks`／`generation`／`applications`／`sync`。采集器 `/network` 分为「网卡与状态」「采集配置」「重放样本」「任务记录」，`view=interfaces`／`capture`／`samples`／`tasks`。资产管理 `/assets` 使用 `view=assets/groups/networks`；运行与审计 `/operations` 使用 `view=health/operations/logins`；通知中心 `/notifications` 使用 `view=channels/deliveries`；模型配置为 `/models`，智能助手为 `/assistant`，报告中心为 `/reports`（`view=records/plans`），态势总览／全屏分别为 `/overview`／`screen`，数据留存为 `/retention`。运行与审计、通知中心、模型配置、智能助手、报告中心和数据留存仅对管理员开放。每个视图只展示所属业务数据集，详情描述表不作为另一份业务列表。
 
 页面使用中文业务名称，加载、错误、无数据各自呈现真实请求状态；数据缺测使用“未获取”。探针在线状态以平台接收时间判定，离线后保留最后观测时间。CPU、内存、磁盘和网络计数标注宿主机口径，接口字节数不作为镜像捕获吞吐。
 

@@ -181,7 +181,8 @@
         "sigma",
         "application-rules",
         "rule-samples",
-        "rule-tests"
+        "rule-tests",
+        "rule-sync"
       ]
     },
     {
@@ -5951,6 +5952,55 @@
           "title": "加载失败",
           "url": "/page/governance?state=error",
           "image": "governance/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "rule-sync",
+      "title": "规则自动同步",
+      "group": "detection",
+      "kind": "table",
+      "description": "管理固定批准修订的设备同步，依次核对装载、正反样本和实际发布回执。",
+      "requirements": [
+        "SB-DET-002",
+        "SB-OPS-003"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/rule-sync?state=data",
+          "image": "rule-sync/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/rule-sync?state=empty",
+          "image": "rule-sync/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/rule-sync?state=detail",
+          "image": "rule-sync/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/rule-sync?state=action",
+          "image": "rule-sync/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/rule-sync?state=loading",
+          "image": "rule-sync/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/rule-sync?state=error",
+          "image": "rule-sync/error.jpg"
         }
       ]
     },

@@ -39708,6 +39708,443 @@
         "web/packages/shared/src/controls.css"
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data",
+      "title": "规则自动同步 · data",
+      "state": "data",
+      "capturedAt": "2026-10-17T01:10:49.785Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty",
+      "title": "规则自动同步 · empty",
+      "state": "empty",
+      "capturedAt": "2026-10-17T01:10:50.159Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail",
+      "title": "规则自动同步 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T01:10:50.542Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action",
+      "title": "规则自动同步 · action",
+      "state": "action",
+      "capturedAt": "2026-10-17T01:10:50.973Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading",
+      "title": "规则自动同步 · loading",
+      "state": "loading",
+      "capturedAt": "2026-10-17T01:10:51.313Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error",
+      "title": "规则自动同步 · error",
+      "state": "error",
+      "capturedAt": "2026-10-17T01:10:51.780Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data",
+      "title": "规则自动同步 · data",
+      "state": "data",
+      "capturedAt": "2026-10-17T01:13:18.032Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty",
+      "title": "规则自动同步 · empty",
+      "state": "empty",
+      "capturedAt": "2026-10-17T01:13:18.437Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail",
+      "title": "规则自动同步 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T01:13:19.143Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action",
+      "title": "规则自动同步 · action",
+      "state": "action",
+      "capturedAt": "2026-10-17T01:13:19.849Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading",
+      "title": "规则自动同步 · loading",
+      "state": "loading",
+      "capturedAt": "2026-10-17T01:13:20.234Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error",
+      "title": "规则自动同步 · error",
+      "state": "error",
+      "capturedAt": "2026-10-17T01:13:20.654Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail",
+      "title": "规则自动同步 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T01:20:54.497Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data",
+      "title": "规则自动同步 · data",
+      "state": "data",
+      "capturedAt": "2026-10-17T02:27:34.638Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty",
+      "title": "规则自动同步 · empty",
+      "state": "empty",
+      "capturedAt": "2026-10-17T02:27:35.560Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail",
+      "title": "规则自动同步 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T02:27:36.642Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action",
+      "title": "规则自动同步 · action",
+      "state": "action",
+      "capturedAt": "2026-10-17T02:27:37.649Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading",
+      "title": "规则自动同步 · loading",
+      "state": "loading",
+      "capturedAt": "2026-10-17T02:27:38.211Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
+    },
+    {
+      "file": "rule-sync/error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error",
+      "title": "规则自动同步 · error",
+      "state": "error",
+      "capturedAt": "2026-10-17T02:27:38.812Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul"
     }
   ],
   "errors": []

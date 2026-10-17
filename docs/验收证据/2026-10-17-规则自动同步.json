@@ -1,0 +1,429 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "固定规则修订自动同步、现有工程全量回归与专属 Docker 运行核对；不是完整产品或正式发行验收",
+  "formal_product_acceptance": false,
+  "requirements": {
+    "total": 107,
+    "partial": 60,
+    "planned": 47,
+    "accepted": 0
+  },
+  "source": {
+    "sha256": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+    "execution_commit": "6e86a060e82efee49e27271f34fbabc74e4a193c",
+    "clean_commit_at_execution": false,
+    "go": "1.26.8"
+  },
+  "backend": {
+    "status": "passed",
+    "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+    "tests": {
+      "unit": 444,
+      "integration": 108,
+      "capture": 1
+    },
+    "coverage": {
+      "covered": 17723,
+      "total": 19679,
+      "percentage": 90.06047055236546,
+      "minimum": 90
+    },
+    "bounded_live_observations": {
+      "http_to_notification_acceptance_seconds": 0.531,
+      "archive_packets": 12,
+      "raw_bytes": 2068,
+      "compressed_bytes": 1084,
+      "scope": "单个真实 HTTP 样本，不授予吞吐或生产时延资格"
+    },
+    "original_scope_and_exclusions_unchanged": true,
+    "stages": [
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+        "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+        "container": "sbacc_e7e7a91b065ad172-lifecycle123-functional",
+        "container_id": "d438f4221970e092606db03223a42cb7f94c1328a1fded436d5c1b202747d7eb",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+        "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+        "container": "sbacc_e7e7a91b065ad172-lifecycle123-capture",
+        "container_id": "ecda0908337e52a375dd270aa69a12ee20ebf575b2ed6ee8b7ef3dda4e4762c1",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      },
+      {
+        "status": "passed",
+        "scope": "engineering_backend_not_complete_product_acceptance",
+        "source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+        "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+        "container": "sbacc_e7e7a91b065ad172-lifecycle123-combined",
+        "container_id": "a07e8cace966a5b8c3532eda4054cb3daea08f0e84dd5c76b7039897625a02ce",
+        "exit_code": 0,
+        "running": false,
+        "actual_exit_code": 0,
+        "oom_killed": false
+      }
+    ],
+    "archive_sha256": "4724170a58100c31ab26603e31d16f57191a9111b9dad1c79e18150dae262a36",
+    "archive_bytes": 6592814
+  },
+  "rule_sync": {
+    "native": {
+      "source_sha256": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+      "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+      "container_id": "b2a1ed470827dd6edbc296084aabac62b82a69aa5e6de7d9b963e0134f75835d",
+      "exit_code": 0,
+      "oom_killed": false
+    },
+    "real_clock_standalone_roles": {
+      "status": "passed",
+      "scope": "supplemental_standalone_roles_real_clock_rule_sync_not_merged_into_coverage_gate",
+      "backend_source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+      "image_id": "sha256:12aeec84600598437b4ebe3afd8c5d56c0315ee75e25dccf52fb402367c2f3aa",
+      "harness_sha256": "f8ff09b7958bd0780af99a5d214354e61d89273c2247150cf40b00a4e945f71a",
+      "container_id": "ae05b53ef210e67082e50a53172a5174ed90b8d8e298c153c833526609de62f2",
+      "exit_code": 0,
+      "actual_exit_code": 0,
+      "oom_killed": false,
+      "product_source_unchanged": true,
+      "report_directory": "/tmp/starbeacon-acceptance-sbacc_e7e7a91b065ad172/auto-sync-reports",
+      "folder": "/tmp/starbeacon-acceptance-sbacc_e7e7a91b065ad172/auto-sync-f8ff09b7958bd078",
+      "cache": "/tmp/starbeacon-acceptance-sbacc_e7e7a91b065ad172/lifecycle-go-build-cache",
+      "archive_sha256": "5f80694ce047014f1e15d729950ee6890f01a60cbbba42ab9489957ee39b2aa4",
+      "archive_bytes": 416028,
+      "observed_stages": [
+        {
+          "stage": "validating",
+          "elapsed_seconds": 1.037
+        },
+        {
+          "stage": "positive_replay",
+          "elapsed_seconds": 33.305
+        },
+        {
+          "stage": "negative_replay",
+          "elapsed_seconds": 65.554
+        },
+        {
+          "stage": "applying",
+          "elapsed_seconds": 96.935
+        },
+        {
+          "stage": "succeeded",
+          "elapsed_seconds": 129.186
+        }
+      ],
+      "configured_interval_seconds": 30
+    },
+    "supplemental_coverage_merged": false,
+    "scope": [
+      "真实 Suricata 装载、正反样本、mTLS 签名投递与实际发布回执",
+      "固定修订、注册代次、批准快照、幂等和在途停用",
+      "PG 中断原子性、离线、权限及回执边界",
+      "运行默认 180 天与引用任务删除保护",
+      "四个独立程序、真实平台定时器、API 导入样本与实际规则文件；无手工推进调度"
+    ]
+  },
+  "frontend": {
+    "status": "passed",
+    "source_sha256": "bd30583e2fa05a9eecf0b5ddd74af4f7a8d62dc3e01f79664fb4739c4afd472b",
+    "tests": 544,
+    "tool_tests": 9,
+    "coverage": {
+      "statements": 95.56920785627851,
+      "branches": 93.00577156743621,
+      "functions": 92.30543318649046,
+      "lines": 98.93167701863354
+    },
+    "actual_browser": {
+      "status": "passed",
+      "scope": "deployed_rule_sync_login_empty_directory_form_validation_keyboard_and_pc_boundaries",
+      "frontend_source": "bd30583e2fa05a9eecf0b5ddd74af4f7a8d62dc3e01f79664fb4739c4afd472b",
+      "captured_at": "2026-10-17T02:45:38.540Z",
+      "origin": "http://127.0.0.1:5194",
+      "login_and_logout": true,
+      "required_validation_and_correction": true,
+      "select_escape_preserves_draft": true,
+      "select_escape_controls": 2,
+      "selected_sensor_registration_displayed": true,
+      "layouts": [
+        {
+          "documentWidth": 1024,
+          "footerOwnsSave": true,
+          "panel": {
+            "bottom": 572,
+            "left": 132,
+            "right": 892,
+            "top": 20
+          },
+          "save": {
+            "bottom": 552,
+            "left": 778.875,
+            "right": 868,
+            "top": 518
+          },
+          "viewport": [
+            1024,
+            600
+          ]
+        },
+        {
+          "documentWidth": 1280,
+          "footerOwnsSave": true,
+          "panel": {
+            "bottom": 692,
+            "left": 260,
+            "right": 1020,
+            "top": 100
+          },
+          "save": {
+            "bottom": 672,
+            "left": 906.875,
+            "right": 996,
+            "top": 638
+          },
+          "viewport": [
+            1280,
+            720
+          ]
+        },
+        {
+          "documentWidth": 1440,
+          "footerOwnsSave": true,
+          "panel": {
+            "bottom": 769.78125,
+            "left": 340,
+            "right": 1100,
+            "top": 100
+          },
+          "save": {
+            "bottom": 749.78125,
+            "left": 986.875,
+            "right": 1076,
+            "top": 715.78125
+          },
+          "viewport": [
+            1440,
+            900
+          ]
+        },
+        {
+          "documentWidth": 1920,
+          "footerOwnsSave": true,
+          "panel": {
+            "bottom": 769.78125,
+            "left": 580,
+            "right": 1340,
+            "top": 100
+          },
+          "save": {
+            "bottom": 749.78125,
+            "left": 1226.875,
+            "right": 1316,
+            "top": 715.78125
+          },
+          "viewport": [
+            1920,
+            1080
+          ]
+        }
+      ],
+      "valid_plan_submitted": false,
+      "limitation": "工程实例规则目录为空；此页面场景未提交有效同步计划，实际签名执行由独立远程原生及定时器场景验证。当前观察不授予全路由或完整 CRUD 资格。"
+    },
+    "scope": "组件交互、类型与双端构建；不代替全部页面的真实业务验收"
+  },
+  "prototype": {
+    "base_images": 761,
+    "supplemental_images": 54,
+    "rule_sync_states": 6,
+    "pc_layout_widths": [
+      1024,
+      1280,
+      1440,
+      1920
+    ],
+    "scope": "当前同步页面的状态与横向边界观察；不是所有页面及硬件的资格"
+  },
+  "runtime": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "engineering_runtime_readiness_and_static_artifact",
+    "backend_source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+    "frontend_artifact": "41ec8c0ee697dc01c506ef13234d12aba8970c5a5254b827635bfa818eb48d30",
+    "container_id": "f4c048ff0ebad8d1bc00aaa844fc824873eaffb4b490f3542f560abd5f005638",
+    "readiness": {
+      "28080": 200,
+      "28081": 200,
+      "28180": 200,
+      "28181": 200
+    },
+    "programs": {
+      "starbeacon": "96267e21f0fd62a43bd741ecc9f48452c0b1beb3e11f2baeb8d3878d57d9734b",
+      "starbeacon-ingest": "c0250fac902b6d26492df66be5427d0c66bea6855d3fbcc25994bc0175f17b84",
+      "starbeacon-worker": "80e1cc6679284c7aa80f412d57338374f36ec68d4eedbf1dc1c220c959b40dbe",
+      "starbeacon-agent": "7cc8606f45a7259b4415ce3f35324a6e7c156f64568e9620c447dca1dc84ad04",
+      "starbeaconctl": "5c47b76425d686bf6489904d1172795ffda2c152dae41ad1d8c9aeca538fb0c1"
+    },
+    "frontend_files": 81,
+    "running_roles": {
+      "starbeacon": {
+        "pid": 8,
+        "sha256": "96267e21f0fd62a43bd741ecc9f48452c0b1beb3e11f2baeb8d3878d57d9734b"
+      },
+      "starbeacon-ingest": {
+        "pid": 9,
+        "sha256": "c0250fac902b6d26492df66be5427d0c66bea6855d3fbcc25994bc0175f17b84"
+      },
+      "starbeacon-worker": {
+        "pid": 14,
+        "sha256": "80e1cc6679284c7aa80f412d57338374f36ec68d4eedbf1dc1c220c959b40dbe"
+      },
+      "starbeacon-agent": {
+        "pid": 19,
+        "sha256": "7cc8606f45a7259b4415ce3f35324a6e7c156f64568e9620c447dca1dc84ad04"
+      }
+    }
+  },
+  "deployment": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_engineering_instance_not_production_release",
+    "backend_source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+    "frontend_source": "04f0f0b5d5fd533f41834089e62de4d615a813c0f20704363a7f67251e1c078e",
+    "frontend_artifact": "13322d9ec5603388c9d2277896291c2a193aac4d039bfe35ce1afb5de77c56b3",
+    "runtime_project": "sbacc_cf08cb9c52292287_app101",
+    "before_container": "5d6149c00a6c751486b25f6525715fe69910173b741ad2cdca0aeab445d4e30a",
+    "after_container": "f4c048ff0ebad8d1bc00aaa844fc824873eaffb4b490f3542f560abd5f005638",
+    "original_runtime_unchanged": true,
+    "identity_files_and_role_configuration_sha256_preserved": true,
+    "init": true,
+    "migration_container": "7388c5d3cdd3729275d8aed35aac577198b91db442f058025313aeceec062415",
+    "migration_actual_exit_code": 0,
+    "database_backup_sha256": "de8680c1c2a409b2fd3e1f40ef3726cac8db44c35b05a1d762d34802ae3ece0c",
+    "persistent_mounts_preserved": true,
+    "configuration_format_recovery": {
+      "status": "passed",
+      "scope": "restore_exact_original_role_configuration_bytes",
+      "paths": [
+        "data/platform.json",
+        "data/agent.json"
+      ],
+      "logical_values_unchanged": true,
+      "process_restart": false
+    },
+    "preserved_failure": "application123-deployment-controller.log",
+    "storage_limitation": "engineering_persistent_volume_testing_not_production_capacity_qualification"
+  },
+  "frontend_deployment": {
+    "schema_version": 1,
+    "status": "passed",
+    "scope": "owned_engineering_instance_static_frontend_only",
+    "backend_source": "5380e538c0dfc3fe23abe2c1462eb5b7f8ed1af8e6f62adfc23b8232421c5df5",
+    "frontend_source": "bd30583e2fa05a9eecf0b5ddd74af4f7a8d62dc3e01f79664fb4739c4afd472b",
+    "frontend_artifact": "41ec8c0ee697dc01c506ef13234d12aba8970c5a5254b827635bfa818eb48d30",
+    "backend_container_id": "f4c048ff0ebad8d1bc00aaa844fc824873eaffb4b490f3542f560abd5f005638",
+    "backend_start_time_unchanged": true,
+    "four_role_processes_unchanged": true,
+    "identity_and_role_configuration_bytes_preserved": true,
+    "original_runtime_unchanged": true,
+    "before_web_container": "528737de0315997dfb8222e05a34fd1bb0fdfe2e4680912079c402b7f1a0621e",
+    "after_web_container": "09bd18264411ed0302a6f4bd4c3d03cd60c532029ffce8a84c1578abac58d70e",
+    "frontend_files": 81
+  },
+  "deployed_api": {
+    "status": "passed",
+    "scope": "deployed_authenticated_rule_sync_directory_and_session_revocation",
+    "login_status": 200,
+    "rule_sync_status": 200,
+    "items": 0,
+    "post_logout_status": 401
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "owned_rule_sync_qualification_projects",
+    "containers_removed": 19,
+    "dependency_volumes_removed": 8,
+    "archives": [
+      {
+        "project": "sbacc_08644798c3bcbed1",
+        "path": ".local/acceptance/sbacc_08644798c3bcbed1-sync123-preserved.tar.gz",
+        "sha256": "dac76c1783d5f550f8796d2e087585bb434a37c030a4e2ff52871ac0a366df56",
+        "bytes": 1924872
+      },
+      {
+        "project": "sbacc_e7e7a91b065ad172",
+        "path": ".local/acceptance/sbacc_e7e7a91b065ad172-sync123-preserved.tar.gz",
+        "sha256": "d66798fe63e68b6a02fe0cbe7011d38e391d84613f861fa4e6c00d55b7edba67",
+        "bytes": 7653065
+      }
+    ],
+    "online_instances_unchanged": true,
+    "current_image_and_evidence_preserved": true,
+    "global_prune": false,
+    "allocated_bytes_removed": 6384676864,
+    "temporary_roots_removed": 2,
+    "profiles_unloaded": [
+      "sbacc_08644798c3bcbed1_runner",
+      "sbacc_e7e7a91b065ad172_runner"
+    ]
+  },
+  "migration_cleanup": {
+    "status": "passed",
+    "scope": "completed_owned_migration_container_only",
+    "container_id": "7388c5d3cdd3729275d8aed35aac577198b91db442f058025313aeceec062415",
+    "actual_exit_code": 0,
+    "anonymous_volumes_removed": 3,
+    "bind_data_and_runtime_preserved": true,
+    "global_prune": false,
+    "raw_log_sha256": "6d6fc610db43dc4c7cf8049de40d64b75ef349e9fa6897ba53e5e6ee9f7960af"
+  },
+  "controller_interruption": {
+    "record": ".local/acceptance/sync123-warm-interruption.json",
+    "runner_restarted": false,
+    "qualification_basis": "同一容器的实际退出、完整原始测试日志、分组清单和覆盖率；保持原始截止时间"
+  },
+  "preserved_failures": [
+    {
+      "source_state": "remote-phase120.json",
+      "scope": "构建缓存缺少锁定模块；业务测试未开始"
+    },
+    {
+      "source_state": "remote-phase121.json",
+      "scope": "原生规则装载统计数组被误按对象校验，测试失败；后续源码修正并重新验证"
+    },
+    {
+      "source_state": "remote-phase123.json",
+      "scope": "独立项目首次离线构建缓存缺少锁定模块；按锁定版本补齐后重建，依赖版本未变化"
+    }
+  ],
+  "ui_regression_history": {
+    "frontend126": "542 项通过，1 项测试夹具失败；弹窗被传送到 document.body，测试在错误 DOM 根查找表单；更正查找范围后重新执行完整回归",
+    "select_escape": "真实浏览器在前一页面来源发现 Esc 关闭外层表单；当前来源阻止选择框向外层传播 Esc，保留草稿，并执行独立回归",
+    "quality_environment": "首次本机质量检查错误使用 PATH 中的 Go 1.25.6；固定本机 1.26.8 后重跑原套件；源代码未变化，原失败日志保留",
+    "deployment_format": "迁移驱动在两份角色配置后追加换行；独立核对原内容后恢复原字节，凭据与配置值不变；原失败日志保留"
+  },
+  "cache_preparation": {
+    "scope": "capture_compile_preparation_only",
+    "duplicate_cache_copy_timeout_seconds": 120,
+    "recovery": "复用本轮已验证的编译缓存；实际业务用例范围、权限、期限及覆盖门槛不变"
+  },
+  "limitations": [
+    "全部 107 项复合需求仍未完整验收，正式版门禁保留",
+    "同步只执行明确批准的固定修订，不跟随外部规则渠道或未批准版本",
+    "不包含多探针灰度、系统或检测引擎升级编排",
+    "生产 PKI、真实模型质量、硬件联动、办公渠道、对象存储和沙箱需各自实际环境验收",
+    "大规模吞吐、丢包、尾延迟、HA 和灾难恢复未由本次工程回归证明"
+  ]
+}

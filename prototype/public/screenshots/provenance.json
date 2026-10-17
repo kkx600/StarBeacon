@@ -2,7 +2,7 @@
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "renderer": "Codex in-app browser",
-  "baseStateCount": 755,
+  "baseStateCount": 761,
   "supplementalCount": 54,
   "entries": [
     {
@@ -14152,6 +14152,180 @@
         "height": 812
       },
       "sha256": "0ce020e020923c3231bf1223bd3376923bd9b0d9c0c76d91d0f3b32814e98363"
+    },
+    {
+      "file": "rule-sync/data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data",
+      "title": "规则自动同步 · data",
+      "state": "data",
+      "capturedAt": "2026-10-17T02:27:34.638Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 73731,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "aef7e297cdf49990b24db6fcafa975ccd91a70d99f82bde1efd760510895a6fe"
+    },
+    {
+      "file": "rule-sync/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty",
+      "title": "规则自动同步 · empty",
+      "state": "empty",
+      "capturedAt": "2026-10-17T02:27:35.560Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 69040,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "8d53b8896d4160b21f15bf52ffbc6012801832a298e18cf24ccc7f3bffaf1553"
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail",
+      "title": "规则自动同步 · detail",
+      "state": "detail",
+      "capturedAt": "2026-10-17T02:27:36.642Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 71205,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "e3897f5c36ccc524c92df4d4445a2aa04d39eb08c42a872124487aaf7876ec58"
+    },
+    {
+      "file": "rule-sync/action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action",
+      "title": "规则自动同步 · action",
+      "state": "action",
+      "capturedAt": "2026-10-17T02:27:37.649Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 75538,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "d6e16ec027c2a60a6a4820e2006d8f592a5d021105908581dc2c299852ee7403"
+    },
+    {
+      "file": "rule-sync/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading",
+      "title": "规则自动同步 · loading",
+      "state": "loading",
+      "capturedAt": "2026-10-17T02:27:38.211Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 69482,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "b7d4ea775b3f731d29e72937dce2b000a3d5bfed2f3a4bd0b0b66d7779174d79"
+    },
+    {
+      "file": "rule-sync/error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error",
+      "title": "规则自动同步 · error",
+      "state": "error",
+      "capturedAt": "2026-10-17T02:27:38.812Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成数据组件页面截图",
+      "stateVerified": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280
+      },
+      "themeSha256": "058b092a2c030561ec6f5db3ed1ad79fd7e0e1e04d83f01f5f8dcac70fe8bd87",
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "bytes": 70557,
+      "image": {
+        "width": 1280,
+        "height": 900
+      },
+      "sha256": "a14b0bdb4ec521840a62ea05afd28f3957b7d62a6ab6f672ea26db147a78bb11"
     },
     {
       "file": "big-screen/data.jpg",

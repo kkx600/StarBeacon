@@ -12863,6 +12863,215 @@
           }
         }
       }
+    },
+    "/api/v1/rule-sync-plans": {
+      "get": {
+        "summary": "读取规则同步计划",
+        "description": "仅管理员；按计划主键游标分页，每页至多 20 项，附当前有效运行档案。运行到期不清除已处理修订水位。",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RuleSyncPlan"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员权限",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订或在途任务冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "达到配额",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "依赖暂不可用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "保存规则同步授权",
+        "description": "仅原批准管理员修改。CAS 修订、精确输入重试、审计与依赖校验同事务；固定规则修订不自动跟随最新。存在在途任务时仅允许原计划停用，停用不撤销已签名任务。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleSyncChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleSyncPlan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "需要管理员权限",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订或在途任务冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "达到配额",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "依赖暂不可用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -22911,6 +23120,204 @@
           "transport",
           "mode"
         ]
+      },
+      "RuleSyncSpec": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "enabled",
+          "sensor_id",
+          "registration_id",
+          "package_id",
+          "package_revision",
+          "positive_sample_id",
+          "negative_sample_id",
+          "interval_seconds"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "package_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "package_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "positive_sample_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "negative_sample_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "interval_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 3600
+          }
+        }
+      },
+      "RuleSyncChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "expected_revision",
+          "spec"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "spec": {
+            "$ref": "#/components/schemas/RuleSyncSpec"
+          }
+        }
+      },
+      "RuleSyncRun": {
+        "type": "object",
+        "required": [
+          "id",
+          "plan_revision",
+          "state",
+          "code",
+          "stage",
+          "tasks",
+          "expected_sha256",
+          "created_at",
+          "expires_at",
+          "spec",
+          "created_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "plan_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "validating",
+              "positive_replay",
+              "negative_replay",
+              "applying",
+              "succeeded",
+              "blocked",
+              "paused"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "tasks": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected_sha256": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/RuleSyncSpec"
+          },
+          "created_by": {
+            "type": "string"
+          }
+        }
+      },
+      "RuleSyncPlan": {
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "spec",
+          "created_by",
+          "updated_at",
+          "next_at",
+          "processed_revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "spec": {
+            "$ref": "#/components/schemas/RuleSyncSpec"
+          },
+          "created_by": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "next_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processed_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "run": {
+            "$ref": "#/components/schemas/RuleSyncRun"
+          }
+        }
       }
     }
   }

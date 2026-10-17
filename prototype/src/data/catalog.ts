@@ -229,6 +229,7 @@ function supplemental(id: string, title: string, group: string, family: string, 
   return { id,title,group,family,description,kind:'table',requirement:[],columns:columnsFromText(cols),fields:fieldsForColumns(cols,family),primary,rowAction:'操作',emptyTitle:`暂无${title}`,emptyDescription:'当前筛选范围内没有记录，请核对时间范围或完成相关配置。',objectLabel:title }
 }
 pages.push(
+  {...supplemental('rule-sync','规则自动同步','detection','rule-sync','管理固定批准修订的设备同步，依次核对装载、正反样本和实际发布回执。','name:同步计划|sensor:目标探针|revision:批准修订|status:执行状态','创建同步计划'),requirement:['SB-DET-002','SB-OPS-003']},
   { ...supplemental('big-screen','态势大屏','overview','screen','按网络域展示风险、流量与响应状态。','name:对象|status:状态','配置大屏'),kind:'screen',requirement:['SB-VIS-007'] },
   {...supplemental('decision-evaluations','评估记录','response','decision-evaluation','查看本人评估的不可变判断、策略快照和独立持续授权。','name:评估标识|policy:策略 / 修订|status:判断结果|confidence:模型自报分数|model:研判作业|time:评估时间','查看评估记录'),readOnly:true,requirement:['SB-RSP-001','SB-RSP-004'],detailTabs:['判断快照','策略快照','持续授权','来源与限制'],notice:'本页面为合成示例。判断、授权与任务分别留存，默认 180 天；判断自身不授予执行权限，任务受理不代表设备已生效或流量已阻断。'},
   supplemental('notification-routes','通知规则','notifications','notification-rule','按严重级别、业务范围、值班与升级条件分派通知。','name:规则名称|level:告警级别|channels:通知渠道|owner:接收组|schedule:静默窗口|status:状态','创建通知规则'),

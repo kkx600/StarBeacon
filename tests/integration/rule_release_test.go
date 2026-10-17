@@ -325,6 +325,9 @@ func TestQualifiedRuleReleaseNativeMTLSPersistenceAndAtomicFailure(t *testing.T)
 	}
 	health(p.SHA256)
 	// 实际装载已执行，但设备持久队列仍处于执行中；关闭并重开 WAL 验证中断恢复。
+	exerciseNativeRuleSync(t, ctx, f, httpClient, u, id, signer, sampleIDs, second, health, execute)
+	_, _ = create(body, "release_restore_after_sync")
+	health(p.SHA256)
 	stopTasks()
 	require(t, <-taskDone)
 	tasksStopped = true

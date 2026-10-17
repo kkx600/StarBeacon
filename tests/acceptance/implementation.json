@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-16",
+  "review_date": "2026-10-17",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -244,10 +244,15 @@
         "internal/store/rule_release.go",
         "internal/store/rule_reconciliation.go",
         "internal/agent/engine_reconciliation.go",
-        "web/platform/src/features/rules/RuleReleaseDialog.vue"
+        "web/platform/src/features/rules/RuleReleaseDialog.vue",
+        "internal/rulesync/plan.go",
+        "internal/store/rule_sync.go",
+        "internal/platform/rule_sync.go",
+        "web/platform/src/features/rules/RuleSyncWorkspace.vue"
       ],
       "pages": [
-        "platform:/rules"
+        "platform:/rules",
+        "platform:/rules?view=sync"
       ],
       "tests": [
         "internal/store/rules_test.go",
@@ -265,9 +270,13 @@
         "internal/agent/rule_digest_test.go",
         "web/tests/rule-release.test.ts",
         "web/tests/rule-reconciliation.test.ts",
-        "tests/integration/rule_release_test.go"
+        "tests/integration/rule_release_test.go",
+        "internal/rulesync/plan_test.go",
+        "internal/platform/rule_sync_test.go",
+        "tests/integration/rule_sync_test.go",
+        "web/tests/rule-sync.test.ts"
       ],
-      "boundary": "不可变修订、CodeMirror 高亮和基础结构诊断、Suricata 8.0.7 -T。手动单探针发布核对同设备、注册代次、完整包、检测配置、一天内装载与独立正反样本回执；签名命令绑定当前文件摘要，原生重载、完整包数量和文件回读，失败恢复保留 journal。历史修订以新的授权任务部署；独立 rules.reconcile 回读当前事务规则并保存依据，原中断回执保持不变。该链路正在执行真实远程验收；不含自动灰度编排、来源管理、AI 生成或 TUF 分发。"
+      "boundary": "不可变修订、CodeMirror 高亮和基础结构诊断、Suricata 8.0.7 -T。手动单探针发布核对同设备、注册代次、完整包、检测配置、一天内装载与独立正反样本回执；签名命令绑定当前文件摘要，原生重载、完整包数量和文件回读，失败恢复保留 journal。历史修订以新的授权任务部署；独立 rules.reconcile 回读当前事务规则并保存依据，原中断回执保持不变。该链路正在执行真实远程验收；不含自动灰度编排、来源管理、AI 生成或 TUF 分发。 固定批准修订的单探针同步计划复用装载、正反样本及发布资格；在途停用不撤销已签名任务；不包含规则渠道订阅、自动跟随未批准修订或多探针灰度。"
     },
     {
       "id": "replay",
@@ -1391,7 +1400,8 @@
         "规则包不可变修订",
         "高亮、结构诊断、原生 -T 与指定规则重放",
         "同设备完整包正反样本资格、签名发布、固定历史修订回滚与中断核实代码",
-        "AI 候选生成、材料来源引用、SID 防冲突和人工采纳；正式发布保留独立验证资格"
+        "AI 候选生成、材料来源引用、SID 防冲突和人工采纳；正式发布保留独立验证资格",
+        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。"
       ],
       "remaining": [
         "来源管理/TUF/自动灰度与多探针编排",
@@ -2162,10 +2172,11 @@
         "本机托管捕获配置实际应用，保留失败前进程并回读运行/停止",
         "完整验证资格绑定的手动单探针规则发布与独立中断核实；历史修订部署",
         "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执",
-        "现场 CLI 的独立发布签名、ZIP/ELF/摘要与代次核对、持久 journal/CAS/幂等、Agent 程序切换、失败回退和中断恢复；只读维护准入保护 WAL、未知任务和有效封禁撤销责任"
+        "现场 CLI 的独立发布签名、ZIP/ELF/摘要与代次核对、持久 journal/CAS/幂等、Agent 程序切换、失败回退和中断恢复；只读维护准入保护 WAL、未知任务和有效封禁撤销责任",
+        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。"
       ],
       "remaining": [
-        "多探针配置编排与规则订阅自动同步",
+        "多探针配置编排、规则渠道订阅与自动灰度",
         "正式安装引导、系统/引擎/插件升级、平台灰度及全场景自动恢复编排",
         "全场景同版本远程及页面验收"
       ]
