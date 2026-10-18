@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18T13:28:27.382186+00:00",
+  "scope": "fixed_plan_multi_probe_rule_rollout_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "2daec55d6349d24b2a7481ce5dfccf070b75d6d0b5bff3d11b7bd24d6c3dd795",
+    "frontend_sha256": "b1d9f0e3368652fbf8b84d8d380075b82268abe1f7436f84e723b45365673381",
+    "build_parent_commit": "196469c8e64a9e10d60b4feb46f78dff12fb0912",
+    "build_clean_commit": false,
+    "source_scope_or_gate_relaxed": false
+  },
+  "capabilities": [
+    "固定 2–200 个本人批准的停用同步计划修订及顺序，事务预留与审计，活跃目标禁止直接改写。",
+    "每台探针独立核对原生装载、正反样本、签名发布、实际规则摘要和发布后的新心跳。",
+    "每批观察 30–3600 秒，窗口结束后的接收与健康观测水位均核对后才推进；前序批次继续参与核对。",
+    "停止撤回后续授权，已签名任务独立核对；不把停止解释为已取消，不自动回滚生效规则。",
+    "租户预算、稳定游标、幂等提交确认、迟到响应隔离、默认 180 天留存及关联运行和回执保护。"
+  ],
+  "backend": {
+    "environment": "remote_docker_linux_amd64",
+    "actual_exit_code": 0,
+    "report_fetch_actual_exit_code": 0,
+    "tests": {
+      "unit": 508,
+      "integration": 121,
+      "native_capture": 1
+    },
+    "test_failures": 0,
+    "test_case_skips": 0,
+    "coverage": {
+      "covered": 20253,
+      "total": 22470,
+      "percentage": 90.13351134846462,
+      "minimum": 90
+    },
+    "coverage_scope_or_minimum_relaxed": false,
+    "native_flow": {
+      "alert_to_channel_acceptance_seconds": 0.879,
+      "quality_event_to_channel_acceptance_seconds": 8.786,
+      "http_events_individually_verified": 1922,
+      "missing_or_duplicate_paths": 0,
+      "pcap": {
+        "packets": 26,
+        "original_bytes": 4036,
+        "compressed_bytes": 1513,
+        "observed_complete_tcp_handshakes": 2,
+        "first_http_request_to_verified_download_seconds": 9.801,
+        "includes_serial_quality_observation_wait": true,
+        "independent_archive_service_latency": false
+      },
+      "scope": "single_isolated_docker_native_flow_observation",
+      "production_sla_or_throughput_qualification": false
+    },
+    "docker_event_observer": {
+      "status": "passed",
+      "stop_requested": true,
+      "actual_exit_code": 143,
+      "oom_events": 0
+    }
+  },
+  "frontend": {
+    "tests": 808,
+    "test_files": 55,
+    "tool_tests": 9,
+    "ant_binding_cases_included": 144,
+    "coverage": {
+      "statements": 95.39623829385378,
+      "branches": 92.9047131147541,
+      "functions": 91.78183613030602,
+      "lines": 98.82501049097776
+    },
+    "minimum_each": 90,
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "default_palette_and_white_grey_background_preserved": true,
+    "timeout_scope_relaxed": false
+  },
+  "native_rollout": {
+    "real_native_probes": 2,
+    "separate_registrations_certificates_and_wals": true,
+    "real_independent_tasks": 8,
+    "normal_state": "succeeded",
+    "normal_code": "observed",
+    "elapsed_seconds": 351.822584,
+    "observation_seconds_per_batch": 30,
+    "heartbeat_seconds": 10,
+    "scheduler_time_manipulated": false,
+    "synthetic_eve_injection": false,
+    "raw_http_samples_use_explicit_synthetic_packet_container": true,
+    "shared_test_network_namespace": true,
+    "runtime_build_source": "fe4acd162984bad0d9fb6d16a163a025c9e15d9a28253f11554da03659dd7d9d",
+    "tested_backend_program_byte_equivalence": "rollout719-equivalence.json",
+    "rollout_component_byte_equivalence": "rollout635-frontend-components.json",
+    "positive_alert_counts": [
+      1,
+      1
+    ],
+    "negative_alert_counts": [
+      0,
+      0
+    ],
+    "actual_rule_files_and_active_digest_verified": true,
+    "manual_stop": {
+      "empty_reason_rejected": true,
+      "state": "stopped",
+      "code": "operator_stopped",
+      "independent_tasks_before_stop": 1,
+      "remaining_batches_dispatched": false,
+      "applied_rules_unchanged": true
+    },
+    "boundary": "真实页面、持久调度与两个独立 Suricata 目标；聚合测试人工推进到期时间的材料不替代本场景真实时钟。两目标共用隔离测试网络命名空间，非两个生产站点，不授予生产规模或检测效果资格。"
+  },
+  "ui": {
+    "browser": "in_app_browser",
+    "frontend_source_sha256": "b1d9f0e3368652fbf8b84d8d380075b82268abe1f7436f84e723b45365673381",
+    "pc_widths": [
+      1024,
+      1280,
+      1366,
+      1440,
+      1920,
+      2560,
+      3840
+    ],
+    "platform_business_views": 36,
+    "collector_business_views": 6,
+    "authenticated_read_only_route_layout_observations": 294,
+    "stable_rollout_interaction_layout_observations": 28,
+    "page_horizontal_overflows": 0,
+    "double_business_tables": 0,
+    "console_errors": 0,
+    "console_warnings": 0,
+    "flow_checks": {
+      "normal_readback": "passed",
+      "directory_consistency": "passed",
+      "stop_readback": "passed",
+      "apply_task_message": "passed",
+      "validation_task_message": "passed"
+    },
+    "boundary": "稳定几何、只读目录与指定发布交互分别核对，不等同全产品所有 CRUD、异常状态或动态动画帧验收。"
+  },
+  "deployment": {
+    "scope": "owned_persistent_development_environment",
+    "backend_source": "2daec55d6349d24b2a7481ce5dfccf070b75d6d0b5bff3d11b7bd24d6c3dd795",
+    "frontend_dist_sha256": "593e6ad7f6591ab5f67b41e148808a2bcece685c68430a7a0a450ff6522e3fa9",
+    "programs_verified": 5,
+    "running_roles_verified": 4,
+    "ready_endpoints_verified": 4,
+    "static_files_verified": 82,
+    "gateway_checks_after_cleanup": 12,
+    "identity_digest_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "migration_version": 47,
+    "production_qualification": false
+  },
+  "checks": {
+    "quality_tests": 68,
+    "acceptance_tools_tests": 84,
+    "prototype_tools_tests": 7,
+    "go_vet": "passed",
+    "alignment": "passed",
+    "strict_gallery": {
+      "base": 767,
+      "supplemental": 101,
+      "total": 868,
+      "status": "passed"
+    },
+    "reference_palette_global_aa_qualification": false
+  },
+  "cleanup": {
+    "scope": "owned_archived_test_temporaries",
+    "status": "passed",
+    "source_sha256": "2daec55d6349d24b2a7481ce5dfccf070b75d6d0b5bff3d11b7bd24d6c3dd795",
+    "started_at": "2026-10-18T13:25:46.564385+00:00",
+    "remote": {
+      "status": "passed",
+      "scope": "owned_unreferenced_build_caches_only",
+      "directories": [
+        {
+          "directory": "go-build-cache",
+          "files": 12524,
+          "logical_bytes": 1784002672,
+          "allocated_file_bytes_before_removal": 1829130240,
+          "removed": true
+        },
+        {
+          "directory": "capture-go-build-cache",
+          "files": 6802,
+          "logical_bytes": 1088270233,
+          "allocated_file_bytes_before_removal": 1112432640,
+          "removed": true
+        }
+      ],
+      "logical_bytes_removed": 2872272905,
+      "allocated_file_bytes_before_removal": 2941562880,
+      "global_prune": false,
+      "stopped_readonly_host_root_views": 2,
+      "active_writers_or_direct_cache_mounts": 0,
+      "persistent_data_identity_wal_and_ca_retained": true
+    },
+    "local": {
+      "path": "rollout612-capture.test",
+      "bytes": 109583397,
+      "sha256": "7a97635ea4c6564e5b25e2532b87af21768a5fcd0b72a47425f85dd55757e43e",
+      "removed": true
+    },
+    "finished_at": "2026-10-18T13:25:58.085166+00:00"
+  },
+  "failure_history": [
+    "第一次缓存清理保护检查发现祖先挂载而拒绝删除，未改动缓存。独立核对唯一引用为已停止容器的宿主根目录只读视图，保留原失败，仅在确认没有运行中写入者或直接缓存挂载后清理本项目缓存，不操作该容器。",
+    "同一最终来源的原生预验收曾在流量端点 rotation/24 等待 HTTP 响应头超过原有三秒期限。失败完整保留；随后源码、资源及期限均未调整，只读端点日志与 cgroup 观测的原生预验收通过，完整回归另行从头执行。前次超时根因未证实，不将重试通过写成缺陷已解决或长稳资格。",
+    "扩展 Linux 静态检查发现八处集成测试使用未指名结构体字段；原回归主动中止、实际执行器退出与报告回传独立记录，完整源码及日志归档。字段名补齐后静态检查通过，最终来源从头执行，不借用中止运行的通过项或覆盖。",
+    "逐路径断言发现质量测试主动关闭未消费响应，使原生 HTTP 日志延后到流结束才产生；只读原 EVE 与 ES 对照保留原失败，对照实验完整消费响应后全部 1922 路径核对通过。诊断覆盖映射与监视副本不计入正式覆盖；修复固化后以全新源码从头验收。",
+    "原完整回归一次停用账号密码重置超过原有五秒客户端期限，原始失败及服务器资源诊断保留；当前来源在相同密码强度、请求期限与容器资源下另行诊断并重新完成全回归，不将定向重试计入全量通过数。",
+    "早期定向准备的缓存属主、协议夹具状态水位和辅助脚本转义问题均独立保留；当前最终来源从头执行，不继承旧覆盖计数。",
+    "成功终态保留观察阶段原因，真实页面出现完成与等待矛盾；原完整运行明确停止并保留，状态持久化及历史只读解释修复后重新执行。",
+    "原完整回归的实际流量测试漏算 noalert 质量观测请求，误报重复；原失败报告归档。当前核对两个初始请求与全部轮转路径，不只比较总量。",
+    "详情核对后目录仍保留旧状态，及规则发布误用装载检查说明，分别由失败测试复现；修复后当前 808 项完整前端回归通过。",
+    "停止观察辅助程序误用原因码、原生核对误读公开任务结构均保留失败；按实际契约及真实 PG 注册绑定分别独立核对，不放宽业务判断。",
+    "初期页面检查未等待路由加载、采集器登录失效、辅助程序误判登录日志及闭包重复记录，均不计入通过；当前来源以完整固定清单重新检查。",
+    "下拉退出动画期间的瞬态尺寸超出记录单独保留；稳定交互检查等待下拉实际隐藏后完成，不能解释为全部动态帧均有几何保证。",
+    "首轮探针停止回执不完整，随后独立检查两台原身份和 WAL 后恢复；清理及退出以本次最终实际回执另行记录。"
+  ],
+  "raw_evidence_archive": {
+    "local_path": ".local/acceptance/rollout713-precleanup-evidence.tar.gz",
+    "bytes": 74578181,
+    "sha256": "c391be02fe10eb11ca05e299ce7c8a0168a2e9f4fb9d93f26dd01ebe521a38fc",
+    "members_verified": 2740,
+    "private": true
+  },
+  "post_ui_evidence_archive": {
+    "status": "passed",
+    "scope": "post_deployment_current_ui_and_source_evidence",
+    "local_path": ".local/acceptance/rollout641-post-ui-evidence.tar.gz",
+    "bytes": 2753342,
+    "sha256": "dabb66769a00a8b61c093191f390fdc437cf499fab67cfa1f47aafc08a9aa888",
+    "members_verified": 420,
+    "private": true,
+    "recorded_at": "2026-10-18T13:23:33.705134+00:00"
+  },
+  "completion_evidence_archive": {
+    "status": "passed",
+    "scope": "post_cleanup_runtime_and_protected_cleanup_failure_evidence",
+    "local_path": ".local/acceptance/rollout724-final-evidence.tar.gz",
+    "bytes": 179515,
+    "sha256": "304a66e83fe54492e3d222f4e0dfe6d1ebdb08cf6e71edf71dc8f4ef867a12fd",
+    "members_verified": 27,
+    "private": true,
+    "recorded_at": "2026-10-18T13:28:27.250794+00:00"
+  },
+  "product_requirement_status": {
+    "total": 107,
+    "partial": 61,
+    "missing": 46,
+    "fully_accepted": 0
+  },
+  "remaining": [
+    "规则来源订阅、TUF、完整规则例外、观察窗口内持续引擎运行与装载状态核对、性能与检测效果门禁、生产规模灰度及自动故障回退。",
+    "统一质量关联、持续资产治理、关联检测、情报、风险治理、文件与沙箱等工程缺口。",
+    "1–200+ 探针持续负载、海量数据、积压恢复、多网卡、生产 TLS／HA／灾备。",
+    "真实外部模型、设备、办公渠道及生产对象存储；当前两类 Linux UPX ZIP 与正式全产品验收。"
+  ]
+}

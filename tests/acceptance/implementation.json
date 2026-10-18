@@ -248,11 +248,18 @@
         "internal/rulesync/plan.go",
         "internal/store/rule_sync.go",
         "internal/platform/rule_sync.go",
-        "web/platform/src/features/rules/RuleSyncWorkspace.vue"
+        "web/platform/src/features/rules/RuleSyncWorkspace.vue",
+        "internal/rulerollout/rollout.go",
+        "internal/store/rule_rollouts.go",
+        "internal/platform/rule_rollouts.go",
+        "migrations/00047_rule_rollouts.sql",
+        "web/platform/src/features/rules/RuleRolloutsWorkspace.vue",
+        "web/platform/src/features/rules/useRuleRollouts.ts"
       ],
       "pages": [
         "platform:/rules",
-        "platform:/rules?view=sync"
+        "platform:/rules?view=sync",
+        "platform:/rules?view=sync&mode=rollouts"
       ],
       "tests": [
         "internal/store/rules_test.go",
@@ -274,9 +281,14 @@
         "internal/rulesync/plan_test.go",
         "internal/platform/rule_sync_test.go",
         "tests/integration/rule_sync_test.go",
-        "web/tests/rule-sync.test.ts"
+        "web/tests/rule-sync.test.ts",
+        "internal/rulerollout/rollout_test.go",
+        "internal/platform/rule_rollouts_test.go",
+        "tests/integration/rule_rollouts_test.go",
+        "tests/integration/rule_rollouts_native_test.go",
+        "web/tests/rule-rollouts.test.ts"
       ],
-      "boundary": "不可变修订、CodeMirror 高亮和基础结构诊断、Suricata 8.0.7 -T。手动单探针发布核对同设备、注册代次、完整包、检测配置、一天内装载与独立正反样本回执；签名命令绑定当前文件摘要，原生重载、完整包数量和文件回读，失败恢复保留 journal。历史修订以新的授权任务部署；独立 rules.reconcile 回读当前事务规则并保存依据，原中断回执保持不变。该链路正在执行真实远程验收；不含自动灰度编排、来源管理、AI 生成或 TUF 分发。 固定批准修订的单探针同步计划复用装载、正反样本及发布资格；在途停用不撤销已签名任务；不包含规则渠道订阅、自动跟随未批准修订或多探针灰度。"
+      "boundary": "不可变修订、CodeMirror 高亮与基础结构诊断、Suricata 8.0.7 -T；原生发布核对同设备、注册代次、完整包、检测配置及独立正反样本回执，失败恢复保留 journal。单探针固定批准修订自动同步；分批发布明确选择 2–200 个同规则与样本的停用计划修订，目标预留、逐台验证、每批 30–3600 秒观察及窗口后新心跳核对，失败或未知结果停止后续批次，保留已签名任务与已生效事实；不自动回滚。规则源订阅、TUF、生产规模及完整灰度效果验收仍未完成；AI 生成见独立能力。"
     },
     {
       "id": "replay",
@@ -1514,11 +1526,13 @@
         "高亮、结构诊断、原生 -T 与指定规则重放",
         "同设备完整包正反样本资格、签名发布、固定历史修订回滚与中断核实代码",
         "AI 候选生成、材料来源引用、SID 防冲突和人工采纳；正式发布保留独立验证资格",
-        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。"
+        "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。",
+        "固定计划修订的多探针分批发布、逐目标独立验证、发布后心跳与观察水位、停止和任务证据"
       ],
       "remaining": [
-        "来源管理/TUF/自动灰度与多探针编排",
-        "发布与回滚的同版本远程验收",
+        "来源管理、TUF 和规则渠道订阅",
+        "生产规模、全场景灰度效果与自动故障回退编排",
+        "发布与回滚的同版本完整远程验收",
         "例外/阈值/到期"
       ]
     },
@@ -2297,10 +2311,11 @@
         "平台签名下发采集配置、实测网卡准入、双端修订比较与生效回执",
         "现场 CLI 的独立发布签名、ZIP/ELF/摘要与代次核对、持久 journal/CAS/幂等、Agent 程序切换、失败回退和中断恢复；只读维护准入保护 WAL、未知任务和有效封禁撤销责任",
         "固定批准规则修订的单探针自动同步计划；绑定管理员、注册代次及正反样本，顺序调度装载检查、两次重放和资格核验发布；持久阶段、幂等、在途停用与原请求核对；运行档案默认 180 天及引用任务保护。",
-        "现场维护回收默认预览并显式执行，冻结默认 180 天期限，保护当前／回退版本与未决责任，分批回收历史制品及记录；独立凭据支持中断继续，同名待回收制品禁止重新暂存。"
+        "现场维护回收默认预览并显式执行，冻结默认 180 天期限，保护当前／回退版本与未决责任，分批回收历史制品及记录；独立凭据支持中断继续，同名待回收制品禁止重新暂存。",
+        "固定批准规则的多探针分批发布与在途停止核对"
       ],
       "remaining": [
-        "多探针配置编排、规则渠道订阅与自动灰度",
+        "多探针配置编排、规则渠道订阅、生产规模灰度与故障回退",
         "正式安装引导、系统/引擎/插件升级、平台灰度及全场景自动恢复编排",
         "全场景同版本远程及页面验收"
       ]

@@ -66197,6 +66197,473 @@
       "captureJpegSha256": "92a1c22f8a65f9d2348aae54916eb10bb41b4b28ec4597d96689d59579284349",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
       "bytes": 97534
+    },
+    {
+      "file": "rule-sync/data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data&capture=1",
+      "title": "规则自动同步",
+      "state": "data",
+      "capturedAt": "2026-10-18T09:20:04.095Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "1bc67c3047fca72c6e7333774574485edb1bd1dfa2191882fe97f8ccc380500a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 76623
+    },
+    {
+      "file": "rule-sync/empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty&capture=1",
+      "title": "规则自动同步",
+      "state": "empty",
+      "capturedAt": "2026-10-18T09:20:04.451Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "a078706b24f77ee29533d94a7305a7705bbe66de2ade983ee13edacfc5aef964",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 73644
+    },
+    {
+      "file": "rule-sync/detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&capture=1",
+      "title": "规则自动同步",
+      "state": "detail",
+      "capturedAt": "2026-10-18T09:20:04.924Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 1,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "7641d7d2df32d06ca6bc88128dc444dcedf75a61a13bc87cef54004e4ed4eaff",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 79206
+    },
+    {
+      "file": "rule-sync/action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&capture=1",
+      "title": "规则自动同步",
+      "state": "action",
+      "capturedAt": "2026-10-18T09:20:05.433Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 1,
+        "footer": [
+          {
+            "bottom": 737.78125,
+            "text": "关 闭",
+            "top": 703.78125
+          },
+          {
+            "bottom": 737.78125,
+            "text": "保存计划",
+            "top": 703.78125
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "8bdda2bdf3566a3c20e9a8e892be68cfc9ff5341fcddd1489d6fa6896ca60106",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 83052
+    },
+    {
+      "file": "rule-sync/loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading&capture=1",
+      "title": "规则自动同步",
+      "state": "loading",
+      "capturedAt": "2026-10-18T09:20:05.838Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "4c01089ea80df019bed3ba03a95d099db69cce4fe26f04d8df0669b1a6ac9e08",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 75318
+    },
+    {
+      "file": "rule-sync/error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error&capture=1",
+      "title": "规则自动同步",
+      "state": "error",
+      "capturedAt": "2026-10-18T09:20:06.241Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "be1a946413aa986dcc40bd6077cd9341b0ff80ffc794549249f196b78d6734a9",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 73860
+    },
+    {
+      "file": "supplemental/rule-rollout-data.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 有数据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:12.143Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "f2933d24a0ba79f8c33507ef42b34dbf10233b96fb3d4657ee143b6e7ea34cc4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 76532
+    },
+    {
+      "file": "supplemental/rule-rollout-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 无数据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:12.524Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "9f321e4973c4445614a66a3ca247c48d04c7ace63c61c41497bae9b8be83111d",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71535
+    },
+    {
+      "file": "supplemental/rule-rollout-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 查看详情",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:14.037Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "61c5dad9ba20b31a5d2656660390ece13afaddf7c42a1efede0395b6439b4635",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 111785
+    },
+    {
+      "file": "supplemental/rule-rollout-action.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 操作表单",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:14.469Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 1,
+        "footer": [
+          {
+            "bottom": 691.484375,
+            "text": "关 闭",
+            "top": 657.484375
+          },
+          {
+            "bottom": 691.484375,
+            "text": "批准并启动",
+            "top": 657.484375
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "dcfcee915d9d0b695d6821e2a22508fd47a80414e4cc03c2974397bd21cf0204",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 87475
+    },
+    {
+      "file": "supplemental/rule-rollout-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 加载中",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:14.820Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "be3a37cf1ce41caa7670723f7ef0892f404510ffe18b41e90e08511ddca6f18a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71916
+    },
+    {
+      "file": "supplemental/rule-rollout-error.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 加载失败",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:15.168Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 0,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "9f6fff3d536a2235767a9a94d782e39ea02ccb725e3d1a6ba62c38010ebe6693",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71498
+    },
+    {
+      "file": "supplemental/rule-rollout-approval.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 固定范围授权",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:49.518Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 1,
+        "footer": [
+          {
+            "bottom": 852,
+            "text": "关 闭",
+            "top": 818
+          },
+          {
+            "bottom": 852,
+            "text": "批准并启动",
+            "top": 818
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "379a30e3295117d572aa059140fdd91b828f6dd704f2996d03afedede2ba62b1",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 100491
+    },
+    {
+      "file": "supplemental/rule-rollout-target.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 单台验证证据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:20:57.714Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 1,
+        "footer": [],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "c25401c15a3b806caed536bd12e1f37d3a7375e790d4e8919270ecf921c7975f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 78914
+    },
+    {
+      "file": "supplemental/rule-rollout-target.jpg",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts&capture=1",
+      "title": "规则分批发布 · 单台验证证据",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T09:26:13.469Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 0,
+        "dialogs": 1,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "c25401c15a3b806caed536bd12e1f37d3a7375e790d4e8919270ecf921c7975f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 78914
     }
   ],
   "errors": []

@@ -48,13 +48,14 @@ var historyCategories = []historyCategory{
 	{"decision_responses", "expires_at", "true"},
 	{"decision_continuous_runs", "expires_at", "true"},
 	{"decision_triage_triggers", "expires_at", `state<>'pending'`},
-	{"rule_sync_runs", "expires_at", `finished_at IS NOT NULL`},
+	{"rule_sync_runs", "expires_at", `finished_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM rule_rollout_targets t JOIN rule_rollouts r ON r.tenant_id=t.tenant_id AND r.id=t.rollout_id WHERE t.tenant_id=h.tenant_id AND t.plan_id=h.plan_id AND t.execution_revision=h.plan_revision AND (r.finished_at IS NULL OR r.expires_at>now()))`},
 	{"probe_enrollments", "retain_until", `true`},
 	{"probe_certificates", "retain_until", `state<>'signing' AND (not_after IS NULL OR not_after<=now())`},
 	{"incident_task_changes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed')`},
 	{"incident_tasks", "expires_at", `state IN('completed','cancelled') AND EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed') AND NOT EXISTS(SELECT 1 FROM incident_task_changes c WHERE c.tenant_id=h.tenant_id AND c.task_id=h.id)`},
 	{"sensor_quality_outbox", "expires_at", `state IN('done','expired','pending') OR (state='leased' AND lease_until<=now())`},
 	{"sensor_quality_cursors", "expires_at", `NOT EXISTS(SELECT 1 FROM sensors s WHERE s.tenant_id=h.tenant_id AND s.id=h.sensor_id AND s.registration_id=h.registration_id)`},
+	{"rule_rollouts", "expires_at", `finished_at IS NOT NULL`},
 }
 
 type HistorySweep struct {

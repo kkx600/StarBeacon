@@ -68,6 +68,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/audits/logins", a.Auth.Require(true, a.loginAudits))
 	a.registerTasks(m)
 	a.registerRuleSync(m)
+	a.registerRuleRollouts(m)
 	a.registerAlertAssessments(m)
 	a.registerAlertTriage(m)
 	a.registerIncidents(m)

@@ -88,7 +88,10 @@ func (a *API) SweepRuleSync(ctx context.Context, after string) (string, int, err
 		if ctx.Err() != nil {
 			return after, count, errors.Join(failures, ctx.Err())
 		}
-		n, err := a.DB.SweepRuleSync(ctx, tenant, a.Signer)
+		n, err := a.DB.SweepRuleRollouts(ctx, tenant)
+		count += n
+		failures = errors.Join(failures, err)
+		n, err = a.DB.SweepRuleSync(ctx, tenant, a.Signer)
 		count += n
 		failures = errors.Join(failures, err)
 		after = tenant

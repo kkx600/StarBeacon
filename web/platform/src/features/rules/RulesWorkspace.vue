@@ -17,10 +17,15 @@ import {useRuleRelease} from './useRuleRelease'
 import RuleGenerationWorkspace from './RuleGenerationWorkspace.vue'
 import ApplicationRulesWorkspace from '../applications/ApplicationRulesWorkspace.vue'
 import RuleSyncWorkspace from './RuleSyncWorkspace.vue'
+import RuleRolloutsWorkspace from './RuleRolloutsWorkspace.vue'
+import {useRoute,useRouter} from 'vue-router'
 const message=useFeedback()
 const release=useRuleRelease()
 const {view,change}=useWorkspaceView(session.current.value?.role==='admin'?['packages','samples','tasks','generation','applications','sync']:['packages','applications'])
 const canEdit=computed(()=>session.current.value?.role==='admin')
+const route=useRoute(),router=useRouter()
+const syncMode=computed(()=>route.query.mode==='rollouts'?'rollouts':'plans')
+function changeSyncMode(key:string){void router.push({path:route.path,query:{...route.query,mode:key==='rollouts'?'rollouts':undefined},hash:route.hash})}
 const views=[{key:'packages',label:'规则包'},{key:'samples',label:'重放样本'},{key:'tasks',label:'重放任务'},{key:'generation',label:'AI 规则生成'},{key:'applications',label:'应用识别规则'},{key:'sync',label:'规则自动同步'}]
 const items=shallowRef<RulePackage[]>([]),pending=shallowRef(true),error=shallowRef(''),saving=shallowRef(false),editor=shallowRef(false),editing=shallowRef(false),formError=shallowRef('')
 const form=reactive({id:'',name:'',text:'',expected_revision:0})
@@ -106,7 +111,7 @@ onMounted(refresh);onScopeDispose(()=>{stopped=true;controller?.abort();actionCo
   </template>
   <RuleGenerationWorkspace v-else-if="view==='generation'" @adopted="refresh" @samples="change('samples')" />
   <ApplicationRulesWorkspace v-else-if="view==='applications'"/>
-  <RuleSyncWorkspace v-else-if="view==='sync'"/>
+  <section v-else-if="view==='sync'"><WorkspaceTabs :active="syncMode" :items="[{key:'plans',label:'单探针计划'},{key:'rollouts',label:'分批发布'}]" label="规则同步范围" @change="changeSyncMode"/><RuleRolloutsWorkspace v-if="syncMode==='rollouts'"/><RuleSyncWorkspace v-else/></section>
   <ReplayWorkspace v-else :api="session.api" @tasks="change('tasks')" :view="view==='tasks'?'tasks':'samples'" />
   <a-modal v-if="view==='packages'" :title="!canEdit?'查看规则包':editing?'规则包修订':'创建规则包'" :open="editor" :width="900" :confirm-loading="saving" :footer="canEdit?undefined:null" ok-text="保存修订" cancel-text="取消" :cancel-button-props="{disabled:saving}" :mask-closable="!saving" :closable="!saving" :keyboard="!saving" @ok="save" @cancel="editor=false">
     <a-alert v-if="formError" type="error" show-icon :message="formError" class="section-gap" />

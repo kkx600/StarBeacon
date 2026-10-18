@@ -901,11 +901,47 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 				Count int `json:"count"`
 			}
 			require(t, json.NewDecoder(io.LimitReader(response.Body, 65536)).Decode(&count))
-			if count.Count > sent+1 {
+			// 初始告警和 noalert 质量观测各有一次真实 HTTP 请求。
+			if count.Count > sent+2 {
 				t.Fatal("真实 HTTP 事件被重复索引", count.Count)
 			}
-			return count.Count == sent+1
+			return count.Count == sent+2
 		})
+		// 总量一致仍可能掩盖一条丢失与一条重复；逐路径核对实际发送的事务。
+		response, err := es.API.Search(es.API.Search.WithContext(ctx), es.API.Search.WithIndex(contextIndex), es.API.Search.WithBody(strings.NewReader(`{"size":4200,"_source":["http.path"],"query":{"term":{"event.kind":"http"}}}`)))
+		require(t, err)
+		var indexed struct {
+			Hits struct {
+				Hits []struct {
+					Source struct {
+						HTTP struct {
+							Path string `json:"path"`
+						} `json:"http"`
+					} `json:"_source"`
+				} `json:"hits"`
+			} `json:"hits"`
+		}
+		if response.IsError() {
+			response.Body.Close()
+			t.Fatal("真实 HTTP 事务路径核对失败")
+		}
+		err = json.NewDecoder(io.LimitReader(response.Body, 4*1024*1024)).Decode(&indexed)
+		require(t, response.Body.Close())
+		require(t, err)
+		expectedPaths := map[string]bool{"/starbeacon/validation": true, "/starbeacon/quality": true}
+		for i := range sent {
+			expectedPaths["/starbeacon/rotation/"+strconv.Itoa(i)] = true
+		}
+		for _, hit := range indexed.Hits.Hits {
+			path := hit.Source.HTTP.Path
+			if !expectedPaths[path] {
+				t.Fatal("真实 HTTP 事务重复或出现未发送路径", path)
+			}
+			delete(expectedPaths, path)
+		}
+		if len(expectedPaths) != 0 {
+			t.Fatal("真实 HTTP 事务路径缺失", expectedPaths)
+		}
 		previousPID, previousSHA := capture.PID, capture.ConfigSHA256
 		bad := *capture.AppliedSettings
 		bad.BPFFilter = "tcp port ???"
@@ -929,7 +965,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		}
 		checkNativeFlow()
 		t.Logf("真实 Docker 网卡 HTTP 流量 → Suricata → EVE → WAL → mTLS → NATS → ES → 通知受理 %.3fs；实际 MAC、配置失败保留、恢复、停止及双端离线重放通过", acceptedDuration.Seconds())
-		t.Logf("轮转前后 %d 个实际 HTTP 事件均已索引，无缺失或重复；轮转与捕获计数来自实际检测进程", sent+1)
+		t.Logf("轮转前后 %d 个实际 HTTP 事件均已索引，逐路径核对无缺失或重复；轮转与捕获计数来自实际检测进程", sent+2)
 	} else {
 		t.Logf("原生 PCAP 告警的 EVE → WAL → mTLS → NATS → ES → 通知受理耗时 %.3fs（单个离线样本）；主控及采集器登录、心跳、检索、坏批次隔离、平台指定探针重放和采集器本地重放通过", acceptedDuration.Seconds())
 	}

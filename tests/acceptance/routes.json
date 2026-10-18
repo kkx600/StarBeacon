@@ -36,7 +36,8 @@
     "/retention",
     "/incidents",
     "/users",
-    "/rules?view=sync"
+    "/rules?view=sync",
+    "/rules?view=sync&mode=rollouts"
   ],
   "collector": [
     "/login",

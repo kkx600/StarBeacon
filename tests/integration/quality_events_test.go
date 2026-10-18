@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -79,6 +80,9 @@ func verifyNativeQualityEvent(t *testing.T, ctx context.Context, api *liveHTTP, 
 	r, err := http.NewRequestWithContext(ctx, "GET", os.Getenv("SB_TEST_CAPTURE_ENDPOINT")+"/starbeacon/quality", nil)
 	require(t, err)
 	response, err := traffic.Do(r)
+	require(t, err)
+	// 完整消费响应，避免主动中止事务使 HTTP 日志延后到流结束才输出。
+	_, err = io.Copy(io.Discard, io.LimitReader(response.Body, 65537))
 	require(t, err)
 	require(t, response.Body.Close())
 	if response.StatusCode != 200 {

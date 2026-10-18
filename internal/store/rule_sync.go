@@ -122,6 +122,13 @@ func (p *Postgres) SaveRuleSyncPlan(ctx context.Context, u model.Principal, c ru
 			out = prior
 			return nil
 		}
+		var reserved bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM rule_rollout_targets WHERE tenant_id=$1 AND plan_id=$2 AND NOT released)`, u.TenantID, c.ID).Scan(&reserved); err != nil {
+			return err
+		}
+		if reserved {
+			return ErrConflict
+		}
 		if prior.Revision != c.ExpectedRevision {
 			return ErrConflict
 		}
