@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/rulerollout"
@@ -85,7 +86,9 @@ func (f *rolloutFixture) complete(t *testing.T, ctx context.Context, r rulerollo
 	require(t, err)
 	_, err = f.f.Owner.Pool.Exec(ctx, `UPDATE rule_sync_plans SET processed_revision=$3 WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, target.PlanID, target.ExecutionRevision)
 	require(t, err)
-	h, _ := json.Marshal(model.HostHealth{ObservedAt: time.Now().UTC(), RegisteredRulesAvailable: true, RegisteredRulesSHA256: f.rule.SHA256})
+	now := time.Now().UTC()
+	observation := &enginehealth.Report{SchemaVersion: enginehealth.Schema, State: "observed", Source: "managed_process", ObservedAt: now, PID: 100, StartedAt: now.Add(-time.Hour), ConfigSHA256: control.Digest([]byte("fixture_configuration")), RulesSHA256: f.rule.SHA256, FileRuleCount: 1, RulesLoaded: 1}
+	h, _ := json.Marshal(model.HostHealth{ObservedAt: now, RegisteredRulesAvailable: true, RegisteredRulesSHA256: f.rule.SHA256, EngineHealth: observation})
 	_, err = f.f.Owner.Pool.Exec(ctx, `UPDATE sensors SET last_seen=clock_timestamp(),health=$3 WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, target.Spec.SensorID, h)
 	require(t, err)
 }
@@ -252,7 +255,7 @@ func TestRuleRolloutSchedulerRequiresEvidenceAndFreshWatermarks(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Second)
 	defer cancel()
 	f := newRolloutFixture(t, ctx)
-	for _, scenario := range []string{"success", "offline", "digest", "identity", "owner", "deadline", "task_failed", "task_unknown", "stop_pending", "stop_signed", "plan_changed"} {
+	for _, scenario := range []string{"success", "offline", "digest", "identity", "owner", "deadline", "task_failed", "task_unknown", "stop_pending", "stop_signed", "plan_changed", "engine_missing", "engine_stale", "engine_before_release", "engine_busy", "engine_failed", "engine_count_changed", "engine_digest_changed"} {
 		t.Run(scenario, func(t *testing.T) {
 			c := f.create(t, ctx, scenario, 3)
 			_, err := f.f.Runtime.CreateRuleRollout(ctx, f.u, c, "create")
@@ -319,9 +322,29 @@ func TestRuleRolloutSchedulerRequiresEvidenceAndFreshWatermarks(t *testing.T) {
 			if scenario == "identity" {
 				modify(`UPDATE sensors SET registration_id='changed_registration' WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
 			}
+			switch scenario {
+			case "engine_missing":
+				modify(`UPDATE sensors SET health=health-'engine_health' WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
+			case "engine_stale":
+				modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,observed_at}',to_jsonb((clock_timestamp()-interval '5 minutes')::timestamptz)) WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
+			case "engine_before_release":
+				modify(`UPDATE sensors s SET health=jsonb_set(health,'{engine_health,observed_at}',to_jsonb(r.finished_at-interval '1 millisecond')) FROM rule_sync_runs r WHERE s.tenant_id=$1 AND s.id=$2 AND r.tenant_id=s.tenant_id AND r.plan_id=$3 AND r.plan_revision=$4`, f.u.TenantID, r.Targets[0].Spec.SensorID, r.Targets[0].PlanID, r.Targets[0].ExecutionRevision)
+			case "engine_busy":
+				modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,state}','"pending"') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
+			case "engine_failed":
+				modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,state}','"unavailable"') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
+			case "engine_count_changed":
+				modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,rules_loaded}','2') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID)
+			case "engine_digest_changed":
+				modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,rules_sha256}',to_jsonb($3::text)) WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, r.Targets[0].Spec.SensorID, strings.Repeat("f", 64))
+			}
 			r = f.pulse(t, ctx, c.ID)
-			if scenario == "offline" {
-				if r.Code != "waiting_for_heartbeat" || r.Targets[1].ExecutionRevision != 0 {
+			if scenario == "offline" || scenario == "engine_missing" || scenario == "engine_stale" || scenario == "engine_before_release" || scenario == "engine_busy" {
+				want := "waiting_for_engine"
+				if scenario == "offline" {
+					want = "waiting_for_heartbeat"
+				}
+				if r.Code != want || r.Targets[1].ExecutionRevision != 0 || r.ObservationStartedAt != nil {
 					t.Fatal("缺少心跳仍推进")
 				}
 				_, err = f.f.Runtime.StopRuleRollout(ctx, f.u, c.ID, rulerollout.Stop{Reason: "等待现场恢复"}, "stop")
@@ -386,5 +409,66 @@ func TestRuleRolloutSchedulerRequiresEvidenceAndFreshWatermarks(t *testing.T) {
 				t.Fatal("已完成事实被改写")
 			}
 		})
+	}
+}
+
+// 人工时间夹具独立验证三条水位及前序批次门禁，不替代原生设备真实观察窗口。
+func TestRuleRolloutEngineWatermarkAndEarlierBatchFailure(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	f := newRolloutFixture(t, ctx)
+	c := f.create(t, ctx, "engine_window", 3)
+	_, err := f.f.Runtime.CreateRuleRollout(ctx, f.u, c, "create")
+	require(t, err)
+	r := f.pulse(t, ctx, c.ID)
+	f.complete(t, ctx, r, 0)
+	r = f.pulse(t, ctx, c.ID)
+	if r.ObservationStartedAt == nil {
+		t.Fatal("没有开始原生观察窗口")
+	}
+	firstStart := *r.ObservationStartedAt
+	sensor := r.Targets[0].Spec.SensorID
+	modify := func(query string, args ...any) {
+		t.Helper()
+		_, err := f.f.Owner.Pool.Exec(ctx, query, args...)
+		require(t, err)
+	}
+	modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,state}','"pending"') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, sensor)
+	r = f.pulse(t, ctx, c.ID)
+	if r.Code != "waiting_for_engine" || r.ObservationStartedAt != nil || r.CurrentBatch != 0 {
+		t.Fatal("原生事务忙仍累积观察时间")
+	}
+	modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,state}','"observed"') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, sensor)
+	r = f.pulse(t, ctx, c.ID)
+	if r.ObservationStartedAt == nil || !r.ObservationStartedAt.After(firstStart) {
+		t.Fatal("恢复后沿用了被中断的窗口")
+	}
+	modify(`UPDATE rule_sync_runs SET finished_at=clock_timestamp()-interval '1 minute' WHERE tenant_id=$1 AND plan_id=$2`, f.u.TenantID, r.Targets[0].PlanID)
+	modify(`UPDATE rule_rollouts SET observation_started_at=clock_timestamp()-interval '31 seconds' WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, c.ID)
+	modify(`UPDATE sensors SET last_seen=clock_timestamp(),health=jsonb_set(jsonb_set(health,'{observed_at}',to_jsonb(clock_timestamp())),'{engine_health,observed_at}',to_jsonb(clock_timestamp()-interval '2 seconds')) WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, sensor)
+	r = f.pulse(t, ctx, c.ID)
+	if r.Code != "observing" || r.CurrentBatch != 0 || r.ObservationStartedAt == nil {
+		t.Fatal("只有心跳越过窗口末尾仍放行")
+	}
+	modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,observed_at}',to_jsonb(clock_timestamp())) WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, sensor)
+	r = f.pulse(t, ctx, c.ID)
+	if r.CurrentBatch != 1 {
+		t.Fatal("三条水位均通过后没有推进")
+	}
+	r = f.pulse(t, ctx, c.ID)
+	if r.Targets[1].ExecutionRevision != 2 {
+		t.Fatal("后续批次未启用")
+	}
+	modify(`UPDATE sensors SET health=jsonb_set(health,'{engine_health,state}','"unavailable"') WHERE tenant_id=$1 AND id=$2`, f.u.TenantID, sensor)
+	r = f.pulse(t, ctx, c.ID)
+	r = f.pulse(t, ctx, c.ID)
+	if r.State != "blocked" || r.Code != "engine_health_failed" {
+		t.Fatal("前序批次引擎失效仍继续后续提交", r.State, r.Code)
+	}
+	var tasks, enabled int
+	require(t, f.f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM sensor_tasks WHERE tenant_id=$1`, f.u.TenantID).Scan(&tasks))
+	require(t, f.f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM rule_sync_plans WHERE tenant_id=$1 AND enabled`, f.u.TenantID).Scan(&enabled))
+	if tasks != 0 || enabled != 0 {
+		t.Fatal("失效后仍留下执行授权或任务")
 	}
 }

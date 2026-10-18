@@ -135,7 +135,12 @@ func TestRuleRolloutTwoNativeProbesMTLSAndRealObservation(t *testing.T) {
 		t.Helper()
 		rules, err := os.ReadFile(p.engine.Config.SuricataRulesPath)
 		require(t, err)
-		raw, _ := json.Marshal(model.HostHealth{ObservedAt: time.Now().UTC(), TaskCapabilities: p.engine.Capabilities(), CommandSignerSHA256: control.Digest(pub), RegisteredRulesAvailable: true, RegisteredRulesSHA256: control.Digest(rules)})
+		monitor := &agent.EngineMonitor{Engine: p.engine}
+		observation := monitor.Observe(ctx)
+		if observation.State != "observed" {
+			t.Fatal("独立原生引擎观测失败", observation.Code)
+		}
+		raw, _ := json.Marshal(model.HostHealth{ObservedAt: time.Now().UTC(), TaskCapabilities: p.engine.Capabilities(), CommandSignerSHA256: control.Digest(pub), RegisteredRulesAvailable: true, RegisteredRulesSHA256: control.Digest(rules), EngineHealth: observation})
 		require(t, p.stream.Send(&sensorv1.AgentMessage{SensorId: p.id.SensorID, SensorRegistrationId: p.id.RegistrationID, Kind: sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT, MessageId: store.RandomID("hb_"), PayloadSchema: "host.health.v1", PayloadJson: raw}))
 		ack, err := p.stream.Recv()
 		require(t, err)

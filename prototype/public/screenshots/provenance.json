@@ -3,7 +3,7 @@
   "synthetic": true,
   "renderer": "Codex in-app browser",
   "baseStateCount": 767,
-  "supplementalCount": 101,
+  "supplementalCount": 105,
   "entries": [
     {
       "file": "overview/data.jpg",
@@ -15569,21 +15569,19 @@
     },
     {
       "file": "sensors/detail.jpg",
-      "url": "http://127.0.0.1:4173/page/sensors?state=detail&capture=1",
-      "title": "探针列表 · detail",
+      "url": "http://127.0.0.1:4173/page/sensors?state=detail",
+      "title": "探针列表 · 查看详情",
       "state": "detail",
-      "capturedAt": "2026-10-18T03:21:13.303Z",
+      "capturedAt": "2026-10-18T15:08:58.943Z",
       "renderer": "Codex in-app browser",
-      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "source": "合成探针、资源与原生观测；复用工程观测组件，不代表真实设备资格",
       "stateVerified": true,
       "viewport": {
-        "actions": [],
-        "background": "rgba(0, 0, 0, 0)",
         "businessTables": 1,
         "dialogs": 1,
-        "height": 720,
-        "scrollWidth": 1280,
-        "width": 1280
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15593,14 +15591,28 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "5262806f4f727b7738b68a15b72397e6ef6f28f5accb61c1173aaeea3dcc6719",
+      "captureJpegSha256": "9e6d801f5633ccee1f2d388e9798050b4cd7a203a1d5565777a8c43fa090be44",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 124860,
+      "bytes": 145210,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RecordDetail.vue",
+          "sha256": "04ae8ae0acfe50fc8e7a79181874592d70b5e0cce07135add69e00cf5920bb57"
+        },
+        {
+          "path": "prototype/src/components/SensorDetail.vue",
+          "sha256": "ac2adc280c8f786b0f96b6e76ec836791194a88c0be34bb39e824951b5334b7d"
+        },
+        {
+          "path": "web/packages/shared/src/components/EngineHealthSummary.vue",
+          "sha256": "7b550cacfbcbb9eb74671bbd7b8ac5e632875b2a5a9951b3b294ebab89ff654a"
+        }
+      ],
       "image": {
-        "width": 1280,
+        "width": 1440,
         "height": 1292
       },
-      "sha256": "5262806f4f727b7738b68a15b72397e6ef6f28f5accb61c1173aaeea3dcc6719"
+      "sha256": "9e6d801f5633ccee1f2d388e9798050b4cd7a203a1d5565777a8c43fa090be44"
     },
     {
       "file": "sensors/action.jpg",
@@ -22725,17 +22737,19 @@
     },
     {
       "file": "collector/overview/data.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=data&capture=1",
-      "title": "运行状态 · 有数据",
+      "url": "http://127.0.0.1:4173/collector/overview?state=data",
+      "title": "采集器运行状态 · 有数据",
       "state": "data",
-      "capturedAt": "2026-10-17T13:29:09.225Z",
+      "capturedAt": "2026-10-18T14:06:48.537Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22745,28 +22759,30 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "475aa685a0667092281bc386ef4064bd6727260b9923bd9ce529ce3af8067d6c",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 168445,
+      "captureJpegSha256": "e62a9e1b3410e32590c10b7232a36c466e208e95b6f852ec8c389b77836aed65",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 149962,
       "image": {
-        "width": 1280,
-        "height": 863
+        "width": 1440,
+        "height": 1224
       },
-      "sha256": "45f09a46c6f7fab083f323ee0557a09497f94631b43230dfc6a8620b91519991"
+      "sha256": "e62a9e1b3410e32590c10b7232a36c466e208e95b6f852ec8c389b77836aed65"
     },
     {
       "file": "collector/overview/empty.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=empty&capture=1",
-      "title": "运行状态 · 无数据",
+      "url": "http://127.0.0.1:4173/collector/overview?state=empty",
+      "title": "采集器运行状态 · empty",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:29:09.814Z",
+      "capturedAt": "2026-10-18T14:07:28.236Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22776,28 +22792,30 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "c29ef3519d4fac3668d394ef62a49491595fd10096670befd800a53ccd3b377c",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 75937,
+      "captureJpegSha256": "fd86442bb31d7156d0c1d1330aeecb408d4c070be28303326b099b32ccd46b94",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 48686,
       "image": {
-        "width": 1280,
-        "height": 720
+        "width": 1440,
+        "height": 900
       },
-      "sha256": "cc38ac40f70c62c3ff9f190e8a8c474402e3455e65afc44746be16b27e4837a1"
+      "sha256": "fd86442bb31d7156d0c1d1330aeecb408d4c070be28303326b099b32ccd46b94"
     },
     {
       "file": "collector/overview/detail.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=detail&capture=1",
-      "title": "运行状态 · 查看详情",
+      "url": "http://127.0.0.1:4173/collector/overview?state=detail",
+      "title": "采集器运行状态 · 查看详情",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:29:10.484Z",
+      "capturedAt": "2026-10-18T14:07:27.684Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22807,28 +22825,30 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "7fd2935de4bfad45ab1e6707f3225e6cbaaa49c39068eb5d73dd68229db196bd",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 145205,
+      "captureJpegSha256": "ff0952e8f21792f301bc3165147ec5ae03b7f1646e269e76fb3162ba1c3edacb",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 137083,
       "image": {
-        "width": 1280,
-        "height": 863
+        "width": 1440,
+        "height": 1224
       },
-      "sha256": "9b4755b84ed8d6a9c91bb65d1a99a4e8c82aa9fe0c29f9e78b980b9fd84ec54a"
+      "sha256": "ff0952e8f21792f301bc3165147ec5ae03b7f1646e269e76fb3162ba1c3edacb"
     },
     {
       "file": "collector/overview/action.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=action&capture=1",
-      "title": "运行状态 · 操作表单",
+      "url": "http://127.0.0.1:4173/collector/overview?state=action",
+      "title": "采集器运行状态 · action",
       "state": "action",
-      "capturedAt": "2026-10-17T13:29:11.222Z",
+      "capturedAt": "2026-10-18T14:07:30.125Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22838,28 +22858,30 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "0cbf7acc19f7728f17f60b854f0f217d472adc03842d2dd0b7af62c52ea049d4",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 141427,
+      "captureJpegSha256": "36bd427fbca5a108649d9861a6ae48e73d60e9229e80c7c58e5b60a58182ae70",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 139422,
       "image": {
-        "width": 1280,
-        "height": 863
+        "width": 1440,
+        "height": 1224
       },
-      "sha256": "c6cd65d35afda4e1aa045421023e23cc0df86711622f3153a41912a9e2a4e575"
+      "sha256": "36bd427fbca5a108649d9861a6ae48e73d60e9229e80c7c58e5b60a58182ae70"
     },
     {
       "file": "collector/overview/loading.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=loading&capture=1",
-      "title": "运行状态 · 加载中",
+      "url": "http://127.0.0.1:4173/collector/overview?state=loading",
+      "title": "采集器运行状态 · loading",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:29:11.913Z",
+      "capturedAt": "2026-10-18T14:07:30.634Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22869,28 +22891,30 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "808e12f5fdeaa5b74a698f9a3da92e4d7a3519f04a6fe0649f2fef35aa1000b5",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 79767,
+      "captureJpegSha256": "3ec5d6072bd3644d6e8a6503eda5a3e05c72a917341c9a9d736007a55996f1f3",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 49365,
       "image": {
-        "width": 1280,
-        "height": 720
+        "width": 1440,
+        "height": 900
       },
-      "sha256": "613980249ea96ce754085509c30c6edeed670c0ebcee78bf3a8acf072dfdef4e"
+      "sha256": "3ec5d6072bd3644d6e8a6503eda5a3e05c72a917341c9a9d736007a55996f1f3"
     },
     {
       "file": "collector/overview/error.jpg",
-      "url": "http://127.0.0.1:4173/collector/overview?state=error&capture=1",
-      "title": "运行状态 · 加载失败",
+      "url": "http://127.0.0.1:4173/collector/overview?state=error",
+      "title": "采集器运行状态 · 加载失败",
       "state": "error",
-      "capturedAt": "2026-10-17T13:29:12.618Z",
+      "capturedAt": "2026-10-18T14:07:48.434Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
-        "height": 720,
-        "scrollWidth": 1280
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -22900,14 +22924,14 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "cb2970acfa64f18a6e0a583b379d111fe89d1ba81da5a62e28601b07a69b160f",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 79653,
+      "captureJpegSha256": "f2ee5646ff5a0f21a47e077f98ecd74a5ce93945fea7f05c2cd31f87e338c40f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 51052,
       "image": {
-        "width": 1280,
-        "height": 720
+        "width": 1440,
+        "height": 900
       },
-      "sha256": "3223854fc2ee0baa14d58e9bbc9095f7d4d9c84c1d1d02285bc555d746fc3bb8"
+      "sha256": "f2ee5646ff5a0f21a47e077f98ecd74a5ce93945fea7f05c2cd31f87e338c40f"
     },
     {
       "file": "collector/network/data.jpg",
@@ -26991,17 +27015,16 @@
     },
     {
       "file": "supplemental/rule-rollout-data.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=data&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 有数据",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=data&mode=rollouts",
+      "title": "规则分批发布 · data",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:12.143Z",
+      "capturedAt": "2026-10-18T15:09:26.058Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 1,
         "dialogs": 0,
-        "footer": [],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27014,28 +27037,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "f2933d24a0ba79f8c33507ef42b34dbf10233b96fb3d4657ee143b6e7ea34cc4",
+      "captureJpegSha256": "a3875dc6a69736249fe486c91906ee7ae536e34452b8f2e22b3820a4798db40d",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 76532,
+      "bytes": 76305,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "f2933d24a0ba79f8c33507ef42b34dbf10233b96fb3d4657ee143b6e7ea34cc4"
+      "sha256": "a3875dc6a69736249fe486c91906ee7ae536e34452b8f2e22b3820a4798db40d"
     },
     {
       "file": "supplemental/rule-rollout-empty.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 无数据",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=empty&mode=rollouts",
+      "title": "规则分批发布 · empty",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:12.524Z",
+      "capturedAt": "2026-10-18T15:09:26.489Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 0,
         "dialogs": 0,
-        "footer": [],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27048,28 +27084,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "9f321e4973c4445614a66a3ca247c48d04c7ace63c61c41497bae9b8be83111d",
+      "captureJpegSha256": "48fcd4dc7d0aad3fed4ae51d9198f9b80fda37acff625d137eb580a235061b53",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 71535,
+      "bytes": 71967,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "9f321e4973c4445614a66a3ca247c48d04c7ace63c61c41497bae9b8be83111d"
+      "sha256": "48fcd4dc7d0aad3fed4ae51d9198f9b80fda37acff625d137eb580a235061b53"
     },
     {
       "file": "supplemental/rule-rollout-detail.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 查看详情",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts",
+      "title": "规则分批发布 · detail",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:14.037Z",
+      "capturedAt": "2026-10-18T15:09:28.997Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 1,
         "dialogs": 0,
-        "footer": [],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27082,39 +27131,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "61c5dad9ba20b31a5d2656660390ece13afaddf7c42a1efede0395b6439b4635",
+      "captureJpegSha256": "60e43b17251308e5e690350e2c1ee0eb832134e9947c082ad6085759a5dc2afd",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 111785,
+      "bytes": 108296,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 957
       },
-      "sha256": "61c5dad9ba20b31a5d2656660390ece13afaddf7c42a1efede0395b6439b4635"
+      "sha256": "60e43b17251308e5e690350e2c1ee0eb832134e9947c082ad6085759a5dc2afd"
     },
     {
       "file": "supplemental/rule-rollout-action.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 操作表单",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts",
+      "title": "规则分批发布 · action",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:14.469Z",
+      "capturedAt": "2026-10-18T15:09:29.543Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 1,
         "dialogs": 1,
-        "footer": [
-          {
-            "bottom": 691.484375,
-            "text": "关 闭",
-            "top": 657.484375
-          },
-          {
-            "bottom": 691.484375,
-            "text": "批准并启动",
-            "top": 657.484375
-          }
-        ],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27127,28 +27178,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "dcfcee915d9d0b695d6821e2a22508fd47a80414e4cc03c2974397bd21cf0204",
+      "captureJpegSha256": "dc6e84855f25cdbf44608894ed0a487adf9b8a2ba869eff5c214dee4cb090cf8",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 87475,
+      "bytes": 89559,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "dcfcee915d9d0b695d6821e2a22508fd47a80414e4cc03c2974397bd21cf0204"
+      "sha256": "dc6e84855f25cdbf44608894ed0a487adf9b8a2ba869eff5c214dee4cb090cf8"
     },
     {
       "file": "supplemental/rule-rollout-loading.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 加载中",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=loading&mode=rollouts",
+      "title": "规则分批发布 · loading",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:14.820Z",
+      "capturedAt": "2026-10-18T15:09:26.964Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 0,
         "dialogs": 0,
-        "footer": [],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27161,28 +27225,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "be3a37cf1ce41caa7670723f7ef0892f404510ffe18b41e90e08511ddca6f18a",
+      "captureJpegSha256": "2910a67a71e3800234d8d7cc80cc61f9dfe9b9a7cd820f2b495f57eea9a40d89",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 71916,
+      "bytes": 70899,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "be3a37cf1ce41caa7670723f7ef0892f404510ffe18b41e90e08511ddca6f18a"
+      "sha256": "2910a67a71e3800234d8d7cc80cc61f9dfe9b9a7cd820f2b495f57eea9a40d89"
     },
     {
       "file": "supplemental/rule-rollout-error.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=error&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 加载失败",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=error&mode=rollouts",
+      "title": "规则分批发布 · error",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:15.168Z",
+      "capturedAt": "2026-10-18T15:09:27.375Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 0,
         "dialogs": 0,
-        "footer": [],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27195,39 +27272,41 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "9f6fff3d536a2235767a9a94d782e39ea02ccb725e3d1a6ba62c38010ebe6693",
+      "captureJpegSha256": "9ab919f8ac3afb401dbfa143d51e75430a7319c0c28d72dd9617220aa63b5eb7",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 71498,
+      "bytes": 71658,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "9f6fff3d536a2235767a9a94d782e39ea02ccb725e3d1a6ba62c38010ebe6693"
+      "sha256": "9ab919f8ac3afb401dbfa143d51e75430a7319c0c28d72dd9617220aa63b5eb7"
     },
     {
       "file": "supplemental/rule-rollout-approval.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts&capture=1",
-      "title": "规则分批发布 · 固定范围授权",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=action&mode=rollouts",
+      "title": "规则分批发布 · 批准范围",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:20:49.518Z",
+      "capturedAt": "2026-10-18T15:10:03.713Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 1,
         "dialogs": 1,
-        "footer": [
-          {
-            "bottom": 852,
-            "text": "关 闭",
-            "top": 818
-          },
-          {
-            "bottom": 852,
-            "text": "批准并启动",
-            "top": 818
-          }
-        ],
         "height": 900,
         "scrollWidth": 1440,
         "width": 1440
@@ -27240,23 +27319,37 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "379a30e3295117d572aa059140fdd91b828f6dd704f2996d03afedede2ba62b1",
+      "captureJpegSha256": "497a5533e0dd0b8b9167a610ceb4407f7cb4ae7f2ac627941b98bab080cc3bd3",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 100491,
+      "bytes": 103258,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "379a30e3295117d572aa059140fdd91b828f6dd704f2996d03afedede2ba62b1"
+      "sha256": "497a5533e0dd0b8b9167a610ceb4407f7cb4ae7f2ac627941b98bab080cc3bd3"
     },
     {
       "file": "supplemental/rule-rollout-target.jpg",
-      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts&capture=1",
+      "url": "http://127.0.0.1:4173/page/rule-sync?state=detail&mode=rollouts",
       "title": "规则分批发布 · 单台验证证据",
       "state": "supplemental",
-      "capturedAt": "2026-10-18T09:26:13.469Z",
+      "capturedAt": "2026-10-18T15:10:05.087Z",
       "renderer": "Codex in-app browser",
-      "source": "合成规则计划、批次、任务和心跳示例；复用工程分批表单与目标证据，不下发设备任务",
+      "source": "合成规则计划、批次、独立任务与观察状态；复用工程分批表单和详情，不向设备提交任务",
       "stateVerified": true,
       "viewport": {
         "businessTables": 0,
@@ -27273,14 +27366,174 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "captureJpegSha256": "c25401c15a3b806caed536bd12e1f37d3a7375e790d4e8919270ecf921c7975f",
+      "captureJpegSha256": "07ceb837237a55f0b459ab0f583a265c4fefe97f98064933a3356816aaeb128e",
       "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
-      "bytes": 78914,
+      "bytes": 78911,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RuleRolloutPreview.vue",
+          "sha256": "b64a7fff6e25fa770dbc19cceda0223375cdbeb5e12268a8c55d3de78045ce93"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutForm.vue",
+          "sha256": "3d3ac46934d5ef632fbe37bf43470d0b9181e0ec5afc3077b942966a5f2e03f5"
+        },
+        {
+          "path": "web/platform/src/features/rules/RuleRolloutDetail.vue",
+          "sha256": "ba7677d4401e61dff51bc5923fa0f3ec9b90fb94baf19077c826e50006901d3e"
+        }
+      ],
       "image": {
         "width": 1440,
         "height": 900
       },
-      "sha256": "c25401c15a3b806caed536bd12e1f37d3a7375e790d4e8919270ecf921c7975f"
+      "sha256": "07ceb837237a55f0b459ab0f583a265c4fefe97f98064933a3356816aaeb128e"
+    },
+    {
+      "file": "supplemental/engine-pending.jpg",
+      "url": "http://127.0.0.1:4173/collector/overview?state=data&engine=pending",
+      "title": "检测引擎观测 · 等待原生观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T14:07:49.862Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "5d1fcfddb7c44e52273c836b43da101bc7d1b5068782f5cefab04e3dbfdda806",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 123346,
+      "image": {
+        "width": 1440,
+        "height": 1034
+      },
+      "sha256": "5d1fcfddb7c44e52273c836b43da101bc7d1b5068782f5cefab04e3dbfdda806"
+    },
+    {
+      "file": "supplemental/engine-unconfigured.jpg",
+      "url": "http://127.0.0.1:4173/collector/overview?state=data&engine=unconfigured",
+      "title": "检测引擎观测 · 未配置原生观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T14:07:51.339Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "77f3878ace66a58824a65fd5629bb566ec6dcf055660c1cca4a5c3b31753130f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 124874,
+      "image": {
+        "width": 1440,
+        "height": 1034
+      },
+      "sha256": "77f3878ace66a58824a65fd5629bb566ec6dcf055660c1cca4a5c3b31753130f"
+    },
+    {
+      "file": "supplemental/engine-unavailable.jpg",
+      "url": "http://127.0.0.1:4173/collector/overview?state=data&engine=unavailable",
+      "title": "检测引擎观测 · 原生观测未通过",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T14:07:52.810Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成进程、完整规则文件与原生装载观测；复用工程观测组件，不触发设备操作",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "999513a58c5f14137d833f47c22bb7cffe464cb972d7105d036f9c6ab0be6426",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 124616,
+      "image": {
+        "width": 1440,
+        "height": 1034
+      },
+      "sha256": "999513a58c5f14137d833f47c22bb7cffe464cb972d7105d036f9c6ab0be6426"
+    },
+    {
+      "file": "supplemental/engine-sensor-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=detail",
+      "title": "探针运行状态 · 原生观测",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T15:09:00.666Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针、资源与原生观测；复用工程观测组件，不代表真实设备资格",
+      "stateVerified": true,
+      "viewport": {
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "403000d644464959fc6385d0e73b3b0022434ea538486133c7744b6a1ccb14e4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 147107,
+      "renderInputs": [
+        {
+          "path": "prototype/src/components/RecordDetail.vue",
+          "sha256": "04ae8ae0acfe50fc8e7a79181874592d70b5e0cce07135add69e00cf5920bb57"
+        },
+        {
+          "path": "prototype/src/components/SensorDetail.vue",
+          "sha256": "ac2adc280c8f786b0f96b6e76ec836791194a88c0be34bb39e824951b5334b7d"
+        },
+        {
+          "path": "web/packages/shared/src/components/EngineHealthSummary.vue",
+          "sha256": "7b550cacfbcbb9eb74671bbd7b8ac5e632875b2a5a9951b3b294ebab89ff654a"
+        }
+      ],
+      "image": {
+        "width": 1440,
+        "height": 1292
+      },
+      "sha256": "403000d644464959fc6385d0e73b3b0022434ea538486133c7744b6a1ccb14e4"
     }
   ]
 }

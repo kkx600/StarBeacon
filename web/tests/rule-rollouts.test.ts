@@ -95,6 +95,36 @@ describe('分批发布读取和原提交核对',()=>{
 })
 
 describe('分批发布表单与独立详情',()=>{
+ it('关闭重开保留输入并撤回勾选，成功后创建使用独立标识',async()=>{
+  const wrapper=await view();await click('创建分批发布')
+  let form=wrapper.getComponent(RuleRolloutForm)
+  const writeName=async(value:string)=>{const el=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
+  await writeName('保留固定范围');await form.getComponent(Select).setValue(plans.map(p=>p.id),'value');await form.getComponent(Checkbox).setValue(true,'checked')
+  form.getComponent(Modal).vm.$emit('cancel');await flushPromises();await click('创建分批发布');form=wrapper.getComponent(RuleRolloutForm)
+  expect(document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!.value).toBe('保留固定范围');expect(form.getComponent(Select).props('value')).toEqual(plans.map(p=>p.id));expect(form.getComponent(Checkbox).props('checked')).toBe(false)
+  await click('批准并启动');expect(request.mock.calls.filter(c=>c[1]?.method==='POST')).toHaveLength(0)
+  const created:RolloutCreate[]=[]
+  request.mockImplementation((url:string,options?:{method?:string;body?:RolloutCreate})=>{if(options?.method==='POST'){created.push(structuredClone(options.body!));return Promise.resolve({...record,id:options!.body!.id,spec:options!.body!.spec})}return Promise.resolve(url.startsWith('/rule-sync-plans')?{items:plans,next_cursor:''}:list())})
+  await form.getComponent(Checkbox).setValue(true,'checked');await click('批准并启动');await flushPromises();await click('返回列表');await click('创建分批发布');form=wrapper.getComponent(RuleRolloutForm)
+  expect(document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!.value).toBe('');expect(form.getComponent(Select).props('value')).toEqual([]);expect(form.getComponent(Checkbox).props('checked')).toBe(false)
+  await writeName('独立发布');await form.getComponent(Select).setValue(plans.map(p=>p.id),'value');await form.getComponent(Checkbox).setValue(true,'checked');await click('批准并启动');await flushPromises()
+  expect(created).toHaveLength(2);expect(created[0]!.id).not.toBe(created[1]!.id);wrapper.unmount()
+ })
+ it('同一账号会话变化清空草稿，不能沿用上一会话的选择和授权',async()=>{
+  const wrapper=await view();await click('创建分批发布');const form=wrapper.getComponent(RuleRolloutForm)
+  const el=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;el.value='上一会话';el.dispatchEvent(new Event('input',{bubbles:true}));await form.getComponent(Select).setValue(plans.map(p=>p.id),'value');await form.getComponent(Checkbox).setValue(true,'checked')
+  user.value={...principal,csrf_token:'different-session'};await flushPromises();expect(wrapper.getComponent(RuleRolloutForm).props('open')).toBe(false);await click('创建分批发布')
+  expect(document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!.value).toBe('');expect(wrapper.getComponent(RuleRolloutForm).getComponent(Select).props('value')).toEqual([]);expect(wrapper.getComponent(RuleRolloutForm).getComponent(Checkbox).props('checked')).toBe(false);wrapper.unmount()
+ })
+ it('保留选择时，缺失目标不得静默缩小范围，资格变化撤回原勾选',async()=>{
+  const wrapper=mount(RuleRolloutForm,{props:{...props(),open:true},global:{plugins:[registerAnt]},attachTo:document.body})
+  const el=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;el.value='固定范围';el.dispatchEvent(new Event('input',{bubbles:true}));await wrapper.getComponent(Select).setValue(plans.map(p=>p.id),'value');await wrapper.getComponent(Checkbox).setValue(true,'checked')
+  await wrapper.setProps({plans:plans.slice(0,2)});expect(wrapper.getComponent(Checkbox).props('checked')).toBe(false);await wrapper.getComponent(Checkbox).setValue(true,'checked');await click('批准并启动');expect(document.body.textContent).toContain('尚未完整读取');expect(wrapper.emitted('save')).toBeUndefined()
+  await wrapper.setProps({plans:plans.map((p,i)=>i?p:{...p,spec:{...p.spec,enabled:true}})});expect(wrapper.getComponent(Checkbox).props('checked')).toBe(false);await wrapper.getComponent(Checkbox).setValue(true,'checked');await click('批准并启动');expect(document.body.textContent).toContain('当前不可发布');expect(wrapper.emitted('save')).toBeUndefined();wrapper.unmount()
+ })
+ it('批次参数变化不能沿用先前勾选的授权',async()=>{
+  const wrapper=mount(RuleRolloutForm,{props:props(),global:{plugins:[registerAnt]},attachTo:document.body});await wrapper.getComponent(Select).setValue(plans.map(p=>p.id),'value');await wrapper.getComponent(Checkbox).setValue(true,'checked');await wrapper.findAllComponents(InputNumber)[1]!.setValue(1,'value');expect(wrapper.getComponent(Checkbox).props('checked')).toBe(false);wrapper.unmount()
+ })
  it('表单逐项校验并冻结修订，首批顺序与明确授权可核对',async()=>{
   const wrapper=mount(RuleRolloutForm,{props:props(),global:{plugins:[registerAnt]},attachTo:document.body});await click('批准并启动');expect(document.body.textContent).toContain('发布名称')
   const name=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;name.value=input.spec.name;name.dispatchEvent(new Event('input',{bubbles:true}));await wrapper.getComponent(Select).setValue(plans.map(p=>p.id),'value');await flushPromises();await click('批准并启动');expect(document.body.textContent).toContain('请确认固定范围')

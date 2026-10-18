@@ -15,6 +15,7 @@ import (
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
@@ -42,6 +43,7 @@ type WAL struct {
 	responseHealth                            func() []response.Health
 	applicationState                          func() json.RawMessage
 	protocolSnapshot                          func(context.Context) *protocolcap.Report
+	engineSnapshot                            func(context.Context) *enginehealth.Report
 	certificateStatus                         func() probepki.LocalStatus
 }
 type Source struct {

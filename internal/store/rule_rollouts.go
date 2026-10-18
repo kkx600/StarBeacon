@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/rulerollout"
 	"github.com/kkx600/StarBeacon/internal/rulesync"
@@ -451,7 +452,7 @@ func (p *Postgres) advanceRuleRollout(ctx context.Context, tenant, id string) er
 			}
 			return finishRuleRollout(ctx, tx, tenant, r, state)
 		}
-		// 已执行批次在后续推进中仍参与设备身份、实际摘要和心跳水位核对。
+		// 前序批次也继续核对原生进程和装载数量；缺报不得仅凭文件摘要放行。
 		fresh := true
 		code := "waiting_for_results"
 		for _, t := range targets {
@@ -477,6 +478,15 @@ func (p *Postgres) advanceRuleRollout(ctx context.Context, tenant, id string) er
 			if !h.RegisteredRulesAvailable || h.RegisteredRulesSHA256 != r.PackageSHA256 {
 				return stopRuleRollout(ctx, tx, tenant, &r, "rules_digest_changed")
 			}
+			engineCode := enginehealth.Gate(h.EngineHealth, r.PackageSHA256, now, *t.Run.FinishedAt)
+			if engineCode == "engine_health_failed" {
+				return stopRuleRollout(ctx, tx, tenant, &r, engineCode)
+			}
+			if engineCode != "" {
+				fresh = false
+				code = engineCode
+				continue
+			}
 			var uncertain bool
 			if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM sensor_tasks WHERE tenant_id=$1 AND sensor_id=$2 AND kind='rules.apply' AND (state IN('queued','delivered','running') OR (state='unknown' AND rule_resolution IS NULL)))`, tenant, t.Spec.SensorID).Scan(&uncertain); err != nil {
 				return err
@@ -487,7 +497,7 @@ func (p *Postgres) advanceRuleRollout(ctx context.Context, tenant, id string) er
 			}
 			if r.ObservationStartedAt != nil {
 				end := r.ObservationStartedAt.Add(time.Duration(r.Spec.ObservationSeconds) * time.Second)
-				if seen.Before(end) || h.ObservedAt.Before(end) {
+				if seen.Before(end) || h.ObservedAt.Before(end) || h.EngineHealth.ObservedAt.Before(end) {
 					code = "observing"
 				}
 			}

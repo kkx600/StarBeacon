@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/application"
+	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
 )
@@ -36,28 +37,29 @@ type Sensor struct {
 	MetadataUpdatedAt time.Time       `json:"metadata_updated_at"`
 }
 type HostHealth struct {
-	ProtocolCapabilities     *protocolcap.Report `json:"protocol_capabilities,omitempty"`
-	ApplicationRules         json.RawMessage     `json:"application_rules,omitempty"`
-	ResponseConnectors       []response.Health   `json:"response_connectors,omitempty"`
-	RegisteredRulesAvailable bool                `json:"registered_rules_available"`
-	RegisteredRulesSHA256    string              `json:"registered_rules_sha256,omitempty"`
-	TaskCapabilities         []string            `json:"task_capabilities,omitempty"`
-	CommandSignerSHA256      string              `json:"command_signer_sha256,omitempty"`
-	Version                  string              `json:"version"`
-	Hostname                 string              `json:"hostname"`
-	ObservedAt               time.Time           `json:"observed_at"`
-	CPUPercent               *float64            `json:"cpu_percent"`
-	MemoryPercent            *float64            `json:"memory_percent"`
-	DiskPercent              *float64            `json:"disk_percent"`
-	RXBytes                  string              `json:"rx_bytes"`
-	TXBytes                  string              `json:"tx_bytes"`
-	WALPending               uint64              `json:"wal_pending"`
-	WALBytes                 int64               `json:"wal_bytes"`
-	Errors                   []string            `json:"errors"`
-	CaptureStatus            string              `json:"capture_status"`
-	Capture                  json.RawMessage     `json:"capture,omitempty"`
-	PacketArchive            json.RawMessage     `json:"packet_archive,omitempty"`
-	NetworkInterfaces        []NetworkInterface  `json:"network_interfaces,omitempty"`
+	EngineHealth             *enginehealth.Report `json:"engine_health,omitempty"`
+	ProtocolCapabilities     *protocolcap.Report  `json:"protocol_capabilities,omitempty"`
+	ApplicationRules         json.RawMessage      `json:"application_rules,omitempty"`
+	ResponseConnectors       []response.Health    `json:"response_connectors,omitempty"`
+	RegisteredRulesAvailable bool                 `json:"registered_rules_available"`
+	RegisteredRulesSHA256    string               `json:"registered_rules_sha256,omitempty"`
+	TaskCapabilities         []string             `json:"task_capabilities,omitempty"`
+	CommandSignerSHA256      string               `json:"command_signer_sha256,omitempty"`
+	Version                  string               `json:"version"`
+	Hostname                 string               `json:"hostname"`
+	ObservedAt               time.Time            `json:"observed_at"`
+	CPUPercent               *float64             `json:"cpu_percent"`
+	MemoryPercent            *float64             `json:"memory_percent"`
+	DiskPercent              *float64             `json:"disk_percent"`
+	RXBytes                  string               `json:"rx_bytes"`
+	TXBytes                  string               `json:"tx_bytes"`
+	WALPending               uint64               `json:"wal_pending"`
+	WALBytes                 int64                `json:"wal_bytes"`
+	Errors                   []string             `json:"errors"`
+	CaptureStatus            string               `json:"capture_status"`
+	Capture                  json.RawMessage      `json:"capture,omitempty"`
+	PacketArchive            json.RawMessage      `json:"packet_archive,omitempty"`
+	NetworkInterfaces        []NetworkInterface   `json:"network_interfaces,omitempty"`
 }
 type NetworkInterface struct {
 	Name      string   `json:"name"`

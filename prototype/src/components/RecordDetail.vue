@@ -26,7 +26,7 @@ watch(()=>props.open,open=>{if(open){activeTab.value='0';completed.value=[];note
 function addNote(){if(note.value.trim()){notes.value.push(note.value.trim());note.value='';message.success('笔记已保存在本地示例中。')}}
 </script>
 <template>
-  <a-modal :open="open" :title="`${page.objectLabel}详情`" :width="1080" :footer="null" destroy-on-close @cancel="emit('close')" class="record-detail-modal" :class="{'single-detail':tabs.length===1}">
+  <a-modal :open="open" :title="`${page.objectLabel}详情`" :width="1080" :footer="page.family==='sensor'?undefined:null" destroy-on-close @cancel="emit('close')" class="record-detail-modal" :class="{'single-detail':tabs.length===1}">
     <template v-if="record">
       <div class="detail-heading"><div><div class="detail-id">{{record.id}}</div><h2>{{record.name}}</h2></div><StatusTag :value="record.status"/></div>
       <a-tabs v-model:activeKey="activeTab">
@@ -59,7 +59,11 @@ function addNote(){if(note.value.trim()){notes.value.push(note.value.trim());not
           <template v-else><div class="evidence-list"><div v-for="item in evidence" :key="item.title"><div><b>{{item.title}}</b><p>{{item.value}}</p></div><StatusTag v-if="item.status" :value="item.status"/></div></div><a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small" style="margin-top:20px"><a-descriptions-item label="版本快照">demo-20260930</a-descriptions-item><a-descriptions-item label="访问范围">当前租户授权</a-descriptions-item><a-descriptions-item label="来源引用"><LinkOutlined/> {{record.snapshot??'未提供'}}</a-descriptions-item><a-descriptions-item label="保留期限">180 天／保全对象排除清理</a-descriptions-item></a-descriptions></template>
         </a-tab-pane>
       </a-tabs>
-      <div class="detail-footer"><span class="muted">合成示例 · 证据与执行状态分别核对</span><a-space><a-button @click="emit('close')">关闭</a-button><a-button v-if="page.family==='decision-evaluation'&&record?.mode!=='持续评估与自动执行'&&record?.status==='策略命中'&&record?.action==='建议评估源 IP 封禁'" type="primary" @click="emit('respond')">处置确认</a-button><a-button v-if="!page.readOnly" type="primary" @click="emit('action')">{{page.rowAction}}</a-button></a-space></div>
+      <div v-if="page.family!=='sensor'" class="detail-footer"><span class="muted">合成示例 · 证据与执行状态分别核对</span><a-space><a-button @click="emit('close')">关闭</a-button><a-button v-if="page.family==='decision-evaluation'&&record?.mode!=='持续评估与自动执行'&&record?.status==='策略命中'&&record?.action==='建议评估源 IP 封禁'" type="primary" @click="emit('respond')">处置确认</a-button><a-button v-if="!page.readOnly" type="primary" @click="emit('action')">{{page.rowAction}}</a-button></a-space></div>
     </template>
+    <template v-if="page.family==='sensor'" #footer><div class="detail-footer sensor-detail-footer"><span class="muted">合成示例 · 证据与执行状态分别核对</span><a-space><a-button @click="emit('close')">关闭</a-button><a-button v-if="record&&!page.readOnly" type="primary" @click="emit('action')">{{page.rowAction}}</a-button></a-space></div></template>
   </a-modal>
 </template>
+<style scoped>
+.sensor-detail-footer{margin:0;padding:0;border:0;text-align:left}
+</style>

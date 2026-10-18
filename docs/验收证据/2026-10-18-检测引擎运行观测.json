@@ -1,0 +1,429 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18T15:38:29.747595+00:00",
+  "scope": "native_engine_observation_and_rollout_gate_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "6ceb98b9865715fe8fc02504c70f6058ce25dda8fe4d74911be0f47179f41dee",
+    "backend_files": 585,
+    "frontend_sha256": "8486524981b1429e665b7f1344f141656991d5dd36b7eac4ad3eb396e0c93e07",
+    "frontend_files": 328,
+    "frontend_dist_sha256": "8c062ec0ba3189bf7ae4d23d8cd88006c5f8f2f498a7d858b7632769810bac07",
+    "original_build_parent_commit": "3abc1e2852a5d872f3d219d5393d6c71759173dd",
+    "original_clean_commit": false,
+    "binding": "保留原始父提交和非干净快照记录；提交后逐一核对 913 份原始输入的 Git blob 字节，不追补干净发行资格。",
+    "raw_source_manifests": [
+      {
+        "path": "engine731-source-inputs.json",
+        "sha256": "65a0aae2698238c7cbf1ee37f26af9cfa2710185f16c918539e1665886757d17",
+        "bytes": 99247
+      },
+      {
+        "path": "engine767-frontend/source.json",
+        "sha256": "c19ad39b38a6de962c2ce50bba32e07cd0a670cf53a59e4751b1a325a6f29a47",
+        "bytes": 58648
+      }
+    ]
+  },
+  "capabilities": {
+    "read_only_monitor": "后台每五秒只读核对登记进程、单一完整规则集与装载数量；控制调用共用两秒期限，健康读取仅访问内存，十五秒过期。",
+    "rollout_gate": "每个已发布目标和前序批次均核对发布后原生观测，窗口结束后要求接收、宿主及原生三条水位。缺测等待并清除起点，明确失败停止后续提交。",
+    "ui": "平台探针详情与采集器运行页共用组件；历史发布保留通用成功描述；发布草稿仅在本页面会话内存保留，重开或资格变化撤回勾选授权，成功及会话变化清空。",
+    "limits": "离散观测不证明连续运行、无丢包、内存规则内容、检测效果或生产性能；不自动回滚，也不撤销已签名任务。"
+  },
+  "backend": {
+    "status": "passed",
+    "scope": "backend_functional_and_live_af_packet",
+    "counter_scope": "顶层测试；子测试不重复累加，未含 Test 字段的包级 skip 不当作用例跳过。两组集成名称无交集。",
+    "unit": {
+      "passed": 513,
+      "failed": 0,
+      "skipped": 0
+    },
+    "integration_groups": [
+      {
+        "passed": 61,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "passed": 61,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "af_packet": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "coverage": {
+      "covered": 20348,
+      "total": 22567,
+      "percentage": 90.1670580936766,
+      "minimum": 90
+    },
+    "coverage_scope": "沿用业务与 CLI 合并语句范围、原排除与 90% 门槛；包含同源码真实网卡及 CLI 计数。",
+    "actual_exit_code": 0,
+    "fetch_actual_exit_code": 0,
+    "real_chain": "专属 Docker AF_PACKET → Suricata → EVE → WAL → mTLS → NATS → ES → 通知受理；不授予生产渠道送达和生产容量资格。",
+    "evidence": [
+      {
+        "path": "engine741-driver.json",
+        "sha256": "3fb6c2bbde87bb1a53751d0f7a0536325c592b1e92db1f61936a9e679c3587bd",
+        "bytes": 1235
+      },
+      {
+        "path": "sbacc_454c145fa2db878e/reports/backend.json",
+        "sha256": "99de8530bccee84abe6220a15eb4e08825c48e3e57d130bfbad327172c7b482d",
+        "bytes": 1560
+      },
+      {
+        "path": "sbacc_454c145fa2db878e/reports/capture/capture.json",
+        "sha256": "0f365eaa235cdd22cc8559e05f24748caefcbaed259cf66cf4498f554a99de51",
+        "bytes": 689
+      }
+    ]
+  },
+  "frontend": {
+    "tests": 816,
+    "tool_tests": 9,
+    "test_files": 56,
+    "coverage": {
+      "statements": 95.43139252409686,
+      "branches": 92.92543021032505,
+      "functions": 91.87331205499632,
+      "lines": 98.8328470195915
+    },
+    "minimum_each_percentage": 90,
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "evidence": [
+      {
+        "path": "engine767-frontend/frontend.json",
+        "sha256": "0b89a39575742181d727b8ee9946d552df89345b352755677a13da2bf20a762c",
+        "bytes": 52481
+      }
+    ]
+  },
+  "native_failure_flow": {
+    "scope": "实际页面创建与批准、真实调度和探针原生任务、专属容器内单一检测进程故障；没有伪造时钟、健康或回执。",
+    "rollout_id": "rollout_9e8337e1b65b459ba8a23c3e03be8701",
+    "observation_seconds": 60,
+    "observation_started_at": "2026-10-18T14:38:51.407491Z",
+    "tasks": [
+      {
+        "id": "task_2a82de50102339f360683476dbe99163",
+        "kind": "rules.validate",
+        "state": "succeeded"
+      },
+      {
+        "id": "task_72e7178dbcad6aea98c79aaac1baf619",
+        "kind": "rules.replay",
+        "state": "succeeded"
+      },
+      {
+        "id": "task_3e464ac5e4365b2c6b7d3b4d55b6cb96",
+        "kind": "rules.replay",
+        "state": "succeeded"
+      },
+      {
+        "id": "task_bd512df715738ed24ab0e6752e7c4cea",
+        "kind": "rules.apply",
+        "state": "succeeded"
+      }
+    ],
+    "signal": {
+      "signal": "SIGTERM",
+      "pid": 26,
+      "at": "2026-10-18T14:38:52.238768+00:00",
+      "container_af_packet_engine_only": true
+    },
+    "final_state": "blocked",
+    "final_code": "engine_health_failed",
+    "final_batch_zero_based": 0,
+    "blocked_at": "2026-10-18T14:38:59.406597Z",
+    "signal_to_blocked_seconds_single_sample": 7.167829,
+    "latency_scope": "单次发布调度门禁观测，不是流量阻断时延、性能分位值或生产 SLA。",
+    "second_target_execution_revision": 0,
+    "second_target_task_count": 0,
+    "native_recovery_did_not_resume": true,
+    "fixture_cleanup": "确认无在途或未知设备任务，专属容器实际退出 0、无 OOM 后移除；身份、证书、WAL 和生效规则文件保留。",
+    "evidence": [
+      {
+        "path": "engine748-native.json",
+        "sha256": "285afc7404727770c2c4185f741a071ddfec5b40f69d81a2089d49b479b7f825",
+        "bytes": 2792
+      },
+      {
+        "path": "engine757-fault.json",
+        "sha256": "f629979bbbf5422ce9b807c853a1d847f7ca13ac93cacc2b4037dd70e82afa7b",
+        "bytes": 307
+      },
+      {
+        "path": "engine758-signal.json",
+        "sha256": "6332d24e3556708bcd518b505bde377776d7dd97a66a9bfcaa9692c0a94f6e01",
+        "bytes": 372
+      },
+      {
+        "path": "engine759-flow.json",
+        "sha256": "096529c472c48f7181ad1f9dee1891f3b299201ed912a505df2666f0982ca954",
+        "bytes": 116455
+      },
+      {
+        "path": "engine759-recovery.json",
+        "sha256": "67374d0b347c0b5f93c6776373a9136c6bc903aa76ca84419f988a217678876b",
+        "bytes": 4179
+      },
+      {
+        "path": "engine760-stop.json",
+        "sha256": "447c1c65042618276e594a3145f9d403a50b7db4da82ad24db6ee97a2eb4e54e",
+        "bytes": 2171
+      }
+    ]
+  },
+  "ui": {
+    "scope": "real_engineering_route_layout_and_selected_interactions_not_full_product_acceptance",
+    "platform_routes": 36,
+    "collector_routes": 6,
+    "sizes": [
+      {
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "width": 2560,
+        "height": 1440
+      },
+      {
+        "width": 3840,
+        "height": 2160
+      }
+    ],
+    "unique_route_layout_checks": 294,
+    "unique_selected_interaction_layout_checks": 35,
+    "interaction_modes": [
+      "blocked_rollout_detail",
+      "collector_engine_unconfigured",
+      "legacy_sensor_engine_missing",
+      "rollout_form",
+      "rollout_target_evidence"
+    ],
+    "business_flow_checks": [
+      {
+        "name": "escape_keeps_draft",
+        "passed": true
+      },
+      {
+        "name": "historical_success_scope",
+        "passed": true
+      },
+      {
+        "name": "native_failure_blocks_later_batch",
+        "passed": true
+      },
+      {
+        "name": "four_native_task_links",
+        "passed": true
+      },
+      {
+        "name": "reopen_keeps_selection_requires_approval",
+        "passed": true
+      },
+      {
+        "name": "server_confirmed_create_resets_draft",
+        "passed": true
+      },
+      {
+        "name": "current_ui_create_then_stop_final",
+        "passed": true
+      }
+    ],
+    "flow_evidence_scope": "同源码七项真实交互保留自 engine772；该次错误尺寸结论不复用，七种尺寸由 engine775 逐项核对请求值与实际宽高。",
+    "console_error_or_warning_count": 0,
+    "limits": "只读几何与选定交互；不等于全部 CRUD、全部异常状态或全产品正式验收。",
+    "prototype_gallery": {
+      "base": 767,
+      "supplemental": 105,
+      "total": 872,
+      "format": "native_browser_jpeg",
+      "synthetic_data_labelled": true,
+      "selected_footer_layout_checks": 7
+    },
+    "theme_sha256_unchanged": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "contrast_scope": "54 组正文与业务文字达到 4.5:1、9 组图表达到 3:1；参考组件主按钮白字 3.29:1、链接 3.29:1、占位提示 2.30:1、轮廓 1.24:1、成功 3.51:1、关注 3.31:1，不声明整体 WCAG AA。",
+    "evidence": [
+      {
+        "path": "engine775-current-ui/results.json",
+        "sha256": "3d215af086268ffe5e5f434fbedfec84b5e5596365dccf86ea97f103db66e0f9",
+        "bytes": 109050
+      },
+      {
+        "path": "engine775-current-ui/complete.jpg",
+        "sha256": "17dc1c94de48f38eac28066bef4347ae566dd03bb1107f411100456e4159cad6",
+        "bytes": 96774
+      },
+      {
+        "path": "engine772-current-ui/results.json",
+        "sha256": "85de29e8be34778c887d7c4964471d1e81508df4440d00bdb0e91c4b3c20a4b8",
+        "bytes": 90894
+      },
+      {
+        "path": "engine769-prototype-ui/results.json",
+        "sha256": "330387f9c31d5f069def5d5f1e01ca5ef310652b7c55799c867f03e102ff7217",
+        "bytes": 3160
+      },
+      {
+        "path": "engine769-prototype-ui/draft.json",
+        "sha256": "14e91863ea6cc23e2e260b84021732ec9faa875f9414e03059687794e96fc1f4",
+        "bytes": 113
+      },
+      {
+        "path": "engine774-gallery.log",
+        "sha256": "71643fd8fe7d734246555c3ed9f8a51b7e2a98a3435a08687ac9379f25b9357d",
+        "bytes": 143
+      },
+      {
+        "path": "engine774-theme.log",
+        "sha256": "3383b4d5c7bd2804585209c19802456df7eaf87072557cba9390bfda5508342c",
+        "bytes": 633
+      }
+    ]
+  },
+  "deployment": {
+    "scope": "owned_persistent_development_runtime",
+    "status": "passed",
+    "migration": 47,
+    "image": "sha256:27099e3713fb10e0140ebcb444190c0979fac78d8e1759ab73f8ca10a4024113",
+    "reference_program_sha256": {
+      "starbeacon": "9990ded55bbe0718b869fb4b3976058d6876e1fda0f8c0cace9e3aab7cc7d59f",
+      "starbeacon-ingest": "4a223705a6d2d7b3a78e644d95221e0b084d3cdc25eca149af234427dd3aa433",
+      "starbeacon-worker": "3b9f0d0bb65c8e1567a9c8837997929398e14223802af94f72142b060217282e",
+      "starbeacon-agent": "99881bf762981eb303e3d71a59346304c2282b24a299fbc616ad5343b2c14bab",
+      "starbeaconctl": "00c0cc891eb4be874c13d6ec1a8e4a20608f01461fad41ce6203d70db796e416"
+    },
+    "actual_programs_verified": 5,
+    "actual_roles_verified": 4,
+    "readiness_checks": 4,
+    "static_files_verified": 82,
+    "gateway_checks": 12,
+    "identity_digest_and_wal_device_inode_preserved": true,
+    "after_cleanup_reverified_at": "2026-10-18T15:35:57.655162+00:00",
+    "formal_product_acceptance": false,
+    "evidence": [
+      {
+        "path": "engine770-restart.json",
+        "sha256": "40e8395bf45c37d2f3a33543376f24db414cb056b625fe87fc11fc1f547337f8",
+        "bytes": 1146
+      },
+      {
+        "path": "engine771-runtime.json",
+        "sha256": "8ce25dac304b7fd39a08bb7a9459e51448a110278f462f2dc4739c891abd2d1e",
+        "bytes": 15437
+      },
+      {
+        "path": "engine778-runtime.json",
+        "sha256": "a1230f8e4354d9696e5e8a9ee05bd8c3cdbae93962fc65a75ef1820118ef0bb9",
+        "bytes": 15437
+      }
+    ]
+  },
+  "checks": {
+    "quality_tests": 68,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 7,
+    "go_vet_linux_all_tags": "passed",
+    "alignment": "passed",
+    "contracts": "passed",
+    "gallery": "passed",
+    "theme": "passed"
+  },
+  "cleanup": {
+    "status": "passed",
+    "scope": "owned_unreferenced_build_caches_only",
+    "directories": [
+      {
+        "directory": "go-build-cache",
+        "files": 11165,
+        "logical_bytes": 1419023919,
+        "allocated_file_bytes_before_removal": 1459077120,
+        "removed": true
+      },
+      {
+        "directory": "capture-go-build-cache",
+        "files": 6752,
+        "logical_bytes": 998063263,
+        "allocated_file_bytes_before_removal": 1022054400,
+        "removed": true
+      }
+    ],
+    "logical_bytes_removed": 2417087182,
+    "allocated_file_bytes_before_removal": 2481131520,
+    "global_prune": false,
+    "stopped_readonly_host_root_views": 2,
+    "active_writers_or_direct_cache_mounts": 0,
+    "persistent_data_identity_wal_and_ca_retained": true,
+    "local_raw_evidence_retained": true,
+    "space_scope": "逻辑及逐文件分配量不等于宿主即时释放空间；未执行全局 prune。",
+    "evidence": [
+      {
+        "path": "engine777-cleanup.json",
+        "sha256": "51a0d547f5075ce436027a629e833dd7f7e5f4f7faaebb4c7888c6b229705f98",
+        "bytes": 1176
+      }
+    ]
+  },
+  "failure_history": [
+    "初期原生预检漏传基线环境，出现跳过，整个预检判失败；修正原环境后专项与全量重新执行，无测试用例跳过。",
+    "早期前端来源在资格执行期间变化而失效；后续已通过但被产品文案和真实草稿缺陷替代的候选保留，不混入当前来源。",
+    "第一次故障观察辅助程序遇到只读路径，后续准备又错过首批观察窗口；均未发送故障信号。原任务由页面明确停止，第二次提前建立观察器后才完成真实故障测试。",
+    "真实页面按 Esc 关闭表单造成草稿丢失；组件生命周期与内存草稿修复后，缺省 Boolean 初次实现使三项既有测试失败，再以显式默认值修复并完成 816 项回归。",
+    "一次浏览器尺寸设置作用到另一标签，294 条记录只有 42 个唯一几何组合；该次判失败，关闭其他标签后重新执行七档实际宽高核对，得到当前 294 项唯一布局。",
+    "原型详情底部操作超出视口，经实际 Ant footer 插槽修正后完成七档几何核对；初期未匹配到实际底部节点的辅助结果不计入通过。"
+  ],
+  "raw_evidence_archives": [
+    {
+      "archive": "engine768-backend-raw.tar.gz",
+      "sha256": "5c55a9d7a2eb1d263c6d1a562496b5cffc7c811798dfad3c1ae20c3b9f12a038",
+      "bytes": 12691886,
+      "members_readback_verified": 175
+    },
+    {
+      "archive": "engine776-post-ui-raw.tar.gz",
+      "sha256": "3e7eaf2de558be39a4008495faf11c42750eca3775d5f7a417fc02b9e252d0d3",
+      "bytes": 9363836,
+      "members_readback_verified": 3795
+    }
+  ],
+  "private_evidence_policy": "完整源码、通过、失败及私有凭据相关材料仅保留于 Git 忽略的受限本地归档；此文件只公开无秘密的摘要与校验值。",
+  "product_requirement_status": {
+    "compound_requirements": 107,
+    "partial": 61,
+    "missing": 46,
+    "fully_accepted": 0
+  },
+  "remaining": [
+    "规则来源订阅与 TUF、规则例外、内存规则内容可信核对、连续质量及检测效果门禁、生产规模灰度和自动故障回退。",
+    "关联检测、情报、风险治理、完整资产与应用会话归因、文件提取与沙箱等工程功能。",
+    "1–200+ 探针持续负载、海量数据与积压恢复、多网卡、生产 TLS、HA、灾备和容量验收。",
+    "真实外部模型、设备、办公渠道与生产对象存储；当前两类 Linux UPX ZIP、完整发行闭环及全产品正式验收。"
+  ]
+}

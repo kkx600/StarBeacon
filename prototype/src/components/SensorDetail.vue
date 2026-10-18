@@ -7,6 +7,8 @@ import {sensorThresholds} from '../composables/useSensorHealth'
 import StatusTag from './StatusTag.vue'
 import {collectorDevice} from '../data/collector'
 import DetectionQualityPreview from './DetectionQualityPreview.vue'
+import EngineHealthSummary from '../../../web/packages/shared/src/components/EngineHealthSummary.vue'
+import {engineHealthExample} from '../data/engineHealth'
 const props=defineProps<{record:BusinessRecord;tab:string}>()
 const health=computed(()=>healthFor(props.record,sensorThresholds))
 const observable=computed(()=>health.value!=='不可观测')
@@ -40,6 +42,8 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
       <a-descriptions-item label="事件输出速率">{{execution?'不适用（执行角色）':metric('eps')}}</a-descriptions-item><a-descriptions-item label="CPU / 内存 / 磁盘阈值">{{sensorThresholds.cpu}}% / {{sensorThresholds.memory}}% / {{sensorThresholds.disk}}%</a-descriptions-item>
     </a-descriptions>
     <p class="field-hint">丢包阈值 {{sensorThresholds.drop}}%；心跳超时 {{sensorThresholds.heartbeat}} 秒。当前为单次合成快照，未提供实时趋势。</p>
+    <p class="field-hint">以下原生观测为合成示例，不代表真实引擎的执行资格。</p>
+    <EngineHealthSummary :report="execution?undefined:engineHealthExample(observable)" />
     <a-button @click="qualityOpen=true">检测质量</a-button>
   </template>
   <template v-else-if="tab==='采集与版本'">

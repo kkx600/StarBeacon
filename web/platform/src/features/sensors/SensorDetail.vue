@@ -7,6 +7,7 @@ const ADescriptionsItem = ADescriptions.Item
 import type { Sensor } from '@starbeacon/shared/types.ts'
 import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCapabilitiesDialog.vue'
 import DetectionQualityDialog from '@starbeacon/shared/components/DetectionQualityDialog.vue'
+import EngineHealthSummary from '@starbeacon/shared/components/EngineHealthSummary.vue'
 import {basicApplicationState} from '@starbeacon/shared/application.ts'
 import {formatBytes} from '@starbeacon/shared/utils/format.ts'
 import {packetStates} from '@starbeacon/shared/packetArchives.ts'
@@ -73,10 +74,11 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
         </template>
         <a-descriptions-item label="应用识别规则">{{applicationState?applicationState.rule_count+' 条 / '+(applicationState.deployment_id||'尚未部署'):'未提供可核对的状态'}}</a-descriptions-item>
         <a-descriptions-item v-if="applicationState" label="应用规则快照"><span class="capture-digest">{{applicationState.rules_sha256}}</span> · {{formatTime(applicationState.installed_at)}}</a-descriptions-item>
-        <a-descriptions-item label="生效规则摘要"><span class="capture-digest">{{ sensor.health.registered_rules_sha256 || '尚未观测' }}</span></a-descriptions-item>
+        <a-descriptions-item label="登记规则文件摘要"><span class="capture-digest">{{ sensor.health.registered_rules_sha256 || '尚未观测' }}</span></a-descriptions-item>
         <a-descriptions-item label="任务能力">{{ sensor.health.task_capabilities?.map(value=>(taskNames[value]??value)).join('、')||'尚未上报' }}</a-descriptions-item>
         <a-descriptions-item label="观测异常">{{ formatHealthErrors(sensor.health.errors) }}</a-descriptions-item>
       </a-descriptions>
+      <EngineHealthSummary :report="sensor.health.engine_health" />
     </div>
   </a-modal>
   <ProtocolCapabilitiesDialog :open="protocolsOpen&&sensor!==null" :name="sensor?.name" :report="sensor?.health.protocol_capabilities" :capture="capture" @close="protocolsOpen=false" />

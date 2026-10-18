@@ -8,6 +8,7 @@ export function useRuleRollouts(){
  const page=shallowRef<RolloutPage>({items:[],next_cursor:''}),pending=shallowRef(false),error=shallowRef(''),cursors=shallowRef([''])
  const detail=shallowRef<RuleRollout>(),detailID=shallowRef(''),detailPending=shallowRef(false),detailError=shallowRef('')
  const creating=shallowRef(false),stopping=shallowRef(false),saving=shallowRef(false),formError=shallowRef(''),unconfirmed=shallowRef<Submission>()
+ const draftEpoch=shallowRef(0)
  const plans=shallowRef<RuleSyncPlan[]>([]),plansCursor=shallowRef(''),plansPending=shallowRef(false),plansError=shallowRef('')
  const allowed=computed(()=>session.current.value?.role==='admin')
  let disposed=false,listCall:AbortController|undefined,detailCall:AbortController|undefined,plansCall:AbortController|undefined,writeCall:AbortController|undefined
@@ -41,6 +42,7 @@ export function useRuleRollouts(){
   const frozen=structuredClone(s);unconfirmed.value=frozen;saving.value=true;formError.value='';writeCall?.abort();const call=new AbortController();writeCall=call
   try{const r=await session.api.request<RuleRollout>(frozen.kind==='create'?'/rule-rollouts':'/rule-rollouts/'+encodeURIComponent(frozen.id)+'/stop',{method:'POST',body:frozen.kind==='create'?frozen.input:{reason:frozen.reason},signal:call.signal});if(call.signal.aborted)return
    if(!validRollout(r,true)||(frozen.kind==='create'?(r.id!==frozen.input.id||r.created_by!==session.current.value?.id||!sameRolloutSpec(r.spec,frozen.input.spec)):(r.id!==frozen.id||r.stop_reason!==frozen.reason||r.stopped_by!==session.current.value?.id||!['stopping','stopped','blocked'].includes(r.state))))throw new Error('操作回执未准确绑定原提交，请核对原提交')
+   if(frozen.kind==='create')draftEpoch.value++
    unconfirmed.value=undefined;creating.value=false;stopping.value=false;detailID.value=r.id;detail.value=r;detailError.value='';remember(r);await refresh()
   }catch(e){if(!call.signal.aborted){formError.value=e instanceof Error?e.message:'分批发布操作失败';if(rejected(e))unconfirmed.value=undefined}}
   finally{if(writeCall===call)saving.value=false}
@@ -48,7 +50,7 @@ export function useRuleRollouts(){
  function create(input:RolloutCreate){return submit({kind:'create',input})}
  function stop(reason:string){if(detailID.value)return submit({kind:'stop',id:detailID.value,reason})}
  function confirm(){if(unconfirmed.value)void submit(unconfirmed.value)}
- watch(()=>session.current.value?.tenant_id+'/'+session.current.value?.id+'/'+session.current.value?.role,()=>{listCall?.abort();detailCall?.abort();plansCall?.abort();writeCall?.abort();page.value={items:[],next_cursor:''};cursors.value=[''];detailID.value='';detail.value=undefined;plans.value=[];creating.value=false;stopping.value=false;unconfirmed.value=undefined;formError.value='';saving.value=false;plansPending.value=false;void refresh()})
+ watch(()=>session.current.value?.tenant_id+'/'+session.current.value?.id+'/'+session.current.value?.role+'/'+session.current.value?.csrf_token,()=>{listCall?.abort();detailCall?.abort();plansCall?.abort();writeCall?.abort();draftEpoch.value++;page.value={items:[],next_cursor:''};cursors.value=[''];detailID.value='';detail.value=undefined;plans.value=[];creating.value=false;stopping.value=false;unconfirmed.value=undefined;formError.value='';saving.value=false;plansPending.value=false;void refresh()})
  onMounted(refresh);onScopeDispose(()=>{disposed=true;listCall?.abort();detailCall?.abort();plansCall?.abort();writeCall?.abort();unconfirmed.value=undefined})
- return{page,pending,error,cursors,detail,detailID,detailPending,detailError,creating,stopping,saving,formError,unconfirmed,plans,plansCursor,plansPending,plansError,refresh,next,previous,show,back,loadPlans,open,close,openStop,create,stop,confirm}
+ return{page,pending,error,cursors,detail,detailID,detailPending,detailError,creating,stopping,saving,formError,unconfirmed,draftEpoch,plans,plansCursor,plansPending,plansError,refresh,next,previous,show,back,loadPlans,open,close,openStop,create,stop,confirm}
 }

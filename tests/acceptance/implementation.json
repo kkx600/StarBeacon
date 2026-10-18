@@ -254,7 +254,10 @@
         "internal/platform/rule_rollouts.go",
         "migrations/00047_rule_rollouts.sql",
         "web/platform/src/features/rules/RuleRolloutsWorkspace.vue",
-        "web/platform/src/features/rules/useRuleRollouts.ts"
+        "web/platform/src/features/rules/useRuleRollouts.ts",
+        "internal/enginehealth/health.go",
+        "internal/agent/engine_health.go",
+        "web/packages/shared/src/components/EngineHealthSummary.vue"
       ],
       "pages": [
         "platform:/rules",
@@ -286,9 +289,12 @@
         "internal/platform/rule_rollouts_test.go",
         "tests/integration/rule_rollouts_test.go",
         "tests/integration/rule_rollouts_native_test.go",
-        "web/tests/rule-rollouts.test.ts"
+        "web/tests/rule-rollouts.test.ts",
+        "internal/enginehealth/health_test.go",
+        "internal/agent/engine_health_test.go",
+        "web/tests/engine-health.test.ts"
       ],
-      "boundary": "不可变修订、CodeMirror 高亮与基础结构诊断、Suricata 8.0.7 -T；原生发布核对同设备、注册代次、完整包、检测配置及独立正反样本回执，失败恢复保留 journal。单探针固定批准修订自动同步；分批发布明确选择 2–200 个同规则与样本的停用计划修订，目标预留、逐台验证、每批 30–3600 秒观察及窗口后新心跳核对，失败或未知结果停止后续批次，保留已签名任务与已生效事实；不自动回滚。规则源订阅、TUF、生产规模及完整灰度效果验收仍未完成；AI 生成见独立能力。"
+      "boundary": "不可变修订、CodeMirror 高亮与基础结构诊断、Suricata 8.0.7 -T；原生发布核对同设备、注册代次、完整包、检测配置及独立正反样本回执，失败恢复保留 journal。单探针固定批准修订自动同步；分批发布明确选择 2–200 个同规则与样本的停用计划修订，目标预留、逐台验证、每批 30–3600 秒观察及窗口后新心跳核对，失败或未知结果停止后续批次，保留已签名任务与已生效事实；不自动回滚。规则源订阅、TUF、生产规模及完整灰度效果验收仍未完成；AI 生成见独立能力。 原生进程与单一完整规则集每五秒只读观测，缺报和过期不放行；分批观察须取得发布后及窗口后的原生时间水位，明确失败停止后续提交。装载数量与登记文件摘要不证明引擎内存规则内容相同；质量、效果和自动回退门禁仍待完成。"
     },
     {
       "id": "replay",

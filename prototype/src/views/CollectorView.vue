@@ -19,6 +19,8 @@ import ProtocolCapabilitiesDialog from '../../../web/packages/shared/src/compone
 import ProbeIdentitySummary from '../../../web/packages/shared/src/components/ProbeIdentitySummary.vue'
 import {protocolObservation} from '../data/protocols'
 import DetectionQualityPreview from '../components/DetectionQualityPreview.vue'
+import EngineHealthSummary from '../../../web/packages/shared/src/components/EngineHealthSummary.vue'
+import {engineHealthExample} from '../data/engineHealth'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview();const {state:collector,device}=useCollector()
 const page=computed(()=>collectorPages.find(item=>item.id===route.params.id))
 const detailOpen=ref(false);const actionOpen=ref(false);const selected=ref<CollectorInterface|CollectorTask>();const action=ref<CollectorAction>('network');const localTab=ref('interfaces');const keyword=ref('');const statusFilter=ref('全部状态')
@@ -66,6 +68,8 @@ function clearFilters(){keyword.value='';statusFilter.value='全部状态'}
     <template v-else>
       <template v-if="page.id==='overview'">
         <MetricBar :items="metrics"/>
+        <p class="field-hint">以下原生进程与规则装载观测为合成示例，不代表真实设备资格。</p>
+        <EngineHealthSummary :report="engineHealthExample(route.query.engine)" />
         <section class="panel collector-section"><div class="panel-heading"><h2>采集与上报链路</h2><StatusTag value="在线（示例）"/></div><a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small"><a-descriptions-item label="采集模式">旁路镜像 · {{collector.capture.backend}}</a-descriptions-item><a-descriptions-item label="镜像采集口">{{collector.capture.interfaces.join('、')}}</a-descriptions-item><a-descriptions-item label="管理口">{{collector.network.interface}} · {{collector.network.ipv4}}</a-descriptions-item><a-descriptions-item label="主控平台">{{collector.connection.host}}:{{collector.connection.port}}</a-descriptions-item><a-descriptions-item label="引擎 / 规则">{{collector.engineActive}} / {{collector.ruleActive}}</a-descriptions-item><a-descriptions-item label="心跳 / 证书">{{collector.connection.heartbeat}} 秒 / {{collector.certificate}}</a-descriptions-item><a-descriptions-item label="事件 WAL">0 条待上传 · 已确认水位 demo-eve-094500</a-descriptions-item><a-descriptions-item label="PCAP 归档">无上传积压（示例）· 对象留存 180 天</a-descriptions-item><a-descriptions-item label="本机时钟">误差 +3 ms（示例）· {{collector.maintenance.timezone}}</a-descriptions-item><a-descriptions-item label="联动权限">未授权本机执行设备写动作</a-descriptions-item></a-descriptions><p class="field-hint">心跳、采集健康和数据持久确认是不同状态。当前为合成快照，不代表实时监控或性能验收。</p></section>
         <section class="panel table-panel"><div class="table-toolbar"><h2>最近任务</h2><router-link to="/collector/updates">查看同步与升级</router-link></div><a-table :columns="taskColumns" :data-source="collector.tasks.slice(0,4)" row-key="id" :pagination="false" :scroll="{x:1050}" size="middle"><template #bodyCell="{column,record}"><template v-if="column.key==='identity'"><button class="record-link" @click="showDetail(record)">{{record.name}}</button><small class="row-id">{{record.id}}</small></template><StatusTag v-else-if="column.key==='status'" :value="record.status"/><a-button v-else-if="column.key==='action'" type="link" size="small" @click="showDetail(record)">查看</a-button></template></a-table></section>
       </template>
