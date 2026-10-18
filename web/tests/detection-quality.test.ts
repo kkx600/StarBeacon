@@ -17,12 +17,12 @@ const global = {plugins:[registerAnt]}
 
 describe('检测质量回执边界', () => {
   it('核对配置、运行身份、唯一指标、整数精度和状态，不把损坏回执视为正常', () => {
-    expect(readQuality(report(), 'b'.repeat(64))).not.toBeNull()
+    const marked=report();marked.counters[0]!.observed_resets='1';expect(readQuality(marked, 'b'.repeat(64))).not.toBeNull();expect(readQuality(report(), 'b'.repeat(64))).not.toBeNull()
     expect(readQuality(report(), 'c'.repeat(64))).toBeNull()
     const changes: ((r:Record<string,any>)=>void)[] = [
       r=>{r.schema_version=2},r=>{r.scope='flow'},r=>{r.source='replay'},r=>{r.state='safe'},r=>{r.state='offline'},r=>{r.engine_run_id=null},r=>{r.engine_run_id='bad'},r=>{r.config_sha256='bad'},r=>{r.evaluated_at='bad'},
       r=>{r.counters=null},r=>{r.counters.pop()},r=>{r.counters[0]=null},r=>{r.counters[0].key='private'},r=>{r.counters[1]=r.counters[0]},r=>{r.counters[0].layer='policy'},r=>{r.counters[0].kind='gauge'},
-      r=>{r.counters[0].total='18446744073709551616'},r=>{r.counters[0].total='01'},r=>{r.counters[0].total=null},r=>{r.counters[0].delta='-1'},r=>{r.counters[0].delta='1'},r=>{delete r.counters[0].total},r=>{r.counters[5].delta='0'},
+      r=>{r.counters[0].total='18446744073709551616'},r=>{r.counters[0].total='01'},r=>{r.counters[0].total=null},r=>{r.counters[0].delta='-1'},r=>{r.counters[0].delta='1'},r=>{delete r.counters[0].total},r=>{r.counters[5].delta='0'},r=>{r.counters[0].observed_resets='-1'},r=>{r.counters[0].observed_resets='18446744073709551616'},r=>{r.counters[5].observed_resets='0'},
       r=>{r.sampled_at='bad'},r=>{delete r.sampled_at},r=>{r.received_at='bad'},r=>{r.interval_started_at='bad'},r=>{r.interval_started_at=r.sampled_at},r=>{r.interval_started_at=new Date(Date.parse(r.sampled_at)-21000).toISOString()},
       r=>{r.reset_counters=null},r=>{r.reset_counters=['private']},r=>{r.reset_counters=['decoder.pkts','decoder.pkts']},r=>{r.capture=null},r=>{r.capture.state='safe'},r=>{r.capture.reasons=['detect.alert']},r=>{r.capture.reasons=Array(26).fill('capture.errors')},r=>{r.capture.reasons=null},r=>{r.state='baseline'},
     ]
@@ -45,10 +45,10 @@ describe('检测质量回执边界', () => {
 
 describe('检测质量交互', () => {
   it('仅有一张指标表，独立呈现策略与损失，完整大数和字节单位可读', async () => {
-    const r=report();r.counters[1]!.total='9007199254740993';r.counters[1]!.delta='2';r.counters[4]!.delta='1024';r.counters[22]!.total='1';r.counters[22]!.delta='1';r.capture={state:'limited',reasons:['capture.kernel_drops']};r.policy={state:'policy_applied',reasons:['detect.alerts_suppressed']}
+    const r=report();r.counters[1]!.total='9007199254740993';r.counters[1]!.observed_resets='1';r.counters[1]!.delta='2';r.counters[4]!.delta='1024';r.counters[22]!.total='1';r.counters[22]!.delta='1';r.capture={state:'limited',reasons:['capture.kernel_drops']};r.policy={state:'policy_applied',reasons:['detect.alerts_suppressed']}
     const wrapper=mount(DetectionQuality,{props:{capture:capture(r)},global})
     expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1)
-    expect(wrapper.text()).toContain('存在覆盖限制');expect(wrapper.text()).toContain('存在策略影响');expect(wrapper.text()).toContain('9,007,199,254,740,993');expect(wrapper.text()).toContain('18.45 EB');expect(wrapper.text()).toContain('1.02 KB');expect(wrapper.text()).toContain('瞬时值，不计算增量');expect(wrapper.text()).not.toContain('检测正常')
+    expect(wrapper.text()).toContain('存在覆盖限制');expect(wrapper.text()).toContain('存在策略影响');expect(wrapper.text()).toContain('9,007,199,254,740,993');expect(wrapper.text()).toContain('本次进程观测复位 1 次');expect(wrapper.text()).toContain('18.45 EB');expect(wrapper.text()).toContain('1.02 KB');expect(wrapper.text()).toContain('瞬时值，不计算增量');expect(wrapper.text()).not.toContain('检测正常')
     const partial=report();delete partial.counters[1]!.total;delete partial.counters[1]!.delta;await wrapper.setProps({capture:capture(partial)});expect(wrapper.text()).toContain('未提供')
   })
   it('缺测、复位、采样断档和后台停留不补零或保留质量结论', async () => {

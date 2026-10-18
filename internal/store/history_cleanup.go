@@ -53,6 +53,8 @@ var historyCategories = []historyCategory{
 	{"probe_certificates", "retain_until", `state<>'signing' AND (not_after IS NULL OR not_after<=now())`},
 	{"incident_task_changes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed')`},
 	{"incident_tasks", "expires_at", `state IN('completed','cancelled') AND EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed') AND NOT EXISTS(SELECT 1 FROM incident_task_changes c WHERE c.tenant_id=h.tenant_id AND c.task_id=h.id)`},
+	{"sensor_quality_outbox", "expires_at", `state IN('done','expired','pending') OR (state='leased' AND lease_until<=now())`},
+	{"sensor_quality_cursors", "expires_at", `NOT EXISTS(SELECT 1 FROM sensors s WHERE s.tenant_id=h.tenant_id AND s.id=h.sensor_id AND s.registration_id=h.registration_id)`},
 }
 
 type HistorySweep struct {

@@ -41,7 +41,7 @@ type Sender struct{ Policy outbound.Policy }
 func (s Sender) Send(ctx context.Context, config Config, message Message) (out Outcome) {
 	started := time.Now()
 	defer func() { out.DurationMS = time.Since(started).Milliseconds(); out.ObservedAt = time.Now().UTC() }()
-	if config.Validate(s.Policy) != nil || message.ID == "" || len(message.Alerts) > contract.MaxBatchRecords || !validAuditLogs(config, message) {
+	if config.Validate(s.Policy) != nil || message.ID == "" || len(message.Alerts) > contract.MaxBatchRecords || !validAuditLogs(config, message) || !validQuality(config, message) {
 		return Outcome{State: "failed", Code: "invalid_config"}
 	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -205,7 +205,7 @@ func (s Sender) syslog(ctx context.Context, config Config, message Message) Outc
 		defer encrypted.Close()
 	}
 	// 每条业务记录单独分帧，避免批次超过接收器的单消息限制。
-	count := max(1, len(message.Alerts), len(message.Logs))
+	count := max(1, len(message.Alerts), len(message.Logs), len(message.Quality))
 	frames := make([][]byte, 0, count)
 	for index := range count {
 		item := message
@@ -213,6 +213,10 @@ func (s Sender) syslog(ctx context.Context, config Config, message Message) Outc
 			item.Alerts = message.Alerts[index : index+1]
 		}
 		msgID := "alert"
+		if len(message.Quality) != 0 {
+			item.Quality = message.Quality[index : index+1]
+			msgID = "quality"
+		}
 		if len(message.Logs) != 0 {
 			item.Logs = message.Logs[index : index+1]
 			msgID = item.Logs[0].Stream
@@ -263,7 +267,11 @@ func (s Sender) email(ctx context.Context, config Config, message Message) Outco
 	if msg.From(config.From) != nil || msg.To(message.Recipient) != nil {
 		return Outcome{State: "failed", Code: "invalid_recipient"}
 	}
-	msg.Subject("星烽 StarBeacon 安全告警")
+	if len(message.Quality) > 0 {
+		msg.Subject("星烽 StarBeacon 探针检测质量")
+	} else {
+		msg.Subject("星烽 StarBeacon 安全告警")
+	}
 	msg.SetMessageIDWithValue(message.ID + "@starbeacon.local")
 	msg.SetBodyString(mail.TypeTextPlain, message.Text())
 	var connected atomic.Bool

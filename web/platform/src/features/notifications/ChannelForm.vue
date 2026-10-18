@@ -8,12 +8,13 @@ const updateConnection=shallowRef(!props.record),formError=shallowRef('')
 const id=props.record?.id??'channel_'+crypto.randomUUID().replaceAll('-','')
 const model=reactive({streams:[...(props.record?.streams??['alerts'])] as LogStream[],name:props.record?.name??'',kind:props.record?.kind??'webhook' as ChannelKind,enabled:props.record?.enabled??true,severities:[...(props.record?.severities??['high','medium'])],mutedUntil:props.record?.muted_until??'',endpoint:'',secret:'',token:'',smtpHost:'',smtpPort:587,smtpUser:'',smtpPassword:'',from:'',recipients:'',implicitTLS:false})
 const options=computed(()=>Object.entries(channelNames).filter(([key])=>props.development||key!=='syslog_tcp').map(([value,label])=>({value,label})))
-watch(()=>model.kind,()=>{model.endpoint='';model.secret='';model.token='';model.smtpHost='';model.smtpPort=587;model.smtpUser='';model.smtpPassword='';model.from='';model.recipients='';model.implicitTLS=false;if(!model.kind.startsWith('syslog_'))model.streams=['alerts']})
+const subscriptions=computed(()=>streamOptions.filter(item=>model.kind.startsWith('syslog_')||['alerts','quality'].includes(item.value)))
+watch(()=>model.kind,()=>{model.endpoint='';model.secret='';model.token='';model.smtpHost='';model.smtpPort=587;model.smtpUser='';model.smtpPassword='';model.from='';model.recipients='';model.implicitTLS=false;if(!model.kind.startsWith('syslog_')){model.streams=model.streams.filter(item=>['alerts','quality'].includes(item));if(!model.streams.length)model.streams=['alerts']}})
 function save(){
   if(props.pending)return
   formError.value=''
   if(!model.name.trim()||model.streams.includes('alerts')&&!model.severities.length){formError.value='请填写渠道名称并选择告警级别。';return}
-  if(!model.streams.length){formError.value='请选择日志类别。';return}
+  if(!model.streams.length){formError.value='请选择订阅内容。';return}
   let mutedUntil:string|null=null
   if(model.mutedUntil){const date=new Date(model.mutedUntil);if(Number.isNaN(date.getTime())){formError.value='静默截止时间无效。';return};mutedUntil=date.toISOString()}
   const change:ChannelChange={id,expected_revision:props.record?.revision??0,name:model.name.trim(),kind:model.kind,enabled:model.enabled,severities:model.streams.includes('alerts')?[...model.severities]:[],streams:[...model.streams],muted_until:mutedUntil}
@@ -30,12 +31,12 @@ function save(){
   <Modal :open="true" :title="record?'配置通知渠道':'创建通知渠道'" :width="640" :footer="null" :mask-closable="false" :closable="!pending" :keyboard="!pending" @cancel="emit('close')">
     <a-alert v-if="error||formError" type="error" :message="error||formError" show-icon class="section-gap" />
     <a-form :model="model" layout="vertical" :disabled="pending" @finish="save">
-      <div class="channel-fields"><a-form-item label="渠道名称" name="name" :rules="[{required:true,message:'请输入渠道名称'}]"><a-input v-model:value="model.name" :maxlength="128" /></a-form-item><a-form-item label="渠道类型" name="kind"><Select v-model:value="model.kind" :options="options" :disabled="pending||!!record" /></a-form-item></div>
-      <a-form-item v-if="model.kind.startsWith('syslog_')" label="日志类别" name="streams" :rules="[{required:true,type:'array',min:1,message:'请选择日志类别'}]"><Select v-model:value="model.streams" aria-label="日志类别" mode="multiple" :options="streamOptions" /></a-form-item>
-      <a-form-item v-if="model.streams.includes('alerts')" label="告警级别" name="severities" :rules="[{required:true,type:'array',min:1,message:'请选择告警级别'}]"><Select v-model:value="model.severities" mode="multiple" :options="severityOptions" /></a-form-item>
+      <div class="channel-fields"><a-form-item label="渠道名称" name="name" :rules="[{required:true,message:'请输入渠道名称'}]"><a-input v-model:value="model.name" :maxlength="128" /></a-form-item><a-form-item label="渠道类型" name="kind"><Select v-model:value="model.kind" :options="options" :disabled="pending||!!record" @keydown.esc.stop /></a-form-item></div>
+      <a-form-item label="订阅内容" name="streams" :rules="[{required:true,type:'array',min:1,message:'请选择订阅内容'}]"><Select v-model:value="model.streams" aria-label="订阅内容" mode="multiple" :options="subscriptions" @keydown.esc.stop /></a-form-item>
+      <a-form-item v-if="model.streams.includes('alerts')" label="告警级别" name="severities" :rules="[{required:true,type:'array',min:1,message:'请选择告警级别'}]"><Select v-model:value="model.severities" mode="multiple" :options="severityOptions" @keydown.esc.stop /></a-form-item>
       <div class="channel-fields"><a-form-item label="渠道启用" html-for="channel-enabled"><Switch id="channel-enabled" aria-label="渠道启用" v-model:checked="model.enabled" checked-children="启用" un-checked-children="停用" /></a-form-item><a-form-item label="静默截止时间" html-for="channel-mute"><a-input id="channel-mute" aria-label="静默截止时间" v-model:value="model.mutedUntil" :maxlength="40" placeholder="留空表示不静默，例如 2026-10-03T18:00:00+08:00" /></a-form-item></div>
       <Checkbox v-if="record" v-model:checked="updateConnection" :disabled="pending">更新连接信息</Checkbox>
-      <p class="page-description section-gap">{{record&&!updateConnection?'保留已保存的连接信息和凭据。':'连接信息与凭据加密保存，保存后不回显。'}} {{model.kind.startsWith('syslog_')?'按选择的日志类别发送脱敏摘要；审计日志不包含操作原因或请求正文。':'通知仅发送告警摘要。'}}</p>
+      <p class="page-description section-gap">{{record&&!updateConnection?'保留已保存的连接信息和凭据。':'连接信息与凭据加密保存，保存后不回显。'}} {{model.kind.startsWith('syslog_')?'按订阅发送脱敏摘要；审计日志不包含操作原因或请求正文。':'按订阅发送安全告警或检测质量事件摘要。'}} 检测质量事件须显式选择，原生计数、配置摘要与报文载荷不外发。</p>
       <template v-if="updateConnection">
         <template v-if="model.kind==='email'">
           <div class="channel-fields"><a-form-item label="SMTP 主机" html-for="channel-smtp-host"><a-input id="channel-smtp-host" aria-label="SMTP 主机" v-model:value="model.smtpHost" :maxlength="253" placeholder="smtp.example.com" /></a-form-item><a-form-item label="SMTP 端口" html-for="channel-smtp-port"><InputNumber id="channel-smtp-port" aria-label="SMTP 端口" v-model:value="model.smtpPort" :min="1" :max="65535" :precision="0" style="width:100%" /></a-form-item></div>

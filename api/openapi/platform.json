@@ -14614,6 +14614,126 @@
         },
         "description": "仅管理员可按当前探针注册代次和使用中的网段修订查询已有 flow 文档。半开窗口不超过 24 小时；读取当前租户索引族并排除同前缀的其他租户，按实际事件时间过滤和分片预过滤，兼容跨日上传与离线重放，源、目的方向分别计数，计数不等于设备或会话数。合并地址最多 512 个，超限拒绝全部交付；超时、分片失败、范围变化和撤权均不提供部分结果。每租户最多一个并发查询、每 UTC 自然分钟 6 次查询尝试。不会自动登记、合并或认定资产身份，MAC 仅是方向端点原始观测。available 仅表示当前租户存在流量分区，absent 表示其流量分区不存在；均不证明捕获覆盖。结果交付前核对范围并写入默认 180 天操作审计。"
       }
+    },
+    "/api/v1/sensors/quality-events": {
+      "get": {
+        "summary": "检索探针检测质量事件",
+        "description": "管理员与只读用户均按当前会话租户读取。只记录已接收的托管统计变化与持续提醒，不记录每次心跳；外部 EVE、不包含原生样本的报告不创建事件。事件先与心跳同事务暂存，再异步索引到 sb-context；空结果不证明检测完整或不存在待索引事件。复用网络事件按 UTC 日分区的保留策略，默认 180 天。分页为冻结时间窗口内的有界实时检索，不提供 PIT 一致快照。",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "平台记录时间起点，包含；2000—2100 年。"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "平台记录时间终点，不包含；窗口须大于 0 且不超过 31 天。"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 1
+            },
+            "description": "固定每页 20 条，最多前 10000 条；缩小窗口可查询更早历史。"
+          },
+          {
+            "name": "sensor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "精确探针标识；省略查询当前租户全部探针。"
+          },
+          {
+            "name": "registration_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "精确注册代次；必须同时指定 sensor_id，可查询历史注册。"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "limitation",
+                "policy",
+                "uncertain",
+                "interval_clear",
+                "observation_resumed"
+              ]
+            },
+            "description": "省略包含全部质量事件类型。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "完整历史结果，按记录时间倒序、同时间事件标识升序；Cache-Control: no-store。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityEventPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效、重复参数或未知参数；不接受租户字段。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录会话无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "索引或结果完整性不可核对；不返回部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -16019,7 +16139,7 @@
             "minItems": 0,
             "maxItems": 4,
             "uniqueItems": true,
-            "description": "订阅 alerts 时至少选择一个级别；审计日志不按告警级别筛选。"
+            "description": "订阅 alerts 时至少选择一个告警级别；质量事件和审计日志不按告警级别筛选。"
           },
           "muted_until": {
             "type": [
@@ -16045,13 +16165,14 @@
               "enum": [
                 "alerts",
                 "operations",
-                "logins"
+                "logins",
+                "quality"
               ]
             },
             "minItems": 1,
-            "maxItems": 3,
+            "maxItems": 4,
             "uniqueItems": true,
-            "description": "仅 Syslog 支持操作日志与登录日志；其他渠道只允许 alerts。创建省略表示仅告警，编辑省略保留原类别。空数组无效。"
+            "description": "所有渠道可显式订阅 quality；仅 Syslog 可订阅 operations/logins。创建省略表示仅 alerts，编辑省略保留原订阅；空数组无效。质量事件不按告警级别过滤，摘要不含原生计数、配置摘要或报文载荷。"
           }
         },
         "required": [
@@ -16109,7 +16230,7 @@
             "minItems": 0,
             "maxItems": 4,
             "uniqueItems": true,
-            "description": "订阅 alerts 时至少选择一个级别；审计日志不按告警级别筛选。"
+            "description": "订阅 alerts 时至少选择一个告警级别；质量事件和审计日志不按告警级别筛选。"
           },
           "target": {
             "type": "string",
@@ -16136,13 +16257,14 @@
               "enum": [
                 "alerts",
                 "operations",
-                "logins"
+                "logins",
+                "quality"
               ]
             },
             "minItems": 1,
-            "maxItems": 3,
+            "maxItems": 4,
             "uniqueItems": true,
-            "description": "仅 Syslog 支持操作日志与登录日志；其他渠道只允许 alerts。创建省略表示仅告警，编辑省略保留原类别。空数组无效。"
+            "description": "所有渠道可显式订阅 quality；仅 Syslog 可订阅 operations/logins。创建省略表示仅 alerts，编辑省略保留原订阅；空数组无效。质量事件不按告警级别过滤，摘要不含原生计数、配置摘要或报文载荷。"
           }
         },
         "required": [
@@ -16286,7 +16408,8 @@
               "alerts",
               "operations",
               "logins",
-              "test"
+              "test",
+              "quality"
             ],
             "description": "投递记录所属类别。"
           },
@@ -25190,6 +25313,11 @@
             "type": "string",
             "pattern": "^(0|[1-9][0-9]{0,19})$",
             "description": "uint64 十进制字符串；未提供时省略，不补零。"
+          },
+          "observed_resets": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "当前托管进程内，从已持久化原生统计观察到的累计下降次数；uint64 十进制字符串。不是全部实际复位次数。旧报告可省略；只有两端快照均具备全部计数水位时计算跨心跳区间。"
           }
         },
         "description": "原生累计或瞬时总值；delta 仅在同进程、未复位且连续的已观测区间提供，瞬时量不提供增量。"
@@ -25372,7 +25500,7 @@
             "$ref": "#/components/schemas/QualityFacet"
           }
         },
-        "description": "当前托管进程中已持久化的原生 EVE 统计，保留实际采样与读取时间。原生采样五秒；首次、复位、超过二十秒的采样或接收间隔不提供可比较增量；超过二十秒的旧观测和非运行引擎显示未知。无单流覆盖、全 pass/threshold、驱动质量、投递链路或持久质量告警资格。"
+        "description": "托管进程中已持久化原生 EVE 统计的投影，保留实际采样与读取时间。实时快照五秒采样、二十秒连续性与过期检查；质量事件内的历史 report 按记录时刻冻结。首次、复位和采样断档不提供可比较增量；缺测不补零。不能证明逐流覆盖、流量安全或生产吞吐。"
       },
       "IncidentTaskSpec": {
         "type": "object",
@@ -25861,6 +25989,132 @@
               "available",
               "absent"
             ]
+          }
+        }
+      },
+      "QualityEventSignal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "reasons",
+          "fingerprint"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "limitation",
+              "policy",
+              "uncertain",
+              "interval_clear",
+              "observation_resumed"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 25,
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "fingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "prior_event_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "reminder": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "description": "限制、策略和未知区间按原因与引擎配置去重；相同问题持续至少 15 分钟时可提醒。原限制明确为零增量才记录 interval_clear；跨引擎或未知区间后的连续样本仅记录 observation_resumed。关联事件不保证仍在保留期内。"
+      },
+      "QualityEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "id",
+          "tenant_id",
+          "sensor_id",
+          "sensor_registration_id",
+          "created_at",
+          "signal",
+          "report"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/QualityEventSignal"
+          },
+          "report": {
+            "$ref": "#/components/schemas/DetectionQuality"
+          }
+        },
+        "description": "平台接收有效托管心跳时形成的不可变历史区间。report 的状态按记录时刻冻结，不能按查看时刻推断探针现状；不能推断逐流覆盖、攻击成功或自动封禁授权。 平台用同一引擎与配置的相邻原生累计快照计算接收区间，可能包含多个五秒采样；超过二十秒、时钟回退、复位和缺测不拼接为连续覆盖。首次无平台水位时保留探针原区间，重复快照不生成清除事件。"
+      },
+      "QualityEventPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/QualityEvent"
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "精确命中数量，以十进制字符串保留 int64 精度。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "page_size": {
+            "type": "integer",
+            "const": 20
           }
         }
       }

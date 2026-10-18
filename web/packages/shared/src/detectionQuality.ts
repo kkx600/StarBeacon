@@ -27,7 +27,7 @@ export const qualityCounters = {
 } as const
 
 export type QualityCounterKey = keyof typeof qualityCounters
-export interface QualityCounter {key: QualityCounterKey; layer: string; kind: 'counter'|'gauge'; total?: string; delta?: string}
+export interface QualityCounter {key: QualityCounterKey; layer: string; kind: 'counter'|'gauge'; total?: string; delta?: string;observed_resets?:string}
 export interface QualityFacet {state: 'unknown'|'no_reported_change'|'limited'|'policy_applied'; reasons: QualityCounterKey[]}
 export interface QualityReport {
   schema_version: 1; scope: 'sensor_interval'; source: 'suricata_eve_stats'; state: Exclude<keyof typeof qualityStates,'offline'>
@@ -65,7 +65,7 @@ export function readQuality(value: unknown, configSHA?: string): QualityReport|n
   const seen = new Set<string>()
   for (const row of value.counters) {
     if (!object(row) || !key(row.key) || seen.has(row.key) || row.layer !== qualityCounters[row.key][1] || row.kind !== qualityCounters[row.key][2]
-      || !counter(row.total) || !counter(row.delta) || row.delta !== undefined && (row.total === undefined || row.kind !== 'counter' || value.state !== 'observed' || BigInt(row.delta as string) > BigInt(row.total as string))) return null
+      || !counter(row.total) || !counter(row.delta) || !counter(row.observed_resets) || row.kind==='gauge'&&row.observed_resets!==undefined || row.delta !== undefined && (row.total === undefined || row.kind !== 'counter' || value.state !== 'observed' || BigInt(row.delta as string) > BigInt(row.total as string))) return null
     seen.add(row.key)
   }
   for (const layer of Object.keys(qualityFacetNames)) {

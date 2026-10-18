@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18T05:26:29.126547+00:00",
+  "scope": "detection_quality_history_and_explicit_notifications_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "27445a97979fc78c1c76ed9eb8d3fe40962fd19c7dc6e21f047e349172db6296",
+    "frontend_sha256": "97874bd41550449c216ee0c9724448cd4c5d513386e547737938c8f18ec00aab",
+    "build_parent_commit": "f44c368be429e301f49a8f04d430e99b27477d27",
+    "build_clean_commit": false,
+    "source_scope_or_gate_relaxed": false
+  },
+  "capabilities": [
+    "原生观测复位水位与平台相邻已接收累计值核对，覆盖十秒心跳跨越五秒原生采样的短暂增量。",
+    "心跳、注册代次游标与质量待办在同一租户事务提交；租约、退避、重复索引与通知流去重。",
+    "质量历史以 ES 网络事件分区为主存储，默认 180 天；PG 保留最后原生快照与有界到期待办状态。",
+    "管理员与只读用户按窗口、探针、注册代次和事件类型检索；冻结详情保留当时区间，未知与零增量分别处理。",
+    "办公与 Syslog 渠道须显式选择质量订阅，外发白名单摘要；原生计数、配置摘要、IP 和报文不外发。"
+  ],
+  "backend": {
+    "environment": "remote_docker_linux_amd64",
+    "actual_exit_code": 0,
+    "report_fetch_actual_exit_code": 0,
+    "tests": {
+      "unit": 506,
+      "integration": 118,
+      "native_capture": 1
+    },
+    "test_failures": 0,
+    "test_case_skips": 0,
+    "coverage": {
+      "covered": 19854,
+      "total": 22023,
+      "percentage": 90.1512055578259,
+      "minimum": 90
+    },
+    "coverage_scope_or_minimum_relaxed": false,
+    "native_capture": {
+      "http_to_notification_acceptance_seconds": 0.492,
+      "quality_packet_to_notification_acceptance_seconds": 9.176,
+      "request_sequence_to_archive_verified_seconds": 9.788,
+      "archive_sequence_includes_quality_observation_wait": true,
+      "packets": 26,
+      "raw_bytes": 4000,
+      "compressed_bytes": 1513,
+      "observed_complete_tcp_handshakes_in_archive": 2,
+      "indexed_http_events_across_rotation": 1665,
+      "missing_or_duplicate_events": 0,
+      "boundary": "独立 Docker 网卡的有界样本；原包校验时长包含串行质量观测等待。不能授予生产吞吐、长期完整性、外部渠道送达、生产对象存储、TLS 解密或真实设备阻断资格。"
+    },
+    "event_observer": {
+      "events": 5953,
+      "oom_events_observed": 0,
+      "qualification_container_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "actual_observer_exit_code": 143,
+      "stop_requested": true,
+      "fixture_teardown_exit_codes": [
+        137
+      ],
+      "fixture_teardown_reason": "通过后的专属 HTTP 流量夹具由 Compose 停止超时清理；与用例实际退出状态分别记录。"
+    }
+  },
+  "frontend": {
+    "tests": 788,
+    "ant_binding_cases_included": 138,
+    "tool_tests": 9,
+    "test_files": 54,
+    "coverage": {
+      "statements": 95.43831168831169,
+      "branches": 92.94218812012171,
+      "functions": 91.98873816227284,
+      "lines": 98.89848812095032
+    },
+    "minimum_each": 90,
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "default_palette_and_white_grey_background_preserved": true,
+    "timeout_scope_relaxed": false
+  },
+  "ui": {
+    "browser": "in_app_browser",
+    "pc_widths": [
+      1024,
+      1280,
+      1366,
+      1440,
+      1920,
+      2560,
+      3840
+    ],
+    "platform_business_views": 35,
+    "collector_business_views": 6,
+    "authenticated_read_only_route_layout_observations": 287,
+    "current_quality_list_detail_channel_form_observations": 21,
+    "synthetic_prototype_targeted_layout_observations": 35,
+    "page_horizontal_overflows": 0,
+    "double_business_tables": 0,
+    "current_browser_console_errors": 0,
+    "current_browser_console_warnings": 0,
+    "escape_preserves_channel_draft": "passed",
+    "frozen_native_interval_and_nested_scroll": "passed",
+    "real_native_history_readback": "passed",
+    "synthetic_gallery": {
+      "base": 767,
+      "supplemental": 93,
+      "total": 860,
+      "strict_check": "passed"
+    },
+    "boundary": "287 项只读 DOM 观察、21 项定向表单／详情观察及真实原生回读分别留证，不等同全部 CRUD、所有异常状态或正式全产品验收。"
+  },
+  "deployment": {
+    "scope": "owned_persistent_development_environment",
+    "backend_source": "27445a97979fc78c1c76ed9eb8d3fe40962fd19c7dc6e21f047e349172db6296",
+    "frontend_dist_sha256": "60fe8987ba07cd954467ff36e3e124dfa4c5240ef7734ad65a1c0911a76d9891",
+    "programs_verified": 5,
+    "running_roles_verified": 4,
+    "ready_endpoints_verified": 4,
+    "static_files_verified": 82,
+    "gateway_checks_after_cleanup": 12,
+    "identity_digest_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "native_fixture_identity_and_wal_preserved": true,
+    "production_qualification": false,
+    "native_fixture_observed_absent_after_archive": true
+  },
+  "checks": {
+    "quality_tests": 68,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 7,
+    "alignment_requirements": 107,
+    "platform_http_operations": 127,
+    "collector_http_operations": 18,
+    "go_vet": "passed",
+    "go_format": "passed",
+    "gallery": "passed",
+    "theme": "passed",
+    "diff_check": "passed",
+    "coverage_source_validation_target": "linux_amd64"
+  },
+  "cleanup": {
+    "scope": "owned_idle_caches_and_archived_diagnostics",
+    "remote_cache_directories": 2,
+    "remote_logical_bytes_removed": 2944993603,
+    "remote_allocated_file_bytes_before_removal": 3016859648,
+    "local_logical_bytes_removed": 99667746,
+    "native_fixture_observed_absent_before_remaining_cleanup": true,
+    "native_fixture_exit_receipt": "not_recovered",
+    "http_fixture_teardown_exit_codes": [
+      137
+    ],
+    "persistent_identity_wal_ca_and_evidence_preserved": true,
+    "global_prune": false,
+    "boundary": "保留首次清理失败；随后核对实际缺失夹具和持久文件，再完成剩余操作。逻辑字节与逐文件分配量不等同宿主文件系统即时释放空间。"
+  },
+  "failure_history": [
+    "旧实现仅采用最新五秒增量，真实 PG 复现跨十秒心跳漏计；原全回归明确停止，原源码、复现与失败分别保留。累计快照与复位水位修复后，原诊断程序得到一条期望事件。",
+    "原前端的组件导入及本机 Go PATH 问题独立留存；本次仅使用固定 Go 1.26.8，未放宽覆盖率或超时。",
+    "通知订阅下拉 Escape 连带关闭外层草稿的浏览器和失败用例保留；修复后重新执行当前 788 项完整前端回归。",
+    "原来源完整回归已通过；四处标准 Go 格式输出后保存原始源码，最终来源重新构建并从头通过完整回归，未继承旧覆盖计数。",
+    "七项初期通知表单尺寸记录实际不含弹窗，另两次原型视口未作用于目标标签，均未计入验收；独立标签上的 35 项原型检查实际尺寸一致。",
+    "历史源码归档核对两次错误分别源于生成的 Dockerfile.cached 与字符串排序；依据原 SOURCE_PATHS 和 pathlib.Path 分段排序独立核对通过，原归档字节与源码范围未改写。",
+    "首次清理 SSH 回执异常且无完整结果，原失败保留；随后确认专属探针已不存在，核对持久身份和 WAL，并只继续剩余夹具、闲置缓存与已归档诊断程序。",
+    "提交前在本机核对 Linux 覆盖率时，首次误用 darwin 构建选择而被拒绝；失败保留，按原 Linux amd64 目标复核后来源和覆盖计数一致，未改写原始统计。"
+  ],
+  "raw_evidence_archive": {
+    "local_path": ".local/acceptance/quality547-evidence.tar.gz",
+    "bytes": 98253555,
+    "sha256": "873aeaacc7677153489a9239033b20e3f33c1480f4629345538646a4cfbf5a7c",
+    "members_verified": 3249,
+    "private": true
+  },
+  "post_archive_evidence": {
+    "local_path": ".local/acceptance/quality554-supplement.tar.gz",
+    "bytes": 3282561,
+    "sha256": "3c44e66e46652927b12998114e212bdc5101e9c9507330289717a67da250aa37",
+    "members_verified": 128,
+    "private": true
+  },
+  "product_requirement_status": {
+    "total": 107,
+    "partial": 61,
+    "missing": 46,
+    "fully_accepted": 0
+  },
+  "remaining": [
+    "全部 pass／threshold 策略、驱动与解析错误映射、原包记录器和事件交付的统一质量关联仍未完成。",
+    "单租户突发吞吐、积压容量限制、长期中断、多网卡及 1–200+ 探针的持续大流量和恢复仍需独立验收。",
+    "持续资产治理、关联检测、情报、风险治理、文件与沙箱等仍有工程缺口；完整需求尚未逐项通过。",
+    "真实外部模型／设备／办公渠道／生产对象存储、生产 TLS／HA／灾备、当前两类 Linux UPX ZIP 与全路由完整交互仍未完成验收。"
+  ]
+}

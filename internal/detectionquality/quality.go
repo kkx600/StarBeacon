@@ -35,6 +35,8 @@ type Counter struct {
 	Kind  string  `json:"kind"`
 	Total *string `json:"total,omitempty"`
 	Delta *string `json:"delta,omitempty"`
+	// 只计从已持久化原生样本观察到的累计下降，不声明全部实际复位。
+	ObservedResets *string `json:"observed_resets,omitempty"`
 }
 
 type Facet struct {
@@ -93,11 +95,12 @@ type Tracker struct {
 	sampled, received, interval *time.Time
 	values, deltas              map[string]string
 	reset                       []string
+	observedResets              map[string]uint64
 	state                       string
 }
 
 func (t *Tracker) Start(runID, configSHA string, started time.Time) {
-	*t = Tracker{runID: runID, configSHA: configSHA, started: started, state: "unavailable"}
+	*t = Tracker{runID: runID, configSHA: configSHA, started: started, state: "unavailable", observedResets: map[string]uint64{}}
 }
 
 // Observe 仅接收当前托管进程 EVE 的持久记录；回放、旧进程、重复、未来或乱序样本不能刷新健康状态。
@@ -138,6 +141,7 @@ func (t *Tracker) Observe(payload []byte, received time.Time) {
 			p, _ := strconv.ParseUint(prior, 10, 64)
 			if v < p {
 				t.reset = append(t.reset, def.Key)
+				t.observedResets[def.Key]++
 			} else {
 				t.deltas[def.Key] = strconv.FormatUint(v-p, 10)
 			}
@@ -179,6 +183,10 @@ func (t *Tracker) Snapshot(now time.Time, running bool) Report {
 	}
 	for _, def := range definitions {
 		c := Counter{Key: def.Key, Layer: def.Layer, Kind: def.Kind}
+		if def.Kind == "counter" {
+			value := strconv.FormatUint(t.observedResets[def.Key], 10)
+			c.ObservedResets = &value
+		}
 		if value, ok := t.values[def.Key]; ok {
 			c.Total = &value
 		}

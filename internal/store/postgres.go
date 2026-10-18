@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/qualityevent"
 	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
@@ -189,6 +190,10 @@ func (p *Postgres) Heartbeat(ctx context.Context, id transport.SensorIdentity, h
 	if h.ProtocolCapabilities != nil && h.ProtocolCapabilities.Validate() != nil {
 		return fmt.Errorf("协议能力观测格式无效")
 	}
+	quality, err := qualityevent.Observation(h, time.Now().UTC())
+	if err != nil {
+		return err
+	}
 	b, e := json.Marshal(h)
 	if e != nil {
 		return e
@@ -198,7 +203,10 @@ func (p *Postgres) Heartbeat(ctx context.Context, id transport.SensorIdentity, h
 		if e == nil && tag.RowsAffected() != 1 {
 			return fmt.Errorf("探针未注册或已停用")
 		}
-		return e
+		if e != nil {
+			return e
+		}
+		return recordQuality(ctx, tx, id, quality)
 	})
 }
 

@@ -3,7 +3,7 @@
   "synthetic": true,
   "renderer": "Codex in-app browser",
   "baseStateCount": 767,
-  "supplementalCount": 85,
+  "supplementalCount": 93,
   "entries": [
     {
       "file": "overview/data.jpg",
@@ -13964,16 +13964,20 @@
     {
       "file": "channels/data.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=data&capture=1",
-      "title": "通知渠道 · 有数据",
+      "title": "通知渠道",
       "state": "data",
-      "capturedAt": "2026-10-17T13:22:03.413Z",
+      "capturedAt": "2026-10-18T05:04:27.953Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -13983,28 +13987,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "2bba113e537d43fcdb2dcd26a42782d733b33d81fd6bcb92c90a97577c660256",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 209154,
+      "captureJpegSha256": "c36f6aeede1085d833d5b214ef4d8ef6cac881a581bb5f91a1dacab363e2e09b",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 88540,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "7b36dcfdd68977b85fccceae31ab8e1f8403d848a31a2f6e55f21fc28f9c93cb"
+      "sha256": "c36f6aeede1085d833d5b214ef4d8ef6cac881a581bb5f91a1dacab363e2e09b"
     },
     {
       "file": "channels/empty.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=empty&capture=1",
-      "title": "通知渠道 · 无数据",
+      "title": "通知渠道",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:22:03.978Z",
+      "capturedAt": "2026-10-18T05:04:26.582Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14014,28 +14022,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "761490d1fd7fa82c60fc55470b5f47352673f31a6461b1568956d291d08a47a0",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 119502,
+      "captureJpegSha256": "869c1559a680aaa0a83f782c4ce8b3464e1849a279c5e6741b263c09d2de08a4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 67445,
       "image": {
         "width": 1280,
-        "height": 780
+        "height": 758
       },
-      "sha256": "e93680991839dfd1bd43a6896669a5041c0578350b3445f520d5be35ca6137b5"
+      "sha256": "869c1559a680aaa0a83f782c4ce8b3464e1849a279c5e6741b263c09d2de08a4"
     },
     {
       "file": "channels/detail.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=detail&capture=1",
-      "title": "通知渠道 · 查看详情",
+      "title": "通知渠道",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:22:04.662Z",
+      "capturedAt": "2026-10-18T05:04:29.324Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14045,28 +14057,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "1a400b70c4f7d886df341f84454908ff6b70fea404ecce04896c29b1250abd89",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 154140,
+      "captureJpegSha256": "3c571fe237e5c5e3ae6236e0206796f5af8da5133d522b890cd349e694034a0f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 70538,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "7ccf18032d76631b515ce76036d107f4a946d0e64a13ea06f2ba9af664320c38"
+      "sha256": "3c571fe237e5c5e3ae6236e0206796f5af8da5133d522b890cd349e694034a0f"
     },
     {
       "file": "channels/action.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=action&capture=1",
-      "title": "通知渠道 · 操作表单",
+      "title": "通知渠道",
       "state": "action",
-      "capturedAt": "2026-10-17T13:22:05.437Z",
+      "capturedAt": "2026-10-18T05:04:31.616Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14076,28 +14092,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "b057091d113faa6e6e5160a0ba203840d2e2bf6bd8cdb0efde092cc9c16a1ca1",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 162975,
+      "captureJpegSha256": "4d3db97195bb176a0a05238b50d3e2bc5100893c0c4fae874731bf1e57c458b6",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 73687,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "8910eebb6074d59966d0c1683ef1b246e48e2a918f565c50167a2ce000ee8946"
+      "sha256": "4d3db97195bb176a0a05238b50d3e2bc5100893c0c4fae874731bf1e57c458b6"
     },
     {
       "file": "channels/loading.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=loading&capture=1",
-      "title": "通知渠道 · 加载中",
+      "title": "通知渠道",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:22:06.038Z",
+      "capturedAt": "2026-10-18T05:04:32.811Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14107,28 +14127,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "06f2f0824f5a721ce91ab0e759af24bf61db6fca4f843e88a1c99a2320f2d4d0",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 124097,
+      "captureJpegSha256": "6d6d6f5d37b812a2126fdf19ac0da1ffc23f6f77546a91f7da8db8beac9882c0",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 65152,
       "image": {
         "width": 1280,
-        "height": 917
+        "height": 758
       },
-      "sha256": "f0218bfcec06610492fa54321795ab7a1888f29dba99fba13744c252dc03c609"
+      "sha256": "6d6d6f5d37b812a2126fdf19ac0da1ffc23f6f77546a91f7da8db8beac9882c0"
     },
     {
       "file": "channels/error.jpg",
       "url": "http://127.0.0.1:4173/page/channels?state=error&capture=1",
-      "title": "通知渠道 · 加载失败",
+      "title": "通知渠道",
       "state": "error",
-      "capturedAt": "2026-10-17T13:22:06.644Z",
+      "capturedAt": "2026-10-18T05:04:33.964Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14138,28 +14162,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "a86fd2b56c539243e0d16f46528a85f530026125b73185f687f1c0cb035b0ffc",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 119365,
+      "captureJpegSha256": "794e59129f0ad8c618706938de32880cb31fa84cc117aa62b44fa35e02a66663",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 68358,
       "image": {
         "width": 1280,
-        "height": 812
+        "height": 758
       },
-      "sha256": "efac4bc8e9caa1221af5b785992d5104425f6645c4b3a448d8b376e0a880a7d3"
+      "sha256": "794e59129f0ad8c618706938de32880cb31fa84cc117aa62b44fa35e02a66663"
     },
     {
       "file": "syslog-output/data.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=data&capture=1",
-      "title": "Syslog 转发 · 有数据",
+      "title": "Syslog 转发",
       "state": "data",
-      "capturedAt": "2026-10-17T13:22:07.328Z",
+      "capturedAt": "2026-10-18T05:04:36.331Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14169,28 +14197,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "fab53662a548ef94a8e4c41585fc5cc6eac0defe12467fb8ea7d1007e53f8ea8",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 204877,
+      "captureJpegSha256": "954b43932d555a4c757bc5a2a153b841560dd7f21940e0dbb923a4c0e16644bb",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 74536,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "fc02a5b28465261d5fe4268f457112bc94f5dc03db353cb8c060315b6180ef50"
+      "sha256": "954b43932d555a4c757bc5a2a153b841560dd7f21940e0dbb923a4c0e16644bb"
     },
     {
       "file": "syslog-output/empty.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=empty&capture=1",
-      "title": "Syslog 转发 · 无数据",
+      "title": "Syslog 转发",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:22:07.955Z",
+      "capturedAt": "2026-10-18T05:04:35.149Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14200,28 +14232,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "5aede626995d24051f16343737720a7b1644c6a21767039ba8cb108c41969078",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 119945,
+      "captureJpegSha256": "43c53d565d0f8d9517c91ef5f4823678e46c37ad2a4940100fd57fec60062404",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 68074,
       "image": {
         "width": 1280,
-        "height": 780
+        "height": 758
       },
-      "sha256": "667db0faf4e93a3fa000714a28f7f8ffb93e922c9f9ca7958423c5791565b9d8"
+      "sha256": "43c53d565d0f8d9517c91ef5f4823678e46c37ad2a4940100fd57fec60062404"
     },
     {
       "file": "syslog-output/detail.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=detail&capture=1",
-      "title": "Syslog 转发 · 查看详情",
+      "title": "Syslog 转发",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:22:08.747Z",
+      "capturedAt": "2026-10-18T05:04:37.497Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14231,28 +14267,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "99308144ea80a83e70298f1fc0c79d76e0f0d16535ee1a4fec3e383b13c9e1a9",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 153681,
+      "captureJpegSha256": "28e93778d29da0ba40425ac4a795407e8df9906f9b5d7ab096d296bcd8e2e040",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 60804,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "67cd3bc511bf6789966aa0fe9c6f39f3cddbbf6007a02e5534650a35ad9616ad"
+      "sha256": "28e93778d29da0ba40425ac4a795407e8df9906f9b5d7ab096d296bcd8e2e040"
     },
     {
       "file": "syslog-output/action.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=action&capture=1",
-      "title": "Syslog 转发 · 操作表单",
+      "title": "Syslog 转发",
       "state": "action",
-      "capturedAt": "2026-10-17T13:22:09.668Z",
+      "capturedAt": "2026-10-18T05:04:38.683Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14262,28 +14302,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "464fedcbda137816fefefa0a978bf2d9bd480d4dda92ef4cbe9cd1dc3406fb60",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 165582,
+      "captureJpegSha256": "f773d85fee40471033ea683ab45e315607faba79422d41710bd93d0000ecb2e3",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 69309,
       "image": {
         "width": 1280,
-        "height": 1078
+        "height": 720
       },
-      "sha256": "aedf1085e4edbbab437af45da40e9aaddf78faf702a3d277c91889697e8325a3"
+      "sha256": "f773d85fee40471033ea683ab45e315607faba79422d41710bd93d0000ecb2e3"
     },
     {
       "file": "syslog-output/loading.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=loading&capture=1",
-      "title": "Syslog 转发 · 加载中",
+      "title": "Syslog 转发",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:22:10.354Z",
+      "capturedAt": "2026-10-18T05:04:39.767Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14293,28 +14337,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "f459b274f94ee94f5b7a3ce7b608b8c10fd1c0ee4cac8c53356fb19d869e5a75",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 123852,
+      "captureJpegSha256": "1018eacc3f1e3e65d0561df13ba9ac7d01c38a2cea2837dce18c5c1d41378569",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 65759,
       "image": {
         "width": 1280,
-        "height": 917
+        "height": 758
       },
-      "sha256": "06f8bad90ac1b94c14c307ca34b805ee31d1b99935577709e6160d2ef53a6c89"
+      "sha256": "1018eacc3f1e3e65d0561df13ba9ac7d01c38a2cea2837dce18c5c1d41378569"
     },
     {
       "file": "syslog-output/error.jpg",
       "url": "http://127.0.0.1:4173/page/syslog-output?state=error&capture=1",
-      "title": "Syslog 转发 · 加载失败",
+      "title": "Syslog 转发",
       "state": "error",
-      "capturedAt": "2026-10-17T13:22:10.981Z",
+      "capturedAt": "2026-10-18T05:04:40.847Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -14324,14 +14372,14 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "0b4266549c668eba5a201da75a62372f1b89d0b8ad8bb477b1ce464f2c4f2469",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 119105,
+      "captureJpegSha256": "9ff67cf61595786dee56dbc580948109019a1744c49eb62304686d93dfe7e4b4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 68724,
       "image": {
         "width": 1280,
-        "height": 812
+        "height": 758
       },
-      "sha256": "ef999c8a460cb3a90058f8d5a0f31a4dd5bec83ec00c0c6b7d6a38f77edf7a54"
+      "sha256": "9ff67cf61595786dee56dbc580948109019a1744c49eb62304686d93dfe7e4b4"
     },
     {
       "file": "models/data.jpg",
@@ -15452,16 +15500,20 @@
     {
       "file": "sensors/data.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=data&capture=1",
-      "title": "探针列表 · 有数据",
+      "title": "探针列表 · data",
       "state": "data",
-      "capturedAt": "2026-10-17T13:24:03.158Z",
+      "capturedAt": "2026-10-18T03:21:10.721Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15471,28 +15523,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "bd75b82240b36731d9cab00f57fc62946ebb594db2934b8c92d94fd6e5230ac6",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 259403,
+      "captureJpegSha256": "747a6b9969d7a0ee139151237d6d5c8fecfb951612b9ddae9bc53de92fd0b980",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 156094,
       "image": {
         "width": 1280,
         "height": 1292
       },
-      "sha256": "2ca2e361cca0bfd5fb6033bffb955a9491ed4100d5818a8cd9513c45af7bc775"
+      "sha256": "747a6b9969d7a0ee139151237d6d5c8fecfb951612b9ddae9bc53de92fd0b980"
     },
     {
       "file": "sensors/empty.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=empty&capture=1",
-      "title": "探针列表 · 无数据",
+      "title": "探针列表 · empty",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:24:03.766Z",
+      "capturedAt": "2026-10-18T03:21:11.343Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15502,28 +15558,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "9663bc25c33cfc0c73f7ddcd4bc953feaec1b73c781b06517df6e4d6027c5af9",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 158288,
+      "captureJpegSha256": "ab2a78c90725a6c9ab94143c8253d00485c524cedccedd7389be05f40df2f371",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 95089,
       "image": {
         "width": 1280,
         "height": 982
       },
-      "sha256": "7cc3aaaa5ca4fe203177789318633fdeab800b547d6e01639f8704c5555ef50a"
+      "sha256": "ab2a78c90725a6c9ab94143c8253d00485c524cedccedd7389be05f40df2f371"
     },
     {
       "file": "sensors/detail.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=detail&capture=1",
-      "title": "探针列表 · 查看详情",
+      "title": "探针列表 · detail",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:24:04.553Z",
+      "capturedAt": "2026-10-18T03:21:13.303Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15533,28 +15593,43 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "5262806f4f727b7738b68a15b72397e6ef6f28f5accb61c1173aaeea3dcc6719",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 210997,
+      "captureJpegSha256": "5262806f4f727b7738b68a15b72397e6ef6f28f5accb61c1173aaeea3dcc6719",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 124860,
       "image": {
         "width": 1280,
         "height": 1292
       },
-      "sha256": "eef983a2444cf5aad46e133d1509246d6d95477f524815549cb90520eb30d692"
+      "sha256": "5262806f4f727b7738b68a15b72397e6ef6f28f5accb61c1173aaeea3dcc6719"
     },
     {
       "file": "sensors/action.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=action&capture=1",
-      "title": "探针列表 · 操作表单",
+      "title": "探针列表 · action",
       "state": "action",
-      "capturedAt": "2026-10-17T13:24:05.318Z",
+      "capturedAt": "2026-10-18T03:21:14.016Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [
+          {
+            "bottom": 603.375,
+            "text": "取 消",
+            "top": 569.375
+          },
+          {
+            "bottom": 603.375,
+            "text": "提 交",
+            "top": 569.375
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15564,28 +15639,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "daf76079b55569725c62b705cd3a5235c6096b8cc3ab86de3aaaff8266eae4cc",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 198984,
+      "captureJpegSha256": "8b19ceec9a7a6bc3634b7f9325f36649a55594a02b72ae3fe631dce1eb5ecd7f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 117189,
       "image": {
         "width": 1280,
         "height": 1292
       },
-      "sha256": "6b2f41ebe036325605f1b5fa36a280ab55d97f5ab81087e52a79ff3af3ff4d2a"
+      "sha256": "8b19ceec9a7a6bc3634b7f9325f36649a55594a02b72ae3fe631dce1eb5ecd7f"
     },
     {
       "file": "sensors/loading.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=loading&capture=1",
-      "title": "探针列表 · 加载中",
+      "title": "探针列表 · loading",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:24:06.004Z",
+      "capturedAt": "2026-10-18T03:21:11.850Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15595,28 +15674,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "c3c4d39aab5a5fcd829bc56736118822323b010c60d3aa85f31b5f6f17da3227",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 149731,
+      "captureJpegSha256": "aee73751798df0e13dd61a826820970e3c8d2a8e1865c5241f13c934ed6f43bb",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 89590,
       "image": {
         "width": 1280,
         "height": 1005
       },
-      "sha256": "681652ee5e64ff8355c73f9e3a8131b6dfc57617d30a5e63105db6d71a600562"
+      "sha256": "aee73751798df0e13dd61a826820970e3c8d2a8e1865c5241f13c934ed6f43bb"
     },
     {
       "file": "sensors/error.jpg",
       "url": "http://127.0.0.1:4173/page/sensors?state=error&capture=1",
-      "title": "探针列表 · 加载失败",
+      "title": "探针列表 · error",
       "state": "error",
-      "capturedAt": "2026-10-17T13:24:06.663Z",
+      "capturedAt": "2026-10-18T03:21:12.567Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15626,28 +15709,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "41bf2f6f39fb6e4eedda8e91bb26df479cf3f3456c536b2fb230f65656ce9b89",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 145166,
+      "captureJpegSha256": "d43d00a28d487221b25592f57c6d10716502a15c7997d1b943951909a1795e4b",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 87726,
       "image": {
         "width": 1280,
         "height": 900
       },
-      "sha256": "f3624cd51a960a3d17f80426921f4ed872dc6b69f8cd8327ee0d571becfec6c3"
+      "sha256": "d43d00a28d487221b25592f57c6d10716502a15c7997d1b943951909a1795e4b"
     },
     {
       "file": "sensor-groups/data.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=data&capture=1",
-      "title": "探针分组 · 有数据",
+      "title": "探针分组 · data",
       "state": "data",
-      "capturedAt": "2026-10-17T13:24:07.432Z",
+      "capturedAt": "2026-10-18T03:21:14.608Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15657,28 +15744,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "aeccfdb9d11d48a9ee0326089925f3906fe9b976834a34389bccbf1c63792d0c",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 220796,
+      "captureJpegSha256": "af4256ade55110afc8234876c01f900add5bc9f1c942813974c265c0a03c287e",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 131590,
       "image": {
         "width": 1280,
         "height": 1132
       },
-      "sha256": "804c6c543eeba274bd5ffb89a895cddbfce8c131acee776b1c27cebda749ace4"
+      "sha256": "af4256ade55110afc8234876c01f900add5bc9f1c942813974c265c0a03c287e"
     },
     {
       "file": "sensor-groups/empty.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=empty&capture=1",
-      "title": "探针分组 · 无数据",
+      "title": "探针分组 · empty",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:24:08.043Z",
+      "capturedAt": "2026-10-18T03:21:15.118Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15688,28 +15779,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "345e333f3b3a30184f713d49f54ffc4edaa5be3ff486d82fb406a133a0f4a425",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 130581,
+      "captureJpegSha256": "29cda84b5657d7a8cbfe0db3b8f49c38da738fc5856daf4e81a3efb9510324e5",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 76809,
       "image": {
         "width": 1280,
         "height": 836
       },
-      "sha256": "09daa7d22ad9b4d234c0ab01b65cef21eed25288f30cfc4ad0e2c659350c8db3"
+      "sha256": "29cda84b5657d7a8cbfe0db3b8f49c38da738fc5856daf4e81a3efb9510324e5"
     },
     {
       "file": "sensor-groups/detail.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=detail&capture=1",
-      "title": "探针分组 · 查看详情",
+      "title": "探针分组 · detail",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:24:08.728Z",
+      "capturedAt": "2026-10-18T03:21:16.848Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15719,28 +15814,43 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "4b00ea63cfe8009416dc6665281f4f2346b2406e77629059cea26e718f5ea5bf",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 175929,
+      "captureJpegSha256": "4b00ea63cfe8009416dc6665281f4f2346b2406e77629059cea26e718f5ea5bf",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 103526,
       "image": {
         "width": 1280,
         "height": 1132
       },
-      "sha256": "aaa9baa17f7419df798c8a7ed32535f360d46028a055939635205949d962d5a2"
+      "sha256": "4b00ea63cfe8009416dc6665281f4f2346b2406e77629059cea26e718f5ea5bf"
     },
     {
       "file": "sensor-groups/action.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=action&capture=1",
-      "title": "探针分组 · 操作表单",
+      "title": "探针分组 · action",
       "state": "action",
-      "capturedAt": "2026-10-17T13:24:09.417Z",
+      "capturedAt": "2026-10-18T03:21:17.553Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [
+          {
+            "bottom": 549.171875,
+            "text": "取 消",
+            "top": 515.171875
+          },
+          {
+            "bottom": 549.171875,
+            "text": "提 交",
+            "top": 515.171875
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15750,28 +15860,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "6a7f86844b6e11aba0302aee49438c0514a8e90e3739779d5a4a155642faa3d4",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 175878,
+      "captureJpegSha256": "6a7f86844b6e11aba0302aee49438c0514a8e90e3739779d5a4a155642faa3d4",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 103845,
       "image": {
         "width": 1280,
         "height": 1132
       },
-      "sha256": "d71ea029918f5f95afebcd80232889ada2a1de86bfc6092138448d916930efb4"
+      "sha256": "6a7f86844b6e11aba0302aee49438c0514a8e90e3739779d5a4a155642faa3d4"
     },
     {
       "file": "sensor-groups/loading.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=loading&capture=1",
-      "title": "探针分组 · 加载中",
+      "title": "探针分组 · loading",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:24:10.073Z",
+      "capturedAt": "2026-10-18T03:21:15.671Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15781,28 +15895,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "f4b5f82d460b84907047fae280d5bfa72d958707d4ceff8c1aa7230e446bf3d0",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 135999,
+      "captureJpegSha256": "d986c8fc6fb483feea78e6c67c422eadcb254cb2a6852fe7b6750a36b3d4afe3",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 80037,
       "image": {
         "width": 1280,
         "height": 973
       },
-      "sha256": "67880d6f645fe75e0094c45dc98548c854fd80966b2ced3dd3ff878485b6d4da"
+      "sha256": "d986c8fc6fb483feea78e6c67c422eadcb254cb2a6852fe7b6750a36b3d4afe3"
     },
     {
       "file": "sensor-groups/error.jpg",
       "url": "http://127.0.0.1:4173/page/sensor-groups?state=error&capture=1",
-      "title": "探针分组 · 加载失败",
+      "title": "探针分组 · error",
       "state": "error",
-      "capturedAt": "2026-10-17T13:24:10.693Z",
+      "capturedAt": "2026-10-18T03:21:16.168Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -15812,14 +15930,14 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "4f6471864df149c34f027ebaa8a79b0b696db4041c339a5a19d5090093eb8391",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 132256,
+      "captureJpegSha256": "d8d556a6b2bc49481b2c1f4320c5f76c2f8ae992c633d0f08c42f577856001ec",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 78268,
       "image": {
         "width": 1280,
         "height": 868
       },
-      "sha256": "d2583d857f467144684ccf68bb1298aac2da76908dd28502703ff921248e109c"
+      "sha256": "d8d556a6b2bc49481b2c1f4320c5f76c2f8ae992c633d0f08c42f577856001ec"
     },
     {
       "file": "releases/data.jpg",
@@ -19916,16 +20034,20 @@
     {
       "file": "probe-identity/data.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=data&capture=1",
-      "title": "注册与证书 · 有数据",
+      "title": "注册与证书 · data",
       "state": "data",
-      "capturedAt": "2026-10-17T13:27:25.010Z",
+      "capturedAt": "2026-10-18T03:21:18.068Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -19935,28 +20057,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "ba155b6585e46d6c184dd9c86d7cdd9cd99f22d3dea818ab87e5b9b2e356227a",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 115153,
+      "captureJpegSha256": "df2e039fbb23a0b2dfa9c2eafc63fd1afdc9d8a435fb8d55559ab9ae3e2a25ee",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 67677,
       "image": {
         "width": 1280,
         "height": 720
       },
-      "sha256": "1fd26f241af4b029989ec081701d3d22f697bb7e6f5b5d2fe8761389babb41eb"
+      "sha256": "df2e039fbb23a0b2dfa9c2eafc63fd1afdc9d8a435fb8d55559ab9ae3e2a25ee"
     },
     {
       "file": "probe-identity/empty.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=empty&capture=1",
-      "title": "注册与证书 · 无数据",
+      "title": "注册与证书 · empty",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:27:25.657Z",
+      "capturedAt": "2026-10-18T03:21:18.578Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -19966,28 +20092,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "3a41bed3d694af5d37b713b38e83e50642c972b2007e4a75c87f84717566b535",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 112325,
+      "captureJpegSha256": "4f8c6f350ba0b9bc367a99fc4111caffd0c33783b8927afe2cbf46c4694a83e2",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 67508,
       "image": {
         "width": 1280,
         "height": 758
       },
-      "sha256": "e2d0c7f2b4ea9cee404aa346da319e58e74e0be46dff61e92b0eea23ec1d534e"
+      "sha256": "4f8c6f350ba0b9bc367a99fc4111caffd0c33783b8927afe2cbf46c4694a83e2"
     },
     {
       "file": "probe-identity/detail.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=detail&capture=1",
-      "title": "注册与证书 · 查看详情",
+      "title": "注册与证书 · detail",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:27:26.516Z",
+      "capturedAt": "2026-10-18T03:21:20.459Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -19997,28 +20127,43 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "e5e747e83924739d522364b2eaaca9bda1e5fe1edd423dfd4e034cfb483bd856",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 109058,
+      "captureJpegSha256": "079593ef3cd9d27f9f8128d6c3f96bfd975c267e21b8eb17ef2bb9a94517020c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 64046,
       "image": {
         "width": 1280,
         "height": 720
       },
-      "sha256": "e0fce451c295b0c183662a6c1d4c75c9b73f4c27e9ce04e9a758eddf519c630c"
+      "sha256": "079593ef3cd9d27f9f8128d6c3f96bfd975c267e21b8eb17ef2bb9a94517020c"
     },
     {
       "file": "probe-identity/action.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=action&capture=1",
-      "title": "注册与证书 · 操作表单",
+      "title": "注册与证书 · action",
       "state": "action",
-      "capturedAt": "2026-10-17T13:27:27.179Z",
+      "capturedAt": "2026-10-18T03:21:21.029Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [
+          {
+            "bottom": 505.484375,
+            "text": "关 闭",
+            "top": 471.484375
+          },
+          {
+            "bottom": 505.484375,
+            "text": "创建注册凭据",
+            "top": 471.484375
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -20028,28 +20173,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "55c67b978e6aca4d864f1046d247b63ffef25891ca6c5818e0ef30b08355bd2d",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 120484,
+      "captureJpegSha256": "cd88d66ab9f973df9a248e2f1744347594a5116623b6520483bd106a13bf10f3",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71016,
       "image": {
         "width": 1280,
         "height": 720
       },
-      "sha256": "0662a3e95d411994e829c1d3ebef957f9d0e9bb833b683d1b9ada1edcc3fdcc3"
+      "sha256": "cd88d66ab9f973df9a248e2f1744347594a5116623b6520483bd106a13bf10f3"
     },
     {
       "file": "probe-identity/loading.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=loading&capture=1",
-      "title": "注册与证书 · 加载中",
+      "title": "注册与证书 · loading",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:27:27.888Z",
+      "capturedAt": "2026-10-18T03:21:19.198Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -20059,28 +20208,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "7ce5a2be48ef491c0d47c23c93d7bb9ec8836f34728d8bb465247942e11ff95b",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 119858,
+      "captureJpegSha256": "7449864114f886abefbcfa0bb5be02b58d217dfa01cac0c5d7befbc5251eac07",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71654,
       "image": {
         "width": 1280,
         "height": 896
       },
-      "sha256": "c1b24fa3f8b6b0267862956ee50a237bf60e6977b28d4667373ce5c85e4a9efb"
+      "sha256": "7449864114f886abefbcfa0bb5be02b58d217dfa01cac0c5d7befbc5251eac07"
     },
     {
       "file": "probe-identity/error.jpg",
       "url": "http://127.0.0.1:4173/page/probe-identity?state=error&capture=1",
-      "title": "注册与证书 · 加载失败",
+      "title": "注册与证书 · error",
       "state": "error",
-      "capturedAt": "2026-10-17T13:27:28.587Z",
+      "capturedAt": "2026-10-18T03:21:19.906Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -20090,14 +20243,14 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "48e3e6153527e1017ff872f5a78d41dcacd2ba8d365c073a05c7a87138b06480",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 115412,
+      "captureJpegSha256": "ea0439b42ae764f56792bbd7a9aa48949d14ef7e925d0ccaf61f0c5c2c637632",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 69498,
       "image": {
         "width": 1280,
         "height": 790
       },
-      "sha256": "75f35ec2060219745016c4716e64ef83685d41f939c0880064176199e06fc890"
+      "sha256": "ea0439b42ae764f56792bbd7a9aa48949d14ef7e925d0ccaf61f0c5c2c637632"
     },
     {
       "file": "rule-sync/data.jpg",
@@ -21032,16 +21185,20 @@
     {
       "file": "delivery-logs/data.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=data&capture=1",
-      "title": "推送日志 · 有数据",
+      "title": "推送日志",
       "state": "data",
-      "capturedAt": "2026-10-17T13:27:50.882Z",
+      "capturedAt": "2026-10-18T05:04:43.214Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21051,28 +21208,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "597e3a98c74770882b954ea5a5f87c9607274dcdb50fd5fe3eae5758515b89e6",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 218967,
+      "captureJpegSha256": "63bb83fe420aeff9d3f993505e427c81723ce6f72cc10ab1650ad2b228b3a644",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 71672,
       "image": {
         "width": 1280,
-        "height": 1134
+        "height": 720
       },
-      "sha256": "09dfd3d23efde0c45f97214787d55ba98918ade3f42e5781662821ea31f8c273"
+      "sha256": "63bb83fe420aeff9d3f993505e427c81723ce6f72cc10ab1650ad2b228b3a644"
     },
     {
       "file": "delivery-logs/empty.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=empty&capture=1",
-      "title": "推送日志 · 无数据",
+      "title": "推送日志",
       "state": "empty",
-      "capturedAt": "2026-10-17T13:27:51.584Z",
+      "capturedAt": "2026-10-18T05:04:42.074Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21082,28 +21243,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "86a42e3148e3b32fea21abb83d6774f7108f64da7998de70d0266557f74bc8c3",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 127801,
+      "captureJpegSha256": "4ccc9a2f6fcb3a10b650622263ee4b9832c4e71594f6d9ff148530ded6fdbb38",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 66169,
       "image": {
         "width": 1280,
-        "height": 836
+        "height": 758
       },
-      "sha256": "557309bfb1386915f65b08b960cd8a10ee4b5db1b910c6f4a24876daa6e1e16e"
+      "sha256": "4ccc9a2f6fcb3a10b650622263ee4b9832c4e71594f6d9ff148530ded6fdbb38"
     },
     {
       "file": "delivery-logs/detail.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=detail&capture=1",
-      "title": "推送日志 · 查看详情",
+      "title": "推送日志",
       "state": "detail",
-      "capturedAt": "2026-10-17T13:27:52.503Z",
+      "capturedAt": "2026-10-18T05:04:44.237Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21113,28 +21278,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "8dc844f395e38378422feb1f5d9ace0292135378f0a1e884b03da14789fe3bc0",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 168983,
+      "captureJpegSha256": "ce8e9ee501e67ff51068a5249007db3477a667e1a485443486e8a00072d73e6d",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 66768,
       "image": {
         "width": 1280,
-        "height": 1134
+        "height": 720
       },
-      "sha256": "d2258ae86814dcf4370618da62aa3027c98d36d657e848b23b6793a4902098dc"
+      "sha256": "ce8e9ee501e67ff51068a5249007db3477a667e1a485443486e8a00072d73e6d"
     },
     {
       "file": "delivery-logs/action.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=action&capture=1",
-      "title": "推送日志 · 操作表单",
+      "title": "推送日志",
       "state": "action",
-      "capturedAt": "2026-10-17T13:27:53.376Z",
+      "capturedAt": "2026-10-18T05:04:45.379Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21144,28 +21313,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "82017dbb00499b4ce8eac4cfc46042d3dabc8f33c2a71ba2c7682a0c1ca60fe2",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 177413,
+      "captureJpegSha256": "960a082576f19fd6ae027de4da08b17b3df15accf19fba41c48d2fe14a384ccb",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 67615,
       "image": {
         "width": 1280,
-        "height": 1134
+        "height": 720
       },
-      "sha256": "955095c26d0a4d0941708b6c06cf93b52060f1e83fae37e8cbe5a2d27ee80ca2"
+      "sha256": "960a082576f19fd6ae027de4da08b17b3df15accf19fba41c48d2fe14a384ccb"
     },
     {
       "file": "delivery-logs/loading.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=loading&capture=1",
-      "title": "推送日志 · 加载中",
+      "title": "推送日志",
       "state": "loading",
-      "capturedAt": "2026-10-17T13:27:53.949Z",
+      "capturedAt": "2026-10-18T05:04:46.398Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21175,28 +21348,32 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "b3362b0c5d64811ade4dfe61cc37e13f80145844bf2bf7034b3fbc2d84a0336e",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 134227,
+      "captureJpegSha256": "d40c00f95b717f7d4df3c2def6cb6693a644c0f68bebcacd43a1bddddada442b",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 63718,
       "image": {
         "width": 1280,
-        "height": 973
+        "height": 758
       },
-      "sha256": "64f34250b2fd5be8ad9287822e4d1238f800c774ad182ef8fb96f58ce85a82c2"
+      "sha256": "d40c00f95b717f7d4df3c2def6cb6693a644c0f68bebcacd43a1bddddada442b"
     },
     {
       "file": "delivery-logs/error.jpg",
       "url": "http://127.0.0.1:4173/page/delivery-logs?state=error&capture=1",
-      "title": "推送日志 · 加载失败",
+      "title": "推送日志",
       "state": "error",
-      "capturedAt": "2026-10-17T13:27:54.630Z",
+      "capturedAt": "2026-10-18T05:04:47.642Z",
       "renderer": "Codex in-app browser",
-      "source": "合成数据组件页面截图；可见路由状态与页面边界核对",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
       "stateVerified": true,
       "viewport": {
-        "width": 1280,
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
         "height": 720,
-        "scrollWidth": 1280
+        "scrollWidth": 1280,
+        "width": 1280
       },
       "themeInputs": [
         "prototype/src/theme.ts",
@@ -21206,14 +21383,14 @@
       ],
       "themeDigestAlgorithm": "sha256-path-nul-content-nul",
       "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
-      "capturePngSha256": "87e247653da22bc65604edd67820ad90b9c8d5440b375ad1d7cd5bcabdb0e5ce",
-      "encoding": "原始浏览器 PNG 仅转码为 JPEG，未合成或修改页面像素",
-      "bytes": 130506,
+      "captureJpegSha256": "22995a8e8bb52938b96a00dcef4e6706ef94685547e54fd7e3f292e904667004",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 66764,
       "image": {
         "width": 1280,
-        "height": 868
+        "height": 758
       },
-      "sha256": "073065af677ec5f2a1351476adef68656686a8b82adbd4c8aebb5dfffea98dd7"
+      "sha256": "22995a8e8bb52938b96a00dcef4e6706ef94685547e54fd7e3f292e904667004"
     },
     {
       "file": "application-rules/data.jpg",
@@ -26484,6 +26661,304 @@
         "height": 930
       },
       "sha256": "e43f7e3b8c8cab9b91d8cb7587d88295cd98cb0e0d292aeec53b85cf40f8a6a5"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-data.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=data&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:06.616Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "8888ac5b9ba261fa1e3044f08492251b812663e332c8a2e4e56084601cf7a81a",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 97081,
+      "image": {
+        "width": 1280,
+        "height": 878
+      },
+      "sha256": "8888ac5b9ba261fa1e3044f08492251b812663e332c8a2e4e56084601cf7a81a"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-detail.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=detail&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:07.773Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "bottom": 672,
+            "text": "返回列表",
+            "top": 638
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "88015e85b1e0559497d3428462866cc631a7cca5e7abda9759a12f4e9969107c",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 81636,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "88015e85b1e0559497d3428462866cc631a7cca5e7abda9759a12f4e9969107c"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-empty.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=empty&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:08.904Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "57505f494aee3d4734af2c22d403d38e7e9fc8ef7b1b3b2c48895305c53e9ccf",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 92882,
+      "image": {
+        "width": 1280,
+        "height": 1020
+      },
+      "sha256": "57505f494aee3d4734af2c22d403d38e7e9fc8ef7b1b3b2c48895305c53e9ccf"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-loading.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=loading&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:10.047Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "db1fc6f70984d11b8c846ef6b7d9974a293e99e60f894948a17e670dafcc020f",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 86735,
+      "image": {
+        "width": 1280,
+        "height": 1020
+      },
+      "sha256": "db1fc6f70984d11b8c846ef6b7d9974a293e99e60f894948a17e670dafcc020f"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-error.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=error&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:11.251Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 0,
+        "dialogs": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "ad1ab0d0d2ada07430953a9bd5cc763463e8ab6de3beb1981ca25283a2297307",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 91439,
+      "image": {
+        "width": 1280,
+        "height": 1020
+      },
+      "sha256": "ad1ab0d0d2ada07430953a9bd5cc763463e8ab6de3beb1981ca25283a2297307"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-action.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=action&view=quality&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:12.545Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "bottom": 672,
+            "text": "返回列表",
+            "top": 638
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "f75640025508b95a850648617e787d0f8146015f4affbd5ec8a3a25f35ae7184",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 81639,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "f75640025508b95a850648617e787d0f8146015f4affbd5ec8a3a25f35ae7184"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-clear.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=detail&view=quality&result=clear&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:13.747Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [
+          {
+            "bottom": 672,
+            "text": "返回列表",
+            "top": 638
+          }
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 1,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "c991c02f09a00e4f54ed3d8b141d49e813e443bc2023568b65391b9ed70f17a2",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 84769,
+      "image": {
+        "width": 1280,
+        "height": 720
+      },
+      "sha256": "c991c02f09a00e4f54ed3d8b141d49e813e443bc2023568b65391b9ed70f17a2"
+    },
+    {
+      "file": "supplemental/sensor-quality-events-reminder.jpg",
+      "url": "http://127.0.0.1:4173/page/sensors?state=data&view=quality&result=reminder&capture=1",
+      "title": "质量事件",
+      "state": "supplemental",
+      "capturedAt": "2026-10-18T05:05:14.814Z",
+      "renderer": "Codex in-app browser",
+      "source": "合成探针与通知数据，复用工程质量历史、渠道配置和回执组件；不查询真实探针或发送通知",
+      "stateVerified": true,
+      "viewport": {
+        "actions": [],
+        "background": "rgba(0, 0, 0, 0)",
+        "businessTables": 1,
+        "dialogs": 0,
+        "height": 720,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "themeInputs": [
+        "prototype/src/theme.ts",
+        "prototype/src/styles.css",
+        "web/packages/shared/src/theme.ts",
+        "web/packages/shared/src/controls.css"
+      ],
+      "themeDigestAlgorithm": "sha256-path-nul-content-nul",
+      "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+      "captureJpegSha256": "92a1c22f8a65f9d2348aae54916eb10bb41b4b28ec4597d96689d59579284349",
+      "encoding": "原始浏览器 JPEG 直接保存，未转码、合成或修改页面内容",
+      "bytes": 97534,
+      "image": {
+        "width": 1280,
+        "height": 878
+      },
+      "sha256": "92a1c22f8a65f9d2348aae54916eb10bb41b4b28ec4597d96689d59579284349"
     }
   ]
 }

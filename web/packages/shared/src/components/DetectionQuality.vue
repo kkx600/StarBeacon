@@ -6,13 +6,13 @@ import {formatTime} from '../types'
 import {formatBytes} from '../utils/format'
 import {qualityCounters, qualityDisplayState, qualityFacetNames, qualityFacetStates, qualityHelp, qualityStates, readQuality} from '../detectionQuality'
 const ADescriptionsItem = ADescriptions.Item
-const props = withDefaults(defineProps<{capture?:CaptureConfig; online?:boolean}>(), {online:true})
+const props = withDefaults(defineProps<{capture?:Pick<CaptureConfig,'status'|'config_sha256'|'quality'>; online?:boolean;historical?:boolean}>(), {online:true,historical:false})
 const now = shallowRef(Date.now())
 let timer:ReturnType<typeof setInterval>|undefined
-onMounted(() => {timer=setInterval(() => {now.value=Date.now()}, 1000)})
+onMounted(() => {if(!props.historical)timer=setInterval(() => {now.value=Date.now()}, 1000)})
 onScopeDispose(() => {clearInterval(timer)})
 const report = computed(() => readQuality(props.capture?.quality, props.capture?.config_sha256))
-const state = computed(() => report.value ? qualityDisplayState(report.value, props.capture?.status==='running', props.online, now.value) : 'unavailable')
+const state = computed(() => report.value ? props.historical?report.value.state:qualityDisplayState(report.value, props.capture?.status==='running', props.online, now.value) : 'unavailable')
 const interval = computed(() => state.value==='observed')
 const rows = computed(() => report.value?.counters ?? [])
 const facets = computed(() => Object.entries(qualityFacetNames).map(([key,label]) => ({key,label, state:interval.value ? report.value![key as keyof typeof qualityFacetNames].state : 'unknown'})))
@@ -31,7 +31,7 @@ const number = (value?:string) => value===undefined ? '未提供' : new Intl.Num
       <a-descriptions-item v-if="report.reset_counters.length" label="复位指标">{{report.reset_counters.map(key=>qualityCounters[key][0]).join('、')}}</a-descriptions-item>
     </a-descriptions>
     <div class="table-wrap"><a-table :columns="columns" :data-source="rows" row-key="key" size="small" :pagination="false" :scroll="{x:655,y:340}"><template #bodyCell="{column,record}">
-      <template v-if="column.key==='metric'"><span>{{qualityCounters[record.key as keyof typeof qualityCounters][0]}}</span><small class="quality-native">{{record.key}}</small></template>
+      <template v-if="column.key==='metric'"><span>{{qualityCounters[record.key as keyof typeof qualityCounters][0]}}</span><small class="quality-native">{{record.key}}</small><small v-if="record.observed_resets!==undefined&&record.observed_resets!=='0'" class="quality-native">本次进程观测复位 {{number(record.observed_resets)}} 次</small></template>
       <template v-else-if="column.key==='total'">{{record.key==='decoder.bytes'&&record.total!==undefined?formatBytes(record.total):number(record.total)}}</template>
       <template v-else-if="column.key==='delta'"><span :class="{'quality-limited':interval&&record.delta!==undefined&&record.delta!=='0'&&['capture','inspection','alerting'].includes(record.layer)&&record.key!=='capture.kernel_packets'}">{{record.kind==='gauge'?'瞬时值，不计算增量':!interval?'不可比较':record.key==='decoder.bytes'&&record.delta!==undefined?formatBytes(record.delta):number(record.delta)}}</span></template>
     </template></a-table></div>

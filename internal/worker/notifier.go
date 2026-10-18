@@ -26,12 +26,19 @@ type Notifier struct {
 
 func (n *Notifier) Enqueue(ctx context.Context, data []byte) error {
 	var batch struct {
-		TenantID string           `json:"tenant_id"`
-		BatchID  string           `json:"batch_id"`
-		Alerts   []notify.Summary `json:"alerts"`
+		TenantID string                  `json:"tenant_id"`
+		BatchID  string                  `json:"batch_id"`
+		Alerts   []notify.Summary        `json:"alerts"`
+		Quality  []notify.QualitySummary `json:"quality"`
 	}
 	if len(data) > 4*1024*1024 || json.Unmarshal(data, &batch) != nil {
 		return notify.ErrBatch
+	}
+	if len(batch.Quality) > 0 {
+		if len(batch.Alerts) != 0 || notify.ValidateQuality(batch.TenantID, batch.BatchID, batch.Quality) != nil {
+			return notify.ErrBatch
+		}
+		return n.DB.EnqueueQualityNotifications(ctx, batch.TenantID, batch.BatchID, batch.Quality, n.Vault)
 	}
 	if err := notify.ValidateBatch(batch.TenantID, batch.BatchID, batch.Alerts); err != nil {
 		return err

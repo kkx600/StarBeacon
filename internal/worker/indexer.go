@@ -155,6 +155,9 @@ func (w *Indexer) Run(ctx context.Context) error {
 		consumers = append(consumers, consumer)
 	}
 	group, ctx := errgroup.WithContext(ctx)
+	if w.DB != nil {
+		group.Go(func() error { return w.qualityLoop(ctx) })
+	}
 	for i, name := range []string{bus.Alerts, bus.Context} {
 		consumer := consumers[i]
 		group.Go(func() error {

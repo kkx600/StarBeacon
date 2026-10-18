@@ -13,7 +13,7 @@ function onViewportChange(event:MediaQueryListEvent){collapsed.value=event.match
 onMounted(()=>compact.addEventListener('change',onViewportChange));onBeforeUnmount(()=>compact.removeEventListener('change',onViewportChange))
 const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SettingOutlined,ThunderboltOutlined} as Record<string,typeof AlertOutlined>
 const current=computed(()=>pageById.get(String(route.params.id)))
-const title=computed(()=>current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
+const title=computed(()=>current.value?.id==='sensors'&&route.query.view==='quality'?'质量事件':current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
 const groupTitle=computed(()=>groups.find(g=>g.id===current.value?.group)?.title??'星烽 StarBeacon')
 const currentWorkspace=computed(()=>workspaceForPage.get(String(route.params.id)))
 const lastViews=ref<Record<string,string>>({})
@@ -24,8 +24,8 @@ watch(()=>route.params.id,id=>{
   const workspace=workspaceForPage.get(id)
   menuOpen.value=collapsed.value?[]:[pageById.get(id)!.group]
   if(workspace){lastViews.value[workspace.id]=id;if(!visited.value.includes(workspace.id)){visited.value.push(workspace.id);if(visited.value.length>5)visited.value.shift()}}
-  document.title=`${pageById.get(id)!.title} · 星烽 StarBeacon`
 },{immediate:true})
+watch(title,value=>{document.title=`${value} · 星烽 StarBeacon`},{immediate:true})
 watch(collapsed,value=>{menuOpen.value=value?[]:[current.value?.group??'overview']})
 const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
 function navigate(id:string){void router.push(`/page/${id}`);searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}

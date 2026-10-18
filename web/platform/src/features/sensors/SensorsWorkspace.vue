@@ -10,6 +10,7 @@ import CaptureDialog from './CaptureDialog.vue'
 import ResponseDialog from './ResponseDialog.vue'
 import TaskWorkspace from './TaskWorkspace.vue'
 import ProbePKIWorkspace from './ProbePKIWorkspace.vue'
+import QualityEventsWorkspace from './QualityEventsWorkspace.vue'
 import GroupTable from './GroupTable.vue'
 import ManagementForm from './ManagementForm.vue'
 import {useSensors} from './useSensors'
@@ -21,8 +22,8 @@ import {useWorkspaceView} from '@starbeacon/shared/utils/useWorkspaceView.ts'
 import {session} from '../../session'
 const message=useFeedback()
 const admin=computed(()=>session.current.value?.role==='admin')
-const {view,change:changeView}=useWorkspaceView(admin.value?['devices','groups','tasks','identity']:['devices','groups'])
-const views=computed(()=>[{key:'devices',label:'探针列表'},{key:'groups',label:'探针分组'},...(admin.value?[{key:'identity',label:'注册与证书'},{key:'tasks',label:'任务记录'}]:[])])
+const {view,change:changeView}=useWorkspaceView(admin.value?['devices','groups','quality','tasks','identity']:['devices','groups','quality'])
+const views=computed(()=>[{key:'devices',label:'探针列表'},{key:'groups',label:'探针分组'},{key:'quality',label:'质量事件'},...(admin.value?[{key:'identity',label:'注册与证书'},{key:'tasks',label:'任务记录'}]:[])])
 const sensors=useSensors(),groups=useSensorGroups(),mutation=useSensorMutation()
 const tasksWorkspace=ref<InstanceType<typeof TaskWorkspace>|null>(null)
 const {items,pending,error,saving,cursors,nextCursor}=sensors
@@ -49,7 +50,7 @@ watch(()=>[session.current.value?.tenant_id,session.current.value?.id].join('/')
 watch(admin,value=>{if(!value&&['identity','tasks'].includes(view.value))changeView('devices')})
 </script>
 <template>
- <header class="page-header"><div><h1>探针管理</h1><p class="page-description">查看连接、资源和版本，维护当前租户的探针分组与部署信息。</p></div><div class="filter-actions"><a-button v-if="view!=='identity'" :loading="view==='groups'?groupPending:pending" @click="refresh">刷新</a-button><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button><a-button v-else-if="view==='groups'&&admin" type="primary" :disabled="busy" @click="edit({kind:'group',record:null})">创建分组</a-button></div></header>
+ <header class="page-header"><div><h1>探针管理</h1><p class="page-description">查看连接、资源和版本，维护当前租户的探针分组与部署信息。</p></div><div class="filter-actions"><a-button v-if="!['identity','quality'].includes(view)" :loading="view==='groups'?groupPending:pending" @click="refresh">刷新</a-button><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button><a-button v-else-if="view==='groups'&&admin" type="primary" :disabled="busy" @click="edit({kind:'group',record:null})">创建分组</a-button></div></header>
  <WorkspaceTabs :active="view" :items="views" label="探针管理功能" @change="changeView" />
  <a-alert v-if="actionError&&!formOpen" type="error" :message="actionError" show-icon class="section-gap" />
  <template v-if="view==='devices'">
@@ -67,6 +68,7 @@ watch(admin,value=>{if(!value&&['identity','tasks'].includes(view.value))changeV
   <section class="panel"><div class="panel-header"><h2>探针分组</h2><span>当前页 {{groupPage.items.length}} 个</span></div><StatePanel :loading="groupPending" :error="groupError" :empty="!groupPage.items.length" description="当前条件下没有分组。管理员可创建分组，再将探针归入对应站点。" @retry="groups.refresh"><GroupTable :items="groupPage.items" :admin="admin" :locked="locked" @edit="edit({kind:'group',record:$event})" @members="members" /></StatePanel><div class="sensor-pagination"><a-button :disabled="groupPending||groupCursors.length<=1" @click="groups.previous">上一页</a-button><span>第 {{groupCursors.length}} 页</span><a-button :disabled="groupPending||!groupPage.next_cursor" @click="groups.next">下一页</a-button></div></section>
  </template>
  <ProbePKIWorkspace v-else-if="view==='identity'&&admin" :sensor-id="certificateSensor" />
+ <QualityEventsWorkspace v-else-if="view==='quality'" />
  <TaskWorkspace v-else ref="tasksWorkspace" />
  <SensorDetail :sensor="selected" @close="selected=null" @submitted="selected=null;changeView('tasks')" @configure="configure" @respond="selected=null;responseSensor=$event" @certificates="showCertificates" />
  <CaptureDialog :sensor="captureSensor" @close="captureSensor=null" @submitted="captureSensor=null;changeView('tasks')" />

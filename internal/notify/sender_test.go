@@ -212,6 +212,12 @@ func TestSyslogTLSFrameUsesByteLength(t *testing.T) {
 }
 
 func TestEmailUsesTLSAndStableMessageID(t *testing.T) {
+	verifyEmailTLSMessage(t, false)
+}
+func TestQualityEmailUsesTLSAndDedicatedSubject(t *testing.T) {
+	verifyEmailTLSMessage(t, true)
+}
+func verifyEmailTLSMessage(t *testing.T, quality bool) {
 	certificate := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	defer certificate.Close()
 	listener, err := tls.Listen("tcp", "127.0.0.1:0", certificate.TLS)
@@ -269,6 +275,11 @@ func TestEmailUsesTLSAndStableMessageID(t *testing.T) {
 	number, _ := strconv.Atoi(port)
 	config := notify.Config{Name: "邮件验收", Kind: "email", Enabled: true, Severities: []string{"high"}, SMTPHost: host, SMTPPort: number, SMTPUser: "fixture-sender", SMTPPass: "fixture-password", From: "security@example.invalid", Recipients: []string{"recipient@example.invalid"}, ImplicitTLS: true}
 	message := fixtureMessage()
+	if quality {
+		message = qualityMessage()
+		config.Streams = []string{"quality"}
+		config.Severities = nil
+	}
 	message.Recipient = config.Recipients[0]
 	result := (notify.Sender{Policy: fixturePolicy(certificate)}).Send(context.Background(), config, message)
 	if result.State != "accepted" || result.Code != "smtp_accepted" {

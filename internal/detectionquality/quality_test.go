@@ -109,9 +109,15 @@ func TestQualityResetGapRestartStalenessAndInvalidSamples(t *testing.T) {
 	if r.State != "counter_reset" || len(r.ResetCounters) != len(definitions)-1 || r.IntervalStartedAt != nil || r.Counters[0].Delta != nil {
 		t.Fatal(r)
 	}
+	if r.Counters[1].ObservedResets == nil || *r.Counters[1].ObservedResets != "1" {
+		t.Fatal("原生观测复位缺少持久水位")
+	}
 	tr.Observe(sample(now.Add(11*time.Second), allValues(1)), now.Add(11*time.Second))
 	if tr.Snapshot(now.Add(11*time.Second), true).State != "observed" {
 		t.Fatal("复位后不能重新形成基线")
+	}
+	if *tr.Snapshot(now.Add(11*time.Second), true).Counters[1].ObservedResets != "1" {
+		t.Fatal("后续连续样本清除了已观测复位水位")
 	}
 	tr.Observe(sample(now.Add(32*time.Second), allValues(2)), now.Add(32*time.Second))
 	if r = tr.Snapshot(now.Add(32*time.Second), true); r.State != "sample_gap" || r.Counters[0].Delta != nil {

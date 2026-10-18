@@ -488,7 +488,11 @@ func (s *Elasticsearch) readEventPage(ctx context.Context, tenant string, q mode
 		} `json:"hits"`
 	}
 	prefix := "sb-" + stream + "-" + tenant + "-"
-	res, e := s.API.Search(s.API.Search.WithIndex(prefix+"*"), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
+	indices := []string{prefix + "*"}
+	if len(kinds) == 1 && kinds[0] == "quality" {
+		indices = append(indices, "-"+prefix+"*-*")
+	}
+	res, e := s.API.Search(s.API.Search.WithIndex(indices...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
 	if e = response(res, e, &decoded); e != nil {
 		return result, e
 	}

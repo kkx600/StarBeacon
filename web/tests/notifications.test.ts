@@ -42,6 +42,18 @@ describe('通知列表、请求与幂等操作',()=>{
 })
 
 describe('通知渠道表单和凭据处理',()=>{
+ it('Escape 收起渠道下拉框并保留未提交的通知草稿',async()=>{
+  const wrapper=mount(ChannelForm,{props:{record:null,pending:false,error:'',development:true},global,attachTo:document.body});await flushPromises();await field('input[id$="name"]','保留通知渠道草稿')
+  for(const picker of wrapper.findAllComponents(Select)){
+   await picker.find('.ant-select-selector').trigger('mousedown');await flushPromises();expect(picker.find('input').attributes('aria-expanded')).toBe('true')
+   const escape=new KeyboardEvent('keydown',{key:'Escape',keyCode:27,bubbles:true});Object.defineProperty(escape,'which',{value:27});picker.find('input').element.dispatchEvent(escape);await flushPromises()
+   expect(wrapper.emitted('close')).toBeUndefined();expect(picker.find('input').attributes('aria-expanded')).toBe('false');expect(document.body.querySelector<HTMLInputElement>('input[id$="name"]')?.value).toBe('保留通知渠道草稿')
+  }
+  await click('取消');expect(wrapper.emitted('close')).toHaveLength(1)
+ })
+ it('办公渠道须明确选择质量订阅，切换类型保留选择且不要求告警级别',async()=>{
+  const wrapper=mount(ChannelForm,{props:{record:null,pending:false,error:'',development:true},global,attachTo:document.body});await flushPromises();await field('input[id$="name"]','检测质量通知');const picker=wrapper.findAllComponents(Select).find(item=>item.attributes('aria-label')==='订阅内容')!;expect(picker.props('value')).toEqual(['alerts']);expect(picker.props('options')?.map(item=>item.value)).toEqual(['alerts','quality']);await picker.setValue(['quality'],'value');await flushPromises();expect(document.body.textContent).not.toContain('告警级别');await wrapper.findAllComponents(Select)[0]!.setValue('wecom','value');await flushPromises();expect(picker.props('value')).toEqual(['quality']);await field('input[placeholder="https://example.com/webhook"]','https://example.invalid/notify');await click('保存渠道');await vi.waitFor(()=>expect(wrapper.emitted('save')).toHaveLength(1));expect(wrapper.emitted('save')![0]![0]).toMatchObject({streams:['quality'],severities:[]});wrapper.unmount()
+ })
  it('校验名称、地址和级别，保存失败保留草稿和稳定标识',async()=>{
   const wrapper=mount(ChannelForm,{props:{record:null,pending:false,error:'',development:false},global,attachTo:document.body});await flushPromises();await click('保存渠道');await vi.waitFor(()=>expect(document.body.textContent).toContain('请输入渠道名称'));expect(wrapper.emitted('save')).toBeUndefined()
   await field('input[id$="name"]','告警通知');await click('保存渠道');await vi.waitFor(()=>expect(document.body.textContent).toContain('请填写渠道目标地址'));await field('input[placeholder="https://example.com/webhook"]','https://example.invalid/hook');await click('保存渠道');await vi.waitFor(()=>expect(wrapper.emitted('save')).toHaveLength(1));const change=wrapper.emitted('save')![0]![0] as ChannelChange;expect(change.id).toMatch(/^channel_[a-f0-9]{32}$/);expect(change.connection).toEqual({endpoint:'https://example.invalid/hook',secret:'',token:''})
@@ -61,14 +73,14 @@ describe('通知渠道表单和凭据处理',()=>{
 })
 
 describe('审计日志渠道与回执',()=>{
- it('仅 Syslog 展示审计类别，保存空类别失败，切回办公渠道恢复告警范围',async()=>{
+ it('审计类别仅限 Syslog，办公渠道保留明确的质量订阅选项',async()=>{
   const auditChannel:Channel={...channel,kind:'syslog_tls',streams:['operations','logins'],severities:[]}
   const wrapper=mount(ChannelForm,{props:{record:auditChannel,pending:false,error:'',development:false},global,attachTo:document.body});await flushPromises()
-  expect(document.body.textContent).toContain('日志类别');expect(document.body.textContent).not.toContain('请选择告警级别')
+  expect(document.body.textContent).toContain('订阅内容');expect(document.body.textContent).not.toContain('请选择告警级别')
   await click('保存渠道');await vi.waitFor(()=>expect(wrapper.emitted('save')).toHaveLength(1));expect(wrapper.emitted('save')![0]![0]).toMatchObject({streams:['operations','logins'],severities:[]});expect(wrapper.emitted('save')![0]![0]).not.toHaveProperty('connection')
-  const streams=wrapper.findAllComponents(Select).find(item=>item.attributes('aria-label')==='日志类别')!;await streams.setValue([],'value');await flushPromises();await click('保存渠道');await vi.waitFor(()=>expect(document.body.textContent).toContain('请选择日志类别'));expect(wrapper.emitted('save')).toHaveLength(1)
+  const streams=wrapper.findAllComponents(Select).find(item=>item.attributes('aria-label')==='订阅内容')!;await streams.setValue([],'value');await flushPromises();await click('保存渠道');await vi.waitFor(()=>expect(document.body.textContent).toContain('请选择订阅内容'));expect(wrapper.emitted('save')).toHaveLength(1)
   await streams.setValue(['alerts','operations'],'value');await flushPromises();await click('保存渠道');await vi.waitFor(()=>expect(document.body.textContent).toContain('请选择告警级别'));expect(wrapper.emitted('save')).toHaveLength(1);wrapper.unmount()
-  const fresh=mount(ChannelForm,{props:{record:null,pending:false,error:'',development:true},global,attachTo:document.body});await flushPromises();await field('input[id$="name"]','日志转发');const kind=fresh.findAllComponents(Select)[0]!;await kind.setValue('syslog_tls','value');await flushPromises();const picker=fresh.findAllComponents(Select).find(item=>item.attributes('aria-label')==='日志类别')!;await picker.setValue(['logins'],'value');await field('input[placeholder="logs.example.com:6514"]','logs.example.invalid:6514');await click('保存渠道');await vi.waitFor(()=>expect(fresh.emitted('save')).toHaveLength(1));expect(fresh.emitted('save')![0]![0]).toMatchObject({streams:['logins'],severities:[]});await kind.setValue('webhook','value');await flushPromises();expect(document.body.querySelector('[aria-label="日志类别"]')).toBeNull();await field('input[placeholder="https://example.com/webhook"]','https://example.invalid/notify');await click('保存渠道');await vi.waitFor(()=>expect(fresh.emitted('save')).toHaveLength(2));expect(fresh.emitted('save')![1]![0]).toMatchObject({streams:['alerts']})
+  const fresh=mount(ChannelForm,{props:{record:null,pending:false,error:'',development:true},global,attachTo:document.body});await flushPromises();await field('input[id$="name"]','日志转发');const kind=fresh.findAllComponents(Select)[0]!;await kind.setValue('syslog_tls','value');await flushPromises();const picker=fresh.findAllComponents(Select).find(item=>item.attributes('aria-label')==='订阅内容')!;await picker.setValue(['logins'],'value');await field('input[placeholder="logs.example.com:6514"]','logs.example.invalid:6514');await click('保存渠道');await vi.waitFor(()=>expect(fresh.emitted('save')).toHaveLength(1));expect(fresh.emitted('save')![0]![0]).toMatchObject({streams:['logins'],severities:[]});await kind.setValue('webhook','value');await flushPromises();expect(fresh.findAllComponents(Select).find(item=>item.attributes('aria-label')==='订阅内容')!.props('options')?.map(item=>item.value)).toEqual(['alerts','quality']);await field('input[placeholder="https://example.com/webhook"]','https://example.invalid/notify');await click('保存渠道');await vi.waitFor(()=>expect(fresh.emitted('save')).toHaveLength(2));expect(fresh.emitted('save')![1]![0]).toMatchObject({streams:['alerts']})
  })
  it('审计列表使用记录数并区分登录日志与安全告警',async()=>{
   const record:Delivery={...delivery,kind:'syslog_tls',stream:'logins',record_count:1,alert_count:0,receipt:{code:'storage_acknowledgment_unavailable',frames:1,frames_written:1}}

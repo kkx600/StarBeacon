@@ -302,7 +302,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			if _, err := tx.Exec(clean, `DELETE FROM starbeacon_jobs.river_job WHERE args->>'tenant_id'=$1`, tenant); err != nil {
 				return err
 			}
-			for _, table := range []string{"packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}
@@ -381,8 +381,9 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		SuricataBinary: os.Getenv("SB_TEST_SURICATA_BINARY"), SuricataConfig: os.Getenv("SB_TEST_SURICATA_CONFIG")}
 	responseDevice := newGenericHTTPDevice(t, dir)
 	agentConfig.ResponseConnectorsFile = responseDevice.file
-	const rules = `alert http any any -> any any (msg:"StarBeacon end-to-end capture"; flow:established,to_server; http.uri; content:"/starbeacon/validation"; sid:1000999; rev:1;)`
+	rules := `alert http any any -> any any (msg:"StarBeacon end-to-end capture"; flow:established,to_server; http.uri; content:"/starbeacon/validation"; sid:1000999; rev:1;)`
 	if managed {
+		rules += "\n" + `alert http any any -> any any (msg:"StarBeacon quality policy observation"; flow:established,to_server; http.uri; content:"/starbeacon/quality"; noalert; sid:1001000; rev:1;)`
 		agentConfig.CaptureManaged, agentConfig.AllowRuleApply = true, true
 		agentConfig.PacketCapture = true
 		agentConfig.PacketRotateInterval = 3 * time.Second
@@ -693,6 +694,9 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		platformHTTP.request("GET", "/notifications/deliveries?state=accepted", "", nil, &deliveries, 200)
 		return len(deliveries.Items) == 1 && deliveries.Items[0].ID == received.ID && deliveries.Items[0].Attempts == 1
 	})
+	if managed {
+		verifyNativeQualityEvent(t, ctx, platformHTTP, es, identity, accepted, sink.URL)
+	}
 	quarantine, err := queue.JS.Stream(ctx, queue.StreamName(bus.Quarantine))
 	require(t, err)
 	stored, err := quarantine.GetLastMsgForSubject(ctx, queue.Subject("sb.quarantine"))

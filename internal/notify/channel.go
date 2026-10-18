@@ -170,14 +170,15 @@ func Summaries(alerts []model.Alert) []Summary {
 }
 
 type Message struct {
-	ID        string     `json:"delivery_id"`
-	TenantID  string     `json:"tenant_id"`
-	BatchID   string     `json:"batch_id"`
-	CreatedAt time.Time  `json:"created_at"`
-	Alerts    []Summary  `json:"alerts"`
-	Logs      []AuditLog `json:"logs,omitempty"`
-	Recipient string     `json:"-"`
-	Test      bool       `json:"test"`
+	ID        string           `json:"delivery_id"`
+	TenantID  string           `json:"tenant_id"`
+	BatchID   string           `json:"batch_id"`
+	CreatedAt time.Time        `json:"created_at"`
+	Alerts    []Summary        `json:"alerts"`
+	Logs      []AuditLog       `json:"logs,omitempty"`
+	Quality   []QualitySummary `json:"quality,omitempty"`
+	Recipient string           `json:"-"`
+	Test      bool             `json:"test"`
 }
 
 func (m Message) Text() string {
@@ -185,6 +186,14 @@ func (m Message) Text() string {
 		return "星烽 StarBeacon 通知渠道测试。该消息用于验证渠道受理情况。"
 	}
 	var output strings.Builder
+	if len(m.Quality) > 0 {
+		output.WriteString("星烽 StarBeacon 探针检测质量\n")
+		for _, q := range m.Quality {
+			output.WriteString(q.Title + " · " + q.SensorID + " · " + q.ID + "\n")
+		}
+		output.WriteString("本消息反映冻结区间的观测，不表示单流覆盖、攻击结果或完整恢复。\n投递标识：" + m.ID)
+		return output.String()
+	}
 	output.WriteString("星烽 StarBeacon 安全告警\n")
 	for _, alert := range m.Alerts[:min(10, len(m.Alerts))] {
 		output.WriteString(alert.Severity + " · " + alert.RuleName + " · " + alert.ID + "\n")

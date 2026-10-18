@@ -21,12 +21,12 @@ func (c Config) LogStreams() []string {
 func (c Config) Accepts(stream string) bool { return slices.Contains(c.LogStreams(), stream) }
 
 func ValidStreams(kind string, streams []string) bool {
-	if len(streams) == 0 || len(streams) > 3 {
+	if len(streams) == 0 || len(streams) > 4 {
 		return false
 	}
 	seen := map[string]bool{}
 	for _, stream := range streams {
-		if seen[stream] || !slices.Contains([]string{"alerts", "operations", "logins"}, stream) || stream != "alerts" && !strings.HasPrefix(kind, "syslog_") {
+		if seen[stream] || !slices.Contains([]string{"alerts", "operations", "logins", "quality"}, stream) || stream != "alerts" && stream != "quality" && !strings.HasPrefix(kind, "syslog_") {
 			return false
 		}
 		seen[stream] = true
@@ -54,7 +54,7 @@ func validAuditLogs(config Config, message Message) bool {
 	if len(message.Logs) == 0 {
 		return true
 	}
-	if len(message.Logs) > 100 || len(message.Alerts) != 0 || message.Test || !strings.HasPrefix(config.Kind, "syslog_") || !contract.ValidID(message.TenantID) || !contract.ValidID(message.BatchID) || message.CreatedAt.Year() < 1970 || message.CreatedAt.Year() > 2262 {
+	if len(message.Logs) > 100 || len(message.Alerts) != 0 || len(message.Quality) != 0 || message.Test || !strings.HasPrefix(config.Kind, "syslog_") || !contract.ValidID(message.TenantID) || !contract.ValidID(message.BatchID) || message.CreatedAt.Year() < 1970 || message.CreatedAt.Year() > 2262 {
 		return false
 	}
 	seen := map[string]bool{}
