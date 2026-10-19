@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {pages,pageById as actualPageById} from '../src/data/catalog.ts'
-import {workspaces,workspaceForPage,legacyPages} from '../src/data/navigation.ts'
+import {workspaces,workspaceForPage,legacyPages,nestedPages} from '../src/data/navigation.ts'
 import {createFixtures} from '../src/data/fixtures.ts'
 import {healthFor,sensorMetrics,defaultSensorThresholds} from '../src/data/sensorHealth.ts'
 import {formValueFor,expiryFromDuration} from '../src/composables/formValues.ts'
@@ -14,6 +14,7 @@ for(const [legacy,target] of Object.entries(legacyPages)){
 assert.equal(workspaceForPage.get('models'),workspaceForPage.get('knowledge'))
 assert.equal(workspaceForPage.get('pcap-tasks'),workspaceForPage.get('sessions'))
 assert(workspaces.every(workspace=>workspace.pages.length<=7),'工作区不能形成无边界的页签集合')
+for(const [child,parent] of Object.entries(nestedPages)){assert(actualPageById.has(child)&&actualPageById.has(parent),'三级页面必须具有真实目录定义');assert.equal(workspaceForPage.get(child),workspaceForPage.get(parent),'三级页面不能脱离父工作区')}
 for(const page of pages)for(const field of page.fields){
   if(field.type!=='select'||!field.options?.length||['name','status'].includes(field.key))continue
   for(const record of createFixtures(page))if(record[field.key]!=null)assert(field.options.includes(String(record[field.key])),`${page.id}.${field.key} 与业务选项不一致`)

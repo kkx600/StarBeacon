@@ -1,6 +1,8 @@
+import {digestRenderTree} from './gallery-inputs.mjs'
+import {platformScreens} from '../../web/packages/shared/src/navigation.ts'
 import {readFile,writeFile,mkdir} from 'node:fs/promises'
 import {pages,groups,states} from '../src/data/catalog.ts'
-import {workspaces,legacyPages,accountPages} from '../src/data/navigation.ts'
+import {workspaces,legacyPages,accountPages,prototypePath,nestedPages,workspaceForPage} from '../src/data/navigation.ts'
 import {collectorPages} from '../src/data/collector.ts'
 const matrix=await readFile(new URL('../../docs/功能覆盖与验收矩阵.md',import.meta.url),'utf8')
 const required=[...new Set(matrix.match(/SB-[A-Z]+-\d{3}/g))].sort()
@@ -9,7 +11,9 @@ const missing=required.filter(id=>!actual.includes(id));const extra=actual.filte
 const duplicate=pages.map(p=>p.id).filter((id,i,all)=>all.indexOf(id)!==i)
 const incomplete=pages.filter(p=>!p.title||!p.description||!p.columns.length||!p.fields.length||!p.primary||!p.emptyDescription)
 if(missing.length||extra.length||duplicate.length||incomplete.length){console.error({missing,extra,duplicate,incomplete:incomplete.map(p=>p.id)});process.exit(1)}
-const members=workspaces.flatMap(workspace=>workspace.pages)
+const missingScreens=platformScreens.filter(screen=>!pages.some(page=>page.id===screen.id))
+if(missingScreens.length){console.error({missingEngineeringPages:missingScreens.map(screen=>screen.id)});process.exit(1)}
+const members=[...workspaces.flatMap(workspace=>workspace.pages),...Object.keys(nestedPages)]
 const orphans=pages.filter(page=>!members.includes(page.id)&&!accountPages.some(account=>account.id===page.id))
 const duplicates=members.filter((id,index)=>members.indexOf(id)!==index)
 const invalid=workspaces.flatMap(workspace=>workspace.pages.filter(id=>!pages.some(page=>page.id===id&&page.group===workspace.group)))
@@ -17,7 +21,8 @@ const badAliases=Object.entries(legacyPages).filter(([legacy,id])=>pages.some(pa
 if(orphans.length||duplicates.length||invalid.length||badAliases.length){console.error({orphans:orphans.map(page=>page.id),duplicates,invalid,badAliases});process.exit(1)}
 const boundary=[{id:'auth-login',title:'登录',url:'/auth/login'},{id:'auth-mfa',title:'多因素认证',url:'/auth/mfa'},{id:'auth-reset',title:'找回密码',url:'/auth/reset'},{id:'auth-expired',title:'会话过期',url:'/auth/expired'},{id:'status-403',title:'无访问权限',url:'/status/403'},{id:'status-404',title:'页面不存在',url:'/status/404'},{id:'status-500',title:'服务异常',url:'/status/500'},{id:'status-tenant',title:'租户授权不足',url:'/status/tenant'}]
 const collector={title:'采集器管理',boundary:[{id:'collector-login',title:'采集器登录',url:'/collector/auth/login'},{id:'collector-mfa',title:'采集器多因素认证',url:'/collector/auth/mfa'},{id:'collector-expired',title:'采集器会话过期',url:'/collector/auth/expired'}],pages:collectorPages.map(page=>({id:`collector-${page.id}`,title:page.title,group:'collector',description:page.description,requirements:page.requirements,states:states.map(state=>({state:state.value,title:state.label,url:`/collector/${page.id}?state=${state.value}`,image:`collector/${page.id}/${state.value}.jpg`}))}))}
-const manifest={product:'星烽 StarBeacon',synthetic:true,requirementCount:required.length,workspaces,legacyPages,groups,states,boundary,collector,pages:pages.map(p=>({id:p.id,title:p.title,group:p.group,kind:p.kind,description:p.description,requirements:p.requirement,states:states.map(s=>({state:s.value,title:s.label,url:`/page/${p.id}?state=${s.value}`,image:`${p.id}/${s.value}.jpg`}))}))}
+const source={renderTreeSha256:(await digestRenderTree(new URL('../../',import.meta.url))).sha256}
+const manifest={source,product:'星烽 StarBeacon',synthetic:true,requirementCount:required.length,workspaces,legacyPages,groups,states,boundary,collector,pages:pages.map(p=>({id:p.id,workspace:workspaceForPage.get(p.id)?.title,title:p.title,group:p.group,kind:p.kind,description:p.description,requirements:p.requirement,states:states.map(s=>({state:s.value,title:s.label,url:`${prototypePath(p.id)}?state=${s.value}`,image:`${p.id}/${s.value}.jpg`}))}))}
 await mkdir(new URL('../public/',import.meta.url),{recursive:true})
 await writeFile(new URL('../public/page-manifest.json',import.meta.url),JSON.stringify(manifest,null,2)+'\n')
 await writeFile(new URL('../public/page-manifest.js',import.meta.url),`window.StarBeaconPageManifest = ${JSON.stringify(manifest)};\n`)

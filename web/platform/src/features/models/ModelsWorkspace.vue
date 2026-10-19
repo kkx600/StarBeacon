@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('模型配置')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,shallowRef} from 'vue'
 import {Table,Popconfirm} from 'ant-design-vue'
@@ -18,7 +20,7 @@ async function save(change:ModelChange){if(await state.save(change)){editorOpen.
 async function test(record:ModelProvider){const result=await state.test(record);if(result){selectedID.value=record.id;if(result.state==='succeeded')message.success('模型连接验证通过')}}
 </script>
 <template>
-  <header class="page-header"><div><h1>模型配置</h1><p class="page-description">管理生成接口、连接范围和调用预算，核对模型连接验证结果。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button type="primary" :disabled="pending||!available||busy||items.length>=50" @click="edit(null)">创建提供方</a-button></div></header>
+  <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">管理生成接口、连接范围和调用预算，核对模型连接验证结果。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button type="primary" :disabled="pending||!available||busy||items.length>=50" @click="edit(null)">创建提供方</a-button></div></header>
   <a-alert v-if="actionError&&!editorOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <a-alert v-if="!pending&&!available&&!error" type="info" message="模型凭据服务尚未启用，配置暂不可用。" show-icon class="section-gap" />
   <section class="panel"><div class="panel-header"><h2>模型提供方</h2><span>{{items.length}} / 50 个提供方</span></div><StatePanel :loading="pending" :error="error" :empty="items.length===0" description="暂无模型提供方，可创建配置并验证生成接口连接。" @retry="state.refresh"><div class="table-wrap"><Table :columns="columns" :data-source="[...items]" row-key="id" :pagination="false" :scroll="{x:1130}"><template #bodyCell="{column,record}">

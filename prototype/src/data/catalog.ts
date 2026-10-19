@@ -1,20 +1,9 @@
 import type { ColumnSpec, FieldSpec, GroupSpec, PageSpec } from '../models'
 import {statusesFor} from './statuses.ts'
 
-export const groups: GroupSpec[] = [
-  { id: 'overview', title: '态势总览', icon: 'DashboardOutlined' },
-  { id: 'alerts', title: '告警中心', icon: 'AlertOutlined' },
-  { id: 'incidents', title: '安全事件', icon: 'FileProtectOutlined' },
-  { id: 'assets', title: '资产中心', icon: 'ClusterOutlined' },
-  { id: 'traffic', title: '流量分析', icon: 'RadarChartOutlined' },
-  { id: 'detection', title: '检测与情报', icon: 'SafetyCertificateOutlined' },
-  { id: 'response', title: '响应中心', icon: 'ThunderboltOutlined' },
-  { id: 'notifications', title: '通知中心', icon: 'BellOutlined' },
-  { id: 'ai', title: '智能助手', icon: 'RobotOutlined' },
-  { id: 'reports', title: '安全报告', icon: 'BarChartOutlined' },
-  { id: 'sensors', title: '探针与版本', icon: 'ApiOutlined' },
-  { id: 'system', title: '系统管理', icon: 'SettingOutlined' },
-]
+import {navigationGroups} from '../../../web/packages/shared/src/navigation.ts'
+export const groups:GroupSpec[]=navigationGroups
+
 
 type Definition = [string, string, string, string, string, string, string, string?]
 // 字段顺序：需求、路由、导航组、名称、对象类型、业务说明、列定义、主要操作。
@@ -62,7 +51,7 @@ const definitions: Definition[] = [
   ['SB-NET-002','capture-scope','traffic','镜像与捕获范围','capture-scope','登记 TAP／SPAN、方向、接口、VLAN 和镜像限制。','name:捕获点|sensor:探针|interface:接口|direction:方向|vlans:VLAN|status:观测状态','登记捕获点'],
   ['SB-NET-003','session-integrity','traffic','会话完整性','integrity','检查三次握手、双向字节连续性与 FIN／RST 结束证据。','name:会话|source:源 IP|destination:目的 IP|handshake:握手|continuity:连续性|closure:结束证据|status:判定','创建核验任务'],
   ['SB-NET-005','inspection-depth','traffic','检测深度与限制','inspection','管理重组、应用检查和文件深度，区分捕获与检测覆盖。','name:检测配置|scope:探针范围|stream:流重组深度|http:HTTP 检查深度|file:文件提取深度|status:生效状态','创建检测配置'],
-  ['SB-NET-006','capture-quality','traffic','捕获质量','quality','比较镜像、NIC、内核和引擎计数，定位丢包和重复风险。','name:捕获点|bps:吞吐|pps:PPS|drop:丢包率|duplicates:重复率|gap:交付滞后|status:质量状态','创建质量检查'],
+  ['SB-NET-006','capture-quality','traffic','质量事件','quality','查看原生检测质量变化、观察范围与处置提醒，核对缺报、复位和丢包风险。','name:捕获点|bps:吞吐|pps:PPS|drop:丢包率|duplicates:重复率|gap:交付滞后|status:质量状态','创建质量检查'],
   ['SB-NET-007','tls-visibility','traffic','TLS 可见性','tls','区分加密元数据与授权明文来源，展示解密能力和证据缺口。','name:会话|version:TLS 版本|sni:SNI|fingerprint:指纹|visibility:可见范围|status:解密状态','创建授权分析'],
   ['SB-NET-008','protocols','traffic','协议能力','protocol','逐项核对识别、事务、规则、文件、原生取证与外部信号。','name:协议|recognition:识别|transaction:事务|rule:规则|file:文件|native:原生取证|status:当前条件','查看协议能力'],
   ['SB-NET-009','pipeline-latency','traffic','全链路时延','latency','按真实采样点分段计量采集、检测、写入、推送和阻断耗时。','name:链路阶段|p50:P50|p95:P95|p99:P99|count:样本数|missing:缺失起点|status:计量状态','导出时延统计'],
@@ -242,6 +231,11 @@ pages.push(
   supplemental('report-schedules','报告计划','reports','report-schedule','配置日报、周报和月报的时间窗口、审核与授权发送。','name:计划名称|type:报告周期|schedule:生成时间|model:总结模型|owner:审核人|status:状态','创建报告计划'),
   { ...supplemental('login-logs','登录日志','system','login-log','查看登录、MFA、认证失败与会话撤销，支持范围内审计。','name:账号|method:认证方式|source:来源 IP|mfa:MFA|time:时间|status:登录结果','导出登录日志'),readOnly:true,actionMode:'export',requirement:['SB-GOV-007'] },
   { ...supplemental('users','用户管理','system','user','维护本租户账号、角色与启用状态，权限变更同步撤销目标用户的既有会话。','name:账号名称|role:用户角色|status:账号状态|revision:当前修订|time:创建时间|updated:变更时间','创建用户'),requirement:['SB-GOV-001','SB-GOV-002'],notice:'当前账号受保护，权限变更需由其他管理员处理。账号名称创建后保持不变；变更角色或状态需要重新登录。' },
+  supplemental('networks','网段定义','assets','network','维护 CIDR 网段与资产组归属，核对修订和范围。','name:网段名称|cidr:CIDR|group:资产组|revision:修订|status:状态','创建网段'),
+  supplemental('discovery','被动发现','assets','discovery','按当前探针、网段和时间窗口核对已有地址观测。','name:观测地址|ip:IP 地址|mac:MAC 地址|source:方向|status:观测状态','执行发现'),
+  supplemental('rule-rollouts','分批发布','detection','rule-rollout','固定目标计划修订，逐批验证原生装载、样本与观察水位。','name:发布名称|scope:目标探针|progress:当前批次|status:发布状态','创建分批发布'),
+  {...supplemental('sensor-tasks','任务记录','sensors','task','核对签名任务、设备接收与执行回执，受理不代表执行成功。','name:任务标识|sensor:目标探针|type:任务类型|time:提交时间|status:执行状态','查看任务'),readOnly:true},
+  supplemental('system-settings','系统设置','system','settings','统一查找账号、运行状态、留存与审计配置，核对当前版本的功能范围。','name:功能名称|group:功能分组|scope:可用范围|status:状态','查看功能范围'),
   supplemental('my-account','个人设置','system','account','管理显示偏好、通知订阅与会话安全。','name:设置项|value:当前值|scope:作用范围|status:状态','保存个人设置'),
 )
 

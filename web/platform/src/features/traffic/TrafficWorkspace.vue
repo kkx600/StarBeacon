@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('流量检索')
 import {defineAsyncComponent} from 'vue'
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
 import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceState.vue'
@@ -10,7 +12,7 @@ const {view,change}=useWorkspaceView(['events','archives'])
 const views=[{key:'events',label:'协议记录'},{key:'archives',label:'原包归档'}]
 </script>
 <template>
- <header class="page-header"><div><h1>流量检索</h1><p class="page-description">检索协议事件与会话摘要，读取旁路捕获的实际原包。</p></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">检索协议事件与会话摘要，读取旁路捕获的实际原包。</p></div></header>
  <WorkspaceTabs :active="view" :items="views" label="流量检索功能" @change="change"/>
  <TrafficEvents v-if="view==='events'"/>
  <PacketArchiveWorkspace v-else :api="session.api"/>

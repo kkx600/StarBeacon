@@ -43,12 +43,12 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
  describe('应用入口、路由和登录',()=>{
  it('平台实际路由拒绝未登录和越权访问，并保留站内回跳地址',async()=>{
   const{session}=await import('../platform/src/session'),user=session.current as ShallowRef<Principal|null>,{router}=await import('../platform/src/router')
-  user.value=null;await router.push('/sensors?view=tasks');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/sensors?view=tasks')
+  user.value=null;await router.push('/sensors?view=tasks');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/sensors/tasks')
   restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/alerts');expect(router.currentRoute.value.path).toBe('/login')
-  user.value={...principal,role:'viewer'};await router.push('/operations');expect(router.currentRoute.value.path).toBe('/sensors')
+  user.value={...principal,role:'viewer'};await router.push('/operations');expect(router.currentRoute.value.path).toBe('/sensors/list')
  })
  it.each([
-  ['/alerts','告警管理'],['/traffic','流量检索'],['/rules','规则管理'],['/assets','资产管理'],['/operations','运行与审计'],['/overview','态势总览'],['/screen','态势大屏'],['/notifications','通知中心'],['/models','模型配置'],['/assistant','智能助手'],['/reports','报告中心'],['/retention','数据留存'],['/incidents','事件调查'],['/users','用户管理'],['/unknown','页面不存在'],
+  ['/alerts','告警列表'],['/traffic','协议流量'],['/rules','规则包'],['/assets','资产列表'],['/operations','平台运行状态'],['/overview','态势总览'],['/screen','态势大屏'],['/notifications','通知渠道'],['/models','模型提供方'],['/assistant','智能助手'],['/reports','报告记录'],['/retention','数据留存'],['/incidents','事件调查'],['/users','用户管理'],['/unknown','页面不存在'],
  ])('平台地址 %s 可直接打开并展示 %s',async(path,title)=>{
   const{session}=await import('../platform/src/session'),{router}=await import('../platform/src/router'),{default:App}=await import('../platform/src/App.vue')
   const user=session.current as ShallowRef<Principal|null>;user.value=principal;await router.push(path)
@@ -60,9 +60,9 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
   user.value=null;await router.push('/login?redirect=https://evil.test')
   const wrapper=mount(App,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises()
   const form=wrapper.findComponent({name:'LoginForm'});form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/login')
-  login.mockImplementationOnce(async()=>{user.value=principal;return true});form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/sensors')
+  login.mockImplementationOnce(async()=>{user.value=principal;return true});form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/sensors/list')
   user.value=null;await flushPromises();expect(router.currentRoute.value.path).toBe('/login')
-  user.value=principal;await router.push('/sensors');await flushPromises();logout.mockRejectedValueOnce(new Error('退出受阻'));await click('退出');expect(router.currentRoute.value.path).toBe('/sensors')
+  user.value=principal;await router.push('/sensors');await flushPromises();logout.mockRejectedValueOnce(new Error('退出受阻'));await click('退出');expect(router.currentRoute.value.path).toBe('/sensors/list')
   await click('退出');expect(router.currentRoute.value.path).toBe('/login');wrapper.unmount()
  })
  it('平台浏览器入口挂载登录页并可卸载应用',async()=>{
@@ -70,6 +70,21 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
   const user=session.current as ShallowRef<Principal|null>;user.value=null;await router.push('/login');document.body.innerHTML='<div id="app"></div>'
   await import('../platform/src/main');await flushPromises();expect(document.body.textContent).toContain('登录星烽')
   const app=(document.getElementById('app') as HTMLElement&{__vue_app__:{unmount:()=>void}}).__vue_app__;app.unmount()
+ })
+ it('当前管理员权限撤回后，离开系统设置并清除管理员导航',async()=>{
+  const {session}=await import('../platform/src/session'),{router}=await import('../platform/src/router'),{default:App}=await import('../platform/src/App.vue')
+  const user=session.current as ShallowRef<Principal|null>;user.value=principal;await router.push('/system/settings')
+  const wrapper=mount(App,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.get('h1').text()).toBe('系统设置')
+  user.value={...principal,role:'viewer'};await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe('/sensors/list'));expect(wrapper.text()).not.toContain('账号与权限');wrapper.unmount()
+ })
+ it('单工作区保持直接导航，同名层级不生成重复面包屑',async()=>{
+  const {session}=await import('../platform/src/session'),{router}=await import('../platform/src/router'),{default:App}=await import('../platform/src/App.vue')
+  const user=session.current as ShallowRef<Principal|null>;user.value=principal;await router.push('/overview/dashboard')
+  const wrapper=mount(App,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises()
+  const direct=wrapper.findAll('.ant-layout-sider .ant-menu-root > .ant-menu-item').map(item=>item.text())
+  expect(direct).toEqual(['通知管理','安全报告'])
+  expect(wrapper.findAll('.shell-breadcrumb .ant-breadcrumb-link').map(item=>item.text())).toEqual(['态势总览'])
+  await router.push('/reports/records');await flushPromises();expect(wrapper.findAll('.shell-breadcrumb .ant-breadcrumb-link').map(item=>item.text())).toEqual(['安全报告','报告记录']);wrapper.unmount()
  })
  it('采集器实际路由保护本地管理，入口与默认网络视图一致',async()=>{
   const{session}=await import('../collector/src/session'),user=session.current as ShallowRef<Principal|null>,{router}=await import('../collector/src/router');user.value=null;await router.push('/network?view=capture');expect(router.currentRoute.value.path).toBe('/login');restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/network?view=tasks');expect(router.currentRoute.value.path).toBe('/login');user.value=principal;await router.push('/');expect(router.currentRoute.value.path).toBe('/network')

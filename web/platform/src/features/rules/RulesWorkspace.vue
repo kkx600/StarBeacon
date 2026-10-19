@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('规则管理')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import { computed, onMounted, onScopeDispose, reactive, shallowRef } from 'vue'
 import { Table as ATable, Modal as AModal, Select as ASelect} from 'ant-design-vue'
@@ -24,8 +26,8 @@ const release=useRuleRelease()
 const {view,change}=useWorkspaceView(session.current.value?.role==='admin'?['packages','samples','tasks','generation','applications','sync']:['packages','applications'])
 const canEdit=computed(()=>session.current.value?.role==='admin')
 const route=useRoute(),router=useRouter()
-const syncMode=computed(()=>route.query.mode==='rollouts'?'rollouts':'plans')
-function changeSyncMode(key:string){void router.push({path:route.path,query:{...route.query,mode:key==='rollouts'?'rollouts':undefined},hash:route.hash})}
+const syncMode=computed(()=>typeof route.meta.syncMode==='string'?route.meta.syncMode:(route.query.mode==='rollouts'?'rollouts':'plans'))
+function changeSyncMode(key:string){const paths=route.meta.modePaths as Record<string,string>|undefined;const {mode:ignored,...query}=route.query;void router.push(paths?.[key]?{path:paths[key],query,hash:route.hash}:{path:route.path,query:{...route.query,mode:key==='rollouts'?'rollouts':undefined},hash:route.hash})}
 const views=[{key:'packages',label:'规则包'},{key:'samples',label:'重放样本'},{key:'tasks',label:'重放任务'},{key:'generation',label:'AI 规则生成'},{key:'applications',label:'应用识别规则'},{key:'sync',label:'规则自动同步'}]
 const items=shallowRef<RulePackage[]>([]),pending=shallowRef(true),error=shallowRef(''),saving=shallowRef(false),editor=shallowRef(false),editing=shallowRef(false),formError=shallowRef('')
 const form=reactive({id:'',name:'',text:'',expected_revision:0})
@@ -96,7 +98,7 @@ const columns=[{title:'规则包',key:'name',width:220},{title:'修订',dataInde
 onMounted(refresh);onScopeDispose(()=>{stopped=true;controller?.abort();actionController?.abort();checkController?.abort()})
 </script>
 <template>
-  <header class="page-header"><div><h1>规则管理</h1><p class="page-description">管理不可变规则包修订，核对原生装载检查、样本回放和发布条件。</p></div><a-space v-if="view==='packages'"><a-button :loading="pending" @click="refresh">刷新</a-button><a-button v-if="session.current.value?.role==='admin'" type="primary" :disabled="saving" @click="edit()">创建规则包</a-button></a-space></header>
+  <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">管理不可变规则包修订，核对原生装载检查、样本回放和发布条件。</p></div><a-space v-if="view==='packages'"><a-button :loading="pending" @click="refresh">刷新</a-button><a-button v-if="session.current.value?.role==='admin'" type="primary" :disabled="saving" @click="edit()">创建规则包</a-button></a-space></header>
   <WorkspaceTabs :active="view" :items="session.current.value?.role==='admin'?views:views.filter(v=>v.key==='packages'||v.key==='applications')" label="规则管理功能" @change="change" />
   <template v-if="view==='packages'">
   <a-alert type="info" show-icon message="旁路规则包支持 alert 检测规则。装载检查通过后，仍需完成样本回放与完整包验收。" class="section-gap" />

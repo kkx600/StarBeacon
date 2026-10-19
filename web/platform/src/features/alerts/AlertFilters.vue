@@ -6,11 +6,11 @@ import AdvancedFilter from './AdvancedFilter.vue'
 import { session } from '../../session'
 import type {SavedDefinition} from '../search/savedSearch'
 const ARadioGroup = Radio.Group, ARadioButton = Radio.Button
-const props=defineProps<{pending: boolean;inherited?:boolean;applied?:SavedDefinition}>()
+const props=defineProps<{pending: boolean;advanced?:boolean;inherited?:boolean;applied?:SavedDefinition}>()
 type Filters = Omit<SearchRequest,'start'|'end'|'page'|'page_size'> & {filter:string}
 const emit = defineEmits<{search: [filters: Filters, hours: number]}>()
 const defaults: Filters = {keyword:'',source_ip:'',destination_ip:'',protocol:'',method:'',path:'',severity:'',filter:''}
-const form = reactive({...defaults}), hours = shallowRef(props.inherited?0:24), mode=shallowRef('visual'), validating=shallowRef(false), error=shallowRef('')
+const form = reactive({...defaults}), hours = shallowRef(props.inherited?0:24), mode=shallowRef(props.advanced?'advanced':'visual'), validating=shallowRef(false), error=shallowRef('')
 const busy=computed(()=>props.pending||validating.value)
 let controller:AbortController|undefined
 onScopeDispose(()=>controller?.abort())

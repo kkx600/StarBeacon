@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('报告计划')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {shallowRef} from 'vue'
 import {Table,Popconfirm} from 'ant-design-vue'
@@ -26,7 +28,7 @@ function closeRuns(){selected.value=null;state.closeRuns();detailOpen.value=fals
 async function showReport(id:string){analysis.clear();viewing.value=id;detailOpen.value=true;await analysis.loadJob(id)}
 </script>
 <template>
- <header class="page-header"><div><h1>报告中心</h1><p class="page-description">{{selected?selected.spec.name+'的计划运行记录，可核对周期、错过范围与报告处理结果。':'按时区定时生成安全日报、周报与月报，管理持续模型授权和运行记录。'}}</p></div><div class="filter-actions"><template v-if="selected"><a-button @click="closeRuns">返回计划</a-button><a-button :loading="runsPending" @click="state.loadRuns(selected.id)">刷新记录</a-button></template><template v-else><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button type="primary" :disabled="pending||busy||unconfirmed||!!error||items.length>=32" @click="edit(null)">创建计划</a-button></template></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">{{selected?selected.spec.name+'的计划运行记录，可核对周期、错过范围与报告处理结果。':'按时区定时生成安全日报、周报与月报，管理持续模型授权和运行记录。'}}</p></div><div class="filter-actions"><template v-if="selected"><a-button @click="closeRuns">返回计划</a-button><a-button :loading="runsPending" @click="state.loadRuns(selected.id)">刷新记录</a-button></template><template v-else><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button type="primary" :disabled="pending||busy||unconfirmed||!!error||items.length>=32" @click="edit(null)">创建计划</a-button></template></div></header>
  <a-alert v-if="actionError&&!editorOpen" type="error" :message="actionError" show-icon class="section-gap"/>
  <a-alert v-if="unconfirmed&&!editorOpen" type="warning" message="计划操作结果尚未确认，请确认原请求后继续。" show-icon class="section-gap"><template #action><a-button :loading="busy" @click="confirm">确认保存结果</a-button></template></a-alert>
  <a-alert v-if="!selected&&!pending&&!available&&!error" type="info" message="报告计划执行服务暂不可用，可核对已有计划或保存停用配置。" show-icon class="section-gap"/>

@@ -3,6 +3,7 @@ import copy
 import pathlib
 import sys
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -54,6 +55,27 @@ class AlignmentTests(unittest.TestCase):
         routes["platform"].remove("/models")
         with self.assertRaises(ValueError):
             alignment.validate_routes(ROOT, routes, self.inventory)
+
+    def test_nested_navigation_cannot_hide_system_routes(self):
+        declared = alignment.platform_navigation_routes(ROOT)
+        self.assertTrue({"/system", "/system/settings", "/system/accounts/users", "/system/audit/logins", "/response/policies", "/ai/mcp"}.issubset(declared))
+        routes = alignment.load(ROOT, "tests/acceptance/routes.json")
+        routes["platform"].remove("/system/settings")
+        with self.assertRaises(ValueError):
+            alignment.validate_routes(ROOT, routes, self.inventory)
+
+    def test_invalid_navigation_contract_is_rejected(self):
+        original = alignment.load(ROOT, "web/packages/shared/src/navigation.json")
+        for mutate in (lambda data: data["screens"].append(copy.deepcopy(data["screens"][0])),
+                       lambda data: data["screens"][0].update(path="https://external.invalid"),
+                       lambda data: data["screens"][0].update(path="/assets/list"),
+                       lambda data: data["screens"][0].update(workspace="missing"),
+                       lambda data: data["workspaces"][0].update(group="missing")):
+            with self.subTest(mutate=mutate):
+                changed = copy.deepcopy(original)
+                mutate(changed)
+                with mock.patch.object(alignment, "load", return_value=changed), self.assertRaises(ValueError):
+                    alignment.platform_navigation_routes(ROOT)
 
 
 if __name__ == "__main__":

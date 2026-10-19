@@ -1187,6 +1187,34 @@
         "internal/detectionquality/received_test.go"
       ],
       "boundary": "托管进程运行标识及配置摘要绑定，只有原生 EVE 统计持久进入 WAL 后更新；25 项固定总计数以 uint64 字符串保留，累计、瞬时值和连续区间分别呈现。首次样本、计数下降、采样／接收超过 20 秒及时间回退不建立连续增量；停止和旧观测不保留活动质量。捕获损失、检查限制、告警溢出及策略影响分开显示，缺测不补零。原生 noalert 与队列溢出、实时捕获到心跳的实际资格以同源码独立记录为准。平台用同一引擎与配置的相邻原生累计快照计算接收区间，避免心跳跳过五秒增量；缺测不补零，超过二十秒、时钟回退与计数复位保持未知，重复快照不清除前一限制。每项计数保留原生观测复位水位，跨快照变化保持复位未知，缺少水位的旧报告不授予跨心跳连续性；PG 只维护最后快照水位。质量信号与心跳同事务暂存，经有界租约、指数退避和不可变 ES 写入后受理持久通知流；ES 网络事件日分区为历史主存储，默认保留 180 天。历史窗口检索按租户、探针、注册代次和信号过滤；原生区间详情冻结，限制消失与恢复可观测分别表达。相同原因合并，持续状态至少间隔 15 分钟提醒。办公渠道与 Syslog 须显式订阅质量摘要，旧渠道保持原外发范围；投递沿用修订、静默、抑制及回执。实际协议、原生捕获和页面资格以同源码独立记录为准。不提供每流归因、全部 pass／threshold／驱动映射、完整链路质量关联或生产压力资格。"
+    },
+    {
+      "id": "navigation",
+      "name": "业务导航与系统设置目录",
+      "code": [
+        "web/packages/shared/src/navigation.json",
+        "web/platform/src/navigation.ts",
+        "web/platform/src/router.ts",
+        "web/packages/shared/src/components/NavigationMenu.vue",
+        "web/platform/src/features/settings/SettingsWorkspace.vue",
+        "prototype/src/data/navigation.ts",
+        "prototype/scripts/check-screenshots.mjs"
+      ],
+      "pages": [
+        "platform:/system/settings",
+        "platform:/system/accounts/users",
+        "platform:/system/operations/health",
+        "platform:/system/governance/retention",
+        "platform:/system/audit/operations",
+        "platform:/system/audit/logins"
+      ],
+      "tests": [
+        "web/tests/navigation.test.ts",
+        "web/tests/application.test.ts",
+        "tests/quality/test_alignment.py",
+        "prototype/scripts/check-screenshots.test.mjs"
+      ],
+      "boundary": "原型与实际平台共用 12 个业务分组、43 个工作区及工程页面归属。独立系统设置目录链接已有账号、运维、留存与审计入口；二、三级 history 路由保留旧链接窗口和定位，查看角色隐藏管理员工作区。未提供的功能保留明确范围说明，不提供虚假保存与执行操作；布局与导航源码摘要参与严格截图检查。目录不等于业务功能、生产运维设置或全产品验收。"
     }
   ],
   "requirements": [
@@ -2334,7 +2362,8 @@
         "operations",
         "pipeline",
         "models",
-        "notifications"
+        "notifications",
+        "navigation"
       ],
       "implemented": [
         "运行状态页面/真实依赖检查/进程指标",
@@ -2409,7 +2438,8 @@
       "acceptance": "pending",
       "capabilities": [
         "identity",
-        "users"
+        "users",
+        "navigation"
       ],
       "implemented": [
         "本地 bcrypt、独立平台/采集器会话、HttpOnly/CSRF/同源/限流",
@@ -2431,7 +2461,8 @@
         "identity",
         "inventory",
         "search",
-        "users"
+        "users",
+        "navigation"
       ],
       "implemented": [
         "admin/viewer",
@@ -2511,7 +2542,8 @@
       "state": "partial",
       "acceptance": "pending",
       "capabilities": [
-        "retention"
+        "retention",
+        "navigation"
       ],
       "implemented": [
         "十一类策略默认 180 天；事件调查当前状态及未关闭历史受保护",
@@ -2533,7 +2565,8 @@
       "capabilities": [
         "operations",
         "identity",
-        "users"
+        "users",
+        "navigation"
       ],
       "implemented": [
         "关键业务写与审计同事务",

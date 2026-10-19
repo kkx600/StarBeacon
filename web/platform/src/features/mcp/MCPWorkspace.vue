@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('MCP 服务')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {shallowRef} from 'vue'
 import {Table,Modal,Popconfirm} from 'ant-design-vue'
@@ -16,7 +18,7 @@ async function remove(record:Binding){if(await state.remove(record))message.succ
 function date(value:string){const at=new Date(value);return Number.isFinite(at.getTime())?at.toLocaleString('zh-CN',{hour12:false}):'时间无效'}
 </script>
 <template>
-  <header class="page-header"><div><h1>模型配置</h1><p class="page-description">管理其他 Agent 的只读数据分析接入、租户授权及调用预算。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button @click="toolsOpen=true">工具目录</a-button><a-button type="primary" :disabled="pending||busy||!info?.enabled||items.length>=100" @click="edit(null)">登记服务身份</a-button></div></header>
+  <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">管理其他 Agent 的只读数据分析接入、租户授权及调用预算。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button @click="toolsOpen=true">工具目录</a-button><a-button type="primary" :disabled="pending||busy||!info?.enabled||items.length>=100" @click="edit(null)">登记服务身份</a-button></div></header>
   <a-alert v-if="actionError&&!editorOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <a-alert v-if="!pending&&!error&&!info?.enabled" type="info" message="MCP 服务尚未启用。部署管理员需配置 HTTPS 公开来源、OAuth 授权方与受限令牌内省凭据。" show-icon class="section-gap" />
   <section v-if="info?.enabled" class="panel mcp-connection"><div><span class="muted">接入地址</span><code>{{info.resource}}</code></div><div><span class="muted">授权方</span><code>{{info.issuer}}</code></div><div><span class="muted">资源发现</span><code>{{info.metadata_url}}</code></div><p class="page-description">HTTP POST · Bearer 认证 · 无持久协议会话。支持协议：{{info.protocol_versions.join('、')}}。</p></section>

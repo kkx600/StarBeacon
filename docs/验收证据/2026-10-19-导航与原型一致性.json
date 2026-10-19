@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-19T07:51:12.227909+00:00",
+  "scope": "shared_navigation_history_routes_and_prototype_consistency_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "0aabd2d29816a9c417e603550d74a5280159400100a80b3e888d698539903f1b",
+    "backend_files": 585,
+    "frontend_sha256": "8cc8fe043a9f0beecf0ab0f2de744ff3c892c21c169f4ccb8f2b6436d97123ae",
+    "frontend_files": 337,
+    "frontend_dist_sha256": "32a1f483027cbcb58a899bab974105a9af9c865715a5781f5cfcf6e985ffecaf",
+    "original_build_parent_commit": "fdebf6e59dcca45a5df088fbc4c7a5e036dff259",
+    "original_clean_commit": false,
+    "binding": "保留原始父提交与非干净快照记录；提交后逐一核对 922 份原始输入的 Git blob 字节，不追补干净发行资格。",
+    "raw_source_manifests": [
+      {
+        "path": "navigation791-source-bridge.json",
+        "sha256": "89e8ca612b207d60cc9ba28cd2036ee1045bf7144f5979e234896303164971e4",
+        "bytes": 99982
+      },
+      {
+        "path": "navigation816-frontend/source.json",
+        "sha256": "8cdd88cb052b9faed5e5e9294cfa6a0e47e76ae9243537613c25f1105f69533f",
+        "bytes": 60221
+      }
+    ]
+  },
+  "capabilities": {
+    "navigation_groups": 12,
+    "workspaces": 43,
+    "engineering_entry_workspaces": 24,
+    "unprovided_workspaces": 19,
+    "engineering_screens": 38,
+    "shared_catalog": "web/packages/shared/src/navigation.json",
+    "system_settings": "现有账号、运行状态、留存与审计入口的统一目录；不包含尚未交付业务的模拟保存。",
+    "history_routes": "真实父子路由、父级默认页、兼容参数迁移、面包屑、角色过滤与当前权限撤回。",
+    "asset_business_prefix": "/inventory/，避免与静态资源 /assets/ 冲突"
+  },
+  "backend": {
+    "status": "passed",
+    "top_level_unit_tests": 513,
+    "integration_tests": 122,
+    "integration_disjoint_groups": [
+      61,
+      61
+    ],
+    "native_af_packet_tests": 1,
+    "failed_or_skipped_test_cases": 0,
+    "coverage": {
+      "covered": 20345,
+      "total": 22567,
+      "percentage": 90.15376434616918,
+      "minimum": 90
+    },
+    "execution_actual_exit": 0,
+    "report_fetch_actual_exit": 0,
+    "native_chain": "真实网卡 → Suricata → EVE → WAL → mTLS → NATS → ES → 通知受理；不代表生产吞吐或外部服务商送达资格。",
+    "raw": [
+      {
+        "path": "navigation796-driver.json",
+        "sha256": "002b27a75c20fec65a5d9648be3dda1bfcf5c1374e249247937b9a05a3e64402",
+        "bytes": 1242
+      },
+      {
+        "path": "sbacc_454c145fa2db878e/reports/backend.json",
+        "sha256": "0475e1ad745f371216185eb65cf45cafa84f9d7c9c3319598c41023473d6288b",
+        "bytes": 1561
+      }
+    ]
+  },
+  "frontend": {
+    "tests": 849,
+    "tool_tests": 9,
+    "test_files": 57,
+    "coverage": {
+      "statements": 95.45067698259187,
+      "branches": 92.9315899185143,
+      "functions": 91.91870312121945,
+      "lines": 98.83340155546459
+    },
+    "all_metric_minimum": 90,
+    "typecheck_and_both_builds": "passed",
+    "raw": {
+      "path": "navigation816-frontend/frontend.json",
+      "sha256": "9ebb787dedfd1485833e9df6d7ec535d2f912e0c80b8d69135f283199845f1f1",
+      "bytes": 53912
+    }
+  },
+  "ui": {
+    "geometry_checks": 399,
+    "screen_entries": 57,
+    "available_screens": 38,
+    "explicitly_unprovided_entries": 19,
+    "pc_sizes": [
+      "1024×768",
+      "1280×720",
+      "1366×768",
+      "1440×900",
+      "1920×1080",
+      "2560×1440",
+      "3840×2160"
+    ],
+    "registered_route_checks": 106,
+    "navigation_interactions": 9,
+    "checks": "实际视口、规范页头、选中工作区、范围说明、根页面无横向溢出、至多一张业务列表。",
+    "raw": {
+      "path": "navigation820-current-ui/results.json",
+      "sha256": "a7130deb7369daada7880b3c22232b0c69d7b54790ce66c0b4e375a2fd61d286",
+      "bytes": 298073
+    },
+    "scope_boundary": "导航与几何核对不替代全部 CRUD、错误分支、外部依赖及全产品验收。"
+  },
+  "prototype": {
+    "base_images": 797,
+    "supplemental_images": 105,
+    "total_images": 902,
+    "platform_views": 126,
+    "collector_workspaces": 5,
+    "render_tree_sha256": "25d2eabe5d116f496c77bbd3343dcf7d0758046fe14ecf1b4d551152d6c62fb2",
+    "render_tree_files": 310,
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "layout_sha256": "2684153c798b3750aad8556ef96522d51b2f0bc6d572a7726564036b4b4f0e4b",
+    "capture": "当前源码实际渲染；1440×900 原生浏览器 JPEG；合成数据，未进行像素转换或拼接。",
+    "gallery": "在线目录与来源清单禁缓存，图片使用 SHA 版本；源码不匹配时不授予旧图资格。",
+    "strict_checks": "passed",
+    "browser_visible_version_check": "passed",
+    "raw": [
+      {
+        "path": "navigation823-gallery/result.json",
+        "sha256": "1a4bc2aab2b8a09f7ceda5c224f3b570d578c59df48d23aec526f57c4fdf2b7f",
+        "bytes": 1560
+      },
+      {
+        "path": "navigation823-gallery/browser.json",
+        "sha256": "5e849826b66c1a6efc34c69496581c35af15651a90dc982ca9825f085cea3115",
+        "bytes": 300
+      }
+    ]
+  },
+  "deployment": {
+    "scope": "专属远程 Docker 工程实例",
+    "programs_verified": 5,
+    "running_roles_verified": 4,
+    "readiness_checks": 4,
+    "static_resources_verified": 88,
+    "history_gateway_paths": 56,
+    "missing_static_status": 404,
+    "migration": 47,
+    "identity_digest_preserved": true,
+    "wal_device_and_inode_preserved": true,
+    "raw": [
+      {
+        "path": "navigation817-restart.json",
+        "sha256": "8ab8573537b2e45a56a264f42a2e09049fb006959778a26f6ef05f3a452cbaf4",
+        "bytes": 1146
+      },
+      {
+        "path": "navigation819-gateway.json",
+        "sha256": "a4973b2c8eb66405ae9db6bb63e440189042206a7b944867a6545c67d4f34073",
+        "bytes": 7642
+      },
+      {
+        "path": "navigation829-runtime.json",
+        "sha256": "85eb43fdc94bd297140d6470a2345afba41203882b67769188eaa4b3bc54accc",
+        "bytes": 16175
+      }
+    ]
+  },
+  "checks": {
+    "quality_tests": 70,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 9,
+    "alignment": "passed",
+    "default_white_gray_theme": "unchanged",
+    "whole_product_wcag_aa": "未授予"
+  },
+  "cleanup": {
+    "scope": "owned_unreferenced_build_caches_only",
+    "directories": [
+      {
+        "directory": "go-build-cache",
+        "files": 11149,
+        "logical_bytes": 1418601672,
+        "allocated_file_bytes_before_removal": 1458597888,
+        "removed": true
+      },
+      {
+        "directory": "capture-go-build-cache",
+        "files": 6752,
+        "logical_bytes": 998063263,
+        "allocated_file_bytes_before_removal": 1022050304,
+        "removed": true
+      }
+    ],
+    "logical_bytes_removed": 2416664935,
+    "allocated_file_bytes_before_removal": 2480648192,
+    "global_prune": false,
+    "persistent_data_identity_wal_and_ca_retained": true,
+    "post_cleanup_runtime": "passed",
+    "raw": {
+      "path": "navigation828-cleanup.json",
+      "sha256": "f753911f88dd7f7791581c0092cee4ed548ea7ab29b9b1718a4a6aec5fb2743a",
+      "bytes": 1330
+    }
+  },
+  "failure_history": [
+    "原型目录与平级工程菜单分别维护，系统功能散落且部分页面藏在模型页签。",
+    "旧截图检查未绑定组件与导航，固定链接可能显示缓存图片。",
+    "深层 /assets/ 业务路径被静态资源规则返回 404，迁至 /inventory/ 并保留旧入口。",
+    "九处叶页面页头沿用父功能名称；原失败与修正后完整测试均保留。",
+    "原生截图一度返回 1417 像素宽，严格检查失败；使用显式原生视口捕获，全部重新通过。",
+    "旧后端来源复用被门禁拒绝后，从当前源码完整执行远程资格。",
+    "首次清理因另一项目只读宿主根目录视图容器身份变化拒绝，未删除缓存；只读核对后重新限定身份，仅清理本项目两项缓存。",
+    "浏览器连接与执行中断保留为失败／中断，不计入通过。"
+  ],
+  "raw_evidence_archives": [
+    {
+      "archive": "navigation813-backend-qualification.tar.gz",
+      "sha256": "85aa9244ce3fa718239fc2f1736b63b95cf5eef2844a5fa33e72c0eebcf6dcd2",
+      "bytes": 14209962,
+      "members_readback_verified": 741
+    },
+    {
+      "archive": "navigation824-post-ui-raw.tar.gz",
+      "sha256": "2b83505528e1240c334e2309a7c39dd04f855b8feb8529fc86e56dcadc2687a1",
+      "bytes": 77917250,
+      "members_readback_verified": 3277
+    },
+    {
+      "archive": "navigation830-post-cleanup-raw.tar.gz",
+      "sha256": "479334c1f70d6172d06a5f0f51e00fd5ef5f02f62ee777ad9e619d81502d9101",
+      "bytes": 12581,
+      "members_readback_verified": 10
+    }
+  ],
+  "private_evidence_policy": "原始源码、报告与页面截图保存在本机受限目录；凭据、环境状态和原始归档不提交 Git。公开文档仅包含摘要与边界。",
+  "product_requirement_status": {
+    "total": 107,
+    "accepted": 0,
+    "partial": 61,
+    "missing": 46,
+    "status_review_date": "2026-10-18；本次未将导航入口和原型数量折算为业务验收通过。"
+  },
+  "remaining": [
+    "19 个工作区未提供工程功能；完整需求仍有业务闭环缺口。",
+    "OIDC/MFA、自定义角色与组织、租户配额、情报、沙箱、完整平台配置等不能由目录入口认定完成。",
+    "生产容量、外部服务与设备、长期完整性、HA/灾备、完整安装和当前 Linux UPX ZIP 资格尚未完成。",
+    "当前证据不满足正式 Release 的全产品门禁，本次不发布正式 Release。"
+  ]
+}

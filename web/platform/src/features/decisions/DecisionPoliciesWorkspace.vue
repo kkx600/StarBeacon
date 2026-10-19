@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('决策策略')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
 import {useRoute} from 'vue-router'
@@ -43,7 +45,7 @@ watch(()=>[session.current.value?.id,session.current.value?.tenant_id,session.cu
 onScopeDispose(()=>{stopped=true;read?.abort()})
 </script>
 <template>
- <header class="page-header"><div><h1>模型配置</h1><p class="page-description">维护决策条件与材料时限，核对当前策略及历史修订。</p></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">维护决策条件与材料时限，核对当前策略及历史修订。</p></div></header>
  <a-alert type="info" show-icon message="持续模式处理指定模型的新研判；配置自动研判许可后，指定探针的新告警自动进入队列，再按策略授权限时任务。模型分数、设备配置回读与实际流量效果分别核对。" class="section-gap"/>
  <p v-if="triageID" class="page-description">已带入研判作业 <span class="technical">{{triageID}}</span>，选择策略的“影子评估”后确认执行。</p>
  <form class="policy-toolbar" @submit.prevent="search"><a-input v-model:value="filter.keyword" aria-label="决策策略名称" placeholder="策略名称" :maxlength="128"/><a-select v-model:value="filter.active" aria-label="决策策略状态" :options="[{value:'',label:'全部状态'},{value:'true',label:'启用'},{value:'false',label:'停用'}]"/><a-button html-type="submit" :disabled="model.pending.value">检索</a-button><a-button :loading="model.pending.value" @click="refresh">刷新</a-button><a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{model.unconfirmed.value?'核对原提交':'创建策略'}}</a-button></form>

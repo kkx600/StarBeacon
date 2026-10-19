@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('通知中心')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,shallowRef,watch} from 'vue'
 import {Select} from 'ant-design-vue'
@@ -24,7 +26,7 @@ async function test(record:Channel){if(await state.test(record)){message.success
 async function retry(record:Delivery){if(await state.retry(record))message.success('人工重试已受理')}
 </script>
 <template>
-  <header class="page-header"><div><h1>通知中心</h1><p class="page-description">配置告警通知和日志转发渠道，核对每次投递的处理状态与渠道回执。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button v-if="view==='channels'" type="primary" :disabled="!available||busy||channels.length>=50" @click="edit(null)">创建渠道</a-button></div></header>
+  <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">配置告警通知和日志转发渠道，核对每次投递的处理状态与渠道回执。</p></div><div class="filter-actions"><a-button :loading="pending" @click="state.refresh">刷新</a-button><a-button v-if="view==='channels'" type="primary" :disabled="!available||busy||channels.length>=50" @click="edit(null)">创建渠道</a-button></div></header>
   <WorkspaceTabs :active="view" :items="[{key:'channels',label:'通知渠道'},{key:'deliveries',label:'推送日志'}]" label="通知中心功能" @change="change" />
   <a-alert v-if="actionError&&!editorOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <a-alert v-if="view==='channels'&&!pending&&!available&&!error" type="info" message="通知服务尚未启用，渠道配置暂不可用。" show-icon class="section-gap" />

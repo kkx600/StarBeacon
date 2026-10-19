@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('评估记录')
 import {onScopeDispose,reactive,ref,shallowRef,watch} from 'vue'
 import {Table as ATable,Select as ASelect,Tag as ATag,Modal as AModal} from 'ant-design-vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
@@ -28,7 +30,7 @@ watch(()=>[session.current.value?.id,session.current.value?.tenant_id,session.cu
 onScopeDispose(()=>read?.abort())
 </script>
 <template>
- <header class="page-header"><div><h1>模型配置</h1><p class="page-description">查看本账号的评估档案与策略快照，核对判断依据和处置授权记录。</p></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">查看本账号的评估档案与策略快照，核对判断依据和处置授权记录。</p></div></header>
  <a-alert type="info" show-icon message="仅显示本账号的评估记录。判断与持续决策授权独立留档，详情可核对自动任务或未授权原因；默认保留 180 天。" class="section-gap"/>
  <form class="evaluation-toolbar" @submit.prevent="search"><a-input v-model:value="draft.policy_id" aria-label="评估策略标识" placeholder="策略标识" :maxlength="64"/><a-input v-model:value="draft.triage_id" aria-label="评估研判作业标识" placeholder="研判作业标识" :maxlength="64"/><a-select v-model:value="draft.status" aria-label="评估判断结果" :options="[{value:'',label:'全部结果'},...Object.entries(policyStatuses).map(([value,label])=>({value,label}))]"/><a-button html-type="submit" :disabled="model.pending.value">检索</a-button><a-button :loading="model.pending.value" @click="refresh">刷新</a-button></form>
  <section class="panel"><div class="panel-header"><h2>评估记录</h2><span>当前页 {{model.page.value.items.length}} 条 · 持久提交倒序</span></div>

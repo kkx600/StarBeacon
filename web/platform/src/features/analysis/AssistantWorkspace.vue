@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('智能对话')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,ref} from 'vue'
 import {Select,Checkbox,Modal,Table,Input} from 'ant-design-vue'
@@ -22,7 +24,7 @@ function fresh(){if(blocked.value||unconfirmed.value)return;state.clear();select
 async function cancel(id:string){const job=await state.cancel(id);if(job?.cancel_requested)message.info('取消请求已提交，请以运行结果为准')}
 </script>
 <template>
- <header class="page-header"><div><h1>智能助手</h1><p class="page-description">依据当前统计解释检测现象并提出调查建议，结论须结合原始证据复核。</p></div><div class="filter-actions"><a-button :disabled="blocked||unconfirmed" @click="fresh">创建对话</a-button><a-button :disabled="busy||unconfirmed" @click="historyOpen=true;state.refresh()">对话记录</a-button></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">依据当前统计解释检测现象并提出调查建议，结论须结合原始证据复核。</p></div><div class="filter-actions"><a-button :disabled="blocked||unconfirmed" @click="fresh">创建对话</a-button><a-button :disabled="busy||unconfirmed" @click="historyOpen=true;state.refresh()">对话记录</a-button></div></header>
  <a-alert v-if="models.error.value" type="error" :message="models.error.value" show-icon class="section-gap"/><a-alert v-if="!models.pending.value&&!providers.length" type="info" message="暂无启用的模型提供方，请先完成模型配置。" show-icon class="section-gap"><template #action><a-button type="link" @click="router.push('/models')">模型配置</a-button></template></a-alert>
  <a-alert v-if="!pending&&!state.available.value&&!error" type="warning" message="模型分析执行服务暂不可用，请联系管理员核对运行状态。" show-icon class="section-gap"/>
  <section class="panel assistant-context"><div class="assistant-fields"><div><label>模型提供方</label><Select v-model:value="provider" aria-label="模型提供方" :disabled="blocked||unconfirmed" placeholder="请选择模型提供方" :options="providers.map(p=>({value:p.id,label:`${p.name} · ${p.model}`}))"/></div><div><label>统计时间范围</label><Select v-model:value="hours" aria-label="统计时间范围" :disabled="blocked||unconfirmed" :options="[{value:24,label:'最近 24 小时'},{value:168,label:'最近 7 天'},{value:720,label:'最近 30 天'}]"/></div></div><p class="muted">本次输入包含所选范围的告警统计、生成时的登记状态和最近对话。统计生成时会固定窗口；原始载荷、PCAP、凭据和设备管理信息不进入模型输入。</p></section>

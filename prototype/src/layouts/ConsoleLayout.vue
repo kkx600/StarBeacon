@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,LogoutOutlined } from '@ant-design/icons-vue'
 import type {PreviewState} from '../models'
 import { groups,pageById,pages,states } from '../data/catalog'
-import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage} from '../data/navigation'
+import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage,pageIdForRoute,prototypePath} from '../data/navigation'
 import { usePreview } from '../composables/usePreview'
 
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
@@ -12,23 +12,23 @@ const compact=window.matchMedia('(max-width:899px)');const collapsed=ref(compact
 function onViewportChange(event:MediaQueryListEvent){collapsed.value=event.matches}
 onMounted(()=>compact.addEventListener('change',onViewportChange));onBeforeUnmount(()=>compact.removeEventListener('change',onViewportChange))
 const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SettingOutlined,ThunderboltOutlined} as Record<string,typeof AlertOutlined>
-const current=computed(()=>pageById.get(String(route.params.id)))
+const current=computed(()=>pageById.get(pageIdForRoute(route)))
 const title=computed(()=>current.value?.id==='sensors'&&route.query.view==='quality'?'质量事件':current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
 const groupTitle=computed(()=>groups.find(g=>g.id===current.value?.group)?.title??'星烽 StarBeacon')
-const currentWorkspace=computed(()=>workspaceForPage.get(String(route.params.id)))
+const currentWorkspace=computed(()=>workspaceForPage.get(pageIdForRoute(route)))
 const lastViews=ref<Record<string,string>>({})
-const menuOpen=ref<string[]>(['overview'])
+const menuOpen=ref<string[]>(['group:overview'])
 const visited=ref<string[]>(['overview','alerts','search'])
-watch(()=>route.params.id,id=>{
+watch(()=>pageIdForRoute(route),id=>{
   if(typeof id!=='string'||!pageById.has(id))return
   const workspace=workspaceForPage.get(id)
-  menuOpen.value=collapsed.value?[]:[pageById.get(id)!.group]
+  menuOpen.value=collapsed.value?[]:['group:'+pageById.get(id)!.group]
   if(workspace){lastViews.value[workspace.id]=id;if(!visited.value.includes(workspace.id)){visited.value.push(workspace.id);if(visited.value.length>5)visited.value.shift()}}
 },{immediate:true})
 watch(title,value=>{document.title=`${value} · 星烽 StarBeacon`},{immediate:true})
-watch(collapsed,value=>{menuOpen.value=value?[]:[current.value?.group??'overview']})
+watch(collapsed,value=>{menuOpen.value=value?[]:['group:'+(current.value?.group??'overview')]})
 const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
-function navigate(id:string){void router.push(`/page/${id}`);searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}
+function navigate(id:string){void router.push(prototypePath(id));searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}
 function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??workspace.pages[0]!)}
 function profileAction(key:string){if(key==='account')navigate('my-account');if(key==='logout')void router.push('/auth/login')}
 </script>
@@ -40,10 +40,10 @@ function profileAction(key:string){if(key==='account')navigate('my-account');if(
         <span class="brand-symbol"><SafetyCertificateOutlined /></span><span v-if="!collapsed" class="brand-copy"><b>星烽 <span>StarBeacon</span></b><small>态势感知系统</small></span>
       </button>
       <div v-if="!collapsed" class="nav-section-label">安全运营</div>
-      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="[currentWorkspace?.id??String(route.params.id)]" v-model:openKeys="menuOpen" class="main-menu">
-        <template v-for="group in groups" :key="group.id"><a-menu-item v-if="workspaces.filter(w=>w.group===group.id).length===1" :key="workspaces.find(w=>w.group===group.id)!.id" @click="openWorkspace(workspaces.find(w=>w.group===group.id)!.id)"><template #icon><component :is="iconMap[group.icon]"/></template>{{workspaces.find(w=>w.group===group.id)!.title}}</a-menu-item><a-sub-menu v-else :key="group.id">
+      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="['workspace:'+(currentWorkspace?.id??pageIdForRoute(route))]" v-model:openKeys="menuOpen" class="main-menu">
+        <template v-for="group in groups" :key="'group:'+group.id"><a-menu-item v-if="workspaces.filter(w=>w.group===group.id).length===1" :key="'workspace:'+workspaces.find(w=>w.group===group.id)!.id" @click="openWorkspace(workspaces.find(w=>w.group===group.id)!.id)"><template #icon><component :is="iconMap[group.icon]"/></template>{{workspaces.find(w=>w.group===group.id)!.title}}</a-menu-item><a-sub-menu v-else :key="'group:'+group.id">
           <template #icon><component :is="iconMap[group.icon]" /></template><template #title>{{group.title}}</template>
-          <a-menu-item v-for="workspace in workspaces.filter(w=>w.group===group.id)" :key="workspace.id" @click="openWorkspace(workspace.id)">{{workspace.title}}</a-menu-item>
+          <a-menu-item v-for="workspace in workspaces.filter(w=>w.group===group.id)" :key="'workspace:'+workspace.id" @click="openWorkspace(workspace.id)">{{workspace.title}}</a-menu-item>
         </a-sub-menu></template>
       </a-menu>
       <div class="sidebar-footer"><span class="status-dot success"></span><span v-if="!collapsed">交互原型 · 合成数据</span></div>

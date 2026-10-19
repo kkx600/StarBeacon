@@ -1,4 +1,7 @@
 {
+  "source": {
+    "renderTreeSha256": "25d2eabe5d116f496c77bbd3343dcf7d0758046fe14ecf1b4d551152d6c62fb2"
+  },
   "product": "星烽 StarBeacon",
   "synthetic": true,
   "requirementCount": 107,
@@ -102,7 +105,8 @@
       "title": "资产组与网段",
       "group": "assets",
       "pages": [
-        "asset-groups"
+        "asset-groups",
+        "networks"
       ]
     },
     {
@@ -334,7 +338,8 @@
       "pages": [
         "sensors",
         "sensor-groups",
-        "probe-identity"
+        "probe-identity",
+        "sensor-tasks"
       ]
     },
     {
@@ -343,6 +348,14 @@
       "group": "sensors",
       "pages": [
         "releases"
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "系统设置",
+      "group": "system",
+      "pages": [
+        "system-settings"
       ]
     },
     {
@@ -819,6 +832,7 @@
   "pages": [
     {
       "id": "overview",
+      "workspace": "态势总览",
       "title": "态势总览",
       "group": "overview",
       "kind": "overview",
@@ -830,43 +844,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/overview?state=data",
+          "url": "/overview/dashboard?state=data",
           "image": "overview/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/overview?state=empty",
+          "url": "/overview/dashboard?state=empty",
           "image": "overview/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/overview?state=detail",
+          "url": "/overview/dashboard?state=detail",
           "image": "overview/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/overview?state=action",
+          "url": "/overview/dashboard?state=action",
           "image": "overview/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/overview?state=loading",
+          "url": "/overview/dashboard?state=loading",
           "image": "overview/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/overview?state=error",
+          "url": "/overview/dashboard?state=error",
           "image": "overview/error.jpg"
         }
       ]
     },
     {
       "id": "topology",
+      "workspace": "网络拓扑",
       "title": "风险拓扑",
       "group": "overview",
       "kind": "topology",
@@ -915,6 +930,7 @@
     },
     {
       "id": "response-metrics",
+      "workspace": "响应效能",
       "title": "响应效能",
       "group": "overview",
       "kind": "table",
@@ -963,6 +979,7 @@
     },
     {
       "id": "screens",
+      "workspace": "态势大屏",
       "title": "大屏管理",
       "group": "overview",
       "kind": "table",
@@ -1011,6 +1028,7 @@
     },
     {
       "id": "alerts",
+      "workspace": "告警管理",
       "title": "告警列表",
       "group": "alerts",
       "kind": "table",
@@ -1022,43 +1040,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/alerts?state=data",
+          "url": "/alerts/list?state=data",
           "image": "alerts/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/alerts?state=empty",
+          "url": "/alerts/list?state=empty",
           "image": "alerts/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/alerts?state=detail",
+          "url": "/alerts/list?state=detail",
           "image": "alerts/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/alerts?state=action",
+          "url": "/alerts/list?state=action",
           "image": "alerts/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/alerts?state=loading",
+          "url": "/alerts/list?state=loading",
           "image": "alerts/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/alerts?state=error",
+          "url": "/alerts/list?state=error",
           "image": "alerts/error.jpg"
         }
       ]
     },
     {
       "id": "assessments",
+      "workspace": "告警管理",
       "title": "研判任务",
       "group": "alerts",
       "kind": "table",
@@ -1107,6 +1126,7 @@
     },
     {
       "id": "search",
+      "workspace": "高级检索",
       "title": "高级检索",
       "group": "alerts",
       "kind": "search",
@@ -1118,43 +1138,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/search?state=data",
+          "url": "/alerts/search?state=data",
           "image": "search/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/search?state=empty",
+          "url": "/alerts/search?state=empty",
           "image": "search/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/search?state=detail",
+          "url": "/alerts/search?state=detail",
           "image": "search/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/search?state=action",
+          "url": "/alerts/search?state=action",
           "image": "search/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/search?state=loading",
+          "url": "/alerts/search?state=loading",
           "image": "search/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/search?state=error",
+          "url": "/alerts/search?state=error",
           "image": "search/error.jpg"
         }
       ]
     },
     {
       "id": "fields",
+      "workspace": "高级检索",
       "title": "字段目录",
       "group": "alerts",
       "kind": "table",
@@ -1203,6 +1224,7 @@
     },
     {
       "id": "exports",
+      "workspace": "高级检索",
       "title": "数据导出",
       "group": "alerts",
       "kind": "table",
@@ -1251,6 +1273,7 @@
     },
     {
       "id": "incidents",
+      "workspace": "事件调查",
       "title": "事件调查",
       "group": "incidents",
       "kind": "table",
@@ -1262,43 +1285,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/incidents?state=data",
+          "url": "/incidents/investigation?state=data",
           "image": "incidents/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/incidents?state=empty",
+          "url": "/incidents/investigation?state=empty",
           "image": "incidents/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/incidents?state=detail",
+          "url": "/incidents/investigation?state=detail",
           "image": "incidents/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/incidents?state=action",
+          "url": "/incidents/investigation?state=action",
           "image": "incidents/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/incidents?state=loading",
+          "url": "/incidents/investigation?state=loading",
           "image": "incidents/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/incidents?state=error",
+          "url": "/incidents/investigation?state=error",
           "image": "incidents/error.jpg"
         }
       ]
     },
     {
       "id": "cases",
+      "workspace": "事件调查",
       "title": "案件工作台",
       "group": "incidents",
       "kind": "table",
@@ -1347,6 +1371,7 @@
     },
     {
       "id": "timelines",
+      "workspace": "事件调查",
       "title": "调查时间线",
       "group": "incidents",
       "kind": "table",
@@ -1395,6 +1420,7 @@
     },
     {
       "id": "case-sharing",
+      "workspace": "事件调查",
       "title": "案件协作",
       "group": "incidents",
       "kind": "table",
@@ -1443,6 +1469,7 @@
     },
     {
       "id": "duty",
+      "workspace": "值班管理",
       "title": "值班与 SLA",
       "group": "incidents",
       "kind": "table",
@@ -1491,6 +1518,7 @@
     },
     {
       "id": "tickets",
+      "workspace": "处置工单",
       "title": "工单同步",
       "group": "incidents",
       "kind": "table",
@@ -1539,6 +1567,7 @@
     },
     {
       "id": "reviews",
+      "workspace": "事件调查",
       "title": "事件复盘",
       "group": "incidents",
       "kind": "table",
@@ -1587,6 +1616,7 @@
     },
     {
       "id": "assets",
+      "workspace": "资产管理",
       "title": "资产列表",
       "group": "assets",
       "kind": "table",
@@ -1598,43 +1628,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/assets?state=data",
+          "url": "/inventory/list?state=data",
           "image": "assets/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/assets?state=empty",
+          "url": "/inventory/list?state=empty",
           "image": "assets/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/assets?state=detail",
+          "url": "/inventory/list?state=detail",
           "image": "assets/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/assets?state=action",
+          "url": "/inventory/list?state=action",
           "image": "assets/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/assets?state=loading",
+          "url": "/inventory/list?state=loading",
           "image": "assets/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/assets?state=error",
+          "url": "/inventory/list?state=error",
           "image": "assets/error.jpg"
         }
       ]
     },
     {
       "id": "interfaces",
+      "workspace": "资产管理",
       "title": "接口与地址",
       "group": "assets",
       "kind": "table",
@@ -1683,6 +1714,7 @@
     },
     {
       "id": "address-history",
+      "workspace": "资产管理",
       "title": "地址归属历史",
       "group": "assets",
       "kind": "table",
@@ -1731,6 +1763,7 @@
     },
     {
       "id": "nat",
+      "workspace": "资产管理",
       "title": "NAT 与代理映射",
       "group": "assets",
       "kind": "table",
@@ -1779,6 +1812,7 @@
     },
     {
       "id": "identities",
+      "workspace": "资产管理",
       "title": "身份关联",
       "group": "assets",
       "kind": "table",
@@ -1827,6 +1861,7 @@
     },
     {
       "id": "asset-groups",
+      "workspace": "资产组与网段",
       "title": "资产组与网段",
       "group": "assets",
       "kind": "table",
@@ -1838,43 +1873,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/asset-groups?state=data",
+          "url": "/inventory/groups?state=data",
           "image": "asset-groups/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/asset-groups?state=empty",
+          "url": "/inventory/groups?state=empty",
           "image": "asset-groups/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/asset-groups?state=detail",
+          "url": "/inventory/groups?state=detail",
           "image": "asset-groups/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/asset-groups?state=action",
+          "url": "/inventory/groups?state=action",
           "image": "asset-groups/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/asset-groups?state=loading",
+          "url": "/inventory/groups?state=loading",
           "image": "asset-groups/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/asset-groups?state=error",
+          "url": "/inventory/groups?state=error",
           "image": "asset-groups/error.jpg"
         }
       ]
     },
     {
       "id": "services",
+      "workspace": "资产管理",
       "title": "服务与暴露面",
       "group": "assets",
       "kind": "table",
@@ -1923,6 +1959,7 @@
     },
     {
       "id": "asset-relations",
+      "workspace": "资产管理",
       "title": "资产关系",
       "group": "assets",
       "kind": "table",
@@ -1971,6 +2008,7 @@
     },
     {
       "id": "vulnerabilities",
+      "workspace": "资产风险",
       "title": "漏洞列表",
       "group": "assets",
       "kind": "table",
@@ -2019,6 +2057,7 @@
     },
     {
       "id": "scan-tasks",
+      "workspace": "资产风险",
       "title": "扫描任务",
       "group": "assets",
       "kind": "table",
@@ -2067,6 +2106,7 @@
     },
     {
       "id": "risk-priorities",
+      "workspace": "资产风险",
       "title": "风险优先级",
       "group": "assets",
       "kind": "table",
@@ -2115,6 +2155,7 @@
     },
     {
       "id": "remediations",
+      "workspace": "资产风险",
       "title": "整改与复测",
       "group": "assets",
       "kind": "table",
@@ -2163,6 +2204,7 @@
     },
     {
       "id": "baselines",
+      "workspace": "资产风险",
       "title": "配置与弱口令风险",
       "group": "assets",
       "kind": "table",
@@ -2211,6 +2253,7 @@
     },
     {
       "id": "external-exposure",
+      "workspace": "资产风险",
       "title": "外部暴露与外连审批",
       "group": "assets",
       "kind": "table",
@@ -2259,6 +2302,7 @@
     },
     {
       "id": "asset-risk",
+      "workspace": "资产风险",
       "title": "资产风险态势",
       "group": "assets",
       "kind": "table",
@@ -2307,6 +2351,7 @@
     },
     {
       "id": "applications",
+      "workspace": "应用与行为",
       "title": "应用流量",
       "group": "traffic",
       "kind": "table",
@@ -2355,6 +2400,7 @@
     },
     {
       "id": "behaviors",
+      "workspace": "应用与行为",
       "title": "行为与外连",
       "group": "traffic",
       "kind": "table",
@@ -2403,6 +2449,7 @@
     },
     {
       "id": "packets",
+      "workspace": "通信取证",
       "title": "数据包工作台",
       "group": "traffic",
       "kind": "search",
@@ -2414,43 +2461,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/packets?state=data",
+          "url": "/traffic/events?state=data",
           "image": "packets/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/packets?state=empty",
+          "url": "/traffic/events?state=empty",
           "image": "packets/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/packets?state=detail",
+          "url": "/traffic/events?state=detail",
           "image": "packets/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/packets?state=action",
+          "url": "/traffic/events?state=action",
           "image": "packets/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/packets?state=loading",
+          "url": "/traffic/events?state=loading",
           "image": "packets/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/packets?state=error",
+          "url": "/traffic/events?state=error",
           "image": "packets/error.jpg"
         }
       ]
     },
     {
       "id": "packet-times",
+      "workspace": "通信取证",
       "title": "通信时间",
       "group": "traffic",
       "kind": "table",
@@ -2499,6 +2547,7 @@
     },
     {
       "id": "sessions",
+      "workspace": "会话与 PCAP",
       "title": "会话与事务",
       "group": "traffic",
       "kind": "table",
@@ -2547,6 +2596,7 @@
     },
     {
       "id": "payloads",
+      "workspace": "通信取证",
       "title": "载荷与编码",
       "group": "traffic",
       "kind": "search",
@@ -2595,6 +2645,7 @@
     },
     {
       "id": "pcap-tasks",
+      "workspace": "会话与 PCAP",
       "title": "PCAP 取证",
       "group": "traffic",
       "kind": "table",
@@ -2644,6 +2695,7 @@
     },
     {
       "id": "packet-archives",
+      "workspace": "会话与 PCAP",
       "title": "原包归档",
       "group": "traffic",
       "kind": "table",
@@ -2656,43 +2708,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/packet-archives?state=data",
+          "url": "/traffic/archives?state=data",
           "image": "packet-archives/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/packet-archives?state=empty",
+          "url": "/traffic/archives?state=empty",
           "image": "packet-archives/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/packet-archives?state=detail",
+          "url": "/traffic/archives?state=detail",
           "image": "packet-archives/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/packet-archives?state=action",
+          "url": "/traffic/archives?state=action",
           "image": "packet-archives/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/packet-archives?state=loading",
+          "url": "/traffic/archives?state=loading",
           "image": "packet-archives/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/packet-archives?state=error",
+          "url": "/traffic/archives?state=error",
           "image": "packet-archives/error.jpg"
         }
       ]
     },
     {
       "id": "capture-policy",
+      "workspace": "流量采集",
       "title": "捕获与归档策略",
       "group": "traffic",
       "kind": "table",
@@ -2741,6 +2794,7 @@
     },
     {
       "id": "capture-scope",
+      "workspace": "流量采集",
       "title": "镜像与捕获范围",
       "group": "traffic",
       "kind": "table",
@@ -2789,6 +2843,7 @@
     },
     {
       "id": "session-integrity",
+      "workspace": "会话与 PCAP",
       "title": "会话完整性",
       "group": "traffic",
       "kind": "table",
@@ -2837,6 +2892,7 @@
     },
     {
       "id": "inspection-depth",
+      "workspace": "流量采集",
       "title": "检测深度与限制",
       "group": "traffic",
       "kind": "table",
@@ -2885,10 +2941,11 @@
     },
     {
       "id": "capture-quality",
-      "title": "捕获质量",
+      "workspace": "流量采集",
+      "title": "质量事件",
       "group": "traffic",
       "kind": "table",
-      "description": "比较镜像、NIC、内核和引擎计数，定位丢包和重复风险。",
+      "description": "查看原生检测质量变化、观察范围与处置提醒，核对缺报、复位和丢包风险。",
       "requirements": [
         "SB-NET-006"
       ],
@@ -2896,43 +2953,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/capture-quality?state=data",
+          "url": "/traffic/capture/quality?state=data",
           "image": "capture-quality/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/capture-quality?state=empty",
+          "url": "/traffic/capture/quality?state=empty",
           "image": "capture-quality/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/capture-quality?state=detail",
+          "url": "/traffic/capture/quality?state=detail",
           "image": "capture-quality/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/capture-quality?state=action",
+          "url": "/traffic/capture/quality?state=action",
           "image": "capture-quality/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/capture-quality?state=loading",
+          "url": "/traffic/capture/quality?state=loading",
           "image": "capture-quality/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/capture-quality?state=error",
+          "url": "/traffic/capture/quality?state=error",
           "image": "capture-quality/error.jpg"
         }
       ]
     },
     {
       "id": "tls-visibility",
+      "workspace": "通信取证",
       "title": "TLS 可见性",
       "group": "traffic",
       "kind": "table",
@@ -2981,6 +3039,7 @@
     },
     {
       "id": "protocols",
+      "workspace": "流量采集",
       "title": "协议能力",
       "group": "traffic",
       "kind": "table",
@@ -3029,6 +3088,7 @@
     },
     {
       "id": "pipeline-latency",
+      "workspace": "处理性能",
       "title": "全链路时延",
       "group": "traffic",
       "kind": "table",
@@ -3077,6 +3137,7 @@
     },
     {
       "id": "capacity",
+      "workspace": "处理性能",
       "title": "容量与压力评估",
       "group": "traffic",
       "kind": "table",
@@ -3125,6 +3186,7 @@
     },
     {
       "id": "rules",
+      "workspace": "检测规则",
       "title": "Suricata 规则",
       "group": "detection",
       "kind": "table",
@@ -3136,43 +3198,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/rules?state=data",
+          "url": "/detection/rules/packages?state=data",
           "image": "rules/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/rules?state=empty",
+          "url": "/detection/rules/packages?state=empty",
           "image": "rules/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/rules?state=detail",
+          "url": "/detection/rules/packages?state=detail",
           "image": "rules/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/rules?state=action",
+          "url": "/detection/rules/packages?state=action",
           "image": "rules/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/rules?state=loading",
+          "url": "/detection/rules/packages?state=loading",
           "image": "rules/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/rules?state=error",
+          "url": "/detection/rules/packages?state=error",
           "image": "rules/error.jpg"
         }
       ]
     },
     {
       "id": "correlation",
+      "workspace": "检测规则",
       "title": "关联规则",
       "group": "detection",
       "kind": "table",
@@ -3221,6 +3284,7 @@
     },
     {
       "id": "sigma",
+      "workspace": "检测规则",
       "title": "日志规则",
       "group": "detection",
       "kind": "table",
@@ -3269,6 +3333,7 @@
     },
     {
       "id": "hunts",
+      "workspace": "威胁狩猎",
       "title": "威胁狩猎",
       "group": "detection",
       "kind": "table",
@@ -3317,6 +3382,7 @@
     },
     {
       "id": "behavior-baselines",
+      "workspace": "威胁狩猎",
       "title": "行为基线",
       "group": "detection",
       "kind": "table",
@@ -3365,6 +3431,7 @@
     },
     {
       "id": "threat-scenarios",
+      "workspace": "威胁场景",
       "title": "威胁场景",
       "group": "detection",
       "kind": "table",
@@ -3413,6 +3480,7 @@
     },
     {
       "id": "attack-coverage",
+      "workspace": "威胁场景",
       "title": "ATT&CK 覆盖",
       "group": "detection",
       "kind": "table",
@@ -3461,6 +3529,7 @@
     },
     {
       "id": "file-analysis",
+      "workspace": "文件分析",
       "title": "文件分析",
       "group": "detection",
       "kind": "table",
@@ -3509,6 +3578,7 @@
     },
     {
       "id": "intel-sources",
+      "workspace": "威胁情报",
       "title": "情报源",
       "group": "detection",
       "kind": "table",
@@ -3557,6 +3627,7 @@
     },
     {
       "id": "indicators",
+      "workspace": "威胁情报",
       "title": "威胁指标",
       "group": "detection",
       "kind": "table",
@@ -3605,6 +3676,7 @@
     },
     {
       "id": "intel-lifecycle",
+      "workspace": "威胁情报",
       "title": "情报有效性",
       "group": "detection",
       "kind": "table",
@@ -3653,6 +3725,7 @@
     },
     {
       "id": "intel-hits",
+      "workspace": "威胁情报",
       "title": "情报命中与回溯",
       "group": "detection",
       "kind": "table",
@@ -3701,6 +3774,7 @@
     },
     {
       "id": "watchlists",
+      "workspace": "保护与观察名单",
       "title": "名单管理",
       "group": "detection",
       "kind": "table",
@@ -3749,6 +3823,7 @@
     },
     {
       "id": "intel-sharing",
+      "workspace": "威胁情报",
       "title": "情报共享",
       "group": "detection",
       "kind": "table",
@@ -3797,6 +3872,7 @@
     },
     {
       "id": "samples",
+      "workspace": "文件分析",
       "title": "文件样本",
       "group": "detection",
       "kind": "table",
@@ -3845,6 +3921,7 @@
     },
     {
       "id": "static-analysis",
+      "workspace": "文件分析",
       "title": "静态检测",
       "group": "detection",
       "kind": "table",
@@ -3893,6 +3970,7 @@
     },
     {
       "id": "sandbox",
+      "workspace": "文件分析",
       "title": "动态沙箱",
       "group": "detection",
       "kind": "table",
@@ -3941,6 +4019,7 @@
     },
     {
       "id": "sample-access",
+      "workspace": "文件分析",
       "title": "样本隔离与授权",
       "group": "detection",
       "kind": "table",
@@ -3989,6 +4068,7 @@
     },
     {
       "id": "analysis-pools",
+      "workspace": "文件分析",
       "title": "文件分析资源",
       "group": "detection",
       "kind": "table",
@@ -4037,6 +4117,7 @@
     },
     {
       "id": "analysis-reports",
+      "workspace": "文件分析",
       "title": "文件分析报告",
       "group": "detection",
       "kind": "table",
@@ -4085,6 +4166,7 @@
     },
     {
       "id": "decision-policies",
+      "workspace": "决策策略",
       "title": "决策策略",
       "group": "response",
       "kind": "table",
@@ -4096,43 +4178,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/decision-policies?state=data",
+          "url": "/response/policies?state=data",
           "image": "decision-policies/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/decision-policies?state=empty",
+          "url": "/response/policies?state=empty",
           "image": "decision-policies/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/decision-policies?state=detail",
+          "url": "/response/policies?state=detail",
           "image": "decision-policies/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/decision-policies?state=action",
+          "url": "/response/policies?state=action",
           "image": "decision-policies/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/decision-policies?state=loading",
+          "url": "/response/policies?state=loading",
           "image": "decision-policies/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/decision-policies?state=error",
+          "url": "/response/policies?state=error",
           "image": "decision-policies/error.jpg"
         }
       ]
     },
     {
       "id": "devices",
+      "workspace": "联动设备",
       "title": "联动设备",
       "group": "response",
       "kind": "table",
@@ -4181,6 +4264,7 @@
     },
     {
       "id": "auth-plugins",
+      "workspace": "联动设备",
       "title": "认证插件",
       "group": "response",
       "kind": "table",
@@ -4229,6 +4313,7 @@
     },
     {
       "id": "actions",
+      "workspace": "响应动作",
       "title": "动作中心",
       "group": "response",
       "kind": "table",
@@ -4277,6 +4362,7 @@
     },
     {
       "id": "playbooks",
+      "workspace": "自动化编排",
       "title": "响应剧本",
       "group": "response",
       "kind": "playbook",
@@ -4325,6 +4411,7 @@
     },
     {
       "id": "playbook-runs",
+      "workspace": "自动化编排",
       "title": "剧本实例",
       "group": "response",
       "kind": "table",
@@ -4373,6 +4460,7 @@
     },
     {
       "id": "emergency",
+      "workspace": "响应动作",
       "title": "应急控制",
       "group": "response",
       "kind": "table",
@@ -4421,6 +4509,7 @@
     },
     {
       "id": "channels",
+      "workspace": "通知管理",
       "title": "通知渠道",
       "group": "notifications",
       "kind": "table",
@@ -4432,43 +4521,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/channels?state=data",
+          "url": "/notifications/channels?state=data",
           "image": "channels/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/channels?state=empty",
+          "url": "/notifications/channels?state=empty",
           "image": "channels/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/channels?state=detail",
+          "url": "/notifications/channels?state=detail",
           "image": "channels/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/channels?state=action",
+          "url": "/notifications/channels?state=action",
           "image": "channels/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/channels?state=loading",
+          "url": "/notifications/channels?state=loading",
           "image": "channels/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/channels?state=error",
+          "url": "/notifications/channels?state=error",
           "image": "channels/error.jpg"
         }
       ]
     },
     {
       "id": "syslog-output",
+      "workspace": "通知管理",
       "title": "Syslog 转发",
       "group": "notifications",
       "kind": "table",
@@ -4517,6 +4607,7 @@
     },
     {
       "id": "models",
+      "workspace": "模型与知识",
       "title": "模型配置",
       "group": "ai",
       "kind": "table",
@@ -4528,43 +4619,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/models?state=data",
+          "url": "/ai/models?state=data",
           "image": "models/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/models?state=empty",
+          "url": "/ai/models?state=empty",
           "image": "models/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/models?state=detail",
+          "url": "/ai/models?state=detail",
           "image": "models/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/models?state=action",
+          "url": "/ai/models?state=action",
           "image": "models/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/models?state=loading",
+          "url": "/ai/models?state=loading",
           "image": "models/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/models?state=error",
+          "url": "/ai/models?state=error",
           "image": "models/error.jpg"
         }
       ]
     },
     {
       "id": "chat",
+      "workspace": "智能对话",
       "title": "智能对话",
       "group": "ai",
       "kind": "chat",
@@ -4576,43 +4668,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/chat?state=data",
+          "url": "/ai/assistant?state=data",
           "image": "chat/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/chat?state=empty",
+          "url": "/ai/assistant?state=empty",
           "image": "chat/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/chat?state=detail",
+          "url": "/ai/assistant?state=detail",
           "image": "chat/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/chat?state=action",
+          "url": "/ai/assistant?state=action",
           "image": "chat/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/chat?state=loading",
+          "url": "/ai/assistant?state=loading",
           "image": "chat/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/chat?state=error",
+          "url": "/ai/assistant?state=error",
           "image": "chat/error.jpg"
         }
       ]
     },
     {
       "id": "rule-studio",
+      "workspace": "规则生成",
       "title": "AI 规则生成",
       "group": "ai",
       "kind": "rule-studio",
@@ -4624,43 +4717,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/rule-studio?state=data",
+          "url": "/ai/rule-generation?state=data",
           "image": "rule-studio/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/rule-studio?state=empty",
+          "url": "/ai/rule-generation?state=empty",
           "image": "rule-studio/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/rule-studio?state=detail",
+          "url": "/ai/rule-generation?state=detail",
           "image": "rule-studio/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/rule-studio?state=action",
+          "url": "/ai/rule-generation?state=action",
           "image": "rule-studio/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/rule-studio?state=loading",
+          "url": "/ai/rule-generation?state=loading",
           "image": "rule-studio/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/rule-studio?state=error",
+          "url": "/ai/rule-generation?state=error",
           "image": "rule-studio/error.jpg"
         }
       ]
     },
     {
       "id": "knowledge",
+      "workspace": "模型与知识",
       "title": "知识与提示模板",
       "group": "ai",
       "kind": "table",
@@ -4709,6 +4803,7 @@
     },
     {
       "id": "mcp",
+      "workspace": "MCP 服务",
       "title": "MCP 服务",
       "group": "ai",
       "kind": "table",
@@ -4720,43 +4815,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/mcp?state=data",
+          "url": "/ai/mcp?state=data",
           "image": "mcp/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/mcp?state=empty",
+          "url": "/ai/mcp?state=empty",
           "image": "mcp/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/mcp?state=detail",
+          "url": "/ai/mcp?state=detail",
           "image": "mcp/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/mcp?state=action",
+          "url": "/ai/mcp?state=action",
           "image": "mcp/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/mcp?state=loading",
+          "url": "/ai/mcp?state=loading",
           "image": "mcp/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/mcp?state=error",
+          "url": "/ai/mcp?state=error",
           "image": "mcp/error.jpg"
         }
       ]
     },
     {
       "id": "reports",
+      "workspace": "安全报告",
       "title": "日报周报月报",
       "group": "reports",
       "kind": "table",
@@ -4768,43 +4864,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/reports?state=data",
+          "url": "/reports/records?state=data",
           "image": "reports/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/reports?state=empty",
+          "url": "/reports/records?state=empty",
           "image": "reports/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/reports?state=detail",
+          "url": "/reports/records?state=detail",
           "image": "reports/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/reports?state=action",
+          "url": "/reports/records?state=action",
           "image": "reports/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/reports?state=loading",
+          "url": "/reports/records?state=loading",
           "image": "reports/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/reports?state=error",
+          "url": "/reports/records?state=error",
           "image": "reports/error.jpg"
         }
       ]
     },
     {
       "id": "sensors",
+      "workspace": "探针管理",
       "title": "探针列表",
       "group": "sensors",
       "kind": "table",
@@ -4817,43 +4914,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/sensors?state=data",
+          "url": "/sensors/list?state=data",
           "image": "sensors/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/sensors?state=empty",
+          "url": "/sensors/list?state=empty",
           "image": "sensors/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/sensors?state=detail",
+          "url": "/sensors/list?state=detail",
           "image": "sensors/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/sensors?state=action",
+          "url": "/sensors/list?state=action",
           "image": "sensors/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/sensors?state=loading",
+          "url": "/sensors/list?state=loading",
           "image": "sensors/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/sensors?state=error",
+          "url": "/sensors/list?state=error",
           "image": "sensors/error.jpg"
         }
       ]
     },
     {
       "id": "sensor-groups",
+      "workspace": "探针管理",
       "title": "探针分组",
       "group": "sensors",
       "kind": "table",
@@ -4865,43 +4963,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/sensor-groups?state=data",
+          "url": "/sensors/groups?state=data",
           "image": "sensor-groups/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/sensor-groups?state=empty",
+          "url": "/sensors/groups?state=empty",
           "image": "sensor-groups/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/sensor-groups?state=detail",
+          "url": "/sensors/groups?state=detail",
           "image": "sensor-groups/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/sensor-groups?state=action",
+          "url": "/sensors/groups?state=action",
           "image": "sensor-groups/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/sensor-groups?state=loading",
+          "url": "/sensors/groups?state=loading",
           "image": "sensor-groups/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/sensor-groups?state=error",
+          "url": "/sensors/groups?state=error",
           "image": "sensor-groups/error.jpg"
         }
       ]
     },
     {
       "id": "releases",
+      "workspace": "版本发布",
       "title": "发布中心",
       "group": "sensors",
       "kind": "table",
@@ -4950,6 +5049,7 @@
     },
     {
       "id": "data-sources",
+      "workspace": "数据接入",
       "title": "数据源",
       "group": "system",
       "kind": "table",
@@ -4998,6 +5098,7 @@
     },
     {
       "id": "syslog-input",
+      "workspace": "数据接入",
       "title": "Syslog 接收",
       "group": "system",
       "kind": "table",
@@ -5046,6 +5147,7 @@
     },
     {
       "id": "imports",
+      "workspace": "数据接入",
       "title": "批次导入",
       "group": "system",
       "kind": "table",
@@ -5094,6 +5196,7 @@
     },
     {
       "id": "logs",
+      "workspace": "日志检索",
       "title": "日志工作台",
       "group": "system",
       "kind": "table",
@@ -5142,6 +5245,7 @@
     },
     {
       "id": "flow-sources",
+      "workspace": "数据接入",
       "title": "流量记录接入",
       "group": "system",
       "kind": "table",
@@ -5190,6 +5294,7 @@
     },
     {
       "id": "parsers",
+      "workspace": "数据接入",
       "title": "解析器",
       "group": "system",
       "kind": "table",
@@ -5238,6 +5343,7 @@
     },
     {
       "id": "data-quality",
+      "workspace": "数据接入",
       "title": "数据质量",
       "group": "system",
       "kind": "table",
@@ -5286,6 +5392,7 @@
     },
     {
       "id": "replays",
+      "workspace": "数据接入",
       "title": "隔离与重放",
       "group": "system",
       "kind": "table",
@@ -5334,6 +5441,7 @@
     },
     {
       "id": "platform-health",
+      "workspace": "平台运维",
       "title": "平台运行状态",
       "group": "system",
       "kind": "table",
@@ -5345,43 +5453,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/platform-health?state=data",
+          "url": "/system/operations/health?state=data",
           "image": "platform-health/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/platform-health?state=empty",
+          "url": "/system/operations/health?state=empty",
           "image": "platform-health/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/platform-health?state=detail",
+          "url": "/system/operations/health?state=detail",
           "image": "platform-health/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/platform-health?state=action",
+          "url": "/system/operations/health?state=action",
           "image": "platform-health/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/platform-health?state=loading",
+          "url": "/system/operations/health?state=loading",
           "image": "platform-health/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/platform-health?state=error",
+          "url": "/system/operations/health?state=error",
           "image": "platform-health/error.jpg"
         }
       ]
     },
     {
       "id": "backups",
+      "workspace": "平台运维",
       "title": "备份与恢复",
       "group": "system",
       "kind": "table",
@@ -5430,6 +5539,7 @@
     },
     {
       "id": "connectors",
+      "workspace": "平台运维",
       "title": "连接器与许可",
       "group": "system",
       "kind": "table",
@@ -5478,6 +5588,7 @@
     },
     {
       "id": "authentication",
+      "workspace": "账号与权限",
       "title": "登录与会话",
       "group": "system",
       "kind": "table",
@@ -5526,6 +5637,7 @@
     },
     {
       "id": "roles",
+      "workspace": "账号与权限",
       "title": "角色与权限",
       "group": "system",
       "kind": "table",
@@ -5574,6 +5686,7 @@
     },
     {
       "id": "tenants",
+      "workspace": "租户管理",
       "title": "租户与组织",
       "group": "system",
       "kind": "table",
@@ -5622,6 +5735,7 @@
     },
     {
       "id": "api-keys",
+      "workspace": "账号与权限",
       "title": "服务身份与 API 密钥",
       "group": "system",
       "kind": "table",
@@ -5670,6 +5784,7 @@
     },
     {
       "id": "data-security",
+      "workspace": "数据治理",
       "title": "数据脱敏与外发",
       "group": "system",
       "kind": "table",
@@ -5718,6 +5833,7 @@
     },
     {
       "id": "retention",
+      "workspace": "数据治理",
       "title": "留存与证据保全",
       "group": "system",
       "kind": "retention",
@@ -5729,43 +5845,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/retention?state=data",
+          "url": "/system/governance/retention?state=data",
           "image": "retention/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/retention?state=empty",
+          "url": "/system/governance/retention?state=empty",
           "image": "retention/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/retention?state=detail",
+          "url": "/system/governance/retention?state=detail",
           "image": "retention/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/retention?state=action",
+          "url": "/system/governance/retention?state=action",
           "image": "retention/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/retention?state=loading",
+          "url": "/system/governance/retention?state=loading",
           "image": "retention/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/retention?state=error",
+          "url": "/system/governance/retention?state=error",
           "image": "retention/error.jpg"
         }
       ]
     },
     {
       "id": "audit",
+      "workspace": "审计日志",
       "title": "操作日志",
       "group": "system",
       "kind": "table",
@@ -5777,43 +5894,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/audit?state=data",
+          "url": "/system/audit/operations?state=data",
           "image": "audit/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/audit?state=empty",
+          "url": "/system/audit/operations?state=empty",
           "image": "audit/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/audit?state=detail",
+          "url": "/system/audit/operations?state=detail",
           "image": "audit/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/audit?state=action",
+          "url": "/system/audit/operations?state=action",
           "image": "audit/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/audit?state=loading",
+          "url": "/system/audit/operations?state=loading",
           "image": "audit/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/audit?state=error",
+          "url": "/system/audit/operations?state=error",
           "image": "audit/error.jpg"
         }
       ]
     },
     {
       "id": "quotas",
+      "workspace": "租户管理",
       "title": "用量与配额",
       "group": "system",
       "kind": "table",
@@ -5862,6 +5980,7 @@
     },
     {
       "id": "software-catalog",
+      "workspace": "平台运维",
       "title": "软件物料与供应链",
       "group": "system",
       "kind": "table",
@@ -5910,6 +6029,7 @@
     },
     {
       "id": "governance",
+      "workspace": "数据治理",
       "title": "治理检查",
       "group": "system",
       "kind": "table",
@@ -5958,6 +6078,7 @@
     },
     {
       "id": "probe-identity",
+      "workspace": "探针管理",
       "title": "注册与证书",
       "group": "sensors",
       "kind": "table",
@@ -5969,43 +6090,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/probe-identity?state=data",
+          "url": "/sensors/identity?state=data",
           "image": "probe-identity/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/probe-identity?state=empty",
+          "url": "/sensors/identity?state=empty",
           "image": "probe-identity/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/probe-identity?state=detail",
+          "url": "/sensors/identity?state=detail",
           "image": "probe-identity/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/probe-identity?state=action",
+          "url": "/sensors/identity?state=action",
           "image": "probe-identity/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/probe-identity?state=loading",
+          "url": "/sensors/identity?state=loading",
           "image": "probe-identity/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/probe-identity?state=error",
+          "url": "/sensors/identity?state=error",
           "image": "probe-identity/error.jpg"
         }
       ]
     },
     {
       "id": "rule-sync",
+      "workspace": "检测规则",
       "title": "规则自动同步",
       "group": "detection",
       "kind": "table",
@@ -6018,43 +6140,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/rule-sync?state=data",
+          "url": "/detection/rules/sync?state=data",
           "image": "rule-sync/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/rule-sync?state=empty",
+          "url": "/detection/rules/sync?state=empty",
           "image": "rule-sync/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/rule-sync?state=detail",
+          "url": "/detection/rules/sync?state=detail",
           "image": "rule-sync/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/rule-sync?state=action",
+          "url": "/detection/rules/sync?state=action",
           "image": "rule-sync/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/rule-sync?state=loading",
+          "url": "/detection/rules/sync?state=loading",
           "image": "rule-sync/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/rule-sync?state=error",
+          "url": "/detection/rules/sync?state=error",
           "image": "rule-sync/error.jpg"
         }
       ]
     },
     {
       "id": "big-screen",
+      "workspace": "态势大屏",
       "title": "态势大屏",
       "group": "overview",
       "kind": "screen",
@@ -6066,43 +6189,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/big-screen?state=data",
+          "url": "/overview/screen?state=data",
           "image": "big-screen/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/big-screen?state=empty",
+          "url": "/overview/screen?state=empty",
           "image": "big-screen/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/big-screen?state=detail",
+          "url": "/overview/screen?state=detail",
           "image": "big-screen/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/big-screen?state=action",
+          "url": "/overview/screen?state=action",
           "image": "big-screen/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/big-screen?state=loading",
+          "url": "/overview/screen?state=loading",
           "image": "big-screen/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/big-screen?state=error",
+          "url": "/overview/screen?state=error",
           "image": "big-screen/error.jpg"
         }
       ]
     },
     {
       "id": "decision-evaluations",
+      "workspace": "决策策略",
       "title": "评估记录",
       "group": "response",
       "kind": "table",
@@ -6115,43 +6239,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/decision-evaluations?state=data",
+          "url": "/response/evaluations?state=data",
           "image": "decision-evaluations/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/decision-evaluations?state=empty",
+          "url": "/response/evaluations?state=empty",
           "image": "decision-evaluations/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/decision-evaluations?state=detail",
+          "url": "/response/evaluations?state=detail",
           "image": "decision-evaluations/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/decision-evaluations?state=action",
+          "url": "/response/evaluations?state=action",
           "image": "decision-evaluations/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/decision-evaluations?state=loading",
+          "url": "/response/evaluations?state=loading",
           "image": "decision-evaluations/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/decision-evaluations?state=error",
+          "url": "/response/evaluations?state=error",
           "image": "decision-evaluations/error.jpg"
         }
       ]
     },
     {
       "id": "notification-routes",
+      "workspace": "通知管理",
       "title": "通知规则",
       "group": "notifications",
       "kind": "table",
@@ -6198,6 +6323,7 @@
     },
     {
       "id": "notification-templates",
+      "workspace": "通知管理",
       "title": "消息模板",
       "group": "notifications",
       "kind": "table",
@@ -6244,6 +6370,7 @@
     },
     {
       "id": "delivery-logs",
+      "workspace": "通知管理",
       "title": "推送日志",
       "group": "notifications",
       "kind": "table",
@@ -6255,43 +6382,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/delivery-logs?state=data",
+          "url": "/notifications/deliveries?state=data",
           "image": "delivery-logs/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/delivery-logs?state=empty",
+          "url": "/notifications/deliveries?state=empty",
           "image": "delivery-logs/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/delivery-logs?state=detail",
+          "url": "/notifications/deliveries?state=detail",
           "image": "delivery-logs/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/delivery-logs?state=action",
+          "url": "/notifications/deliveries?state=action",
           "image": "delivery-logs/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/delivery-logs?state=loading",
+          "url": "/notifications/deliveries?state=loading",
           "image": "delivery-logs/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/delivery-logs?state=error",
+          "url": "/notifications/deliveries?state=error",
           "image": "delivery-logs/error.jpg"
         }
       ]
     },
     {
       "id": "application-rules",
+      "workspace": "检测规则",
       "title": "应用识别规则",
       "group": "detection",
       "kind": "table",
@@ -6301,43 +6429,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/application-rules?state=data",
+          "url": "/detection/rules/applications?state=data",
           "image": "application-rules/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/application-rules?state=empty",
+          "url": "/detection/rules/applications?state=empty",
           "image": "application-rules/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/application-rules?state=detail",
+          "url": "/detection/rules/applications?state=detail",
           "image": "application-rules/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/application-rules?state=action",
+          "url": "/detection/rules/applications?state=action",
           "image": "application-rules/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/application-rules?state=loading",
+          "url": "/detection/rules/applications?state=loading",
           "image": "application-rules/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/application-rules?state=error",
+          "url": "/detection/rules/applications?state=error",
           "image": "application-rules/error.jpg"
         }
       ]
     },
     {
       "id": "rule-samples",
+      "workspace": "检测规则",
       "title": "重放样本",
       "group": "detection",
       "kind": "table",
@@ -6347,43 +6476,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/rule-samples?state=data",
+          "url": "/detection/rules/samples?state=data",
           "image": "rule-samples/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/rule-samples?state=empty",
+          "url": "/detection/rules/samples?state=empty",
           "image": "rule-samples/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/rule-samples?state=detail",
+          "url": "/detection/rules/samples?state=detail",
           "image": "rule-samples/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/rule-samples?state=action",
+          "url": "/detection/rules/samples?state=action",
           "image": "rule-samples/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/rule-samples?state=loading",
+          "url": "/detection/rules/samples?state=loading",
           "image": "rule-samples/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/rule-samples?state=error",
+          "url": "/detection/rules/samples?state=error",
           "image": "rule-samples/error.jpg"
         }
       ]
     },
     {
       "id": "rule-tests",
+      "workspace": "检测规则",
       "title": "重放任务",
       "group": "detection",
       "kind": "table",
@@ -6396,43 +6526,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/rule-tests?state=data",
+          "url": "/detection/rules/tasks?state=data",
           "image": "rule-tests/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/rule-tests?state=empty",
+          "url": "/detection/rules/tasks?state=empty",
           "image": "rule-tests/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/rule-tests?state=detail",
+          "url": "/detection/rules/tasks?state=detail",
           "image": "rule-tests/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/rule-tests?state=action",
+          "url": "/detection/rules/tasks?state=action",
           "image": "rule-tests/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/rule-tests?state=loading",
+          "url": "/detection/rules/tasks?state=loading",
           "image": "rule-tests/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/rule-tests?state=error",
+          "url": "/detection/rules/tasks?state=error",
           "image": "rule-tests/error.jpg"
         }
       ]
     },
     {
       "id": "report-schedules",
+      "workspace": "安全报告",
       "title": "报告计划",
       "group": "reports",
       "kind": "table",
@@ -6442,43 +6573,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/report-schedules?state=data",
+          "url": "/reports/plans?state=data",
           "image": "report-schedules/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/report-schedules?state=empty",
+          "url": "/reports/plans?state=empty",
           "image": "report-schedules/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/report-schedules?state=detail",
+          "url": "/reports/plans?state=detail",
           "image": "report-schedules/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/report-schedules?state=action",
+          "url": "/reports/plans?state=action",
           "image": "report-schedules/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/report-schedules?state=loading",
+          "url": "/reports/plans?state=loading",
           "image": "report-schedules/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/report-schedules?state=error",
+          "url": "/reports/plans?state=error",
           "image": "report-schedules/error.jpg"
         }
       ]
     },
     {
       "id": "login-logs",
+      "workspace": "审计日志",
       "title": "登录日志",
       "group": "system",
       "kind": "table",
@@ -6490,43 +6622,44 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/login-logs?state=data",
+          "url": "/system/audit/logins?state=data",
           "image": "login-logs/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/login-logs?state=empty",
+          "url": "/system/audit/logins?state=empty",
           "image": "login-logs/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/login-logs?state=detail",
+          "url": "/system/audit/logins?state=detail",
           "image": "login-logs/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/login-logs?state=action",
+          "url": "/system/audit/logins?state=action",
           "image": "login-logs/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/login-logs?state=loading",
+          "url": "/system/audit/logins?state=loading",
           "image": "login-logs/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/login-logs?state=error",
+          "url": "/system/audit/logins?state=error",
           "image": "login-logs/error.jpg"
         }
       ]
     },
     {
       "id": "users",
+      "workspace": "账号与权限",
       "title": "用户管理",
       "group": "system",
       "kind": "table",
@@ -6539,38 +6672,273 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/users?state=data",
+          "url": "/system/accounts/users?state=data",
           "image": "users/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/users?state=empty",
+          "url": "/system/accounts/users?state=empty",
           "image": "users/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/users?state=detail",
+          "url": "/system/accounts/users?state=detail",
           "image": "users/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/users?state=action",
+          "url": "/system/accounts/users?state=action",
           "image": "users/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/users?state=loading",
+          "url": "/system/accounts/users?state=loading",
           "image": "users/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/users?state=error",
+          "url": "/system/accounts/users?state=error",
           "image": "users/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "networks",
+      "workspace": "资产组与网段",
+      "title": "网段定义",
+      "group": "assets",
+      "kind": "table",
+      "description": "维护 CIDR 网段与资产组归属，核对修订和范围。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/inventory/networks?state=data",
+          "image": "networks/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/inventory/networks?state=empty",
+          "image": "networks/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/inventory/networks?state=detail",
+          "image": "networks/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/inventory/networks?state=action",
+          "image": "networks/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/inventory/networks?state=loading",
+          "image": "networks/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/inventory/networks?state=error",
+          "image": "networks/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "discovery",
+      "workspace": "资产管理",
+      "title": "被动发现",
+      "group": "assets",
+      "kind": "table",
+      "description": "按当前探针、网段和时间窗口核对已有地址观测。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/inventory/discovery?state=data",
+          "image": "discovery/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/inventory/discovery?state=empty",
+          "image": "discovery/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/inventory/discovery?state=detail",
+          "image": "discovery/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/inventory/discovery?state=action",
+          "image": "discovery/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/inventory/discovery?state=loading",
+          "image": "discovery/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/inventory/discovery?state=error",
+          "image": "discovery/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "rule-rollouts",
+      "workspace": "检测规则",
+      "title": "分批发布",
+      "group": "detection",
+      "kind": "table",
+      "description": "固定目标计划修订，逐批验证原生装载、样本与观察水位。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/detection/rules/rollouts?state=data",
+          "image": "rule-rollouts/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/detection/rules/rollouts?state=empty",
+          "image": "rule-rollouts/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/detection/rules/rollouts?state=detail",
+          "image": "rule-rollouts/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/detection/rules/rollouts?state=action",
+          "image": "rule-rollouts/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/detection/rules/rollouts?state=loading",
+          "image": "rule-rollouts/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/detection/rules/rollouts?state=error",
+          "image": "rule-rollouts/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "sensor-tasks",
+      "workspace": "探针管理",
+      "title": "任务记录",
+      "group": "sensors",
+      "kind": "table",
+      "description": "核对签名任务、设备接收与执行回执，受理不代表执行成功。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/sensors/tasks?state=data",
+          "image": "sensor-tasks/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/sensors/tasks?state=empty",
+          "image": "sensor-tasks/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/sensors/tasks?state=detail",
+          "image": "sensor-tasks/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/sensors/tasks?state=action",
+          "image": "sensor-tasks/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/sensors/tasks?state=loading",
+          "image": "sensor-tasks/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/sensors/tasks?state=error",
+          "image": "sensor-tasks/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "system-settings",
+      "workspace": "系统设置",
+      "title": "系统设置",
+      "group": "system",
+      "kind": "table",
+      "description": "统一查找账号、运行状态、留存与审计配置，核对当前版本的功能范围。",
+      "requirements": [],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/system/settings?state=data",
+          "image": "system-settings/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/system/settings?state=empty",
+          "image": "system-settings/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/system/settings?state=detail",
+          "image": "system-settings/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/system/settings?state=action",
+          "image": "system-settings/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/system/settings?state=loading",
+          "image": "system-settings/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/system/settings?state=error",
+          "image": "system-settings/error.jpg"
         }
       ]
     },

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {usePageTitle} from '@starbeacon/shared/utils/usePageTitle.ts'
+const pageTitle=usePageTitle('探针管理')
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,reactive,ref,shallowRef,watch} from 'vue'
 import {Select as ASelect} from 'ant-design-vue'
@@ -50,7 +52,7 @@ watch(()=>[session.current.value?.tenant_id,session.current.value?.id].join('/')
 watch(admin,value=>{if(!value&&['identity','tasks'].includes(view.value))changeView('devices')})
 </script>
 <template>
- <header class="page-header"><div><h1>探针管理</h1><p class="page-description">查看连接、资源和版本，维护当前租户的探针分组与部署信息。</p></div><div class="filter-actions"><a-button v-if="!['identity','quality'].includes(view)" :loading="view==='groups'?groupPending:pending" @click="refresh">刷新</a-button><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button><a-button v-else-if="view==='groups'&&admin" type="primary" :disabled="busy" @click="edit({kind:'group',record:null})">创建分组</a-button></div></header>
+ <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">查看连接、资源和版本，维护当前租户的探针分组与部署信息。</p></div><div class="filter-actions"><a-button v-if="!['identity','quality'].includes(view)" :loading="view==='groups'?groupPending:pending" @click="refresh">刷新</a-button><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button><a-button v-else-if="view==='groups'&&admin" type="primary" :disabled="busy" @click="edit({kind:'group',record:null})">创建分组</a-button></div></header>
  <WorkspaceTabs :active="view" :items="views" label="探针管理功能" @change="changeView" />
  <a-alert v-if="actionError&&!formOpen" type="error" :message="actionError" show-icon class="section-gap" />
  <template v-if="view==='devices'">

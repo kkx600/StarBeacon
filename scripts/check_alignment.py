@@ -121,10 +121,39 @@ def validate_api(root, role, document):
     return documented
 
 
+def platform_navigation_routes(root):
+    manifest = load(root, "web/packages/shared/src/navigation.json")
+    if manifest.get("schema_version") != 1:
+        raise ValueError("导航目录版本无效")
+    groups, workspaces, screens = manifest["groups"], manifest["workspaces"], manifest["screens"]
+    for rows in (groups, workspaces, screens):
+        if not rows or len({row["id"] for row in rows}) != len(rows):
+            raise ValueError("导航目录为空或标识重复")
+    if any(workspace["group"] not in {group["id"] for group in groups} for workspace in workspaces):
+        raise ValueError("工作区缺少有效业务分组")
+    if any(screen["workspace"] not in {workspace["id"] for workspace in workspaces} for screen in screens):
+        raise ValueError("功能页面缺少有效工作区")
+    paths = [screen["path"] for screen in screens]
+    if len(set(paths)) != len(paths):
+        raise ValueError("功能页面路径重复")
+    if any(path.startswith(("/assets/", "/api/")) for path in paths):
+        raise ValueError("业务路由占用了静态资源或 API 命名空间")
+    for workspace in workspaces:
+        if not any(screen["workspace"] == workspace["id"] for screen in screens):
+            paths.append("/" + manifest.get("group_paths", {}).get(workspace["group"], workspace["group"]) + "/" + workspace["id"])
+    paths += ["/" + key for key in manifest["legacy_modules"]]
+    if any(not re.fullmatch(r"/[a-z0-9/-]+", path) or "//" in path for path in paths):
+        raise ValueError("导航路径格式无效")
+    # 目录父级同样可直接访问并重定向；不得仅检查叶子而遗漏刷新入口。
+    return {"/" + "/".join(path.strip("/").split("/")[:index]) for path in paths for index in range(1, len(path.strip("/").split("/")) + 1)}
+
+
 def validate_routes(root, routes, inventory):
     for role in ("platform", "collector"):
         source = (root / f"web/{role}/src/router.ts").read_text()
         declared = set(re.findall(r"path:\s*['\"]([^'\"]+)['\"]", source)) - {"/", "/:pathMatch(.*)*"}
+        if role == "platform" and "...platformRoutes()" in source:
+            declared |= platform_navigation_routes(root)
         listed = routes[role]
         if len(set(listed)) != len(listed) or "/invalid-page" not in listed:
             raise ValueError(f"{role} 验收路由重复或缺少访问边界")

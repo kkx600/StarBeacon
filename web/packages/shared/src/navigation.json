@@ -1,0 +1,842 @@
+{
+  "groups": [
+    {
+      "id": "overview",
+      "title": "态势总览",
+      "icon": "DashboardOutlined"
+    },
+    {
+      "id": "alerts",
+      "title": "告警中心",
+      "icon": "AlertOutlined"
+    },
+    {
+      "id": "incidents",
+      "title": "安全事件",
+      "icon": "FileProtectOutlined"
+    },
+    {
+      "id": "assets",
+      "title": "资产中心",
+      "icon": "ClusterOutlined"
+    },
+    {
+      "id": "traffic",
+      "title": "流量分析",
+      "icon": "RadarChartOutlined"
+    },
+    {
+      "id": "detection",
+      "title": "检测与情报",
+      "icon": "SafetyCertificateOutlined"
+    },
+    {
+      "id": "response",
+      "title": "响应中心",
+      "icon": "ThunderboltOutlined"
+    },
+    {
+      "id": "notifications",
+      "title": "通知中心",
+      "icon": "BellOutlined"
+    },
+    {
+      "id": "ai",
+      "title": "智能助手",
+      "icon": "RobotOutlined"
+    },
+    {
+      "id": "reports",
+      "title": "安全报告",
+      "icon": "BarChartOutlined"
+    },
+    {
+      "id": "sensors",
+      "title": "探针与版本",
+      "icon": "ApiOutlined"
+    },
+    {
+      "id": "system",
+      "title": "系统管理",
+      "icon": "SettingOutlined"
+    }
+  ],
+  "workspaces": [
+    {
+      "id": "overview",
+      "title": "态势总览",
+      "group": "overview",
+      "pages": [
+        "overview"
+      ]
+    },
+    {
+      "id": "topology",
+      "title": "网络拓扑",
+      "group": "overview",
+      "pages": [
+        "topology"
+      ]
+    },
+    {
+      "id": "response-metrics",
+      "title": "响应效能",
+      "group": "overview",
+      "pages": [
+        "response-metrics"
+      ]
+    },
+    {
+      "id": "screens",
+      "title": "态势大屏",
+      "group": "overview",
+      "pages": [
+        "big-screen",
+        "screens"
+      ]
+    },
+    {
+      "id": "alerts",
+      "title": "告警管理",
+      "group": "alerts",
+      "pages": [
+        "alerts",
+        "assessments"
+      ]
+    },
+    {
+      "id": "search",
+      "title": "高级检索",
+      "group": "alerts",
+      "pages": [
+        "search",
+        "fields",
+        "exports"
+      ]
+    },
+    {
+      "id": "investigation",
+      "title": "事件调查",
+      "group": "incidents",
+      "pages": [
+        "incidents",
+        "cases",
+        "timelines",
+        "case-sharing",
+        "reviews"
+      ]
+    },
+    {
+      "id": "duty",
+      "title": "值班管理",
+      "group": "incidents",
+      "pages": [
+        "duty"
+      ]
+    },
+    {
+      "id": "tickets",
+      "title": "处置工单",
+      "group": "incidents",
+      "pages": [
+        "tickets"
+      ]
+    },
+    {
+      "id": "assets",
+      "title": "资产管理",
+      "group": "assets",
+      "pages": [
+        "assets",
+        "interfaces",
+        "address-history",
+        "nat",
+        "identities",
+        "services",
+        "asset-relations"
+      ]
+    },
+    {
+      "id": "asset-groups",
+      "title": "资产组与网段",
+      "group": "assets",
+      "pages": [
+        "asset-groups"
+      ]
+    },
+    {
+      "id": "asset-risk",
+      "title": "资产风险",
+      "group": "assets",
+      "pages": [
+        "asset-risk",
+        "vulnerabilities",
+        "scan-tasks",
+        "risk-priorities",
+        "remediations",
+        "baselines",
+        "external-exposure"
+      ]
+    },
+    {
+      "id": "applications",
+      "title": "应用与行为",
+      "group": "traffic",
+      "pages": [
+        "applications",
+        "behaviors"
+      ]
+    },
+    {
+      "id": "packets",
+      "title": "通信取证",
+      "group": "traffic",
+      "pages": [
+        "packets",
+        "packet-times",
+        "payloads",
+        "tls-visibility"
+      ]
+    },
+    {
+      "id": "sessions",
+      "title": "会话与 PCAP",
+      "group": "traffic",
+      "pages": [
+        "sessions",
+        "session-integrity",
+        "pcap-tasks",
+        "packet-archives"
+      ]
+    },
+    {
+      "id": "capture-policy",
+      "title": "流量采集",
+      "group": "traffic",
+      "pages": [
+        "capture-policy",
+        "capture-scope",
+        "inspection-depth",
+        "capture-quality",
+        "protocols"
+      ]
+    },
+    {
+      "id": "pipeline-latency",
+      "title": "处理性能",
+      "group": "traffic",
+      "pages": [
+        "pipeline-latency",
+        "capacity"
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "检测规则",
+      "group": "detection",
+      "pages": [
+        "rules",
+        "correlation",
+        "sigma",
+        "application-rules",
+        "rule-samples",
+        "rule-tests",
+        "rule-sync"
+      ]
+    },
+    {
+      "id": "hunts",
+      "title": "威胁狩猎",
+      "group": "detection",
+      "pages": [
+        "hunts",
+        "behavior-baselines"
+      ]
+    },
+    {
+      "id": "threat-scenarios",
+      "title": "威胁场景",
+      "group": "detection",
+      "pages": [
+        "threat-scenarios",
+        "attack-coverage"
+      ]
+    },
+    {
+      "id": "file-analysis",
+      "title": "文件分析",
+      "group": "detection",
+      "pages": [
+        "file-analysis",
+        "samples",
+        "static-analysis",
+        "sandbox",
+        "sample-access",
+        "analysis-pools",
+        "analysis-reports"
+      ]
+    },
+    {
+      "id": "intelligence",
+      "title": "威胁情报",
+      "group": "detection",
+      "pages": [
+        "indicators",
+        "intel-sources",
+        "intel-lifecycle",
+        "intel-hits",
+        "intel-sharing"
+      ]
+    },
+    {
+      "id": "watchlists",
+      "title": "保护与观察名单",
+      "group": "detection",
+      "pages": [
+        "watchlists"
+      ]
+    },
+    {
+      "id": "decision-policies",
+      "title": "决策策略",
+      "group": "response",
+      "pages": [
+        "decision-policies",
+        "decision-evaluations"
+      ]
+    },
+    {
+      "id": "devices",
+      "title": "联动设备",
+      "group": "response",
+      "pages": [
+        "devices",
+        "auth-plugins"
+      ]
+    },
+    {
+      "id": "actions",
+      "title": "响应动作",
+      "group": "response",
+      "pages": [
+        "actions",
+        "emergency"
+      ]
+    },
+    {
+      "id": "playbooks",
+      "title": "自动化编排",
+      "group": "response",
+      "pages": [
+        "playbooks",
+        "playbook-runs"
+      ]
+    },
+    {
+      "id": "notifications",
+      "title": "通知管理",
+      "group": "notifications",
+      "pages": [
+        "channels",
+        "notification-routes",
+        "notification-templates",
+        "delivery-logs",
+        "syslog-output"
+      ]
+    },
+    {
+      "id": "models",
+      "title": "模型与知识",
+      "group": "ai",
+      "pages": [
+        "models",
+        "knowledge"
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "智能对话",
+      "group": "ai",
+      "pages": [
+        "chat"
+      ]
+    },
+    {
+      "id": "rule-studio",
+      "title": "规则生成",
+      "group": "ai",
+      "pages": [
+        "rule-studio"
+      ]
+    },
+    {
+      "id": "mcp",
+      "title": "MCP 服务",
+      "group": "ai",
+      "pages": [
+        "mcp"
+      ]
+    },
+    {
+      "id": "reports",
+      "title": "安全报告",
+      "group": "reports",
+      "pages": [
+        "reports",
+        "report-schedules"
+      ]
+    },
+    {
+      "id": "sensors",
+      "title": "探针管理",
+      "group": "sensors",
+      "pages": [
+        "sensors",
+        "sensor-groups",
+        "probe-identity"
+      ]
+    },
+    {
+      "id": "releases",
+      "title": "版本发布",
+      "group": "sensors",
+      "pages": [
+        "releases"
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "系统设置",
+      "group": "system",
+      "pages": [
+        "system-settings"
+      ]
+    },
+    {
+      "id": "data-sources",
+      "title": "数据接入",
+      "group": "system",
+      "pages": [
+        "data-sources",
+        "syslog-input",
+        "imports",
+        "flow-sources",
+        "parsers",
+        "data-quality",
+        "replays"
+      ]
+    },
+    {
+      "id": "logs",
+      "title": "日志检索",
+      "group": "system",
+      "pages": [
+        "logs"
+      ]
+    },
+    {
+      "id": "platform-health",
+      "title": "平台运维",
+      "group": "system",
+      "pages": [
+        "platform-health",
+        "backups",
+        "connectors",
+        "software-catalog"
+      ]
+    },
+    {
+      "id": "users",
+      "title": "账号与权限",
+      "group": "system",
+      "pages": [
+        "users",
+        "authentication",
+        "roles",
+        "api-keys"
+      ]
+    },
+    {
+      "id": "tenants",
+      "title": "租户管理",
+      "group": "system",
+      "pages": [
+        "tenants",
+        "quotas"
+      ]
+    },
+    {
+      "id": "governance",
+      "title": "数据治理",
+      "group": "system",
+      "pages": [
+        "retention",
+        "data-security",
+        "governance"
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "审计日志",
+      "group": "system",
+      "pages": [
+        "audit",
+        "login-logs"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "id": "overview",
+      "workspace": "overview",
+      "path": "/overview/dashboard",
+      "title": "态势总览",
+      "module": "overview"
+    },
+    {
+      "id": "big-screen",
+      "workspace": "screens",
+      "path": "/overview/screen",
+      "title": "态势大屏",
+      "module": "screen"
+    },
+    {
+      "id": "alerts",
+      "workspace": "alerts",
+      "path": "/alerts/list",
+      "title": "告警列表",
+      "module": "alerts"
+    },
+    {
+      "id": "search",
+      "workspace": "search",
+      "path": "/alerts/search",
+      "title": "高级检索",
+      "module": "alerts"
+    },
+    {
+      "id": "incidents",
+      "workspace": "investigation",
+      "path": "/incidents/investigation",
+      "title": "事件调查",
+      "module": "incidents",
+      "admin": true
+    },
+    {
+      "id": "assets",
+      "workspace": "assets",
+      "path": "/inventory/list",
+      "title": "资产列表",
+      "module": "assets",
+      "view": "assets"
+    },
+    {
+      "id": "asset-groups",
+      "workspace": "asset-groups",
+      "path": "/inventory/groups",
+      "title": "资产组",
+      "module": "assets",
+      "view": "groups"
+    },
+    {
+      "id": "networks",
+      "workspace": "asset-groups",
+      "path": "/inventory/networks",
+      "title": "网段定义",
+      "module": "assets",
+      "view": "networks"
+    },
+    {
+      "id": "discovery",
+      "workspace": "assets",
+      "path": "/inventory/discovery",
+      "title": "被动发现",
+      "module": "assets",
+      "view": "discovery",
+      "admin": true
+    },
+    {
+      "id": "packets",
+      "workspace": "packets",
+      "path": "/traffic/events",
+      "title": "协议流量",
+      "module": "traffic",
+      "view": "events"
+    },
+    {
+      "id": "packet-archives",
+      "workspace": "sessions",
+      "path": "/traffic/archives",
+      "title": "原包归档",
+      "module": "traffic",
+      "view": "archives"
+    },
+    {
+      "id": "capture-quality",
+      "workspace": "capture-policy",
+      "path": "/traffic/capture/quality",
+      "title": "质量事件",
+      "module": "sensors",
+      "view": "quality"
+    },
+    {
+      "id": "rules",
+      "workspace": "rules",
+      "path": "/detection/rules/packages",
+      "title": "规则包",
+      "module": "rules",
+      "view": "packages"
+    },
+    {
+      "id": "application-rules",
+      "workspace": "rules",
+      "path": "/detection/rules/applications",
+      "title": "应用识别规则",
+      "module": "rules",
+      "view": "applications"
+    },
+    {
+      "id": "rule-samples",
+      "workspace": "rules",
+      "path": "/detection/rules/samples",
+      "title": "重放样本",
+      "module": "rules",
+      "view": "samples",
+      "admin": true
+    },
+    {
+      "id": "rule-tests",
+      "workspace": "rules",
+      "path": "/detection/rules/tasks",
+      "title": "重放任务",
+      "module": "rules",
+      "view": "tasks",
+      "admin": true
+    },
+    {
+      "id": "rule-sync",
+      "workspace": "rules",
+      "path": "/detection/rules/sync",
+      "title": "单探针计划",
+      "module": "rules",
+      "view": "sync",
+      "mode": "plans",
+      "admin": true
+    },
+    {
+      "id": "rule-rollouts",
+      "workspace": "rules",
+      "path": "/detection/rules/rollouts",
+      "title": "分批发布",
+      "module": "rules",
+      "view": "sync",
+      "mode": "rollouts",
+      "admin": true
+    },
+    {
+      "id": "decision-policies",
+      "workspace": "decision-policies",
+      "path": "/response/policies",
+      "title": "决策策略",
+      "module": "models",
+      "view": "policies",
+      "admin": true
+    },
+    {
+      "id": "decision-evaluations",
+      "workspace": "decision-policies",
+      "path": "/response/evaluations",
+      "title": "评估记录",
+      "module": "models",
+      "view": "evaluations",
+      "admin": true
+    },
+    {
+      "id": "channels",
+      "workspace": "notifications",
+      "path": "/notifications/channels",
+      "title": "通知渠道",
+      "module": "notifications",
+      "view": "channels",
+      "admin": true
+    },
+    {
+      "id": "delivery-logs",
+      "workspace": "notifications",
+      "path": "/notifications/deliveries",
+      "title": "推送日志",
+      "module": "notifications",
+      "view": "deliveries",
+      "admin": true
+    },
+    {
+      "id": "models",
+      "workspace": "models",
+      "path": "/ai/models",
+      "title": "模型提供方",
+      "module": "models",
+      "view": "providers",
+      "admin": true
+    },
+    {
+      "id": "chat",
+      "workspace": "chat",
+      "path": "/ai/assistant",
+      "title": "智能对话",
+      "module": "assistant",
+      "admin": true
+    },
+    {
+      "id": "rule-studio",
+      "workspace": "rule-studio",
+      "path": "/ai/rule-generation",
+      "title": "规则生成",
+      "module": "rules",
+      "view": "generation",
+      "admin": true
+    },
+    {
+      "id": "mcp",
+      "workspace": "mcp",
+      "path": "/ai/mcp",
+      "title": "MCP 服务",
+      "module": "models",
+      "view": "mcp",
+      "admin": true
+    },
+    {
+      "id": "reports",
+      "workspace": "reports",
+      "path": "/reports/records",
+      "title": "报告记录",
+      "module": "reports",
+      "view": "records",
+      "admin": true
+    },
+    {
+      "id": "report-schedules",
+      "workspace": "reports",
+      "path": "/reports/plans",
+      "title": "报告计划",
+      "module": "reports",
+      "view": "plans",
+      "admin": true
+    },
+    {
+      "id": "sensors",
+      "workspace": "sensors",
+      "path": "/sensors/list",
+      "title": "探针列表",
+      "module": "sensors",
+      "view": "devices"
+    },
+    {
+      "id": "sensor-groups",
+      "workspace": "sensors",
+      "path": "/sensors/groups",
+      "title": "探针分组",
+      "module": "sensors",
+      "view": "groups"
+    },
+    {
+      "id": "probe-identity",
+      "workspace": "sensors",
+      "path": "/sensors/identity",
+      "title": "注册与证书",
+      "module": "sensors",
+      "view": "identity",
+      "admin": true
+    },
+    {
+      "id": "sensor-tasks",
+      "workspace": "sensors",
+      "path": "/sensors/tasks",
+      "title": "任务记录",
+      "module": "sensors",
+      "view": "tasks",
+      "admin": true
+    },
+    {
+      "id": "system-settings",
+      "workspace": "settings",
+      "path": "/system/settings",
+      "title": "系统设置",
+      "module": "settings",
+      "admin": true
+    },
+    {
+      "id": "platform-health",
+      "workspace": "platform-health",
+      "path": "/system/operations/health",
+      "title": "平台运行状态",
+      "module": "operations",
+      "view": "health",
+      "admin": true
+    },
+    {
+      "id": "users",
+      "workspace": "users",
+      "path": "/system/accounts/users",
+      "title": "用户管理",
+      "module": "users",
+      "admin": true
+    },
+    {
+      "id": "retention",
+      "workspace": "governance",
+      "path": "/system/governance/retention",
+      "title": "数据留存",
+      "module": "retention",
+      "admin": true
+    },
+    {
+      "id": "audit",
+      "workspace": "audit",
+      "path": "/system/audit/operations",
+      "title": "操作日志",
+      "module": "operations",
+      "view": "operations",
+      "admin": true
+    },
+    {
+      "id": "login-logs",
+      "workspace": "audit",
+      "path": "/system/audit/logins",
+      "title": "登录日志",
+      "module": "operations",
+      "view": "logins",
+      "admin": true
+    }
+  ],
+  "schema_version": 1,
+  "legacy_modules": {
+    "overview": "overview",
+    "screen": "screen",
+    "sensors": "sensors",
+    "rules": "rules",
+    "alerts": "alerts",
+    "traffic": "traffic",
+    "assets": "assets",
+    "operations": "operations",
+    "notifications": "notifications",
+    "models": "models",
+    "assistant": "assistant",
+    "reports": "reports",
+    "retention": "retention",
+    "incidents": "incidents",
+    "users": "users"
+  },
+  "legacy_defaults": {
+    "sensors": "devices",
+    "rules": "packages",
+    "models": "providers",
+    "assets": "assets",
+    "operations": "health",
+    "reports": "records",
+    "notifications": "channels",
+    "traffic": "events"
+  },
+  "group_paths": {
+    "assets": "inventory"
+  }
+}

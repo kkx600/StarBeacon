@@ -1,8 +1,14 @@
 import {readFile,writeFile,readdir} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
+import {renderRoots,digestRenderTree} from './gallery-inputs.mjs'
 
 const root=new URL('../public/screenshots/',import.meta.url)
 const themeInputs=['prototype/src/theme.ts','prototype/src/styles.css','web/packages/shared/src/theme.ts','web/packages/shared/src/controls.css']
+const layoutInputs=['web/packages/shared/src/navigation.json','web/packages/shared/src/navigation.ts','web/platform/src/navigation.ts','web/platform/src/App.vue','web/packages/shared/src/components/AppShell.vue','web/packages/shared/src/components/NavigationMenu.vue','prototype/src/data/navigation.ts','prototype/src/layouts/ConsoleLayout.vue','prototype/src/router.ts','prototype/src/views/PageView.vue','web/platform/src/features/settings/SettingsWorkspace.vue']
+const layoutHash=createHash('sha256')
+for(const file of layoutInputs){layoutHash.update(file+'\0');layoutHash.update(await readFile(new URL('../../'+file,import.meta.url)));layoutHash.update('\0')}
+const layoutSha256=layoutHash.digest('hex')
+const renderTree=await digestRenderTree(new URL('../../',import.meta.url))
 const themeHash=createHash('sha256')
 for(const file of themeInputs){themeHash.update(file+'\0');themeHash.update(await readFile(new URL('../../'+file,import.meta.url)));themeHash.update('\0')}
 const themeSha256=themeHash.digest('hex')
@@ -39,6 +45,12 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
     const source=log.entries.findLast(e=>e.file===file)
     if(!source||!source.stateVerified||source.renderer!=='Codex in-app browser')throw new Error('缺少已核对的浏览器截图来源')
     if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)throw new Error('截图主题与当前全局主题不同，需要从浏览器重新捕获')
+    if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)throw new Error('截图导航或布局与当前源码不同，需要从浏览器重新捕获')
+    if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)throw new Error('截图界面源码与当前版本不同，需要从浏览器重新捕获')
+    for(const input of source.renderInputs??[]){
+      if(typeof input.path!=='string'||input.path.split('/').includes('..')||! /^(prototype\/src|web\/(platform|packages\/shared)\/src)\/[A-Za-z0-9_./-]+$/.test(input.path))throw new Error('截图组件来源路径无效')
+      if(createHash('sha256').update(await readFile(new URL('../../'+input.path,import.meta.url))).digest('hex')!==input.sha256)throw new Error('截图组件与当前源码不同，需要从浏览器重新捕获')
+    }
     const bytes=await readFile(new URL(file,root))
     const size=dimensions(bytes)
     if(!size.width||!size.height||bytes.length<1000)throw new Error('图像为空或尺寸无效')
@@ -56,7 +68,8 @@ const allFiles=await readdir(root,{recursive:true})
 for(const file of allFiles.filter(file=>/\.(?:jpg|jpeg|png|webp)$/i.test(file)))if(!entries.some(entry=>entry.file===file))failures.push({file,error:'图片没有对应来源记录'})
 if(failures.length){console.error(JSON.stringify(failures,null,2));process.exit(1)}
 if(refresh){
-  await writeFile(new URL('provenance.json',root),JSON.stringify({product:'星烽 StarBeacon',synthetic:true,renderer:'Codex in-app browser',baseStateCount:expected.length,supplementalCount:entries.length-expected.length,entries},null,2)+'\n')
+  await writeFile(new URL('provenance.json',root),JSON.stringify({product:'星烽 StarBeacon',synthetic:true,renderer:'Codex in-app browser',renderTreeSha256:renderTree.sha256,layoutSha256,themeSha256,baseStateCount:expected.length,supplementalCount:entries.length-expected.length,entries},null,2)+'\n')
+  await writeFile(new URL('provenance-manifest.js',root),`window.StarBeaconGalleryVersions = ${JSON.stringify({renderTreeSha256:renderTree.sha256,images:Object.fromEntries(entries.map(entry=>[entry.file,entry.sha256]))})};\n`)
   await writeFile(new URL('supplemental-manifest.js',root),`window.StarBeaconSupplemental = ${JSON.stringify(entries.filter(entry=>entry.state==='supplemental').map(({file,title})=>({file,title})))};\n`)
 }
 console.log(`图片核对通过：${expected.length} 张基础状态图，${entries.length-expected.length} 张补充图；JPEG 尺寸、页面横向边界、浏览器来源及 SHA-256 均已核对。`)
