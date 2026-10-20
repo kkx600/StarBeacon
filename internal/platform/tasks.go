@@ -19,6 +19,8 @@ import (
 )
 
 func (a *API) registerTasks(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/response-actions", a.Auth.Require(true, a.responseActions))
+	m.HandleFunc("GET /api/v1/response-actions/{id}", a.Auth.Require(true, a.responseAction))
 	m.HandleFunc("POST /api/v1/sensors/{id}/response-tasks", a.Auth.Require(true, a.createResponseTask))
 	m.HandleFunc("GET /api/v1/tasks", a.Auth.Require(true, a.tasks))
 	m.HandleFunc("GET /api/v1/tasks/{id}", a.Auth.Require(true, a.task))

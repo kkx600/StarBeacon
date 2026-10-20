@@ -7,7 +7,7 @@ const id=/^[a-z0-9][a-z0-9_-]{0,63}$/
 const kinds=new Set(['diagnostics','capture.configure','applications.apply','rules.validate','rules.replay','rules.apply','rules.reconcile','response.block','response.read','response.revoke'])
 const states=new Set(['queued','delivered','running','succeeded','failed','unknown','expired','cancelled'])
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)
-function validTask(v:unknown,requested:string,sensor?:string,local=false):v is SensorTask{
+export function validTask(v:unknown,requested:string,sensor?:string,local=false):v is SensorTask{
  if(local){
   if(!object(v)||v.id!==requested||typeof v.sensor_id!=='string'||!id.test(v.sensor_id)||sensor&&v.sensor_id!==sensor||!kinds.has(String(v.kind))||!['running','succeeded','failed','unknown'].includes(String(v.state))||!['local','platform'].includes(String(v.origin))||typeof v.acknowledged!=='boolean'||typeof v.retention_protected!=='boolean'||!object(v.receipt))return false
   if(!['created_at','expires_at','retain_until'].every(key=>typeof v[key]==='string'&&Number.isFinite(Date.parse(v[key] as string)))||Date.parse(v.expires_at as string)<=Date.parse(v.created_at as string)||Date.parse(v.retain_until as string)<=Date.now()&&!v.retention_protected)return false
@@ -30,7 +30,7 @@ function validTask(v:unknown,requested:string,sensor?:string,local=false):v is S
 }
 
 // 详情独立读取主键，不能把最近列表或旧回执当作当前任务快照。
-export function useTaskDetail(task:ComputedRef<unknown>,options:{api:()=>ApiClient;principal:()=>Principal|null|undefined;sensor?:()=>string|undefined;local?:()=>boolean;enabled?:()=>boolean}){
+export function useTaskDetail(task:ComputedRef<unknown>,options:{api:()=>ApiClient;principal:()=>Principal|null|undefined;sensor?:()=>string|undefined;local?:()=>boolean;enabled?:()=>boolean;responseOnly?:()=>boolean}){
  const sensor=()=>options.sensor?.(),local=()=>options.local?.()??false,enabled=()=>options.enabled?.()??true
  const detail=reactive<TaskDetailState>({open:false,item:null,pending:false,error:''})
  let controller:AbortController|undefined,timer:ReturnType<typeof setTimeout>|undefined,stopped=false,failures=0
@@ -42,9 +42,9 @@ export function useTaskDetail(task:ComputedRef<unknown>,options:{api:()=>ApiClie
   if(typeof requested!=='string'||!id.test(requested)){detail.error='任务链接无效，请从任务记录或处置档案重新打开。';return}
   const current=new AbortController();controller=current;detail.pending=true
   try{
-   const result=await options.api().request<unknown>('/tasks/'+encodeURIComponent(requested),{signal:current.signal})
+   const result=await options.api().request<unknown>((options.responseOnly?.()?'/response-actions/':'/tasks/')+encodeURIComponent(requested),{signal:current.signal})
    if(current.signal.aborted||controller!==current)return
-   if(!validTask(result,requested,sensor(),local()))throw new Error('任务详情未能完整返回，请刷新核对；不使用列表或历史回执代替。')
+   if(!validTask(result,requested,sensor(),local())||options.responseOnly?.()&&!result.kind.startsWith('response.'))throw new Error('任务详情未能完整返回，请刷新核对；不使用列表或历史回执代替。')
    if(result.kind==='applications.apply'&&result.state==='succeeded'){
     const installed=result.receipt.result
     if(!await validApplicationState(installed)||installed?.deployment_id!==requested)throw new Error('应用规则安装回执与原任务不一致，请刷新后核对。')
@@ -56,7 +56,7 @@ export function useTaskDetail(task:ComputedRef<unknown>,options:{api:()=>ApiClie
    if(!current.signal.aborted&&controller===current){detail.pending=false;if(failures<3&&(detail.error||detail.item&&['queued','delivered','running'].includes(detail.item.state)))timer=setTimeout(()=>void refresh(),detail.error?5000*2**Math.max(0,failures-1):5000)}
   }
  }
- watch(()=>[task.value,sensor(),options.principal()?.tenant_id,options.principal()?.id,options.principal()?.role,options.api(),local(),enabled()],()=>{
+ watch(()=>[task.value,sensor(),options.principal()?.tenant_id,options.principal()?.id,options.principal()?.role,options.api(),local(),enabled(),options.responseOnly?.()],()=>{
   abort();detail.item=null;detail.pending=false;detail.error='';failures=0
   detail.open=enabled()&&task.value!==undefined&&options.principal()?.role==='admin'
   if(detail.open)void refresh()

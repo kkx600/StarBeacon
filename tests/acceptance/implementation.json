@@ -1018,7 +1018,7 @@
         "tests/integration/processes_test.go",
         "web/tests/response.test.ts"
       ],
-      "boundary": "管理员显式提交，绑定采集器注册代次与签名信任；本地私有文件中的固定 HTTPS 管理 IP、CA 与 Bearer 引用，允许/保护网段及本机与平台管理通道保护。独立租约、绝对 TTL、条件解除、超时原键确认和单次写后 GET 核对；副作用前本地落盘，重启只回读，原执行回执不可改写。任务和本地租约历史默认 180 天，可配置；本地最多 1024 条历史，租户滚动 24 小时最多 1024 项。设备须提供原生到期和独立租约协议。受控 Docker HTTPS 端点只验证协议行为，不能证明商业设备或真实流量阻断；尚无自动决策执行、设备品牌适配、浏览器认证插件、MFA 或 HA。远程验收按当前源码的独立执行记录核对。"
+      "boundary": "管理员显式提交，绑定采集器注册代次与签名信任；本地私有文件中的固定 HTTPS 管理 IP、CA 与 Bearer 引用，允许/保护网段及本机与平台管理通道保护。独立租约、绝对 TTL、条件解除、超时原键确认和单次写后 GET 核对；副作用前本地落盘，重启只回读，原执行回执不可改写。任务和本地租约历史默认 180 天，可配置；本地最多 1024 条历史，租户滚动 24 小时最多 1024 项。设备须提供原生到期和独立租约协议。受控 Docker HTTPS 端点只验证协议行为，不能证明商业设备或真实流量阻断；连接器不独立授予模型执行权限，自动授权由持续决策能力提供；尚无设备品牌适配、浏览器认证插件、MFA 或 HA。远程验收按当前源码的独立执行记录核对。"
     },
     {
       "id": "decision_response",
@@ -1215,6 +1215,31 @@
         "prototype/scripts/check-screenshots.test.mjs"
       ],
       "boundary": "原型与实际平台共用 12 个业务分组、43 个工作区及工程页面归属。独立系统设置目录链接已有账号、运维、留存与审计入口；二、三级 history 路由保留旧链接窗口和定位，查看角色隐藏管理员工作区。未提供的功能保留明确范围说明，不提供虚假保存与执行操作；布局与导航源码摘要参与严格截图检查。目录不等于业务功能、生产运维设置或全产品验收。"
+    },
+    {
+      "id": "response_catalog",
+      "name": "响应动作检索与原租约追溯",
+      "code": [
+        "internal/response/catalog.go",
+        "internal/store/response_catalog.go",
+        "internal/platform/response_catalog.go",
+        "web/platform/src/views/ResponseActionsView.vue",
+        "web/platform/src/features/sensors/TaskWorkspace.vue",
+        "web/packages/shared/src/responseCatalog.ts",
+        "web/packages/shared/src/components/ResponseActionFilters.vue",
+        "prototype/src/components/ResponseActionsPreview.vue"
+      ],
+      "pages": [
+        "platform:/response/actions"
+      ],
+      "tests": [
+        "internal/response/catalog_test.go",
+        "internal/platform/response_catalog_test.go",
+        "tests/integration/response_catalog_test.go",
+        "web/tests/response-catalog.test.ts",
+        "web/tests/response.test.ts"
+      ],
+      "boundary": "独立管理员入口检索本租户留存期内的 response.block/read/revoke；固定创建时间窗口最多 31 天、每页 1–100 项、筛选绑定游标和时间/标识排序，不受最近 200 项上限限制。按执行探针、设备、单 IP、类型及当前执行状态精确筛选；详情独立核对原授权、原租约和回执，不依赖设备在线或新配置。读取不修改任务、回执或设备；未知联动提交保留原输入与键，在当前页面会话内确认原受理结果。当前不提供 EDR 隔离/恢复、跨设备冲突、全局停止或真实封禁效果资格；同源远程及页面验收以独立记录为准。"
     }
   ],
   "requirements": [
@@ -2021,12 +2046,14 @@
       "capabilities": [
         "response_http",
         "decision_response",
-        "continuous_decisions"
+        "continuous_decisions",
+        "response_catalog"
       ],
       "implemented": [
         "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
         "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键",
-        "持续策略依据本人指定模型的新研判签发限时源 IP 任务；模型、观测、探针及设备绑定，告警去重、目标冷却与小时预算约束"
+        "持续策略依据本人指定模型的新研判签发限时源 IP 任务；模型、观测、探针及设备绑定，告警去重、目标冷却与小时预算约束",
+        "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",

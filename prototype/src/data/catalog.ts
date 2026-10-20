@@ -79,7 +79,7 @@ const definitions: Definition[] = [
   ['SB-RSP-001','decision-policies','response','决策策略','decision','配置判断条件、模型修订与限时处置授权，持续核对本人完成的研判。','name:策略名称|mode:运行模式|model:模型来源|confidence:自报分数阈值|scope:保护范围|status:状态','创建决策策略'],
   ['SB-RSP-002','devices','response','联动设备','device','绑定执行采集器、网络域、凭据引用与设备能力。','name:设备名称|type:设备类型|address:管理地址|sensor:执行采集器|capability:动作能力|status:连接状态','接入设备'],
   ['SB-RSP-003','auth-plugins','response','认证插件','auth-plugin','管理控制台认证、会话缓存、续期与设备版本兼容性。','name:插件名称|device:设备|version:插件版本|auth:认证方式|expires:会话到期|status:认证状态','配置认证插件'],
-  ['SB-RSP-004','actions','response','动作中心','action','跟踪封禁、解封、隔离与恢复，区分接受、生效和效果观察。','name:动作|target:目标|sensor:执行采集器|accepted:设备接受|effective:配置核验|observed:效果观察|status:动作状态','创建响应动作'],
+  ['SB-RSP-004','actions','response','响应动作','action','检索限时封禁、租约回读与解除任务，分别核对平台受理、设备配置与实际流量效果。','kind:响应任务|sensor:执行探针|target:目标 / 设备|status:执行状态|created:提交时间|expires:租约到期','查询响应动作'],
   ['SB-RSP-005','playbooks','response','响应剧本','playbook','编排触发、条件、人工审批、受控动作和补偿路径。','name:剧本名称|trigger:触发器|nodes:节点数|version:版本|status:发布状态','创建剧本'],
   ['SB-RSP-006','playbook-runs','response','剧本实例','playbook-run','跟踪检查点、等待、结果未知、取消与补偿。','name:实例|playbook:剧本|node:当前节点|duration:耗时|owner:审批人|status:运行状态','创建演练实例'],
   ['SB-RSP-007','emergency','response','应急控制','emergency','停止新动作、撤销有效租约并核对在途任务和执行器隔离。','name:控制范围|newActions:调度状态|leases:活动租约|inflight:在途动作|watermark:撤销水位|status:控制状态','发起应急控制'],

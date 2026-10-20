@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "25d2eabe5d116f496c77bbd3343dcf7d0758046fe14ecf1b4d551152d6c62fb2"
+    "renderTreeSha256": "347c94d8888db34cbf1730206e2822642b806e64ab7c3ef2e7ae15771ffeb0e1"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -4314,10 +4314,10 @@
     {
       "id": "actions",
       "workspace": "响应动作",
-      "title": "动作中心",
+      "title": "响应动作",
       "group": "response",
       "kind": "table",
-      "description": "跟踪封禁、解封、隔离与恢复，区分接受、生效和效果观察。",
+      "description": "检索限时封禁、租约回读与解除任务，分别核对平台受理、设备配置与实际流量效果。",
       "requirements": [
         "SB-RSP-004"
       ],
@@ -4325,37 +4325,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/actions?state=data",
+          "url": "/response/actions?state=data",
           "image": "actions/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/actions?state=empty",
+          "url": "/response/actions?state=empty",
           "image": "actions/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/actions?state=detail",
+          "url": "/response/actions?state=detail",
           "image": "actions/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/actions?state=action",
+          "url": "/response/actions?state=action",
           "image": "actions/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/actions?state=loading",
+          "url": "/response/actions?state=loading",
           "image": "actions/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/actions?state=error",
+          "url": "/response/actions?state=error",
           "image": "actions/error.jpg"
         }
       ]

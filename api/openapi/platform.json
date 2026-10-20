@@ -15153,6 +15153,269 @@
           }
         }
       }
+    },
+    "/api/v1/response-actions": {
+      "get": {
+        "summary": "检索响应动作",
+        "description": "管理员读取本租户留存期内的限时封禁、租约回读与解除任务。按创建时间和标识倒序续页，游标绑定全部筛选条件；默认每页 20、最多 100 项，时间窗最多 31 天。状态为读取时状态，尚未投递的超时任务只计算为 expired，不改写记录。设备状态与阻断效果不由任务成功推定。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseActionPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "包含的任务创建起点；与结束时间相距最多 31 天。"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "不包含的任务创建终点；后续页面保持原窗口。"
+            }
+          },
+          {
+            "name": "sensor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "response.block",
+                "response.read",
+                "response.revoke"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "queued",
+                "delivered",
+                "running",
+                "succeeded",
+                "failed",
+                "unknown",
+                "expired",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "target_ip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 45,
+              "description": "规范单个 IPv4 或 IPv6，精确匹配原授权目标。"
+            }
+          },
+          {
+            "name": "device_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/response-actions/{id}": {
+      "get": {
+        "summary": "读取响应动作档案",
+        "description": "独立读取本租户留存期内指定响应任务，核对原授权命令摘要；不依赖设备在线或当前配置。普通任务、跨租户、已删除和已过留存期统一返回 404。不接受查询参数，不修改任务或原回执。",
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "原始任务档案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensorTask"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "任务不存在、跨租户、已删除或已过留存期时统一返回不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -26901,6 +27164,109 @@
             }
           }
         ]
+      },
+      "ResponseActionQuery": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "包含的任务创建起点；与结束时间相距最多 31 天。"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "不包含的任务创建终点；后续页面保持原窗口。"
+          },
+          "sensor_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "",
+              "response.block",
+              "response.read",
+              "response.revoke"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "",
+              "queued",
+              "delivered",
+              "running",
+              "succeeded",
+              "failed",
+              "unknown",
+              "expired",
+              "cancelled"
+            ]
+          },
+          "target_ip": {
+            "type": "string",
+            "maxLength": 45,
+            "description": "规范单个 IPv4 或 IPv6，精确匹配原授权目标。"
+          },
+          "device_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "sensor_id",
+          "kind",
+          "state",
+          "target_ip",
+          "device_id",
+          "cursor",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "ResponseActionPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/SensorTask"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "query": {
+            "$ref": "#/components/schemas/ResponseActionQuery"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "query",
+          "observed_at"
+        ],
+        "additionalProperties": false
       }
     }
   }

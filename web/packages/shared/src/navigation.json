@@ -652,6 +652,14 @@
       "admin": true
     },
     {
+      "id": "actions",
+      "workspace": "actions",
+      "path": "/response/actions",
+      "title": "响应动作",
+      "module": "responseActions",
+      "admin": true
+    },
+    {
       "id": "channels",
       "workspace": "notifications",
       "path": "/notifications/channels",

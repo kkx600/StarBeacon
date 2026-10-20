@@ -11,4 +11,3 @@ export const platformScreens:PlatformScreen[]=manifest.screens
 export function workspacePath(workspace:WorkspaceSpec):string {
   return platformScreens.find(screen=>screen.workspace===workspace.id)?.path??`/${(manifest.group_paths as Record<string,string>)[workspace.group]??workspace.group}/${workspace.id}`
 }
-

@@ -69,10 +69,10 @@ describe('采集器 HTTP 联动',()=>{
   const value=task(),wrapper=mount(TaskTable,{props:{items:[value],responseable:true},global,attachTo:document.body});await click('回读');expect(wrapper.emitted('response')?.[0]).toEqual([value,'response.read']);await click('查看');expect(document.body.textContent).toContain('封禁到期时间');expect(document.body.textContent).toContain('状态待核对');expect(document.body.textContent).toContain('尚未观测')
   await wrapper.setProps({responseable:false});expect(wrapper.text()).not.toContain('回读')
  })
- it('任务工作区重新核验当前设备，超时复用原键，配置改变禁止发出动作',async()=>{
+ it('原提交确认沿用冻结输入，新操作核对当前设备配置',async()=>{
   const value=task();request.mockResolvedValueOnce({items:[value]});const wrapper=mount(TaskWorkspace,{global,attachTo:document.body});await flushPromises()
   request.mockResolvedValueOnce({items:[observed()]}).mockRejectedValueOnce(new Error('请求超时'));await click('回读');const first=request.mock.lastCall!;expect(first[1].body.original_task_id).toBe(value.id);expect(first[1].body.target_ip).toBeUndefined()
-  request.mockResolvedValueOnce({items:[observed()]}).mockResolvedValueOnce({id:taskID}).mockResolvedValueOnce({items:[value]});await click('回读');const mutation=request.mock.calls.filter(call=>call[0].endsWith('/response-tasks'));expect(mutation).toHaveLength(2);expect(mutation[1]?.[1].headers['Idempotency-Key']).toBe(first[1].headers['Idempotency-Key'])
+  request.mockResolvedValueOnce({id:taskID}).mockResolvedValueOnce({items:[value]});await click('回读');const mutation=request.mock.calls.filter(call=>call[0].endsWith('/response-tasks'));expect(mutation).toHaveLength(2);expect(mutation[1]?.[1].headers['Idempotency-Key']).toBe(first[1].headers['Idempotency-Key'])
   const changed=observed();changed.health.response_connectors![0]!.config_sha256='c'.repeat(64);request.mockResolvedValueOnce({items:[changed]});await click('回读');expect(request.mock.calls.filter(call=>call[0].endsWith('/response-tasks'))).toHaveLength(2);expect(message.error).toHaveBeenCalledWith('执行采集器或原设备配置尚未就绪，请刷新核对。');wrapper.unmount()
  })
 })

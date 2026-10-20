@@ -10,7 +10,7 @@ const components:Record<string,NonNullable<RouteRecordRaw['component']>>={
   notifications:()=>import('./views/NotificationsView.vue'),models:()=>import('./views/ModelsView.vue'),
   assistant:()=>import('./views/AssistantView.vue'),reports:()=>import('./views/ReportsView.vue'),
   retention:()=>import('./views/RetentionView.vue'),incidents:()=>import('./views/IncidentsView.vue'),
-  users:()=>import('./views/UsersView.vue'),settings:()=>import('./views/SettingsView.vue'),
+  users:()=>import('./views/UsersView.vue'),settings:()=>import('./views/SettingsView.vue'),responseActions:()=>import('./views/ResponseActionsView.vue'),
 }
 export const legacyModules:Record<string,string>=manifest.legacy_modules
 export function legacyDestination(to:Pick<RouteLocationNormalized,'path'|'query'|'hash'>):RouteLocationRaw {

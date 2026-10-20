@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-20T05:06:36.713048+00:00",
+  "scope": "response_catalog_original_lease_trace_and_current_remote_engineering_qualification",
+  "status": "passed",
+  "formal_release_eligible": false,
+  "source": {
+    "backend_sha256": "3a4a2ad6bf91812c6fb6f7aa8bf1e92a9c7f28bd57efed8370fab65c55b6be4a",
+    "backend_files": 591,
+    "frontend_sha256": "1d4323c4c9929734a5006da82600a31243732a3fb332b6e1c7c9a87d564e9491",
+    "frontend_files": 341,
+    "frontend_dist_sha256": "5fb19c3a642592d1ad1ca874c4c1e07762bdbe6cdc2da1b71c98178439d8e412",
+    "original_build_parent_commit": "3c819f63d81c642626906df5c1516c4295e5469d",
+    "original_clean_commit": false,
+    "binding": "原始父提交及非干净源码快照保持；提交后逐一核对 591 份后端与 341 份前端输入的 Git blob，不追补干净发行资格。",
+    "raw_source_manifests": [
+      {
+        "path": "actions843-source.json",
+        "sha256": "bd81bda6a3629b8c0ffe1a8b388a9c01bad2ac2e9e414dfe9e5d50e9b6dc7580",
+        "bytes": 100273
+      },
+      {
+        "path": "actions856-frontend/source.json",
+        "sha256": "af8029767e1203f9f3ae8ba39ba4d79d2ef25b42a6cbddf35f4106d5d36a9a3c",
+        "bytes": 60941
+      }
+    ]
+  },
+  "capabilities": {
+    "navigation_groups": 12,
+    "workspaces": 43,
+    "engineering_entry_workspaces": 25,
+    "unprovided_workspaces": 18,
+    "engineering_screens": 39,
+    "business_http_operations": {
+      "platform": 133,
+      "collector": 18
+    },
+    "response_catalog": "管理员在独立页面按最多 31 天窗口、目标 IP、探针、设备、动作类型和执行状态检索；固定页大小与条件绑定游标，详情独立读取。",
+    "history_integrity": "校验原始命令与回执；离线探针、配置变化和当前签名不可用不阻止历史查询。未投递到期状态只作读取投影，不修改任务。",
+    "uncertain_submission": "当前页面会话保存原输入与请求键；确认原联动提交时不先用当前设备目录否定原回执，未确认期间阻止另一联动。",
+    "scope_boundary": "响应任务检索不等于联动设备配置界面、设备插件市场、通用自动化编排或实际流量阻断效果。"
+  },
+  "backend": {
+    "status": "passed",
+    "top_level_unit_tests": 516,
+    "integration_tests": 124,
+    "integration_disjoint_groups": 2,
+    "native_af_packet_tests": 1,
+    "failed_or_skipped_test_cases": 0,
+    "coverage": {
+      "covered": 20488,
+      "total": 22709,
+      "percentage": 90.2197366682813,
+      "minimum": 90
+    },
+    "execution_actual_exit": 0,
+    "report_fetch_actual_exit": 0,
+    "catalog_integration": "同一时间戳 205 项数据库夹具遍历 11 页，验证无重复遗漏、全部筛选、租户权限、撤权、来源损坏、数据库错误和读取不写状态；数据库夹具不计真实设备执行。",
+    "native_chain": "真实网卡 → Suricata → EVE → WAL → mTLS → NATS → ES → 通知受理；不授予生产吞吐或外部服务商送达资格。",
+    "raw": [
+      {
+        "path": "actions846-driver.json",
+        "sha256": "9c6cb87098589ea90c5eb8f9ac19cbc00fb8b50630ddb28d88bb052a464da76a",
+        "bytes": 1243
+      },
+      {
+        "path": "sbacc_454c145fa2db878e/reports/backend.json",
+        "sha256": "1c88249cc1f2de7f7b364186f051b91223d34d2021725c3961ff6ba82d01e8ab",
+        "bytes": 1560
+      }
+    ]
+  },
+  "frontend": {
+    "status": "passed",
+    "tests": 859,
+    "tool_tests": 9,
+    "test_files": 58,
+    "coverage": {
+      "statements": 95.36824376052672,
+      "branches": 93.05139720558883,
+      "functions": 91.84015314668581,
+      "lines": 98.84708737864078
+    },
+    "all_metric_minimum": 90,
+    "typecheck_and_both_builds": "passed",
+    "raw": {
+      "path": "actions856-frontend/frontend.json",
+      "sha256": "740c5200a4dcf25533387d7c9f9c90f3d6556879135b72cd09b01551429e8283",
+      "bytes": 54469
+    }
+  },
+  "protocol_ui": {
+    "scope": "专属 Docker HTTPS 协议端点，实际平台、采集器、gRPC、数据库和页面；不连接真实防火墙或 EDR。",
+    "status": "passed",
+    "target_class": "文档专用地址 198.51.100.0/24",
+    "task_count": 4,
+    "sequence": [
+      "限时封禁",
+      "独立回读有效租约",
+      "解除原租约",
+      "独立回读已解除"
+    ],
+    "checks": [
+      "精确 IP 空结果和探针、设备组合筛选",
+      "筛选窗口之外的新回读任务独立展示",
+      "回读和解除可追溯原租约",
+      "四项独立任务按 limit=2 遍历两页",
+      "改变页大小后旧游标返回 400",
+      "任务、原租约、所有者、IP、设备、配置和期限分别核对",
+      "撤除连接器后历史仍可检索；原始封禁回执保持当时快照"
+    ],
+    "final_read_state": "revoked",
+    "traffic_effect": "not_observed",
+    "detail_pc_geometry_checks": 7,
+    "raw": [
+      {
+        "path": "actions867-protocol-ui/results.json",
+        "sha256": "d56b9323e2e511c83bee1cfbc5b756a248ef37d30813b7826f74cad785a5e61a",
+        "bytes": 11252
+      },
+      {
+        "path": "actions868-online.json",
+        "sha256": "d8720d278d487b6249435b24ef868c666f4536a801faa8498360ff2438977799",
+        "bytes": 19485
+      },
+      {
+        "path": "actions868-restored.json",
+        "sha256": "1b7441813993e292ddadf008c6571f537c9e6055f7cd4ed33cfb120c5a1c20b1",
+        "bytes": 19487
+      }
+    ]
+  },
+  "ui": {
+    "platform_geometry_checks": 399,
+    "collector_geometry_checks": 42,
+    "platform_entries": 57,
+    "available_platform_screens": 39,
+    "explicitly_unprovided_entries": 18,
+    "collector_views": 6,
+    "pc_sizes": [
+      "1024×768",
+      "1280×720",
+      "1366×768",
+      "1440×900",
+      "1920×1080",
+      "2560×1440",
+      "3840×2160"
+    ],
+    "registered_route_checks": {
+      "platform": 106,
+      "collector": 8
+    },
+    "checks": "实际视口、规范页头、工作区和页签定位、根页面无横向溢出、至多一张业务列表；宽表允许在表格内部横向滚动。",
+    "scope_boundary": "几何、导航与选定协议交互不替代全部 CRUD、异常分支、外部设备或全产品验收。",
+    "raw": [
+      {
+        "path": "actions865-current-ui/results.json",
+        "sha256": "347a2b56a7256f88747cfa14cd7f785155def94bb5dbc6bebd0fad75c07429ba",
+        "bytes": 296411
+      },
+      {
+        "path": "actions869-collector-ui/results.json",
+        "sha256": "fc16b0902ee968ff72289593b21256d5624beec74c34e57205bf73cfc61f040e",
+        "bytes": 16968
+      },
+      {
+        "path": "actions867-protocol-ui/catalog-final.jpg",
+        "sha256": "b4c84739ffdd5d039b58009baf03a4e212c681edae4fe5bf1454941181a9a6f2",
+        "bytes": 116625
+      }
+    ]
+  },
+  "prototype": {
+    "base_images": 797,
+    "supplemental_images": 105,
+    "total_images": 902,
+    "platform_views": 126,
+    "collector_workspaces": 5,
+    "render_tree_sha256": "347c94d8888db34cbf1730206e2822642b806e64ab7c3ef2e7ae15771ffeb0e1",
+    "render_tree_files": 314,
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "layout_sha256": "87bff10bd777fa60ddd14d1d563c43d0f0c377be1567ff6d57724af0538900e2",
+    "capture": "当前组件源码实际渲染；1440×900 原生浏览器 JPEG 直接保存；全部合成数据，不转码、修改或拼接像素。",
+    "strict_checks": "passed",
+    "browser_visible_version_check": "passed",
+    "response_geometry_checks": 42,
+    "raw": [
+      {
+        "path": "actions872-gallery/result.json",
+        "sha256": "386af530b30afbf17028ba6a2379736282f400fee342e982168cb2d010b194cb",
+        "bytes": 94267
+      },
+      {
+        "path": "actions873-gallery-browser.json",
+        "sha256": "25a6b03c5a39997be6b72519ac6db95b55fc7520da07513fc6096f5d11f86085",
+        "bytes": 495
+      }
+    ]
+  },
+  "deployment": {
+    "scope": "当前专属远程 Docker 工程环境",
+    "programs_verified": 5,
+    "running_roles_verified": 4,
+    "readiness_checks": 4,
+    "static_resources_verified": 91,
+    "history_gateway_paths": 57,
+    "missing_static_status": 404,
+    "migration": 47,
+    "identity_digest_preserved": true,
+    "wal_device_and_inode_preserved": true,
+    "temporary_protocol_configuration_restored": true,
+    "raw": [
+      {
+        "path": "actions861-restart.json",
+        "sha256": "04eb86e90e5091016092c6e19e930c6712e91de10356cb5ecfb8e5a237118ed3",
+        "bytes": 1146
+      },
+      {
+        "path": "actions864-restore.json",
+        "sha256": "84ad7a4d67921f68f3e970d0cfa38c73d15fc8793b5b992b9752f886cfa05727",
+        "bytes": 1987
+      },
+      {
+        "path": "actions876-runtime.json",
+        "sha256": "49d3b89718b54bde8849b9bfa08db34908bc150eab13b027d1c0307d3f78e9a5",
+        "bytes": 16542
+      }
+    ]
+  },
+  "checks": {
+    "quality_tests": 70,
+    "acceptance_tool_tests": 84,
+    "prototype_tool_tests": 9,
+    "alignment": "passed",
+    "go_vet_and_format": "passed",
+    "default_white_gray_theme": "unchanged",
+    "whole_product_wcag_aa": "未授予",
+    "raw": {
+      "path": "actions874-final-checks.json",
+      "sha256": "ff8f8059b137d44e2741ead84b3b7a028898dac814c0515a0882b2557f47e8ef",
+      "bytes": 706
+    }
+  },
+  "cleanup": {
+    "cache": {
+      "status": "passed",
+      "scope": "owned_unreferenced_build_caches_only",
+      "directories": [
+        {
+          "directory": "go-build-cache",
+          "files": 11161,
+          "logical_bytes": 1419606527,
+          "allocated_file_bytes_before_removal": 1459646464,
+          "removed": true
+        },
+        {
+          "directory": "capture-go-build-cache",
+          "files": 6758,
+          "logical_bytes": 998433306,
+          "allocated_file_bytes_before_removal": 1022435328,
+          "removed": true
+        }
+      ],
+      "logical_bytes_removed": 2418039833,
+      "allocated_file_bytes_before_removal": 2482081792,
+      "global_prune": false,
+      "stopped_readonly_host_root_views": 2,
+      "ignored_ancestor_view_container": "c43620cb63831ee047cf932ad652e4de28ae36f9d24e78c6a435220fdfc385d4",
+      "other_project_resources_untouched": true,
+      "active_writers_or_direct_cache_mounts": 0,
+      "persistent_data_identity_wal_and_ca_retained": true
+    },
+    "protocol_fixture": {
+      "status": "passed",
+      "container_removed": true,
+      "container_exit_code": 2,
+      "oom_killed": false,
+      "directories": [
+        {
+          "kind": "protocol_fixture",
+          "files": 10,
+          "logical_bytes": 17611110
+        },
+        {
+          "kind": "protocol_overlay",
+          "files": 2,
+          "logical_bytes": 11679
+        }
+      ],
+      "logical_bytes_removed": 17622789,
+      "ephemeral_fixture_credentials_destroyed": true,
+      "base_runtime_and_persistent_data_retained": true,
+      "other_project_resources_untouched": true,
+      "global_prune": false
+    },
+    "local": {
+      "temporary_binaries_removed": 1,
+      "bytes_removed": 17599686
+    },
+    "signal_probe": {
+      "scope": "same_archived_protocol_binary_sigterm_with_and_without_container_init",
+      "observations": [
+        {
+          "init": false,
+          "running_before_stop": true,
+          "exit_code": 2,
+          "oom_killed": false
+        },
+        {
+          "init": true,
+          "running_before_stop": true,
+          "exit_code": 143,
+          "oom_killed": false
+        }
+      ]
+    },
+    "signal_boundary": "原协议容器退出 2、无 OOM；同一归档程序隔离复现未启用 init 时停止为 2，启用后为 143，不将前者记录为退出 0。此差异不作为平台程序优雅停机资格。",
+    "protocol_resources_absent": {
+      "status": "passed",
+      "scope": "owned_protocol_fixture_signal_probes_and_overlays_absence",
+      "remaining_protocol_containers": 0,
+      "remaining_protocol_directories": 0,
+      "global_prune": false
+    },
+    "post_cleanup_runtime": "passed",
+    "raw": [
+      {
+        "path": "actions875-cleanup.json",
+        "sha256": "b5e25b28422db5809f64788e76e62ce452ddd3f75a3651fede81653c8233a7b5",
+        "bytes": 1330
+      },
+      {
+        "path": "actions875-fixture-cleanup.json",
+        "sha256": "aef5d097a633ce5d46ce51c1272ca70b47992a9178b535c894390e6581676fa2",
+        "bytes": 1264
+      },
+      {
+        "path": "actions875-signal-probe.json",
+        "sha256": "96cacafbf5f9d48687186fb4abe7df00621f6e6b5563bc9106cae5ad91807a0d",
+        "bytes": 992
+      }
+    ]
+  },
+  "failure_history": [
+    "中间组件测试的设备目录模拟仍假定确认原提交前重新查询当前配置；调整为验证冻结原请求，保留原失败与通过记录。",
+    "同一份最终前端源码在并发浏览器截图期间触发既有 5 秒留存测试超时；定向用例及暂停截图后的完整 859 项通过，未提高超时或降低覆盖率门槛；不据此断定唯一根因。",
+    "图库构建期间页面重载导致筛选观察不匹配；构建完成后重新筛选并核对具体卡片的版本与原生尺寸。",
+    "协议测试端点的非零停止码单独记录并隔离复现；一次信号探测因目录准备失败未执行容器验证，保留失败日志。"
+  ],
+  "raw_evidence_archives": [
+    {
+      "archive": "actions871-backend-raw.tar.gz",
+      "sha256": "e9760bd5a9ce8d28ffc75c0505ceb6625da1fa888ec8b44193eea32c25dd6110",
+      "bytes": 10684127,
+      "members_readback_verified": 630
+    },
+    {
+      "archive": "actions874-post-ui-raw.tar.gz",
+      "sha256": "64346a9bbd397a3f20297f0ef614ad51026014e68dfa4299680f55c0b976a311",
+      "bytes": 74556652,
+      "members_readback_verified": 2998
+    },
+    {
+      "archive": "actions877-post-cleanup-raw.tar.gz",
+      "sha256": "a3181fd93aeb7ec6d267aa17e9570cd32105b70378587f720695333f91f471b6",
+      "bytes": 118809,
+      "members_readback_verified": 22
+    },
+    {
+      "archive": "actions875-fixture-raw.tar.gz",
+      "sha256": "ea907d811add0395d8022b7219e8a5f3bb6a3739cd3ff65fb79a1ef282c97604",
+      "bytes": 9654639,
+      "members_readback_verified": 9,
+      "ephemeral_private_keys_and_bearer_excluded": true
+    }
+  ],
+  "private_evidence_policy": "源码、原始执行与中间失败、页面截图和归档保存在受限私有目录，不提交凭据、私有状态或归档到 Git。协议端点临时私钥和 bearer 已销毁；程序与公开协议状态有单独归档。",
+  "product_requirement_status": {
+    "total": 107,
+    "accepted": 0,
+    "partial": 61,
+    "missing": 46,
+    "status_review_date": "2026-10-18；本次补充响应任务目录能力，未将入口和截图数量折算为复合需求正式验收。"
+  },
+  "remaining": [
+    "18 个工作区尚未提供工程功能，完整需求仍有闭环缺口。",
+    "细粒度组织与角色、OIDC/MFA、租户配额、情报、文件沙箱、通用编排和完整平台配置仍须继续实现或验收。",
+    "真实设备及办公服务、生产容量与长稳、HA/灾备、完整安装和当前 Linux UPX ZIP 资格未完成。",
+    "当前证据不满足正式 Release 的全产品门禁，本次不发布正式 Release。"
+  ]
+}
