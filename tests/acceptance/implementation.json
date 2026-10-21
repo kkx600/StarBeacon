@@ -1270,6 +1270,35 @@
         "web/tests/response-devices.test.ts"
       ],
       "boundary": "管理员按执行探针、设备及原始核验状态分页读取本租户最多每探针八个 HTTP 连接器。目录保留离线及停用历史，设备核验、探针心跳与实际流量效果分开表达。探针及连接器升序游标绑定所有筛选与页大小，不承诺跨心跳状态快照。限时封禁冻结所选设备、配置摘要及注册身份，提交仍由已有任务链复核权限与本地目标范围；相关动作按探针及设备关联。采集器只核对启动时固定私有配置文件的权限、结构及运行绑定，不接受任意路径、不读取凭据、不连设备、不应用配置；CA 内容与同路径凭据轮换不在此核对范围。管理地址与凭据仍由本机私有文件管理，不提供集中凭据托管、网络域配置、设备 HA、排他接管、认证插件或商业设备效果验收。工程验证以独立记录为准。"
+    },
+    {
+      "id": "syslog",
+      "name": "Syslog 接收与日志检索",
+      "code": [
+        "internal/syslogdata/config.go",
+        "internal/syslogdata/parse.go",
+        "internal/agent/syslog.go",
+        "internal/agent/syslog_wal.go",
+        "internal/store/syslog_index.go",
+        "internal/store/syslog_search.go",
+        "internal/store/syslog_sources.go",
+        "internal/platform/syslog.go",
+        "internal/worker/syslog.go"
+      ],
+      "pages": [
+        "platform:/system/data-sources/syslog",
+        "platform:/system/logs",
+        "collector:/network?view=syslog"
+      ],
+      "tests": [
+        "internal/syslogdata/syslog_test.go",
+        "internal/syslogdata/query_test.go",
+        "internal/agent/syslog_test.go",
+        "internal/platform/syslog_test.go",
+        "tests/integration/syslog_test.go",
+        "web/tests/syslog.test.ts"
+      ],
+      "boundary": "固定采集器私有来源文件；TLS 1.3 双向认证与证书指纹、显式授权 TCP/UDP、RFC 5424/3164 严格解析、长度分帧、原文与时间质量分别保留、独立 logs WAL/队列/严格索引、管理员检索与原文审计。默认 180 天，未来索引固化期限。来源目录为当前心跳观测；无平台配置下发、任意设备事件语义映射或日志驱动自动处置；工程测试仍需按当前冻结来源核验。"
     }
   ],
   "requirements": [
@@ -1279,11 +1308,14 @@
       "acceptance": "pending",
       "capabilities": [
         "sensors",
-        "pipeline"
+        "pipeline",
+        "syslog"
       ],
       "implemented": [
         "探针身份由证书和注册代次绑定",
-        "启停与审计"
+        "启停与审计",
+        "Syslog 固定来源身份与授权网段",
+        "按探针与来源游标读取当前日志来源观测"
       ],
       "remaining": [
         "通用数据源中心与移交",
@@ -1293,13 +1325,22 @@
     },
     {
       "id": "SB-DAT-002",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "syslog"
+      ],
+      "implemented": [
+        "TLS 1.3 双向认证与证书指纹限制；TCP/UDP 显式授权",
+        "RFC 5424/3164 严格解析与来源时间质量",
+        "RFC 6587 长度分帧与单报文 UDP",
+        "来源序列、离线持久缓冲、配额隔离与独立 logs 数据流",
+        "租户绑定来源目录和只读本机接收状态"
+      ],
       "remaining": [
-        "入站 Syslog 监听/身份绑定/时区推定/持久缓冲",
-        "UDP 丢失与 NAT 来源边界"
+        "平台来源配置审批、下发、密钥轮换与移交",
+        "真实生产设备授权样本和持续吞吐验收",
+        "UDP 上游丢失不可精确核算；NAT 地址不视作独立身份"
       ]
     },
     {
@@ -1321,13 +1362,20 @@
     },
     {
       "id": "SB-DAT-004",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "syslog"
+      ],
+      "implemented": [
+        "Syslog 接收时间、来源、网络域、对端、声明主机/应用、级别与正文检索",
+        "严格日志映射与中文分词、游标分页、解析隔离",
+        "管理员独立原文审计、HEX 与 UTF-8 查看和摘要核验"
+      ],
       "remaining": [
-        "终端/身份/云/应用来源适配",
-        "标准化日志工作台与逐来源样本验收"
+        "终端/身份/云/应用来源适配与字段语义映射",
+        "授权样本逐来源验收与字段覆盖统计",
+        "日志调查的保存查询、完整导出与跨实体关联"
       ]
     },
     {
@@ -1346,11 +1394,13 @@
       "state": "partial",
       "acceptance": "pending",
       "capabilities": [
-        "pipeline"
+        "pipeline",
+        "syslog"
       ],
       "implemented": [
         "固定 EVE 解析和严格 ES 映射",
-        "异常持久隔离"
+        "异常持久隔离",
+        "固定 Syslog 解析器版本、原文与解析质量分别留存"
       ],
       "remaining": [
         "可管理的解析器版本",

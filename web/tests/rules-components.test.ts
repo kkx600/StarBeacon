@@ -1,6 +1,6 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest'
 import {flushPromises,mount} from '@vue/test-utils'
-import {type ShallowRef} from 'vue'
+import {type ShallowRef,type Component} from 'vue'
 import {createMemoryHistory,createRouter} from 'vue-router'
 import {message,Select} from 'ant-design-vue'
 import {registerAnt} from '../packages/shared/src/ant'
@@ -13,13 +13,13 @@ const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request},current:(await import('vue')).shallowRef(null)}}))
 const user=session.current as ShallowRef<Principal|null>
 beforeEach(()=>{user.value=principal;request.mockReset();request.mockImplementation((path:string)=>Promise.resolve(path==='/rule-packages'?{items:[rulePackage]}:path==='/sensors'?{items:[sensor]}:rulePackage));vi.spyOn(message,'success').mockImplementation(closedMessage);vi.spyOn(message,'error').mockImplementation(closedMessage)})
-async function workspace(path='/rules'){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/rules',component:RulesWorkspace}]});await router.push(path);await router.isReady();const wrapper=mount(RulesWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return{wrapper,router}}
+async function workspace(path='/rules',stubs:Record<string,boolean|Component>={}){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/rules',component:RulesWorkspace}]});await router.push(path);await router.isReady();const wrapper=mount(RulesWorkspace,{global:{plugins:[registerAnt,router],stubs},attachTo:document.body});await flushPromises();return{wrapper,router}}
 async function name(value:string){const input=document.body.querySelector<HTMLInputElement>('#rule-package_name')!;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
 
 describe('规则包编辑',()=>{
  it('切换历史视图后返回时保留未保存的名称和规则草稿',async()=>{
-  const {wrapper,router}=await workspace();await click('创建规则包');await name('尚未保存的规则草稿');await writeRule(wrapper.getComponent(RuleEditor),rules)
-  request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(wrapper.text()).toContain('应用识别规则')
+  const {wrapper,router}=await workspace('/rules',{ApplicationRulesWorkspace:true});await click('创建规则包');await name('尚未保存的规则草稿');await writeRule(wrapper.getComponent(RuleEditor),rules)
+  request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(router.currentRoute.value.query.view).toBe('applications')
   await router.push('/rules');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.querySelector<HTMLInputElement>('#rule-package_name')?.value).toBe('尚未保存的规则草稿');expect(document.body.textContent).not.toContain('创建应用识别规则')
   expect(wrapper.getComponent(RuleEditor).get('.cm-content').text()).toBe(rules)
  })

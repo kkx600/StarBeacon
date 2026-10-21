@@ -251,6 +251,7 @@ func roleEnvironment(c config.Config) []string {
 		"SURICATA_BINARY": c.SuricataBinary, "SURICATA_CONFIG": c.SuricataConfig, "SURICATA_RULES_PATH": c.SuricataRulesPath,
 		"SURICATA_SOCKET": c.SuricataSocket, "SURICATA_PID_FILE": c.SuricataPIDFile,
 		"RESPONSE_CONNECTORS_FILE": c.ResponseConnectorsFile,
+		"SYSLOG_SOURCES_FILE":      c.SyslogSourcesFile,
 	}
 	for key, value := range values {
 		if value != "" {
@@ -322,7 +323,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	defer func() {
 		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		for _, stream := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, stream := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			require(t, queue.JS.DeleteStream(clean, queue.StreamName(stream)))
 		}
 	}()
@@ -331,7 +332,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	defer func() {
 		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		res, err := es.API.Indices.Delete([]string{"sb-alerts-" + tenant + "-*", "sb-context-" + tenant + "-*"}, es.API.Indices.Delete.WithContext(clean))
+		res, err := es.API.Indices.Delete([]string{"sb-alerts-" + tenant + "-*", "sb-context-" + tenant + "-*", "sb-logs-" + tenant + "-*"}, es.API.Indices.Delete.WithContext(clean))
 		if err == nil {
 			res.Body.Close()
 		}
@@ -381,6 +382,11 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		SuricataBinary: os.Getenv("SB_TEST_SURICATA_BINARY"), SuricataConfig: os.Getenv("SB_TEST_SURICATA_CONFIG")}
 	responseDevice := newGenericHTTPDevice(t, dir)
 	agentConfig.ResponseConnectorsFile = responseDevice.file
+	var syslogProbe *nativeSyslogProbe
+	if !managed {
+		syslogProbe = prepareNativeSyslog(t, dir, agentConfig)
+		agentConfig.SyslogSourcesFile = syslogProbe.configuration
+	}
 	rules := `alert http any any -> any any (msg:"StarBeacon end-to-end capture"; flow:established,to_server; http.uri; content:"/starbeacon/validation"; sid:1000999; rev:1;)`
 	if managed {
 		rules += "\n" + `alert http any any -> any any (msg:"StarBeacon quality policy observation"; flow:established,to_server; http.uri; content:"/starbeacon/quality"; noalert; sid:1001000; rev:1;)`
@@ -461,6 +467,9 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	platformHTTP.login(username, password)
 	collectorHTTP := newClient(agentConfig.AllowedOrigin, "/api/local/v1")
 	collectorHTTP.login("admin", password)
+	if syslogProbe != nil {
+		syslogProbe.verify(t, ctx, platformHTTP, collectorHTTP)
+	}
 	var capture agent.CaptureState
 	var capturedInterface agent.NetworkInterface
 	configureFromPlatform := func(settings agent.CaptureSettings) {

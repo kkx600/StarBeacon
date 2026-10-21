@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/retention"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,8 +28,8 @@ func Bootstrap(ctx context.Context, p *store.Postgres, tenant, name, username, p
 		if _, e := tx.Exec(ctx, "INSERT INTO users(id,tenant_id,username,password_hash,role) VALUES($1,$2,$3,$4,$5)", store.RandomID("user_"), tenant, username, string(hash), role); e != nil {
 			return e
 		}
-		for _, category := range []string{"alerts", "pcap", "network", "operations", "logins", "notifications", "reports", "files", "asset_history", "models", "incidents"} {
-			if _, e := tx.Exec(ctx, "INSERT INTO retention_policies(tenant_id,category,days) VALUES($1,$2,180) ON CONFLICT DO NOTHING", tenant, category); e != nil {
+		for _, category := range retention.Catalog() {
+			if _, e := tx.Exec(ctx, "INSERT INTO retention_policies(tenant_id,category,days) VALUES($1,$2,180) ON CONFLICT DO NOTHING", tenant, category.ID); e != nil {
 				return e
 			}
 		}

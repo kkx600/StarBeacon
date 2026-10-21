@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import {computed} from 'vue'
+import {Table as ATable,Tag as ATag} from 'ant-design-vue'
+import type {LogDocument} from '../syslog'
+import {formatTime} from '../types'
+const props=defineProps<{items:readonly LogDocument[]}>(),emit=defineEmits<{view:[row:LogDocument]}>(),rows=computed(()=>[...props.items])
+const columns=[{title:'接收时间',key:'time',width:190},{title:'来源 / 网络域',key:'source',width:210},{title:'传输对端',key:'peer',width:190},{title:'原文声明主机',key:'host',width:180},{title:'正文',key:'message',width:360},{title:'解析状态',key:'state',width:120},{title:'操作',key:'action',width:110,fixed:'right' as const}]
+</script>
+<template><div class="table-wrap"><a-table :columns="columns" :data-source="rows" row-key="event_id" :pagination="false" :scroll="{x:1360}" size="small"><template #bodyCell="{column,record}"><template v-if="column.key==='time'">{{formatTime(record.received_at)}}</template><template v-else-if="column.key==='source'">{{record.record.binding.source_name}}<small>{{record.record.binding.network_domain}} · {{record.sensor_id}}</small></template><span v-else-if="column.key==='peer'" class="technical">{{record.record.peer.ip}}</span><template v-else-if="column.key==='host'">{{record.parsed.hostname||'未提供'}}</template><span v-else-if="column.key==='message'" class="log-summary">{{record.parsed.state==='quarantined'?'原文未能按配置协议解析':(record.parsed.message||'空正文')+(record.message_truncated?'…（查看原文）':'')}}</span><a-tag v-else-if="column.key==='state'" :color="record.parsed.state==='parsed'?'success':'warning'">{{record.parsed.state==='parsed'?'解析成功':'解析隔离'}}</a-tag><a-button v-else-if="column.key==='action'" type="link" @click="emit('view',record as LogDocument)">查看原文</a-button></template></a-table></div></template>
+<style scoped>small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.log-summary{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}</style>

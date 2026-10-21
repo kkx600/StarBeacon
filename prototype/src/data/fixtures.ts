@@ -18,7 +18,7 @@ const names: Record<string,string[]> = {
   case: ['管理入口访问调查','研发网横向访问调查','办公终端外连核对','身份异常登录核对','下载样本分析','分支扫描事件'],
   action: ['封禁可疑源 IP','隔离待核验终端','到期解除封禁','恢复终端连接','撤销重复租约','配置读回核验'],
   platform: ['业务 API','gRPC 接入','Elasticsearch','PostgreSQL','NATS JetStream','对象存储','Redis','分析 Worker','通知 Worker','执行调度器'],
-  retention: ['全量 PCAP','告警数据','协议明细','操作日志','登录日志','通知记录','文件样本','安全报告','统计历史','导出记录'],
+  retention: ['全量 PCAP','告警数据','安全日志','协议明细','操作日志','登录日志','通知记录','文件样本','安全报告','统计历史','导出记录'],
   'packet-archive': ['eth0 原包分段','eth0 封存分段','eth0 待核查分段','eth0 原包分段','eth0 活动分段','eth0 已确认分段'],
   protocol: ['HTTP/1.1','HTTP/2','HTTP/3 / QUIC','TLS','DNS','SMB','SSH','RDP','SMTP','Modbus/TCP'],
   field: ['ip.src','ip.dst','eth.src','eth.dst','http.request.method','http.request.uri','tcp.flags.syn','tcp.stream','frame.time','tls.handshake.extensions_server_name'],

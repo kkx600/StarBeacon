@@ -118,6 +118,8 @@ func (p *Postgres) EventRetention(ctx context.Context, tenant, stream string) (i
 	category := "network"
 	if stream == "alerts" {
 		category = "alerts"
+	} else if stream == "logs" {
+		category = "security_logs"
 	} else if stream != "context" {
 		return 0, errors.New("事件流无效")
 	}

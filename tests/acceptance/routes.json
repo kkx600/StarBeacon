@@ -105,7 +105,8 @@
     "/traffic/capture",
     "/traffic/capture/quality",
     "/traffic/events",
-    "/traffic/pipeline-latency"
+    "/traffic/pipeline-latency",
+    "/system/data-sources/syslog"
   ],
   "collector": [
     "/login",
@@ -115,6 +116,7 @@
     "/network?view=samples",
     "/network?view=tasks",
     "/network?view=responses",
-    "/invalid-page"
+    "/invalid-page",
+    "/network?view=syslog"
   ]
 }

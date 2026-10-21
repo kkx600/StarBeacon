@@ -17,6 +17,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/syslogdata"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"google.golang.org/grpc"
@@ -150,7 +151,7 @@ func (s *Server) GetRoute(ctx context.Context, request *sensorv1.RouteRequest) (
 	if e != nil {
 		return nil, e
 	}
-	if request.StreamId != "alerts" && request.StreamId != "context" {
+	if !contract.ValidStream(request.StreamId) {
 		return nil, status.Error(codes.InvalidArgument, "未知数据流")
 	}
 	r, e := s.DB.Route(ctx, id, request.StreamId)
@@ -289,7 +290,11 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 				stop()
 				return e
 			}
-			if m.SensorId != id.SensorID || m.SensorRegistrationId != id.RegistrationID || len(m.PayloadJson) > 72*1024 {
+			payloadLimit := 72 * 1024
+			if m.Kind == sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT {
+				payloadLimit = 128 * 1024
+			}
+			if m.SensorId != id.SensorID || m.SensorRegistrationId != id.RegistrationID || len(m.PayloadJson) > payloadLimit {
 				stop()
 				return status.Error(codes.InvalidArgument, "控制消息身份或大小无效")
 			}
@@ -300,6 +305,18 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 				if m.PayloadSchema != "host.health.v1" || json.Unmarshal(m.PayloadJson, &h) != nil || h.ObservedAt.IsZero() || h.ProtocolCapabilities != nil && h.ProtocolCapabilities.Validate() != nil {
 					stop()
 					return status.Error(codes.InvalidArgument, "健康消息无效")
+				}
+				if len(h.SyslogSources) > syslogdata.MaxSources {
+					stop()
+					return status.Error(codes.InvalidArgument, "日志来源超过限制")
+				}
+				seenSources := map[string]bool{}
+				for _, source := range h.SyslogSources {
+					if !source.Valid() || seenSources[source.SourceID] {
+						stop()
+						return status.Error(codes.InvalidArgument, "日志来源健康信息无效")
+					}
+					seenSources[source.SourceID] = true
 				}
 				e = s.DB.Heartbeat(call, id, h)
 				ack.Kind = sensorv1.CommandKind_COMMAND_KIND_HEARTBEAT_ACK

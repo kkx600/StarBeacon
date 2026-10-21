@@ -57,6 +57,9 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	if e = w.ES.EnsureIndexRetention(ctx, index, envelope.Partition, days); e != nil {
 		return e
 	}
+	if batch.StreamId == "logs" {
+		return w.processLogs(ctx, index, envelope, &batch)
+	}
 	docs := make([]model.Alert, 0, len(batch.Records))
 	quarantined := 0
 	matchers := map[string]*application.Matcher{}
@@ -146,8 +149,8 @@ func (w *Indexer) Run(ctx context.Context) error {
 		return e
 	}
 	// 所有持久消费者就绪后才启动取数，避免后续流不可用时遗留后台消费。
-	consumers := make([]jetstream.Consumer, 0, 2)
-	for _, name := range []string{bus.Alerts, bus.Context} {
+	consumers := make([]jetstream.Consumer, 0, 3)
+	for _, name := range []string{bus.Alerts, bus.Context, bus.Logs} {
 		consumer, e := w.Bus.Consumer(ctx, name)
 		if e != nil {
 			return e
@@ -158,7 +161,7 @@ func (w *Indexer) Run(ctx context.Context) error {
 	if w.DB != nil {
 		group.Go(func() error { return w.qualityLoop(ctx) })
 	}
-	for i, name := range []string{bus.Alerts, bus.Context} {
+	for i, name := range []string{bus.Alerts, bus.Context, bus.Logs} {
 		consumer := consumers[i]
 		group.Go(func() error {
 			for ctx.Err() == nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/syslogdata"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -105,6 +106,17 @@ func Interfaces() ([]NetworkInterface, error) {
 }
 func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*TaskManager) http.Handler {
 	m := http.NewServeMux()
+	m.HandleFunc("GET /api/local/v1/syslog/sources", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RawQuery != "" {
+			httpapi.Fail(w, r, 400, "invalid_query", "来源目录不接受额外查询条件")
+			return
+		}
+		items := []syslogdata.Health{}
+		if wal.syslogHealth != nil {
+			items = wal.syslogHealth()
+		}
+		httpapi.JSON(w, 200, map[string]any{"items": items})
+	}))
 	var capture *CaptureSupervisor
 	auth.Register(m, "/api/local/v1")
 	if len(managers) > 0 && managers[0] != nil {

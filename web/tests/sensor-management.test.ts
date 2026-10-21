@@ -1,3 +1,4 @@
+import '../platform/src/features/sensors/SensorsWorkspace.vue'
 import {beforeEach,describe,expect,it,vi} from 'vitest'
 import {defineComponent,h,shallowRef} from 'vue'
 import {flushPromises,mount} from '@vue/test-utils'
@@ -116,7 +117,7 @@ describe('探针分页与管理工作区',()=>{
   await wrapper.setProps({locked:true});expect(Array.from((wrapper.element as HTMLElement).querySelectorAll<HTMLButtonElement>('button')).find(b=>b.textContent?.trim()==='编辑')?.disabled).toBe(true)
   await wrapper.setProps({admin:false});expect(wrapper.text()).not.toContain('编辑');await click('查看探针');expect(wrapper.emitted('members')).toHaveLength(2)
  })
- it('分组工作区恢复原提交，确认后同步列表，成员跳转保留分组筛选',async()=>{
+ it('分组创建结果未知时冻结原输入并精确核对提交',async()=>{
   const{createRouter,createMemoryHistory}=await import('vue-router'),{default:Workspace}=await import('../platform/src/features/sensors/SensorsWorkspace.vue')
   let savedGroup=group,fail=true
   request.mockImplementation((path:string,options?:{method?:string;body?:GroupChange})=>{
@@ -129,6 +130,18 @@ describe('探针分页与管理工作区',()=>{
   await click('创建分组');const name=document.querySelector<HTMLInputElement>('#sensor-management-name')!;name.value='分支园区';name.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises();await click('保存');await vi.waitFor(()=>expect(document.body.textContent).toContain('结果尚未确认'))
   const original=request.mock.calls.find(c=>c[1]?.method==='POST')!;await click('关闭');await click('核对原提交');expect(document.querySelector<HTMLInputElement>('#sensor-management-name')?.value).toBe('分支园区')
   fail=false;await click('核对原提交',document.querySelector('.ant-modal')!);await vi.waitFor(()=>expect(document.querySelector('.ant-modal')).toBeNull());const submitted=request.mock.calls.filter(c=>c[1]?.method==='POST');expect(submitted).toHaveLength(2);expect(submitted[1]?.[1].headers).toEqual(original[1].headers);expect(submitted[1]?.[1].body).toEqual(original[1].body)
+  user.value={...principal,tenant_id:'other'};await flushPromises();expect(document.querySelector('.ant-modal')).toBeNull();wrapper.unmount()
+ })
+ it('分组成员跳转保留筛选，返回目录后保留当前分组',async()=>{
+  const{createRouter,createMemoryHistory}=await import('vue-router'),{default:Workspace}=await import('../platform/src/features/sensors/SensorsWorkspace.vue')
+  let savedGroup={...group,name:'分支园区'},fail=false
+  request.mockImplementation((path:string,options?:{method?:string;body?:GroupChange})=>{
+   if(options?.method==='POST'){if(fail)return Promise.reject(new Error('连接中断'));savedGroup={...group,...options.body!,revision:1};return Promise.resolve(savedGroup)}
+   if(path.startsWith('/sensor-groups'))return Promise.resolve({items:[savedGroup],next_cursor:''})
+   return Promise.resolve({items:[{...sensor,metadata_revision:1}],next_cursor:''})
+  })
+  const router=createRouter({history:createMemoryHistory(),routes:[{path:'/sensors',component:Workspace}]});await router.push('/sensors?view=groups');await router.isReady()
+  const wrapper=mount(Workspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.findAll('.ant-table')).toHaveLength(1)
   await click('查看探针');expect(router.currentRoute.value.query.view).toBeUndefined();expect(request.mock.calls.some(c=>c[0].startsWith('/sensors?')&&new URLSearchParams(c[0].split('?')[1]).get('group_id')===savedGroup.id)).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1)
   await click('重置');expect(request.mock.lastCall?.[0]).toContain('group_id=');await click('编辑');expect(document.body.textContent).toContain('探针名称');await click('关闭')
   await click('探针分组');await click('刷新');expect(wrapper.text()).toContain('分支园区');await click('重置');expect(request.mock.calls.some(c=>c[0].startsWith('/sensor-groups?')&&c[0].includes('keyword=&active='))).toBe(true)

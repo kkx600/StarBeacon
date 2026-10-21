@@ -95,7 +95,7 @@ describe('分批发布读取和原提交核对',()=>{
 })
 
 describe('分批发布表单与独立详情',()=>{
- it('关闭重开保留输入并撤回勾选，成功后创建使用独立标识',async()=>{
+ it('关闭重开保留输入并撤回原授权勾选',async()=>{
   const wrapper=await view();await click('创建分批发布')
   let form=wrapper.getComponent(RuleRolloutForm)
   const writeName=async(value:string)=>{const el=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
@@ -103,6 +103,12 @@ describe('分批发布表单与独立详情',()=>{
   form.getComponent(Modal).vm.$emit('cancel');await flushPromises();await click('创建分批发布');form=wrapper.getComponent(RuleRolloutForm)
   expect(document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!.value).toBe('保留固定范围');expect(form.getComponent(Select).props('value')).toEqual(plans.map(p=>p.id));expect(form.getComponent(Checkbox).props('checked')).toBe(false)
   await click('批准并启动');expect(request.mock.calls.filter(c=>c[1]?.method==='POST')).toHaveLength(0)
+  wrapper.unmount()
+ })
+ it('成功创建后清空草稿并为下一次发布分配独立标识',async()=>{
+  const wrapper=await view();await click('创建分批发布');let form=wrapper.getComponent(RuleRolloutForm)
+  const writeName=async(value:string)=>{const el=document.querySelector<HTMLInputElement>('input[aria-label="发布名称"]')!;el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
+  await writeName('首批发布');await form.getComponent(Select).setValue(plans.map(p=>p.id),'value')
   const created:RolloutCreate[]=[]
   request.mockImplementation((url:string,options?:{method?:string;body?:RolloutCreate})=>{if(options?.method==='POST'){created.push(structuredClone(options.body!));return Promise.resolve({...record,id:options!.body!.id,spec:options!.body!.spec})}return Promise.resolve(url.startsWith('/rule-sync-plans')?{items:plans,next_cursor:''}:list())})
   await form.getComponent(Checkbox).setValue(true,'checked');await click('批准并启动');await flushPromises();await click('返回列表');await click('创建分批发布');form=wrapper.getComponent(RuleRolloutForm)

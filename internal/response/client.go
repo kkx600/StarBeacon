@@ -10,14 +10,13 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/outbound"
-	"golang.org/x/sys/unix"
+	"github.com/kkx600/StarBeacon/internal/privatefile"
 )
 
 type Configuration struct {
@@ -82,21 +81,8 @@ func (v Configuration) Allows(target string, seconds int) bool {
 
 // ReadPrivateFile 不跟随链接，不接受 FIFO；打开前后核对身份和所有者权限。
 func ReadPrivateFile(path string, limit int64) ([]byte, error) {
-	info, err := os.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Size() > limit || !filepath.IsAbs(path) {
-		return nil, ErrUnavailable
-	}
-	file, err := os.OpenFile(path, os.O_RDONLY|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
+	raw, err := privatefile.Read(path, limit)
 	if err != nil {
-		return nil, ErrUnavailable
-	}
-	defer file.Close()
-	opened, err := file.Stat()
-	if err != nil || !os.SameFile(info, opened) || opened.Mode().Perm()&0077 != 0 || !opened.Mode().IsRegular() || opened.Size() > limit {
-		return nil, ErrUnavailable
-	}
-	raw, err := io.ReadAll(io.LimitReader(file, limit+1))
-	if err != nil || int64(len(raw)) > limit {
 		return nil, ErrUnavailable
 	}
 	return raw, nil

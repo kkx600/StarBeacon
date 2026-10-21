@@ -16,6 +16,7 @@ type Category struct {
 }
 
 var categories = []Category{
+	{"security_logs", "安全日志", "new_indices", "UTC 日期分区在首次创建时固化保留期；既有分区不重算。"},
 	{"alerts", "告警数据", "new_indices", "UTC 日期分区在首次创建时固化保留期；既有分区不重算。"},
 	{"pcap", "PCAP 数据", "new_samples", "作用于重放样本和连续原包切片；首次归档时固化期限，既有对象不重算。"},
 	{"network", "网络事件", "new_indices", "UTC 日期分区在首次创建时固化保留期；既有分区不重算。"},

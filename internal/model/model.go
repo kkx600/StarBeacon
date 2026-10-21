@@ -9,6 +9,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
+	"github.com/kkx600/StarBeacon/internal/syslogdata"
 )
 
 type Principal struct {
@@ -41,6 +42,7 @@ type HostHealth struct {
 	ProtocolCapabilities     *protocolcap.Report  `json:"protocol_capabilities,omitempty"`
 	ApplicationRules         json.RawMessage      `json:"application_rules,omitempty"`
 	ResponseConnectors       []response.Health    `json:"response_connectors,omitempty"`
+	SyslogSources            []syslogdata.Health  `json:"syslog_sources,omitempty"`
 	RegisteredRulesAvailable bool                 `json:"registered_rules_available"`
 	RegisteredRulesSHA256    string               `json:"registered_rules_sha256,omitempty"`
 	TaskCapabilities         []string             `json:"task_capabilities,omitempty"`

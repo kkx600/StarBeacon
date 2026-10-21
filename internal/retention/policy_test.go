@@ -3,7 +3,7 @@ package retention
 import "testing"
 
 func TestDefaultCatalogAndPublicationScope(t *testing.T) {
-	if DefaultDays != 180 || len(Catalog()) != 11 {
+	if DefaultDays != 180 || len(Catalog()) != 12 {
 		t.Fatal("默认期限或类别缺失")
 	}
 	for _, category := range Catalog() {

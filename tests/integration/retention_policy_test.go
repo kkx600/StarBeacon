@@ -97,7 +97,7 @@ func TestRetentionPoliciesPreviewIsolationFutureExpiryAndESPartition(t *testing.
 		DefaultDays int                  `json:"default_days"`
 	}
 	a.request("GET", "/retention-policies", "", nil, &page, 200)
-	if page.DefaultDays != 180 || len(page.Items) != 11 || len(page.Catalog) != 11 {
+	if page.DefaultDays != 180 || len(page.Items) != 12 || len(page.Catalog) != 12 {
 		t.Fatal("默认分类或期限不完整")
 	}
 	for _, p := range page.Items {

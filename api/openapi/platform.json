@@ -15549,6 +15549,323 @@
           }
         ]
       }
+    },
+    "/api/v1/syslog/sources": {
+      "get": {
+        "summary": "检索 Syslog 来源",
+        "description": "读取本租户认证探针的最近来源观测。来源由采集器私有文件登记；不返回监听地址、路径或凭据。按探针/来源标识升序续页，游标绑定全部条件；超过 35 秒或未来偏差超过 30 秒为 stale。目录不是跨心跳状态快照。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyslogSourcePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sensor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/logs/search": {
+      "post": {
+        "summary": "检索安全日志",
+        "description": "仅管理员；按平台接收时间检索，窗口最多 31 天。游标绑定租户、全部条件及页大小；按接收时间/事件标识倒序续页。中文正文使用内置 CJK 与 standard 分析，不开放任意 DSL。列表不返回 raw_base64 与结构化原始键，正文最多 512 个字符并标记截断。此接口不触发通知、模型或处置。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyslogSearchPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyslogSearchQuery"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logs/{id}": {
+      "get": {
+        "summary": "读取日志原文",
+        "description": "仅当前有效管理员；指定租户日志分区与不可变事件 ID。读取后复核当前账号、来源和摘要，审计成功才返回原文。跨租户、到期与不存在统一返回 404；解析失败仍可读取已保存原文。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyslogDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "partition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -27529,6 +27846,859 @@
             "format": "date-time"
           }
         }
+      },
+      "SyslogBinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tls",
+              "tcp",
+              "udp"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rfc5424",
+              "rfc3164"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "year_policy": {
+            "type": "string",
+            "enum": [
+              "",
+              "nearest_received_year"
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "source_name",
+          "network_domain",
+          "config_sha256",
+          "transport",
+          "format",
+          "timezone",
+          "year_policy"
+        ]
+      },
+      "SyslogHealth": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tls",
+              "tcp",
+              "udp"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rfc5424",
+              "rfc3164"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "year_policy": {
+            "type": "string",
+            "enum": [
+              "",
+              "nearest_received_year"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "listening",
+              "unavailable",
+              "degraded",
+              "stopped"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "",
+              "listener_not_ready",
+              "listener_unavailable",
+              "durable_queue_unavailable",
+              "listener_stopped"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "persisted": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "dropped": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "rejected": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "framing_errors": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "last_persisted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_message_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 65536
+          },
+          "identity_quality": {
+            "type": "string",
+            "enum": [
+              "certificate",
+              "network_allowlist"
+            ]
+          },
+          "upstream_loss": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "unmeasurable"
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "source_name",
+          "network_domain",
+          "config_sha256",
+          "transport",
+          "format",
+          "timezone",
+          "year_policy",
+          "state",
+          "reason",
+          "observed_at",
+          "started_at",
+          "received",
+          "persisted",
+          "dropped",
+          "rejected",
+          "framing_errors",
+          "last_persisted_at",
+          "max_message_bytes",
+          "identity_quality",
+          "upstream_loss"
+        ]
+      },
+      "SyslogSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tls",
+              "tcp",
+              "udp"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rfc5424",
+              "rfc3164"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "year_policy": {
+            "type": "string",
+            "enum": [
+              "",
+              "nearest_received_year"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "listening",
+              "unavailable",
+              "degraded",
+              "stopped"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "",
+              "listener_not_ready",
+              "listener_unavailable",
+              "durable_queue_unavailable",
+              "listener_stopped"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "persisted": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "dropped": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "rejected": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "framing_errors": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "last_persisted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_message_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 65536
+          },
+          "identity_quality": {
+            "type": "string",
+            "enum": [
+              "certificate",
+              "network_allowlist"
+            ]
+          },
+          "upstream_loss": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "unmeasurable"
+            ]
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_name": {
+            "type": "string"
+          },
+          "registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "disabled"
+            ]
+          },
+          "observation": {
+            "type": "string",
+            "enum": [
+              "fresh",
+              "stale"
+            ]
+          },
+          "last_seen": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "source_name",
+          "network_domain",
+          "config_sha256",
+          "transport",
+          "format",
+          "timezone",
+          "year_policy",
+          "state",
+          "reason",
+          "observed_at",
+          "started_at",
+          "received",
+          "persisted",
+          "dropped",
+          "rejected",
+          "framing_errors",
+          "last_persisted_at",
+          "max_message_bytes",
+          "identity_quality",
+          "upstream_loss",
+          "sensor_id",
+          "sensor_name",
+          "registration_id",
+          "sensor_status",
+          "observation",
+          "last_seen"
+        ]
+      },
+      "SyslogSourceQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sensor_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": [
+          "sensor_id",
+          "source_id",
+          "cursor",
+          "limit"
+        ]
+      },
+      "SyslogSourcePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/SyslogSource"
+            }
+          },
+          "query": {
+            "$ref": "#/components/schemas/SyslogSourceQuery"
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "items",
+          "query",
+          "next_cursor",
+          "observed_at"
+        ]
+      },
+      "SyslogSearchQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sensor_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "network_domain": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "peer_ip": {
+            "type": "string",
+            "maxLength": 45
+          },
+          "hostname": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "application": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "",
+              "parsed",
+              "quarantined"
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keyword": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "limit"
+        ]
+      },
+      "SyslogRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "enum": [
+              "syslog.raw.v1"
+            ]
+          },
+          "binding": {
+            "$ref": "#/components/schemas/SyslogBinding"
+          },
+          "source_epoch": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_sequence": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "peer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "certificate_sha256": {
+                "type": "string",
+                "pattern": "^(|[a-f0-9]{64})$"
+              }
+            },
+            "required": [
+              "ip",
+              "port",
+              "certificate_sha256"
+            ]
+          },
+          "raw_base64": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 87384
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema_version",
+          "binding",
+          "source_epoch",
+          "source_sequence",
+          "observed_at",
+          "peer",
+          "raw_sha256"
+        ]
+      },
+      "SyslogParsed": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "parser_version": {
+            "type": "string",
+            "enum": [
+              "leodido/go-syslog/v4@v4.6.0/strict-1"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "parsed",
+              "quarantined"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "",
+              "invalid_syslog"
+            ]
+          },
+          "time_quality": {
+            "type": "string",
+            "enum": [
+              "source_timezone",
+              "inferred_year_timezone",
+              "missing_source_time",
+              "ambiguous_year",
+              "ambiguous_local_time",
+              "source_time_out_of_range",
+              "future_source_time",
+              "unavailable"
+            ]
+          },
+          "source_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 191
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "facility": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 23
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "application": {
+            "type": "string"
+          },
+          "process_id": {
+            "type": "string"
+          },
+          "message_id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "message_utf8": {
+            "type": "boolean"
+          },
+          "structured_data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "parser_version",
+          "state",
+          "reason",
+          "time_quality",
+          "source_time",
+          "priority",
+          "facility",
+          "severity",
+          "hostname",
+          "application",
+          "process_id",
+          "message_id",
+          "message",
+          "message_utf8",
+          "structured_data"
+        ]
+      },
+      "SyslogDocument": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "enum": [
+              "syslog.index.v1"
+            ]
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sequence": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "payload_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "partition": {
+            "type": "string",
+            "format": "date"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "record": {
+            "$ref": "#/components/schemas/SyslogRecord"
+          },
+          "parsed": {
+            "$ref": "#/components/schemas/SyslogParsed"
+          },
+          "message_truncated": {
+            "type": "boolean",
+            "description": "列表正文超过 512 个字符时为 true，原文详情不截断。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "event_id",
+          "tenant_id",
+          "sensor_id",
+          "sensor_registration_id",
+          "sequence",
+          "payload_sha256",
+          "partition",
+          "received_at",
+          "record",
+          "parsed"
+        ]
+      },
+      "SyslogSearchPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/SyslogDocument"
+            }
+          },
+          "query": {
+            "$ref": "#/components/schemas/SyslogSearchQuery"
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "items",
+          "query",
+          "next_cursor"
+        ]
       }
     }
   }

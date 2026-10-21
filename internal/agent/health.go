@@ -97,6 +97,15 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	if w.engineSnapshot != nil {
 		h.EngineHealth = w.engineSnapshot(ctx)
 	}
+	if w.syslogHealth != nil {
+		h.SyslogSources = w.syslogHealth()
+		for _, source := range h.SyslogSources {
+			if source.State == "unavailable" || source.State == "degraded" {
+				h.Errors = append(h.Errors, "syslog_receiver_unavailable")
+				break
+			}
+		}
+	}
 	if w.responseHealth != nil {
 		h.ResponseConnectors = w.responseHealth()
 	}

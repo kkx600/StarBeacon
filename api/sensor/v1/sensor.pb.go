@@ -586,8 +586,11 @@ type EventRecord struct {
 	// 分类独立于原始 EVE 字节；摘要与批次身份共同绑定，可由平台按冻结规则复算。
 	ApplicationJson   []byte `protobuf:"bytes,16,opt,name=application_json,json=applicationJson,proto3" json:"application_json,omitempty"`
 	ApplicationSha256 []byte `protobuf:"bytes,17,opt,name=application_sha256,json=applicationSha256,proto3" json:"application_sha256,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Syslog 使用独立来源序列；文件偏移与记录序号保持零值。
+	SourceId       string `protobuf:"bytes,18,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	SourceSequence uint64 `protobuf:"varint,19,opt,name=source_sequence,json=sourceSequence,proto3" json:"source_sequence,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *EventRecord) Reset() {
@@ -730,6 +733,20 @@ func (x *EventRecord) GetApplicationSha256() []byte {
 		return x.ApplicationSha256
 	}
 	return nil
+}
+
+func (x *EventRecord) GetSourceId() string {
+	if x != nil {
+		return x.SourceId
+	}
+	return ""
+}
+
+func (x *EventRecord) GetSourceSequence() uint64 {
+	if x != nil {
+		return x.SourceSequence
+	}
+	return 0
 }
 
 type EventBatch struct {
@@ -1422,7 +1439,7 @@ const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\tsample_id\x18\x02 \x01(\tR\bsampleId\"?\n" +
 	"\x11ReplaySampleChunk\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\x91\x05\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\xd7\x05\n" +
 	"\vEventRecord\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x120\n" +
@@ -1444,7 +1461,9 @@ const file_starbeacon_sensor_v1_sensor_proto_rawDesc = "" +
 	"\fcontent_type\x18\x0e \x01(\tR\vcontentType\x12%\n" +
 	"\x0epayload_sha256\x18\x0f \x01(\fR\rpayloadSha256\x12)\n" +
 	"\x10application_json\x18\x10 \x01(\fR\x0fapplicationJson\x12-\n" +
-	"\x12application_sha256\x18\x11 \x01(\fR\x11applicationSha256J\x04\b\t\x10\n" +
+	"\x12application_sha256\x18\x11 \x01(\fR\x11applicationSha256\x12\x1b\n" +
+	"\tsource_id\x18\x12 \x01(\tR\bsourceId\x12'\n" +
+	"\x0fsource_sequence\x18\x13 \x01(\x04R\x0esourceSequenceJ\x04\b\t\x10\n" +
 	"R\beve_json\"\x83\x03\n" +
 	"\n" +
 	"EventBatch\x12\x19\n" +

@@ -56,6 +56,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/sensors", a.Auth.Require(false, a.sensors))
 	m.HandleFunc("PATCH /api/v1/sensors/{id}", a.Auth.Require(true, a.setSensor))
 	m.HandleFunc("GET /api/v1/response-connectors", a.Auth.Require(true, a.responseConnectors))
+	a.registerSyslog(m)
 	a.registerSensorManagement(m)
 	a.registerQualityEvents(m)
 	a.registerProbeCertificates(m)

@@ -34,7 +34,7 @@ func verifyApplicationIndexingSupplementIsolation(t *testing.T, ctx context.Cont
 	defer func() {
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		for _, stream := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, stream := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			require(t, queue.JS.DeleteStream(cleanup, queue.StreamName(stream)))
 		}
 	}()

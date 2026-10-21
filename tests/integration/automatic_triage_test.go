@@ -81,7 +81,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 		c, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
 		defer nats.Close()
-		for _, stream := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, stream := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			require(t, nats.JS.DeleteStream(c, nats.StreamName(stream)))
 		}
 	})

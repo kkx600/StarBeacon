@@ -13,6 +13,7 @@ require (
 	github.com/gopacket/gopacket v1.7.2
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.1
+	github.com/leodido/go-syslog/v4 v4.6.0
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/nats-io/nats.go v1.54.0
@@ -31,6 +32,7 @@ require (
 	golang.org/x/net v0.58.0
 	golang.org/x/sync v0.23.0
 	golang.org/x/sys v0.48.0
+	golang.org/x/time v0.15.0
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 )
@@ -90,7 +92,6 @@ require (
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260706201446-f0a921348800 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260831171406-18b4a7587f8a // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect

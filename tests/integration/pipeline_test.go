@@ -56,7 +56,7 @@ func TestMTLSDurableIngestIndexReplayAndTenantIsolation(t *testing.T) {
 	defer func() {
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		for _, name := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, name := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			_ = queue.JS.DeleteStream(cleanup, queue.StreamName(name))
 		}
 	}()
@@ -283,7 +283,7 @@ func TestWorkQueueBackpressurePreservesUnprocessedMessages(t *testing.T) {
 	defer func() {
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		for _, name := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, name := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			_ = queue.JS.DeleteStream(cleanup, queue.StreamName(name))
 		}
 	}()

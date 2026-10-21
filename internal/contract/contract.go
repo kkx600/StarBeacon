@@ -13,6 +13,7 @@ import (
 	"time"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
+	"github.com/kkx600/StarBeacon/internal/syslogdata"
 )
 
 const MaxPayloadBytes = 1024 * 1024
@@ -40,6 +41,20 @@ func EventID(tenant, registration, generation string, offset uint64, ordinal uin
 	h := sha256.Sum256(b.Bytes())
 	return hex.EncodeToString(h[:])
 }
+
+// SyslogEventID 把来源和递增序列绑定到认证注册身份，同文日志不按内容去重。
+func SyslogEventID(tenant, registration, source, epoch string, sequence uint64) string {
+	var b bytes.Buffer
+	for _, s := range []string{"starbeacon.syslog-event.v1", tenant, registration, source, epoch} {
+		text(&b, s)
+	}
+	number(&b, sequence)
+	h := sha256.Sum256(b.Bytes())
+	return hex.EncodeToString(h[:])
+}
+func ValidStream(stream string) bool {
+	return stream == "alerts" || stream == "context" || stream == "logs"
+}
 func BatchDigest(b *sensorv1.EventBatch) []byte {
 	var v bytes.Buffer
 	text(&v, "starbeacon.batch.v1")
@@ -60,6 +75,11 @@ func BatchDigest(b *sensorv1.EventBatch) []byte {
 		}
 		field(&v, r.RawSha256)
 		field(&v, r.PayloadSha256)
+		if r.SourceId != "" || r.SourceSequence != 0 {
+			text(&v, "starbeacon.syslog-source.v1")
+			text(&v, r.SourceId)
+			number(&v, r.SourceSequence)
+		}
 		// 无附加分类的既有批次保持原摘要；附加数据使用独立域且参与重传身份。
 		if len(r.ApplicationJson) > 0 || len(r.ApplicationSha256) > 0 {
 			text(&v, "starbeacon.application-attribution.v1")
@@ -74,7 +94,7 @@ func Seal(b *sensorv1.EventBatch) {
 	b.BatchId = hex.EncodeToString(b.BatchSha256)
 }
 func Validate(tenant, sensor, registration string, b *sensorv1.EventBatch) error {
-	if b == nil || b.SensorId != sensor || b.SensorRegistrationId != registration || !ValidID(b.ProducerEpoch) || b.SchemaVersion != "1.0" || (b.StreamId != "alerts" && b.StreamId != "context") || b.RouteToken == "" {
+	if b == nil || b.SensorId != sensor || b.SensorRegistrationId != registration || !ValidID(b.ProducerEpoch) || b.SchemaVersion != "1.0" || !ValidStream(b.StreamId) || b.RouteToken == "" {
 		return fmt.Errorf("批次身份或版本不合法")
 	}
 	if len(b.Records) == 0 || len(b.Records) > MaxBatchRecords {
@@ -94,12 +114,18 @@ func Validate(tenant, sensor, registration string, b *sensorv1.EventBatch) error
 		if r.EventTime == nil || r.EventTime.CheckValid() != nil || r.ObservedAt == nil || r.ObservedAt.CheckValid() != nil {
 			return fmt.Errorf("时间不合法")
 		}
-		if r.PayloadSchema != "suricata.eve.v1" || r.ContentType != "application/json" || r.EventId != EventID(tenant, registration, r.SourceGenerationId, r.SourceOffset, r.RecordOrdinal) {
-			return fmt.Errorf("事件身份或 schema 不合法")
-		}
 		h := sha256.Sum256(r.Payload)
-		if !bytes.Equal(h[:], r.RawSha256) || !bytes.Equal(h[:], r.PayloadSha256) {
-			return fmt.Errorf("载荷摘要不匹配")
+		if r.ContentType != "application/json" || !bytes.Equal(h[:], r.PayloadSha256) {
+			return fmt.Errorf("载荷摘要或类型不匹配")
+		}
+		if b.StreamId == "logs" {
+			v, raw, err := syslogdata.DecodeRecord(r.Payload)
+			rawHash := sha256.Sum256(raw)
+			if err != nil || r.PayloadSchema != syslogdata.Schema || r.EventType != "syslog" || r.SourceOffset != 0 || r.RecordOrdinal != 0 || r.EngineRunId != "" || len(r.ApplicationJson) != 0 || len(r.ApplicationSha256) != 0 || r.SourceId != v.Binding.SourceID || r.SourceGenerationId != v.SourceEpoch || fmt.Sprint(r.SourceSequence) != v.SourceSequence || r.EventId != SyslogEventID(tenant, registration, r.SourceId, r.SourceGenerationId, r.SourceSequence) || !bytes.Equal(rawHash[:], r.RawSha256) || !r.ObservedAt.AsTime().Equal(v.ObservedAt) || !r.EventTime.AsTime().Equal(v.ObservedAt) {
+				return fmt.Errorf("Syslog 来源身份或原始摘要不合法")
+			}
+		} else if r.PayloadSchema != "suricata.eve.v1" || r.SourceId != "" || r.SourceSequence != 0 || r.EventId != EventID(tenant, registration, r.SourceGenerationId, r.SourceOffset, r.RecordOrdinal) || !bytes.Equal(h[:], r.RawSha256) {
+			return fmt.Errorf("事件身份或 schema 不合法")
 		}
 		if len(r.ApplicationJson) > 0 {
 			digest := sha256.Sum256(r.ApplicationJson)
@@ -143,7 +169,7 @@ func ValidateAck(b *sensorv1.EventBatch, a *sensorv1.IngestAck) error {
 	return nil
 }
 func IndexName(tenant, stream, partition string) (string, error) {
-	if !ValidID(tenant) || (stream != "alerts" && stream != "context") {
+	if !ValidID(tenant) || !ValidStream(stream) {
 		return "", fmt.Errorf("索引身份不合法")
 	}
 	if _, err := time.Parse("2006-01-02", partition); err != nil {

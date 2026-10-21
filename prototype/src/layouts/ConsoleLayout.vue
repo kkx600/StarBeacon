@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,LogoutOutlined } from '@ant-design/icons-vue'
 import type {PreviewState} from '../models'
 import { groups,pageById,pages,states } from '../data/catalog'
+import {platformScreens} from '../../../web/packages/shared/src/navigation'
 import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage,pageIdForRoute,prototypePath} from '../data/navigation'
 import { usePreview } from '../composables/usePreview'
 
@@ -29,7 +30,7 @@ watch(title,value=>{document.title=`${value} · 星烽 StarBeacon`},{immediate:t
 watch(collapsed,value=>{menuOpen.value=value?[]:['group:'+(current.value?.group??'overview')]})
 const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
 function navigate(id:string){void router.push(prototypePath(id));searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}
-function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??workspace.pages[0]!)}
+function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??platformScreens.find(screen=>screen.workspace===id)?.id??workspace.pages[0]!)}
 function profileAction(key:string){if(key==='account')navigate('my-account');if(key==='logout')void router.push('/auth/login')}
 </script>
 

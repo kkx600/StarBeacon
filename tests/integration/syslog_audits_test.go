@@ -143,7 +143,7 @@ func TestSyslogAuditHTTPWorkerTLSDeliveryAndTenantIsolation(t *testing.T) {
 	defer func() {
 		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
-		for _, stream := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, stream := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			require(t, queue.JS.DeleteStream(clean, queue.StreamName(stream)))
 		}
 	}()

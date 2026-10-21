@@ -822,6 +822,22 @@
       "module": "operations",
       "view": "logins",
       "admin": true
+    },
+    {
+      "id": "syslog-input",
+      "workspace": "data-sources",
+      "path": "/system/data-sources/syslog",
+      "title": "Syslog 接收",
+      "module": "syslogSources",
+      "admin": true
+    },
+    {
+      "id": "logs",
+      "workspace": "logs",
+      "path": "/system/logs",
+      "title": "日志检索",
+      "module": "logs",
+      "admin": true
     }
   ],
   "schema_version": 1,

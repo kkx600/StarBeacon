@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func development(t *testing.T) {
 	t.Helper()
@@ -46,5 +49,17 @@ func TestProductionWorkerCannotFallBackToPlaintext(t *testing.T) {
 	t.Setenv("SB_NATS_REPLICAS", "3")
 	if _, e := Load("worker"); e == nil {
 		t.Fatal("缺少证书的生产 Worker 仍可启动")
+	}
+}
+
+func TestSyslogConfigurationIsAgentOnlyAndAbsolute(t *testing.T) {
+	for _, c := range []struct{ role, path string }{{"agent", "sources.json"}, {"platform", "/private/sources.json"}, {"ingest", "/private/sources.json"}, {"worker", "/private/sources.json"}} {
+		t.Run(c.role, func(t *testing.T) {
+			development(t)
+			t.Setenv("SB_SYSLOG_SOURCES_FILE", c.path)
+			if _, err := Load(c.role); err == nil || !strings.Contains(err.Error(), "Syslog") {
+				t.Fatal("Syslog 配置越过运行角色或绝对路径边界", err)
+			}
+		})
 	}
 }

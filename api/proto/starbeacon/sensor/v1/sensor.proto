@@ -54,6 +54,9 @@ message EventRecord {
   // 分类独立于原始 EVE 字节；摘要与批次身份共同绑定，可由平台按冻结规则复算。
   bytes application_json = 16;
   bytes application_sha256 = 17;
+  // Syslog 使用独立来源序列；文件偏移与记录序号保持零值。
+  string source_id = 18;
+  uint64 source_sequence = 19;
 }
 
 message EventBatch {

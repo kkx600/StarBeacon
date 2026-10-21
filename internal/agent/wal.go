@@ -21,6 +21,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/syslogdata"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
 )
@@ -41,6 +42,7 @@ type WAL struct {
 	packetArchives                            *PacketArchiveController
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
+	syslogHealth                              func() []syslogdata.Health
 	responseConfigCheck                       func() response.ConfigCheck
 	applicationState                          func() json.RawMessage
 	protocolSnapshot                          func(context.Context) *protocolcap.Report
@@ -80,7 +82,7 @@ func OpenWAL(path, tenant, sensor, registration string, maxBytes uint64) (*WAL, 
 	}
 	w := &WAL{DB: db, TenantID: tenant, SensorID: sensor, RegistrationID: registration, MaxBytes: maxBytes, failures: map[string]bool{}}
 	e = db.Update(func(tx *bolt.Tx) error {
-		for _, s := range []string{"meta", "alerts", "context", "local_config"} {
+		for _, s := range []string{"meta", "alerts", "context", "logs", "local_config"} {
 			if _, e := tx.CreateBucketIfNotExists([]byte(s)); e != nil {
 				return e
 			}
@@ -88,7 +90,7 @@ func OpenWAL(path, tenant, sensor, registration string, maxBytes uint64) (*WAL, 
 		m := tx.Bucket([]byte("meta"))
 		if m.Get([]byte("pending_count")) == nil {
 			var count uint64
-			for _, stream := range []string{"alerts", "context"} {
+			for _, stream := range []string{"alerts", "context", "logs"} {
 				count += uint64(tx.Bucket([]byte(stream)).Stats().KeyN)
 			}
 			if e := m.Put([]byte("pending_count"), key(count)); e != nil {
@@ -218,6 +220,9 @@ func (w *WAL) AppendBatch(source Source, entries []Entry) error {
 	})
 }
 func (w *WAL) Next(stream string) (*sensorv1.EventBatch, error) {
+	if !contract.ValidStream(stream) {
+		return nil, fmt.Errorf("数据流不合法")
+	}
 	b := &sensorv1.EventBatch{SensorId: w.SensorID, SensorRegistrationId: w.RegistrationID, ProducerEpoch: w.Epoch, SchemaVersion: "1.0", StreamId: stream}
 	e := w.DB.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(stream))
@@ -231,7 +236,7 @@ func (w *WAL) Next(stream string) (*sensorv1.EventBatch, error) {
 			if e := json.Unmarshal(v, &p); e != nil {
 				return e
 			}
-			if b.RouteToken == "" {
+			if len(b.Records) == 0 {
 				b.RouteToken = p.Route
 			}
 			if b.RouteToken != p.Route {
@@ -285,7 +290,7 @@ func (w *WAL) Confirm(b *sensorv1.EventBatch, ack *sensorv1.IngestAck) error {
 			if e != nil {
 				return e
 			}
-			if p.Route != b.RouteToken || !bytes.Equal(want, p.Record) {
+			if p.Route != b.RouteToken || (b.StreamId == "logs" && len(p.Route) != 64) || !bytes.Equal(want, p.Record) {
 				return fmt.Errorf("确认与本地记录不一致")
 			}
 			// 损坏的容量账目不能通过无符号下溢变成成功回收；保留事件供核对恢复。
@@ -293,6 +298,15 @@ func (w *WAL) Confirm(b *sensorv1.EventBatch, ack *sensorv1.IngestAck) error {
 				return fmt.Errorf("本地队列字节账目不一致")
 			}
 			n -= uint64(len(raw))
+			if b.StreamId == "logs" {
+				logs := uintValue(m.Get([]byte("logs_pending_bytes")))
+				if uint64(len(raw)) > logs {
+					return fmt.Errorf("日志队列字节账目不一致")
+				}
+				if err := m.Put([]byte("logs_pending_bytes"), key(logs-uint64(len(raw)))); err != nil {
+					return err
+				}
+			}
 			count := uintValue(m.Get([]byte("pending_count")))
 			if count == 0 {
 				return fmt.Errorf("本地队列计数不一致")

@@ -43,8 +43,20 @@ func upload(ctx context.Context, client sensorv1.SensorServiceClient, wal *WAL, 
 		}
 		if e == nil {
 			call, cancel := context.WithTimeout(ctx, 20*time.Second)
+			if streamID == "logs" && b.RouteToken == "" {
+				route, err := client.GetRoute(call, &sensorv1.RouteRequest{StreamId: streamID})
+				if err != nil {
+					e = err
+				} else if route.TenantId != wal.TenantID || route.StreamId != streamID || route.Token == "" || route.ExpiresAt == nil || !route.ExpiresAt.AsTime().After(time.Now()) {
+					e = fmt.Errorf("日志路由身份无效")
+				} else {
+					e = wal.BindSyslogRoute(b, route.Token)
+				}
+			}
 			var stream grpc.BidiStreamingClient[sensorv1.EventBatch, sensorv1.IngestAck]
-			stream, e = client.UploadEvents(call)
+			if e == nil {
+				stream, e = client.UploadEvents(call)
+			}
 			if e == nil {
 				e = stream.Send(b)
 			}
@@ -120,6 +132,14 @@ func Run(ctx context.Context, c config.Config) error {
 		defer engine.Response.Close()
 		wal.responseHealth = engine.Response.Health
 		wal.responseConfigCheck = engine.Response.CheckConfiguration
+	}
+	var syslog *SyslogService
+	if c.SyslogSourcesFile != "" {
+		syslog, e = NewSyslogService(wal, c.SyslogSourcesFile)
+		if e != nil {
+			return e
+		}
+		wal.syslogHealth = syslog.Health
 	}
 	var capture *CaptureSupervisor
 	var packets *PacketArchiveController
@@ -245,6 +265,9 @@ func Run(ctx context.Context, c config.Config) error {
 	}
 	auth := httpapi.NewAuth(local, nil, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 	group, run := errgroup.WithContext(ctx)
+	if syslog != nil {
+		group.Go(func() error { return syslog.Run(run) })
+	}
 	if identity != nil {
 		group.Go(func() error {
 			return runCertificateRenewal(run, c, identity, tlsConfig, wal, data, controlConnection, packetConnection)
@@ -282,7 +305,7 @@ func Run(ctx context.Context, c config.Config) error {
 		}
 		return nil
 	})
-	for _, stream := range []string{"alerts", "context"} {
+	for _, stream := range []string{"alerts", "context", "logs"} {
 		group.Go(func() error { upload(run, client, wal, stream); return nil })
 	}
 	group.Go(func() error { return tasks.Run(run) })

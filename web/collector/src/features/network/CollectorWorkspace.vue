@@ -7,6 +7,7 @@ import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import HealthSummary from './HealthSummary.vue'
 import InterfaceTable from './InterfaceTable.vue'
 import CollectorIdentity from './CollectorIdentity.vue'
+import SyslogSources from '@starbeacon/shared/components/SyslogSources.vue'
 import ResponseConnectors from '@starbeacon/shared/components/ResponseConnectors.vue'
 import ResponseConfiguration from './ResponseConfiguration.vue'
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue'
@@ -20,19 +21,19 @@ import {captureErrors} from '@starbeacon/shared/types.ts'
 const message=useFeedback()
 const ReplayWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/ReplayWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const PacketArchiveWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/PacketArchiveWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
-const {view,change}=useWorkspaceView(['interfaces','capture','archives','samples','tasks','responses'])
-const views=[{key:'interfaces',label:'网卡与状态'},{key:'capture',label:'采集配置'},{key:'archives',label:'原包归档'},{key:'samples',label:'重放样本'},{key:'tasks',label:'任务记录'},{key:'responses',label:'联动设备'}]
+const {view,change}=useWorkspaceView(['interfaces','capture','archives','samples','tasks','responses','syslog'])
+const views=[{key:'interfaces',label:'网卡与状态'},{key:'capture',label:'采集配置'},{key:'archives',label:'原包归档'},{key:'samples',label:'重放样本'},{key:'tasks',label:'任务记录'},{key:'responses',label:'联动设备'},{key:'syslog',label:'Syslog 接收'}]
 const {health,interfaces,capture,pending,saving,error,refresh,save}=useCollector()
 const protocolsOpen=shallowRef(false)
 const qualityOpen=shallowRef(false)
 async function submit(settings:CaptureSettings){try{if(await save(settings)){const value=capture.value;if(value.status==='running')message.success('采集配置已生效');else if(value.status==='stopped')message.success('采集已停止');else if(value.error_code)message.warning(captureErrors[value.error_code]??'配置已保存，实际执行状态需要核对');else message.success('采集目标保存成功，等待应用')}}catch(e){message.error(e instanceof Error?e.message:'保存失败')}}
 </script>
 <template>
-  <header class="page-header"><div><h1>网络与采集</h1><p class="page-description">读取本机接口、运行状态与采集目标，核对采集器的实际环境。</p></div><div class="filter-actions"><a-button @click="qualityOpen=true">检测质量</a-button><a-button @click="protocolsOpen=true">协议能力</a-button><a-button v-if="['interfaces','capture','responses'].includes(view)" :loading="pending" @click="refresh">刷新</a-button></div></header>
+  <header class="page-header"><div><h1>网络与采集</h1><p class="page-description">读取本机接口、运行状态与采集目标，核对采集器的实际环境。</p></div><div class="filter-actions"><a-button @click="qualityOpen=true">检测质量</a-button><a-button @click="protocolsOpen=true">协议能力</a-button><a-button v-if="['interfaces','capture','responses','syslog'].includes(view)" :loading="pending" @click="refresh">刷新</a-button></div></header>
   <WorkspaceTabs :active="view" :items="views" label="网络与采集功能" @change="change" />
-  <StatePanel v-if="['interfaces','capture','responses'].includes(view)" :loading="pending" :error="error" @retry="refresh">
+  <StatePanel v-if="['interfaces','capture','responses','syslog'].includes(view)" :loading="pending" :error="error" @retry="refresh">
     <template v-if="view==='interfaces'"><HealthSummary v-if="health" :health="health" /><CollectorIdentity v-if="session.current.value?.role==='admin'" /><section class="panel"><div class="panel-header"><h2>网卡列表</h2><span>{{ interfaces.length }} 个接口</span></div><InterfaceTable :items="interfaces" /></section></template>
-    <template v-else-if="view==='responses'"><ResponseConfiguration/><ResponseConnectors :items="health?.response_connectors??[]"/></template>
+    <section v-else-if="view==='syslog'" class="panel"><div class="panel-header"><h2>Syslog 接收</h2></div><div class="panel-body"><a-alert type="info" show-icon message="来源由本机私有文件登记，按证书或授权网段绑定身份。计数仅涵盖本次运行，持久保存仅证明本地队列写入。"/></div><StatePanel :empty="!health?.syslog_sources?.length" description="尚未配置 Syslog 来源。请配置采集器来源文件并受控重启后核对监听状态。"><SyslogSources :items="health?.syslog_sources??[]" local/></StatePanel></section><template v-else-if="view==='responses'"><ResponseConfiguration/><ResponseConnectors :items="health?.response_connectors??[]"/></template>
     <section v-else class="panel"><div class="panel-header"><h2>采集配置</h2></div><div class="panel-body"><CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" /></div></section>
   </StatePanel>
   <PacketArchiveWorkspace v-else-if="view==='archives'" :api="session.api" local/>

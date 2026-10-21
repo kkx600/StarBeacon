@@ -25,13 +25,14 @@ import (
 )
 
 type Elasticsearch struct {
-	API           *esapi.API
-	client        *elastictransport.Client
-	mu            sync.Mutex
-	indices       map[string]bool
-	policies      map[int]bool
-	indexFlight   singleflight.Group
-	templateReady bool
+	API              *esapi.API
+	client           *elastictransport.Client
+	mu               sync.Mutex
+	indices          map[string]bool
+	policies         map[int]bool
+	indexFlight      singleflight.Group
+	templateReady    bool
+	logTemplateReady bool
 }
 type IndexItemError struct{ Status int }
 
@@ -170,6 +171,12 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 	}
 	stream := "alerts"
 	prefix := "sb-alerts-"
+	indexMapping := mapping
+	if strings.HasPrefix(index, "sb-logs-") {
+		stream = "logs"
+		prefix = "sb-logs-"
+		indexMapping = logMapping
+	}
 	if strings.HasPrefix(index, "sb-context-") {
 		stream = "context"
 		prefix = "sb-context-"
@@ -186,13 +193,17 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 		if s.IndexKnown(index) {
 			return nil, nil
 		}
-		if err := s.EnsureEventTemplate(ctx); err != nil {
+		if stream == "logs" {
+			if err := s.EnsureLogTemplate(ctx); err != nil {
+				return nil, err
+			}
+		} else if err := s.EnsureEventTemplate(ctx); err != nil {
 			return nil, err
 		}
 		if err := s.ensureRetentionPolicy(ctx, days); err != nil {
 			return nil, err
 		}
-		body := fmt.Sprintf(`{"settings":{"number_of_shards":1,"number_of_replicas":1,"index.lifecycle.name":%q,"index.lifecycle.origination_date":%d},"mappings":%s}`, retentionPolicyName(days), d.UnixMilli(), mapping)
+		body := fmt.Sprintf(`{"settings":{"number_of_shards":1,"number_of_replicas":1,"index.lifecycle.name":%q,"index.lifecycle.origination_date":%d},"mappings":%s}`, retentionPolicyName(days), d.UnixMilli(), indexMapping)
 		res, e := s.API.Indices.Create(index, s.API.Indices.Create.WithBody(strings.NewReader(body)), s.API.Indices.Create.WithContext(ctx))
 		if e != nil {
 			return nil, e
@@ -211,10 +222,16 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 				limited := failure.Error.Type == "validation_exception" && strings.Contains(failure.Error.Reason, "maximum") && strings.Contains(failure.Error.Reason, "shards")
 				return nil, &IndexCreateError{Status: res.StatusCode, CapacityLimited: limited}
 			}
-			// 只添加可选分类字段，不覆盖既有字段、分片、生命周期或历史文档。
-			updated, err := s.API.Indices.PutMapping([]string{index}, strings.NewReader(`{"properties":{"application":`+applicationMapping+`}}`), s.API.Indices.PutMapping.WithContext(ctx))
-			if err := response(updated, err, nil); err != nil {
-				return nil, err
+			if stream == "logs" {
+				if err := s.verifyLogIndex(ctx, index); err != nil {
+					return nil, err
+				}
+			} else {
+				// 只添加可选分类字段，不覆盖既有字段、分片、生命周期或历史文档。
+				updated, err := s.API.Indices.PutMapping([]string{index}, strings.NewReader(`{"properties":{"application":`+applicationMapping+`}}`), s.API.Indices.PutMapping.WithContext(ctx))
+				if err := response(updated, err, nil); err != nil {
+					return nil, err
+				}
 			}
 		}
 		s.mu.Lock()
@@ -228,23 +245,33 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 	return err
 }
 func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Alert) []error {
-	out := make([]error, len(items))
-	if len(items) == 0 {
-		return out
-	}
-	var b bytes.Buffer
-	for _, item := range items {
-		meta, _ := json.Marshal(map[string]any{"create": map[string]string{"_id": item.EventID}})
-		b.Write(meta)
-		b.WriteByte('\n')
-		doc, e := json.Marshal(item)
-		if e != nil {
+	ids := make([]string, len(items))
+	docs := make([]json.RawMessage, len(items))
+	for i, item := range items {
+		ids[i] = item.EventID
+		raw, err := json.Marshal(item)
+		if err != nil {
+			out := make([]error, len(items))
 			for i := range out {
-				out[i] = e
+				out[i] = err
 			}
 			return out
 		}
-		b.Write(doc)
+		docs[i] = raw
+	}
+	return s.bulkDocuments(ctx, index, ids, docs, func(i int) error { return s.verifyDuplicate(ctx, index, items[i]) })
+}
+func (s *Elasticsearch) bulkDocuments(ctx context.Context, index string, ids []string, docs []json.RawMessage, verify func(int) error) []error {
+	out := make([]error, len(ids))
+	if len(ids) == 0 {
+		return out
+	}
+	var b bytes.Buffer
+	for i, id := range ids {
+		meta, _ := json.Marshal(map[string]any{"create": map[string]string{"_id": id}})
+		b.Write(meta)
+		b.WriteByte('\n')
+		b.Write(docs[i])
 		b.WriteByte('\n')
 	}
 	var result struct {
@@ -265,7 +292,7 @@ func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Al
 		}
 		return out
 	}
-	if len(result.Items) != len(items) {
+	if len(result.Items) != len(ids) {
 		for i := range out {
 			out[i] = fmt.Errorf("ES 分项结果数量不匹配")
 		}
@@ -273,14 +300,14 @@ func (s *Elasticsearch) Bulk(ctx context.Context, index string, items []model.Al
 	}
 	for i, v := range result.Items {
 		status := v["create"].Status
-		if v["create"].ID != items[i].EventID {
+		if v["create"].ID != ids[i] {
 			out[i] = fmt.Errorf("ES 分项身份不匹配")
 			continue
 		}
 		switch status {
 		case 201:
 		case 409:
-			out[i] = s.verifyDuplicate(ctx, index, items[i])
+			out[i] = verify(i)
 		default:
 			if status == 404 {
 				s.mu.Lock()

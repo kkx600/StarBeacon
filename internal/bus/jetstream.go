@@ -15,6 +15,7 @@ import (
 
 const Alerts = "SB_ALERTS"
 const Context = "SB_CONTEXT"
+const Logs = "SB_LOGS"
 const Quarantine = "SB_QUARANTINE"
 const Indexed = "SB_INDEXED"
 
@@ -56,10 +57,10 @@ func (b *Bus) Subject(subject string) string {
 }
 func (b *Bus) Close() { b.NC.Close() }
 func (b *Bus) Ensure(ctx context.Context, replicas int, maxBytes int64) error {
-	for _, s := range []struct{ name, subject string }{{Alerts, "sb.events.alerts"}, {Context, "sb.events.context"}, {Quarantine, "sb.quarantine"}, {Indexed, "sb.indexed"}} {
+	for _, s := range []struct{ name, subject string }{{Alerts, "sb.events.alerts"}, {Context, "sb.events.context"}, {Logs, "sb.events.logs"}, {Quarantine, "sb.quarantine"}, {Indexed, "sb.indexed"}} {
 		age := 72 * time.Hour
 		retention := jetstream.LimitsPolicy
-		if s.name == Alerts || s.name == Context {
+		if s.name == Alerts || s.name == Context || s.name == Logs {
 			age = 0
 			retention = jetstream.WorkQueuePolicy
 		}

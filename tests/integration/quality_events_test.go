@@ -151,7 +151,7 @@ func TestQualityEventsDurableHeartbeatIndexingNotificationsAndIsolation(t *testi
 	defer func() {
 		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
-		for _, name := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, name := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			if err := queue.JS.DeleteStream(clean, queue.StreamName(name)); !errors.Is(err, jetstream.ErrStreamNotFound) {
 				require(t, err)
 			}

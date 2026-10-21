@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "fed97407c1a3e1081fe3f387c60bb9c970797a24022449ee69f34113e5dfd47f"
+    "renderTreeSha256": "20cc419b2950714a36825718fddd9a52f3c1ec13a66815a21d29fdd6a268ad92"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -5102,7 +5102,7 @@
       "title": "Syslog 接收",
       "group": "system",
       "kind": "table",
-      "description": "配置独立入站监听、来源绑定、传输与分帧。",
+      "description": "核对采集器日志来源、接收状态、身份策略与持久缓冲。",
       "requirements": [
         "SB-DAT-002"
       ],
@@ -5110,37 +5110,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/syslog-input?state=data",
+          "url": "/system/data-sources/syslog?state=data",
           "image": "syslog-input/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/syslog-input?state=empty",
+          "url": "/system/data-sources/syslog?state=empty",
           "image": "syslog-input/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/syslog-input?state=detail",
+          "url": "/system/data-sources/syslog?state=detail",
           "image": "syslog-input/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/syslog-input?state=action",
+          "url": "/system/data-sources/syslog?state=action",
           "image": "syslog-input/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/syslog-input?state=loading",
+          "url": "/system/data-sources/syslog?state=loading",
           "image": "syslog-input/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/syslog-input?state=error",
+          "url": "/system/data-sources/syslog?state=error",
           "image": "syslog-input/error.jpg"
         }
       ]
@@ -5197,10 +5197,10 @@
     {
       "id": "logs",
       "workspace": "日志检索",
-      "title": "日志工作台",
+      "title": "日志检索",
       "group": "system",
       "kind": "table",
-      "description": "检索主机、身份、云和应用日志，核对标准化字段。",
+      "description": "检索已接入的 Syslog 原文与解析字段，按接收时间、来源和正文核对。",
       "requirements": [
         "SB-DAT-004"
       ],
@@ -5208,37 +5208,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/logs?state=data",
+          "url": "/system/logs?state=data",
           "image": "logs/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/logs?state=empty",
+          "url": "/system/logs?state=empty",
           "image": "logs/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/logs?state=detail",
+          "url": "/system/logs?state=detail",
           "image": "logs/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/logs?state=action",
+          "url": "/system/logs?state=action",
           "image": "logs/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/logs?state=loading",
+          "url": "/system/logs?state=loading",
           "image": "logs/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/logs?state=error",
+          "url": "/system/logs?state=error",
           "image": "logs/error.jpg"
         }
       ]

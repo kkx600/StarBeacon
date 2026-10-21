@@ -64,7 +64,7 @@ River 表放内部任务 schema，普通租户 API 不直接查询或写入；jo
 
 Wireshark 相似检索分为有界 ES 编译子集和固定 TShark 原生离线作业。participle 只复用语法分析基础设施，类型检查和翻译必须符合平台的字段契约。原生 `matches`、切片、协议层级、多值量词或重组依赖不能因为 AST 能解析就宣称 ES 可准确执行。完整协议树、原生过滤由 TShark **4.6.9** 负责，固定 profile、关闭名称解析，以只读文件和限时管道操作；不给用户 shell 或任意 CLI 参数。[TShark 发行](https://www.wireshark.org/docs/relnotes/wireshark-4.6.9.html)、[participle](https://github.com/alecthomas/participle)
 
-Syslog 使用 leodido 的结构化 builder / serializer 与 parser；其 builder 会忽略某些不符合语法的输入，业务必须先验证 facility/severity、时间戳、字段长度和 structured-data，再检查序列化错误，不能只调用 `Valid()` 就判发送内容完整。TLS、客户端证书、重连、队列持久化、批次水位、接收方应用确认由平台实现。RFC 3164 缺少年／时区时保留解析质量与原文，不猜测成确定时间。标准库 `log/syslog` 不作为 TLS + RFC 5424 完整方案。[固定版 builder 语义](https://github.com/leodido/go-syslog/blob/v4.6.0/README.md)
+Syslog 入站复用固定版本 leodido 的严格 parser，长度分帧使用有界标准库读取以保留原始字节；不从展示字符串重建原文。当前出站固定摘要仍用标准库构造。需要通用构造时可采用 leodido 的结构化 builder / serializer；其 builder 会忽略某些不符合语法的输入，业务必须先验证 facility/severity、时间戳、字段长度和 structured-data，再检查序列化错误，不能只调用 `Valid()` 就判发送内容完整。TLS、客户端证书、重连、队列持久化、批次水位、接收方应用确认由平台实现。RFC 3164 缺少年／时区时保留解析质量与原文，不猜测成确定时间。标准库 `log/syslog` 不作为 TLS + RFC 5424 完整方案。[固定版 builder 语义](https://github.com/leodido/go-syslog/blob/v4.6.0/README.md)
 
 Go 的 `encoding/hex.Dump` 可用于 xxd 风格文本输出；页面 HEX 视图仍需字节偏移、原始长度、截断标志、选择范围与双向定位。UTF-8 使用 `unicode/utf8` 校验，替换字符展示不改写原字节；其他编码通过明确选择的 `x/text/encoding` 解码，并显示所用编码及失败位置。HTTP body、TCP 重组流和单帧字节有不同偏移域，不能共享一个虚构的“包偏移”。
 

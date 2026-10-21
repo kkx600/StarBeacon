@@ -27,7 +27,7 @@ func TestIndexerStartupFailureDoesNotLeavePartialConsumption(t *testing.T) {
 	t.Cleanup(func() {
 		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		for _, name := range []string{bus.Alerts, bus.Context, bus.Quarantine, bus.Indexed} {
+		for _, name := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
 			err := queue.JS.DeleteStream(clean, queue.StreamName(name))
 			if err != nil && !errors.Is(err, jetstream.ErrStreamNotFound) {
 				t.Error("专属流回收失败", err)

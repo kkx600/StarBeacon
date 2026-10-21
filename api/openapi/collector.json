@@ -1797,6 +1797,98 @@
         },
         "x-required-role": "admin"
       }
+    },
+    "/api/local/v1/syslog/sources": {
+      "get": {
+        "summary": "读取本机 Syslog 来源",
+        "description": "本地管理员只读入口，不接受查询参数。计数自本次接收器启动累计，持久保存不等于平台已索引。配置通过专属私有文件与受控重启管理。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "本机来源观测；不返回私有配置内容。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 16,
+                      "items": {
+                        "$ref": "#/components/schemas/SyslogHealth"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4042,6 +4134,220 @@
             "format": "date-time"
           }
         }
+      },
+      "SyslogBinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tls",
+              "tcp",
+              "udp"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rfc5424",
+              "rfc3164"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "year_policy": {
+            "type": "string",
+            "enum": [
+              "",
+              "nearest_received_year"
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "source_name",
+          "network_domain",
+          "config_sha256",
+          "transport",
+          "format",
+          "timezone",
+          "year_policy"
+        ]
+      },
+      "SyslogHealth": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "config_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tls",
+              "tcp",
+              "udp"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rfc5424",
+              "rfc3164"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "year_policy": {
+            "type": "string",
+            "enum": [
+              "",
+              "nearest_received_year"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "listening",
+              "unavailable",
+              "degraded",
+              "stopped"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "",
+              "listener_not_ready",
+              "listener_unavailable",
+              "durable_queue_unavailable",
+              "listener_stopped"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "persisted": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "dropped": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "rejected": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "framing_errors": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "description": "规范 uint64 十进制字符串，保持精确计数。"
+          },
+          "last_persisted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_message_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 65536
+          },
+          "identity_quality": {
+            "type": "string",
+            "enum": [
+              "certificate",
+              "network_allowlist"
+            ]
+          },
+          "upstream_loss": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "unmeasurable"
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "source_name",
+          "network_domain",
+          "config_sha256",
+          "transport",
+          "format",
+          "timezone",
+          "year_policy",
+          "state",
+          "reason",
+          "observed_at",
+          "started_at",
+          "received",
+          "persisted",
+          "dropped",
+          "rejected",
+          "framing_errors",
+          "last_persisted_at",
+          "max_message_bytes",
+          "identity_quality",
+          "upstream_loss"
+        ]
       }
     }
   }

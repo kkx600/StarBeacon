@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "product": "StarBeacon",
+  "reviewed_at": "2026-10-21T07:10:56.197989+00:00",
+  "scope": "本轮 Syslog 子流程与现有工程全套回归；不代表全部产品需求验收",
+  "status": "passed",
+  "formal_release_qualified": false,
+  "features": [
+    "采集器私有来源配置与独立 TLS／TCP／UDP 接收",
+    "严格 RFC 5424／3164 解析、原文字节与解析隔离",
+    "持久来源身份、序列及路由、gRPC 确认与独立 JetStream 消费",
+    "独立安全日志索引、180 天留存、中文正文筛选和受审计的原文读取",
+    "主控来源与日志独立页面、采集器来源观测、原型共享组件"
+  ],
+  "provenance": {
+    "backend_source_sha256": "9dfbd04ea85a61a4648c4b5cadb55b9462e88f26cefdbf9668180844c7d99b69",
+    "backend_files": 620,
+    "frontend_source_sha256": "4e92c20a5fc44571ac17074e9cf361d9d69fc832ffe8fc3bc1c42f64f8e025e3",
+    "frontend_files": 360,
+    "build_parent_commit": "f3ab4b20c72bf7d502e10d46253ba5245aaa82bf",
+    "original_clean_commit": false,
+    "remote_frontend_node": "24.19.0",
+    "local_frontend_node": "24.19.1",
+    "ui_original_build": "本机双端构建；原执行来源与条件保持",
+    "later_remote_qualified_dist_binding": {
+      "status": "passed",
+      "files_verified": 100
+    },
+    "note": "原构建保持父提交与非干净快照；后续提交绑定不追补干净发行资格"
+  },
+  "backend": {
+    "environment": "remote_docker",
+    "status": "passed",
+    "go_unit_top_level": 533,
+    "integration_top_level": 128,
+    "live_af_packet_top_level": 1,
+    "test_failures": 0,
+    "test_skips": 0,
+    "coverage": {
+      "covered": 21504,
+      "total": 23877,
+      "percentage": 90.06156552330695,
+      "minimum": 90
+    },
+    "backend_actual_exit_code": 0,
+    "fetch_actual_exit_code": 0,
+    "standard_four_role_process_syslog_scenario": true
+  },
+  "frontend": {
+    "environment": "remote_docker",
+    "status": "passed",
+    "tests": 901,
+    "test_files": 60,
+    "tool_tests": 9,
+    "coverage": {
+      "statements": 94.88513220632856,
+      "branches": 92.6540004720321,
+      "functions": 91.00089766606823,
+      "lines": 98.75195007800312
+    },
+    "max_workers": 2,
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 3.229
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 386.467
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 63.045
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 35.439
+      }
+    ]
+  },
+  "syslog_native_process": {
+    "status": "passed",
+    "actual_exit_code": 0,
+    "transport": "独立双向 TLS，仅专属容器回环",
+    "tls_rejected": [
+      "no_certificate",
+      "unbound_leaf"
+    ],
+    "sent_messages": 3,
+    "same_payload_distinct_events": 2,
+    "parsed": 2,
+    "quarantined_invalid_rfc5424_fraction": 1,
+    "chinese_matches": 2,
+    "raw_audits_verified": 3,
+    "sent_to_search_seconds": 1.487155,
+    "performance_scope": "单次三条隔离样本，不代表生产吞吐、完整性或 SLA"
+  },
+  "navigation_and_ui": {
+    "platform_entrances": 57,
+    "platform_available_views": 42,
+    "platform_owned_workspaces": 28,
+    "platform_explicitly_unprovided_workspaces": 15,
+    "platform_routes": 107,
+    "platform_geometry_checks": 399,
+    "collector_views": 7,
+    "collector_routes": 9,
+    "collector_geometry_checks": 49,
+    "modal_geometry_checks": 21,
+    "business_interactions": [
+      {
+        "action": "Go省略尾零的时间回显与中文检索",
+        "matches": 2,
+        "status": "passed"
+      },
+      {
+        "action": "探针、来源、网络域、对端、主机与应用组合",
+        "matches": 2,
+        "status": "passed"
+      },
+      {
+        "action": "无数据与重置恢复",
+        "before": 0,
+        "after": 3,
+        "status": "passed"
+      },
+      {
+        "action": "解析隔离筛选与完整原文",
+        "matches": 1,
+        "status": "passed"
+      },
+      {
+        "action": "日志原文摘要、UTF-8与117B字节定位",
+        "status": "passed"
+      }
+    ],
+    "pc_viewports": [
+      [
+        1024,
+        768
+      ],
+      [
+        1280,
+        720
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1440,
+        900
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2560,
+        1440
+      ],
+      [
+        3840,
+        2160
+      ]
+    ],
+    "console_errors": [],
+    "image": {
+      "path": "images/syslog-log-detail.jpg",
+      "bytes": 105700,
+      "sha256": "56bc75a2dade824abf3ebabfe6411b41f1006bc05c2987f1b9068be18d7934cd"
+    },
+    "scope": "目录与七档几何和选定业务交互，不替代全 CRUD、全部状态、无障碍或全产品验收"
+  },
+  "prototype": {
+    "base_images": 797,
+    "supplemental_images": 113,
+    "total_images": 910,
+    "render_tree_sha256": "20cc419b2950714a36825718fddd9a52f3c1ec13a66815a21d29fdd6a268ad92",
+    "render_tree_files": 332,
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "native_viewport": [
+      1440,
+      900
+    ],
+    "strict_source_byte_and_state_check": true,
+    "online_gallery": {
+      "status": "passed",
+      "cards": 3,
+      "source_sha256": "20cc419b2950714a36825718fddd9a52f3c1ec13a66815a21d29fdd6a268ad92",
+      "versioned_image_bytes_bound": true,
+      "recorded_at": "2026-10-21T07:09:47.715926+00:00"
+    },
+    "screenshots_are_synthetic": true,
+    "theme_changed": false
+  },
+  "deployment": {
+    "scope": "专属常驻开发环境",
+    "status": "passed",
+    "migration": 48,
+    "running_roles": 4,
+    "reference_programs": 5,
+    "static_files_verified": 100,
+    "gateway": {
+      "status": "passed",
+      "history_paths": 61
+    },
+    "identity_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "temporary_syslog_config_restored": true,
+    "after_cleanup_rechecked": true
+  },
+  "cleanup": {
+    "status": "passed",
+    "frontend_containers_absent": 12,
+    "frontend_networks_absent": 5,
+    "directories_absent": 16,
+    "temporary_runtime_containers_absent": true,
+    "fixture_logical_bytes_removed": 13971650,
+    "frontend_and_compile_cache_removed_bytes": null,
+    "measurement_note": "清理 SSH 调用超时，远程进程随后结束；独立只读复核确认不存在，不补造丢失的空间计量",
+    "persistent_identity_wal_ca_and_history_retained": true,
+    "global_prune": false
+  },
+  "checks": {
+    "quality_tests": 70,
+    "acceptance_tool_tests": 86,
+    "prototype_tool_tests": 11,
+    "alignment": "107 项需求；137 个平台 HTTP 操作；20 个采集器 HTTP 操作",
+    "go_mod_verify_vet_gofmt_and_diff_check": "passed"
+  },
+  "superseded_attempts": [
+    {
+      "backend_source": "002f7083af357186c05eca037b6dde881a60b85d014265fb905332667f4e672e",
+      "go_coverage_percentage": 89.99874356074884,
+      "status": "failed",
+      "reason": "低于原有 90% 门槛，未部署；补充标准四角色真实 Syslog 场景并从头执行整套门禁"
+    },
+    {
+      "frontend_tests": 900,
+      "status": "failed",
+      "reason": "时间边界夹具两次读取时间导致有效期不稳定；保留原始失败并固定单一观测时刻"
+    },
+    {
+      "scope": "实际页面",
+      "status": "failed_then_fixed",
+      "reason": "小屏弹窗关闭按钮位于滚动正文；Go 时间回显省略尾零触发相等判断失败；均修复后重新执行整套前端、真实交互及截图"
+    }
+  ],
+  "requirement_status": {
+    "partial": 64,
+    "missing": 43
+  },
+  "formal_requirement_acceptance_passed": 0,
+  "requirements_total": 107,
+  "remaining_release_gaps": [
+    "Syslog 集中配置下发、设备语义解析、关联与告警归一；固定 WAL 路由 180 天到期后的恢复管理",
+    "完整网络域、设备 HA、执行器排他接管、集中配置生命周期和浏览器认证插件",
+    "规则来源与 TUF、生产规模发布效果门禁和自动故障回退",
+    "关联检测、情报生命周期、风险治理及文件与沙箱",
+    "应用会话字节计量及真实产品样本效果",
+    "真实外部模型、通知服务商、真实防火墙和 EDR 效果",
+    "完整安装与平台升级、生产 TLS、跨站点 HA／灾备、容量与长稳、全部 PC 交互",
+    "当前同源 Linux UPX ZIP 发行包及完整产品发布验收"
+  ],
+  "archives": [
+    {
+      "file": "syslog1096-backend-raw.tar.gz",
+      "bytes": 11306565,
+      "sha256": "38e285a5a78178a026d2ea8577fca593551d903afd599c49e1ddb08f377b7d03",
+      "members_readback_verified": 659
+    },
+    {
+      "file": "syslog1097-engineering-raw.tar.gz",
+      "bytes": 23885193,
+      "sha256": "44afc693adadfa1c8e148c531e0cee2ac18cba69e16f56c13ea91f1bb28a4023",
+      "members_readback_verified": 5011
+    },
+    {
+      "file": "syslog1108-gallery-raw.tar.gz",
+      "bytes": 62254313,
+      "sha256": "2809fbc04eef8b646e138946e8a2efa0dda0dd5a645397cdc938f39c54aae01a",
+      "members_readback_verified": 1296
+    },
+    {
+      "file": "syslog1100-temporary-runtime.tar.gz",
+      "bytes": 4553521,
+      "sha256": "60569a6fc98b9b51c2e6fc84866a77fb7edb1b1a9d27efcc0f0cfde6dbd12a12",
+      "members_readback_verified": 358
+    }
+  ],
+  "archive_visibility": "原始归档含专属测试私有材料，仅存于本机受限目录，不提交仓库"
+}

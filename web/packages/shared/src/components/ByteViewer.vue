@@ -5,7 +5,7 @@ import {Radio,Pagination as APagination} from 'ant-design-vue'
 import {byteNeedle,decodeUTF8,eveBytes,findBytes,hexRows,highlightedHex,type ByteSearch} from '../evidence'
 const message=useFeedback()
 const ARadioGroup=Radio.Group,ARadioButton=Radio.Button
-const props=defineProps<{original:string;source?:'eve'|'frame'}>()
+const props=defineProps<{original:string;source?:'eve'|'frame'|'syslog'}>()
 const mode=shallowRef('hex'),page=shallowRef(1)
 const searchKind=shallowRef<'hex'|'utf8'>('utf8'),query=shallowRef(''),searchError=shallowRef(''),search=shallowRef<ByteSearch>(),matchIndex=shallowRef(0),matchLength=shallowRef(0),searchId=useId()
 const evidence=computed(()=>eveBytes(props.original)),bytes=computed(()=>evidence.value.state==='available'?evidence.value.bytes:new Uint8Array()),text=computed(()=>decodeUTF8(bytes.value))
@@ -26,7 +26,7 @@ async function copy() {try {await navigator.clipboard.writeText(rendered.value);
   <section aria-label="字节证据" class="byte-viewer">
     <div class="byte-toolbar"><h2>字节证据</h2><a-radio-group v-if="evidence.state==='available'" v-model:value="mode" size="small" aria-label="字节展示方式"><a-radio-button value="hex">HEX</a-radio-button><a-radio-button value="utf8">UTF-8</a-radio-button></a-radio-group><a-button v-if="evidence.state==='available' && (mode==='hex'||text.valid)" size="small" @click="copy">复制当前内容</a-button></div>
     <template v-if="evidence.state==='available'">
-      <p class="page-description">{{evidence.kind==='packet'?'数据包字节':'应用载荷字节'}} · {{bytes.length.toLocaleString('zh-CN')}} B。{{source==='frame'?'内容为已核验原包的实际捕获字节，单包不证明完整会话或握手。':'内容为 EVE 导出副本，完整会话及握手需对照 PCAP。'}}</p>
+      <p class="page-description">{{source==='syslog'?'Syslog 原始消息字节':evidence.kind==='packet'?'数据包字节':'应用载荷字节'}} · {{bytes.length.toLocaleString('zh-CN')}} B。{{source==='syslog'?'内容为接收器持久保存的消息原文，不含 TCP/TLS 分帧或网络包头。':source==='frame'?'内容为已核验原包的实际捕获字节，单包不证明完整会话或握手。':'内容为 EVE 导出副本，完整会话及握手需对照 PCAP。'}}</p>
       <form class="byte-search" aria-label="字节查找" @submit.prevent="submitSearch">
         <a-radio-group v-model:value="searchKind" size="small" aria-label="字节查找方式"><a-radio-button value="utf8">文本</a-radio-button><a-radio-button value="hex">HEX</a-radio-button></a-radio-group>
         <label :for="searchId">查找内容</label><a-input :id="searchId" v-model:value="query" :maxlength="4096" :placeholder="searchKind==='hex'?'例如 47 45 54 或 47:45:54':'区分大小写的 UTF-8 文本'" :aria-invalid="Boolean(searchError)" :aria-describedby="searchError?`${searchId}-error`:undefined" allow-clear class="byte-search-input" />
