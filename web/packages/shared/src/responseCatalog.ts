@@ -12,6 +12,12 @@ export const responseKinds=[{value:'',label:'全部动作'},{value:'response.blo
 
 function localInput(at:number){const value=new Date(at);return new Date(at-value.getTimezoneOffset()*60000).toISOString().slice(0,19)}
 export function defaultResponseFilters(now=Date.now()):ResponseFilters{return {start:localInput(now-24*3600000),end:localInput(now),sensor_id:'',device_id:'',target_ip:'',kind:'',state:''}}
+export function linkedResponseFilters(query:Record<string,unknown>):ResponseFilters{
+ const result=defaultResponseFilters()
+ for(const key of ['sensor_id','device_id'] as const){const value=query[key];if(value!==undefined&&typeof value!=='string')throw new Error('关联动作的探针或设备条件无效，请核对链接。');result[key]=value??''}
+ responseQuery(result)
+ return result
+}
 export function responseQuery(filters:ResponseFilters):ResponseQuery{
  const start=new Date(filters.start).getTime(),end=new Date(filters.end).getTime()
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||end-start>31*86400000||end>Date.now()+30000)throw new Error('请选择有效的本地时间，结束时间须晚于开始时间，窗口最多 31 天。')

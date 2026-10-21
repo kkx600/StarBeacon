@@ -1,0 +1,25 @@
+<script setup lang="ts">
+import {computed,reactive,shallowRef,watch} from 'vue'
+import {useRouter} from 'vue-router'
+import {Modal as AModal} from 'ant-design-vue'
+import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
+import {emptyDeviceQuery,type ResponseDevice} from '../../../web/packages/shared/src/responseDevices'
+import ResponseDeviceFilters from '../../../web/packages/shared/src/components/ResponseDeviceFilters.vue'
+import ResponseDeviceTable from '../../../web/packages/shared/src/components/ResponseDeviceTable.vue'
+import ResponseDeviceDetail from '../../../web/packages/shared/src/components/ResponseDeviceDetail.vue'
+import ResponseBlockForm from '../../../web/packages/shared/src/components/ResponseBlockForm.vue'
+import type {PreviewState} from '../models'
+import StatePanel from './StatePanel.vue'
+import PageHeader from './PageHeader.vue'
+import {prototypePath} from '../data/navigation'
+const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>(),router=useRouter(),message=useFeedback()
+const at=new Date().toISOString(),filters=reactive(emptyDeviceQuery()),rows:ResponseDevice[]=[{sensor_id:'sensor_hq',sensor_name:'总部旁路探针',registration_id:'registration_hq',sensor_status:'online',last_seen:at,host_observed_at:at,observation:'fresh',task_supported:true,connector_id:'connector_hq',device_id:'device_hq',version:'protocol-fixture/1',status:'ready',observed_at:at,config_sha256:'a'.repeat(64),max_ttl_seconds:3600},{sensor_id:'sensor_branch',sensor_name:'分支旁路探针',registration_id:'registration_branch',sensor_status:'offline',last_seen:at,host_observed_at:at,observation:'stale',task_supported:true,connector_id:'connector_branch',device_id:'device_branch',version:'protocol-fixture/1',status:'unavailable',observed_at:new Date(Date.now()-60000).toISOString(),config_sha256:'b'.repeat(64),max_ttl_seconds:300}].sort((a,b)=>a.sensor_id.localeCompare(b.sensor_id)) as ResponseDevice[]
+const items=computed(()=>rows.filter(v=>(!filters.sensor_id||v.sensor_id===filters.sensor_id)&&(!filters.device_id||v.device_id===filters.device_id)&&(!filters.status||v.status===filters.status)))
+const selected=shallowRef<ResponseDevice|null>(null),block=shallowRef<ResponseDevice|null>(null),form=reactive({connector_id:'connector_hq',target_ip:'',ttl_seconds:300,reason:'',confirmed:false})
+function respond(v:ResponseDevice){selected.value=null;block.value=v;form.connector_id=v.connector_id}
+watch(()=>props.state,state=>{selected.value=state==='detail'?rows.find(v=>v.sensor_id==='sensor_hq')!:null;block.value=state==='action'?rows.find(v=>v.sensor_id==='sensor_hq')!:null},{immediate:true})
+function close(){selected.value=null;block.value=null;if(['detail','action'].includes(props.state))emit('state','data')}
+function actions(v:ResponseDevice){void router.push({path:prototypePath('actions'),query:{state:'data',sensor_id:v.sensor_id,device_id:v.device_id}})}
+</script>
+<template><PageHeader title="联动设备" description="按执行探针检索 HTTP 连接器，核对设备身份、配置绑定、观测时效和响应动作。"/><a-alert type="info" show-icon message="以下为合成目录，与工程端使用相同的筛选、列表、详情和限时封禁表单组件，不连接设备或提交任务。" class="section-gap"/><ResponseDeviceFilters :model="filters" :pending="state==='loading'" @search="emit('state','data')" @reset="Object.assign(filters,emptyDeviceQuery());emit('state','data')"/><section class="panel"><div class="panel-header"><div><h2>设备目录</h2><p class="page-description">每页 20 项；设备核验状态来自最近一次探针上报，过期、离线与停用状态分别核对。</p></div><a-button @click="emit('state','data')">刷新设备</a-button></div><StatePanel v-if="['empty','error','loading'].includes(state)" :state="state as 'empty'|'error'|'loading'" :description="state==='empty'?'当前条件下没有联动设备。请调整筛选，或在执行采集器配置本地 HTTP 连接器后核对心跳上报。':undefined" @action="emit('state','data')"/><ResponseDeviceTable v-else :items="items" @view="selected=$event" @respond="respond" @actions="actions"/><div class="device-pagination"><a-button disabled>上一页</a-button><span>第 1 页 · 当前 {{state==='empty'?0:items.length}} 项</span><a-button disabled>下一页</a-button></div></section><ResponseDeviceDetail :device="selected" :observed-at="at" @close="close" @respond="respond" @actions="actions"/><a-modal title="限时封禁" :open="block!==null" :width="660" :footer="null" @cancel="close"><a-alert type="warning" show-icon message="本操作由指定采集器访问联动设备，提交限时封禁配置。配置回读与实际流量阻断效果分别核验。" class="section-gap"/><ResponseBlockForm v-if="block" :model="form" :connectors="[block]" :locked="false" :saving="false" :unconfirmed="false" fixed @submit="message.info('合成表单未提交平台或设备任务。')" @close="close"/></a-modal></template>
+<style scoped>.panel-header{padding:var(--section-gap) var(--panel-inset);display:flex;align-items:center;justify-content:space-between;gap:var(--field-gap)}.panel-header h2{margin:0;font-size:16px}.page-description{margin:0;color:var(--muted);line-height:1.6;font-size:13px;max-width:72ch}.section-gap{margin-bottom:var(--section-gap)}.device-pagination{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:var(--related-gap);padding:var(--panel-inset)}</style>

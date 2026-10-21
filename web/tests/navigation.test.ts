@@ -83,7 +83,7 @@ describe('业务导航与路由契约',()=>{
  it('尚未提供的目录清楚说明范围，系统设置与总览返回目标有效',async()=>{
   const router=await routerFor('/system/tenants');const wrapper=mount(UnavailableView,{global:{plugins:[registerAnt,router]}})
   expect(wrapper.get('h1').text()).toBe('租户管理');expect(wrapper.text()).toContain('当前版本未提供此功能')
-  await wrapper.findAll('button')[0]!.trigger('click');await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe('/system/settings'))
-  await wrapper.findAll('button')[1]!.trigger('click');await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe('/overview/dashboard'));wrapper.unmount()
+  async function follow(label:string,path:string){let stop=()=>{};const arrived=new Promise<void>(resolve=>{stop=router.afterEach(to=>{if(to.path===path)resolve()})});try{await wrapper.findAll('button').find(button=>button.text()===label)!.trigger('click');await arrived;expect(router.currentRoute.value.path).toBe(path)}finally{stop()}}
+  try{await follow('查看系统设置','/system/settings');await follow('返回态势总览','/overview/dashboard')}finally{wrapper.unmount()}
  })
 })

@@ -77,7 +77,7 @@ const definitions: Definition[] = [
   ['SB-FIL-005','analysis-pools','detection','文件分析资源','pool','配置资源池、租户配额、超时和排队上限。','name:资源池|type:引擎类型|concurrency:并发|queue:队列长度|timeout:超时|status:状态','创建资源池'],
   ['SB-FIL-006','analysis-reports','detection','文件分析报告','file-report','查看后到报告、复核和重新分析，分别关联响应依据。','name:报告|sample:样本|verdict:结论|revision:修订|owner:复核人|status:复核状态','创建重新分析'],
   ['SB-RSP-001','decision-policies','response','决策策略','decision','配置判断条件、模型修订与限时处置授权，持续核对本人完成的研判。','name:策略名称|mode:运行模式|model:模型来源|confidence:自报分数阈值|scope:保护范围|status:状态','创建决策策略'],
-  ['SB-RSP-002','devices','response','联动设备','device','绑定执行采集器、网络域、凭据引用与设备能力。','name:设备名称|type:设备类型|address:管理地址|sensor:执行采集器|capability:动作能力|status:连接状态','接入设备'],
+  ['SB-RSP-002','devices','response','联动设备','device','按执行探针检索 HTTP 连接器，核对设备身份、配置绑定、观测时效和相关响应动作。','device:设备 / 连接器|sensor:执行探针|version:接口版本|status:当前条件|ttl:最长封禁|observed:设备核验时间','查询联动设备'],
   ['SB-RSP-003','auth-plugins','response','认证插件','auth-plugin','管理控制台认证、会话缓存、续期与设备版本兼容性。','name:插件名称|device:设备|version:插件版本|auth:认证方式|expires:会话到期|status:认证状态','配置认证插件'],
   ['SB-RSP-004','actions','response','响应动作','action','检索限时封禁、租约回读与解除任务，分别核对平台受理、设备配置与实际流量效果。','kind:响应任务|sensor:执行探针|target:目标 / 设备|status:执行状态|created:提交时间|expires:租约到期','查询响应动作'],
   ['SB-RSP-005','playbooks','response','响应剧本','playbook','编排触发、条件、人工审批、受控动作和补偿路径。','name:剧本名称|trigger:触发器|nodes:节点数|version:版本|status:发布状态','创建剧本'],

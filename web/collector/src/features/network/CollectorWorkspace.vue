@@ -8,6 +8,7 @@ import HealthSummary from './HealthSummary.vue'
 import InterfaceTable from './InterfaceTable.vue'
 import CollectorIdentity from './CollectorIdentity.vue'
 import ResponseConnectors from '@starbeacon/shared/components/ResponseConnectors.vue'
+import ResponseConfiguration from './ResponseConfiguration.vue'
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue'
 import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceState.vue'
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
@@ -31,7 +32,7 @@ async function submit(settings:CaptureSettings){try{if(await save(settings)){con
   <WorkspaceTabs :active="view" :items="views" label="网络与采集功能" @change="change" />
   <StatePanel v-if="['interfaces','capture','responses'].includes(view)" :loading="pending" :error="error" @retry="refresh">
     <template v-if="view==='interfaces'"><HealthSummary v-if="health" :health="health" /><CollectorIdentity v-if="session.current.value?.role==='admin'" /><section class="panel"><div class="panel-header"><h2>网卡列表</h2><span>{{ interfaces.length }} 个接口</span></div><InterfaceTable :items="interfaces" /></section></template>
-    <ResponseConnectors v-else-if="view==='responses'" :items="health?.response_connectors??[]"/>
+    <template v-else-if="view==='responses'"><ResponseConfiguration/><ResponseConnectors :items="health?.response_connectors??[]"/></template>
     <section v-else class="panel"><div class="panel-header"><h2>采集配置</h2></div><div class="panel-body"><CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" /></div></section>
   </StatePanel>
   <PacketArchiveWorkspace v-else-if="view==='archives'" :api="session.api" local/>

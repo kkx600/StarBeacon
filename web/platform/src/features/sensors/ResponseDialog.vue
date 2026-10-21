@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
-import {Modal as AModal,Select as ASelect,InputNumber as AInputNumber,Checkbox as ACheckbox} from 'ant-design-vue'
+import {Modal as AModal} from 'ant-design-vue'
+import ResponseBlockForm from '@starbeacon/shared/components/ResponseBlockForm.vue'
 import type {Sensor} from '@starbeacon/shared/types.ts'
 import type {ResponseConnector} from '@starbeacon/shared/response.ts'
 import {readyConnector} from '@starbeacon/shared/response.ts'
 import {readSensorDirectory} from '@starbeacon/shared/sensors.ts'
+import {emptyDeviceQuery,readDevicePage,usableDevice} from '@starbeacon/shared/responseDevices.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {session} from '../../session'
 const message=useFeedback()
-const props=defineProps<{sensor:Sensor|null}>()
-const emit=defineEmits<{close:[];submitted:[]}>()
+const props=defineProps<{sensor:Sensor|null;binding?:ResponseConnector|null}>()
+const emit=defineEmits<{close:[];submitted:[id:string]}>()
 const connectors=shallowRef<ResponseConnector[]>([]),pending=shallowRef(false),saving=shallowRef(false),error=shallowRef(''),unconfirmed=shallowRef(false)
 const form=reactive({connector_id:'',target_ip:'',ttl_seconds:300,reason:'',confirmed:false})
 const current=computed(()=>connectors.value.find(v=>v.connector_id===form.connector_id))
@@ -19,7 +21,13 @@ let controller:AbortController|undefined,stopped=false,attempt:{key:string;body:
 async function load(){controller?.abort();attempt=undefined;unconfirmed.value=false;saving.value=false;error.value='';connectors.value=[];form.connector_id='';form.target_ip='';form.reason='';form.confirmed=false
  if(!props.sensor||session.current.value?.role!=='admin'){pending.value=false;return}
  const original=props.sensor,currentRequest=new AbortController();controller=currentRequest;pending.value=true
- try{const rows=await readSensorDirectory(session.api,currentRequest.signal);if(currentRequest.signal.aborted)return;const row=rows.find(v=>v.id===original.id)
+ try{
+  if(props.binding){const binding=props.binding,q={...emptyDeviceQuery(),sensor_id:original.id,device_id:binding.device_id},page=await readDevicePage(await session.api.request('/response-connectors?'+new URLSearchParams(Object.entries(q).map(([key,value])=>[key,String(value)])),{signal:currentRequest.signal}),q);if(currentRequest.signal.aborted)return
+   const row=page.items.find(v=>v.connector_id===binding.connector_id&&v.device_id===binding.device_id&&v.config_sha256===binding.config_sha256&&v.registration_id===original.registration_id&&usableDevice(v))
+   if(!row)throw new Error('所选联动设备的身份、配置或就绪状态已变化，请刷新设备目录后核对。')
+   connectors.value=[row];form.connector_id=row.connector_id;form.ttl_seconds=Math.min(300,row.max_ttl_seconds);return
+  }
+  const rows=await readSensorDirectory(session.api,currentRequest.signal);if(currentRequest.signal.aborted)return;const row=rows.find(v=>v.id===original.id)
   const seen=Date.parse(row?.last_seen??'')
   if(!row?.active||row.status!=='online'||row.registration_id!==original.registration_id||!Number.isFinite(seen)||Date.now()-seen>35000||seen-Date.now()>30000||!row.health.task_capabilities?.includes('response.block'))throw new Error('探针未就绪或注册身份已变化，请刷新后核对。')
   connectors.value=(row.health.response_connectors??[]).filter(v=>readyConnector(v));if(!connectors.value.length)throw new Error('没有就绪的联动设备。请在采集器配置受信任的 HTTP 连接器，并核对设备身份。')
@@ -34,12 +42,12 @@ async function submit(){if(stopped||saving.value||session.current.value?.role!==
  const frozen=attempt,request=new AbortController();controller?.abort();controller=request;saving.value=true;error.value=''
  try{const result=await session.api.request<{id:string}>(`/sensors/${encodeURIComponent(frozen.sensor)}/response-tasks`,{method:'POST',headers:{'Idempotency-Key':frozen.key},body:frozen.body,signal:request.signal});if(request.signal.aborted)return
   if(!result||typeof result.id!=='string'||!/^task_[a-f0-9]{32}$/.test(result.id))throw new Error('平台提交回执不完整，请核对原提交。')
-  attempt=undefined;unconfirmed.value=false;message.success('联动任务已受理，请在任务记录中核对设备配置状态');emit('submitted')
+  attempt=undefined;unconfirmed.value=false;message.success('联动任务已受理，请在任务记录中核对设备配置状态');emit('submitted',result.id)
  }catch(cause){if(!request.signal.aborted){error.value=cause instanceof Error?cause.message:'联动任务提交失败';const status=typeof cause==='object'&&cause!==null&&'status' in cause?Number(cause.status):0
   if(status>=400&&status<500&&status!==408){attempt=undefined;unconfirmed.value=false}else unconfirmed.value=true
  }}finally{if(controller===request)saving.value=false}
 }
-watch(()=>[props.sensor?.id,props.sensor?.registration_id,session.current.value?.tenant_id,session.current.value?.id,session.current.value?.role],load,{immediate:true})
+watch(()=>[props.sensor?.id,props.sensor?.registration_id,props.binding?.connector_id,props.binding?.config_sha256,props.binding?.device_id,session.current.value?.tenant_id,session.current.value?.id,session.current.value?.role],load,{immediate:true})
 watch(()=>form.connector_id,()=>{if(current.value&&!locked.value)form.ttl_seconds=Math.min(form.ttl_seconds,current.value.max_ttl_seconds)})
 onScopeDispose(()=>{stopped=true;controller?.abort()})
 </script>
@@ -49,15 +57,7 @@ onScopeDispose(()=>{stopped=true;controller?.abort()})
   <StatePanel :loading="pending" :error="connectors.length?undefined:error" @retry="load">
    <a-alert v-if="error&&connectors.length" type="error" show-icon :message="error" class="section-gap"/>
    <a-alert v-if="unconfirmed" type="warning" show-icon message="提交结果未确认，输入与请求键已保留。核对原提交不会重新计时或创建第二个任务。" class="section-gap"/>
-   <a-form v-if="connectors.length" :model="form" layout="vertical" @finish="submit">
-    <a-form-item label="联动设备" required><a-select v-model:value="form.connector_id" aria-label="联动设备" :disabled="locked" :options="connectors.map(v=>({value:v.connector_id,label:v.device_id+' · '+v.version}))"/></a-form-item>
-    <div class="response-form-grid"><a-form-item label="目标 IP" required><a-input v-model:value="form.target_ip" aria-label="封禁目标 IP" :maxlength="45" :disabled="locked" placeholder="单个 IPv4 或 IPv6 地址"/></a-form-item><a-form-item label="封禁期限（秒）" required><a-input-number v-model:value="form.ttl_seconds" aria-label="封禁期限" :min="30" :max="current?.max_ttl_seconds??30" :precision="0" :disabled="locked"/></a-form-item></div>
-    <a-form-item label="操作依据" required><a-textarea v-model:value="form.reason" aria-label="联动操作依据" :maxlength="500" :auto-size="{minRows:2,maxRows:4}" :disabled="locked"/></a-form-item>
-    <a-checkbox v-model:checked="form.confirmed" :disabled="locked">确认提交此 IP 的限时封禁配置</a-checkbox>
-    <p class="page-description section-gap">设备保护范围由采集器再次校验。任务投递期限与设备封禁到期时间分别记录；旁路探针自身不阻断流量。</p>
-    <div class="filter-actions"><a-button type="primary" html-type="submit" :loading="saving">{{unconfirmed?'核对原提交':'提交任务'}}</a-button><a-button :disabled="locked" @click="emit('close')">返回</a-button></div>
-   </a-form>
+   <ResponseBlockForm v-if="connectors.length" :model="form" :connectors="connectors" :locked="locked" :saving="saving" :unconfirmed="unconfirmed" :fixed="!!binding" @submit="submit" @close="emit('close')"/>
   </StatePanel>
  </a-modal>
 </template>
-<style scoped>.response-form-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.response-form-grid .ant-input-number{width:100%}@media(max-width:600px){.response-form-grid{grid-template-columns:1fr}}</style>

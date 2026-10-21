@@ -80,3 +80,26 @@ test('缺少浏览器核对来源时，刷新清单不能放宽原有检查', as
   assert.equal(result.status, 1)
   assert.match(result.stderr, /缺少已核对的浏览器截图来源/)
 }))
+
+test('采集器组件来源仍须逐文件核对，刷新清单不能接受发生变化的组件', async () => fixture(async ({root, gallery, entry, check}) => {
+  const path = 'web/collector/src/features/network/ResponseConfiguration.vue'
+  const target = join(root, path)
+  await mkdir(dirname(target), {recursive: true})
+  await copyFile(join(project, path), target)
+  const {createHash} = await import('node:crypto')
+  entry.renderInputs = [...(entry.renderInputs ?? []).filter(input => input.path !== path), {path, sha256: createHash('sha256').update(await readFile(target)).digest('hex')}]
+  await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
+  assert.equal(check().status, 0)
+  await appendFile(target, '\n')
+  const result = check('--refresh')
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /截图组件与当前源码不同/)
+}))
+
+test('组件来源不得通过父目录或工程目录外路径绕过核对', async () => fixture(async ({gallery, entry, check}) => {
+  entry.renderInputs = [{path: 'web/collector/src/../../../secret.json', sha256: '0'.repeat(64)}]
+  await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
+  const result = check('--refresh')
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /截图组件来源路径无效/)
+}))

@@ -119,6 +119,7 @@ func Run(ctx context.Context, c config.Config) error {
 		}
 		defer engine.Response.Close()
 		wal.responseHealth = engine.Response.Health
+		wal.responseConfigCheck = engine.Response.CheckConfiguration
 	}
 	var capture *CaptureSupervisor
 	var packets *PacketArchiveController

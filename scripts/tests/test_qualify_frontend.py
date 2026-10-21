@@ -68,6 +68,22 @@ class FrontendQualificationTest(unittest.TestCase):
         self.pending = True
         self.assertEqual(self.qualify()["status"], "failed")
 
+    def test_workers_are_bounded_and_do_not_relax_deadlines(self):
+        with patch.object(frontend.subprocess, "run", side_effect=self.run_step) as run:
+            report = frontend.qualify(self.output, self.root, max_workers=4)
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["max_workers"], 4)
+        calls = [call for call in run.call_args_list if "--coverage" in call.args[0]]
+        self.assertEqual(len(calls), 1)
+        self.assertIn("--maxWorkers=4", calls[0].args[0])
+        self.assertEqual(calls[0].kwargs["timeout"], 600)
+
+    def test_invalid_worker_count_fails_before_creating_output(self):
+        for value in (0, 5, True, 1.5, "4"):
+            with self.assertRaises(ValueError):
+                frontend.qualify(self.output, self.root, max_workers=value)
+            self.assertFalse(self.output.exists())
+
     def test_low_coverage_cannot_qualify(self):
         self.covered = 0
         self.assertEqual(self.qualify()["status"], "failed")

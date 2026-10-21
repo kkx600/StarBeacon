@@ -15416,6 +15416,139 @@
           }
         }
       }
+    },
+    "/api/v1/response-connectors": {
+      "get": {
+        "summary": "检索联动设备",
+        "description": "管理员读取本租户探针最近一次上报的 HTTP 连接器元数据。按探针、连接器标识升序续页，游标绑定全部筛选与页大小；每页默认 20、最多 100 项。探针离线或停用仍可读取历史观测；空结果不证明未配置。设备观测超过 35 秒或未来偏差超过 30 秒为 stale。分页不提供跨心跳状态快照。凭据、私有路径和管理地址不返回平台目录。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseConnectorPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sensor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "device_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "ready",
+                "unverified",
+                "unavailable"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -27267,6 +27400,135 @@
           "observed_at"
         ],
         "additionalProperties": false
+      },
+      "ResponseConnectorQuery": {
+        "type": "object",
+        "required": [
+          "sensor_id",
+          "device_id",
+          "status",
+          "cursor",
+          "limit"
+        ],
+        "properties": {
+          "sensor_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "device_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "",
+              "ready",
+              "unverified",
+              "unavailable"
+            ]
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        }
+      },
+      "ResponseDevice": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResponseConnector"
+          },
+          {
+            "type": "object",
+            "required": [
+              "sensor_id",
+              "sensor_name",
+              "registration_id",
+              "sensor_status",
+              "last_seen",
+              "host_observed_at",
+              "observation",
+              "task_supported"
+            ],
+            "properties": {
+              "sensor_id": {
+                "type": "string"
+              },
+              "sensor_name": {
+                "type": "string"
+              },
+              "registration_id": {
+                "type": "string"
+              },
+              "sensor_status": {
+                "type": "string",
+                "enum": [
+                  "online",
+                  "offline",
+                  "disabled"
+                ]
+              },
+              "last_seen": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "host_observed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "observation": {
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "stale",
+                  "pending"
+                ]
+              },
+              "task_supported": {
+                "type": "boolean",
+                "description": "探针声明支持封禁、回读和解除；不代表当前授权或实际流量效果。"
+              }
+            }
+          }
+        ]
+      },
+      "ResponseConnectorPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "query",
+          "next_cursor",
+          "observed_at"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/ResponseDevice"
+            }
+          },
+          "query": {
+            "$ref": "#/components/schemas/ResponseConnectorQuery"
+          },
+          "next_cursor": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   }

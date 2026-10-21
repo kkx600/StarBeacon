@@ -21,7 +21,9 @@ def save(path: pathlib.Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
-def qualify(output: pathlib.Path, root: pathlib.Path = ROOT) -> dict:
+def qualify(output: pathlib.Path, root: pathlib.Path = ROOT, max_workers: int = 1) -> dict:
+    if type(max_workers) is not int or not 1 <= max_workers <= 4:
+        raise ValueError("前端测试并行数须为 1–4")
     root, output = root.resolve(), output.absolute()
     if ".." in output.parts or not output.is_relative_to(root / ".local/acceptance") or output.is_symlink() or any(p.is_symlink() for p in output.parents):
         raise ValueError("证据目录必须位于本工程 .local/acceptance 内")
@@ -32,13 +34,13 @@ def qualify(output: pathlib.Path, root: pathlib.Path = ROOT) -> dict:
               "source_root": str(root), "source_sha256": manifest["source_sha256"],
               "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
               "clean_commit": not subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True).strip(),
-              "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "steps": []}
+              "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "max_workers": max_workers, "steps": []}
     evidence = output / "frontend.json"
     save(evidence, report)
     tool_tests = [str(p.relative_to(root)) for p in sorted((root / "web/scripts").glob("*.test.mjs"))]
     steps = [
         ("tool-tests", ["node", "--test", "--test-reporter=tap", *tool_tests], 120),
-        ("coverage", ["pnpm", "--dir", "web", "exec", "vitest", "run", "--coverage", "--maxWorkers=1", "--reporter=default", "--reporter=json", "--outputFile=" + str(output / "tests.json"), "--coverage.reportsDirectory=" + str(output / "coverage")], 600),
+        ("coverage", ["pnpm", "--dir", "web", "exec", "vitest", "run", "--coverage", f"--maxWorkers={max_workers}", "--reporter=default", "--reporter=json", "--outputFile=" + str(output / "tests.json"), "--coverage.reportsDirectory=" + str(output / "coverage")], 600),
         ("typecheck", ["pnpm", "--dir", "web", "typecheck"], 300),
         ("build", ["pnpm", "--dir", "web", "build"], 300),
     ]
@@ -83,8 +85,9 @@ def qualify(output: pathlib.Path, root: pathlib.Path = ROOT) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=pathlib.Path, required=True)
+    parser.add_argument("--max-workers", type=int, choices=range(1, 5), default=1, help="按执行容器资源配置 1–4 个测试进程，不改变超时、覆盖率或用例范围")
     args = parser.parse_args()
-    result = qualify(args.output)
+    result = qualify(args.output, max_workers=args.max_workers)
     print(json.dumps({key: result[key] for key in ("status", "source_sha256", "scope")}, ensure_ascii=False))
     return 0 if result["status"] == "passed" else 1
 

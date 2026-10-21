@@ -11,7 +11,7 @@ import {readyConnector} from '@starbeacon/shared/response.ts'
 import {useTaskDetail} from './useTaskDetail'
 import {ApiError} from '@starbeacon/shared/api.ts'
 import ResponseActionFilters from '@starbeacon/shared/components/ResponseActionFilters.vue'
-import {defaultResponseFilters,responseQuery,readResponsePage,type ResponseQuery} from '@starbeacon/shared/responseCatalog.ts'
+import {defaultResponseFilters,linkedResponseFilters,responseQuery,readResponsePage,type ResponseQuery} from '@starbeacon/shared/responseCatalog.ts'
 const message=useFeedback()
 const props = defineProps<{sensorId?:string;responseOnly?:boolean}>()
 const route=inject(routeLocationKey,undefined),router=inject(routerKey,undefined)
@@ -24,12 +24,17 @@ const reconcileKeys=new Map<string,{sha:string;key:string}>()
 type ResponseAttempt={task:SensorTask;kind:'response.read'|'response.revoke';key:string;input:{kind:string;connector_id:string;config_sha256:string;original_task_id:string;reason:string}}
 const responseAttempts=reactive(new Map<string,ResponseAttempt>())
 const unconfirmedResponse=computed(()=>responseAttempts.values().next().value as ResponseAttempt|undefined)
-const filters=reactive(defaultResponseFilters()),applied=shallowRef<ResponseQuery>(responseQuery(filters)),cursors=shallowRef(['']),nextCursor=shallowRef(''),filterError=shallowRef('')
-function search(){try{applied.value=responseQuery(filters);cursors.value=[''];items.value=[];nextCursor.value='';filterError.value='';void refresh()}catch(cause){filterError.value=(cause as Error).message}}
+const filters=reactive(defaultResponseFilters()),applied=shallowRef<ResponseQuery>(responseQuery(filters)),cursors=shallowRef(['']),nextCursor=shallowRef(''),filterError=shallowRef(''),linkedError=shallowRef(false)
+function search(){try{applied.value=responseQuery(filters);linkedError.value=false;cursors.value=[''];items.value=[];nextCursor.value='';filterError.value='';void refresh()}catch(cause){filterError.value=(cause as Error).message}}
 function reset(){Object.assign(filters,defaultResponseFilters());search()}
+function applyLinkedFilters(){
+ if(!props.responseOnly){void refresh();return}
+ controller?.abort();if(timer)clearTimeout(timer);items.value=[];cursors.value=[''];nextCursor.value='';filterError.value='';linkedError.value=false
+ try{Object.assign(filters,linkedResponseFilters(route?.query??{}));applied.value=responseQuery(filters);void refresh()}catch(cause){pending.value=false;linkedError.value=true;filterError.value=(cause as Error).message}
+}
 function page(next:boolean){if(pending.value||next&&!nextCursor.value||!next&&cursors.value.length<=1)return;cursors.value=next?[...cursors.value,nextCursor.value]:cursors.value.slice(0,-1);items.value=[];nextCursor.value='';void refresh()}
 function schedule(){if(timer)clearTimeout(timer);if(stopped||failures>=3)return;if(error.value||items.value.some(task=>['queued','delivered','running'].includes(task.state)))timer=setTimeout(()=>refresh(false),error.value?5000*2**Math.max(0,failures-1):5000)}
-async function refresh(showLoading=true){if(stopped)return;if(props.responseOnly&&session.current.value?.role!=='admin'){pending.value=false;return;}controller?.abort();const current=new AbortController();controller=current;if(showLoading){pending.value=true;failures=0}try{
+async function refresh(showLoading=true){if(stopped||props.responseOnly&&linkedError.value)return;if(props.responseOnly&&session.current.value?.role!=='admin'){pending.value=false;return;}controller?.abort();const current=new AbortController();controller=current;if(showLoading){pending.value=true;failures=0}try{
  const query={...applied.value,cursor:cursors.value.at(-1)??''}
  const result=await session.api.request<{items:SensorTask[]}>(props.responseOnly?'/response-actions?'+new URLSearchParams(Object.entries(query).map(([k,v])=>[k,String(v)])):'/tasks'+(props.sensorId?'?sensor_id='+encodeURIComponent(props.sensorId):''),{signal:current.signal})
  const qualified=props.responseOnly?await readResponsePage(result,query):undefined
@@ -73,7 +78,7 @@ async function respond(task:SensorTask,kind:'response.read'|'response.revoke'){
  }catch(cause){if(!current.signal.aborted){if(cause instanceof ApiError&&[400,401,403,404,409,413,422,429].includes(cause.status))responseAttempts.delete(identity);message.error(cause instanceof Error?cause.message:'联动任务提交失败')}}
  finally{if(!stopped&&cancelController===current)saving.value=false}
 }
-onMounted(refresh);watch(()=>[props.sensorId,props.responseOnly,session.current.value?.tenant_id,session.current.value?.id,session.current.value?.role],()=>{cancelController?.abort();cancelController=undefined;saving.value=false;items.value=[];reconcileKeys.clear();responseAttempts.clear();cursors.value=[''];nextCursor.value='';filterError.value='';Object.assign(filters,defaultResponseFilters());applied.value=responseQuery(filters);void refresh()});onScopeDispose(()=>{stopped=true;controller?.abort();cancelController?.abort();if(timer)clearTimeout(timer)});defineExpose({refresh:()=>{void refresh();void refreshDetail()}})
+onMounted(applyLinkedFilters);watch(()=>[route?.query.sensor_id,route?.query.device_id],()=>{if(props.responseOnly)applyLinkedFilters()});watch(()=>[props.sensorId,props.responseOnly,session.current.value?.tenant_id,session.current.value?.id,session.current.value?.role],()=>{cancelController?.abort();cancelController=undefined;saving.value=false;items.value=[];reconcileKeys.clear();responseAttempts.clear();cursors.value=[''];nextCursor.value='';filterError.value='';Object.assign(filters,defaultResponseFilters());applied.value=responseQuery(filters);if(props.responseOnly)applyLinkedFilters();else void refresh()});onScopeDispose(()=>{stopped=true;controller?.abort();cancelController?.abort();if(timer)clearTimeout(timer)});defineExpose({refresh:()=>{void refresh();void refreshDetail()}})
 </script>
 <template>
   <ResponseActionFilters v-if="responseOnly" :model="filters" :pending="pending" @search="search" @reset="reset"/>

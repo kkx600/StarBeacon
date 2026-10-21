@@ -35,7 +35,7 @@ describe('采集器 HTTP 联动',()=>{
   await fill(wrapper);const pending=deferred<unknown>();request.mockImplementationOnce(()=>pending.promise)
   dialogDOM().get('form').trigger('submit');dialogDOM().get('form').trigger('submit');await flushPromises();expect(request).toHaveBeenCalledTimes(2)
   const call=request.mock.lastCall!;expect(call[0]).toBe(`/sensors/${sensor.id}/response-tasks`);expect(call[1].body).toEqual({kind:'response.block',connector_id:'connector_test',config_sha256:'a'.repeat(64),target_ip:'198.51.100.10',ttl_seconds:300,reason:'异常通信人工确认'});expect(call[1].headers['Idempotency-Key']).toMatch(/^[a-z0-9-]{36}$/)
-  pending.resolve({id:taskID});await flushPromises();expect(wrapper.emitted('submitted')).toHaveLength(1);expect(message.success).toHaveBeenCalledWith('联动任务已受理，请在任务记录中核对设备配置状态')
+  pending.resolve({id:taskID});await flushPromises();expect(wrapper.emitted('submitted')).toEqual([[taskID]]);expect(message.success).toHaveBeenCalledWith('联动任务已受理，请在任务记录中核对设备配置状态')
  })
  it('未知提交锁定输入与原键，完整回执确认后才能结束',async()=>{
   const wrapper=await modal();await fill(wrapper);request.mockRejectedValueOnce(new Error('网络中断'));await submit(wrapper)

@@ -17,11 +17,15 @@ async function workspace(path='/rules'){const router=createRouter({history:creat
 async function name(value:string){const input=document.body.querySelector<HTMLInputElement>('#rule-package_name')!;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
 
 describe('规则包编辑',()=>{
- it('切换历史视图不会叠加旧规则弹窗，返回后保留规则草稿',async()=>{
+ it('切换历史视图后返回时保留未保存的名称和规则草稿',async()=>{
   const {wrapper,router}=await workspace();await click('创建规则包');await name('尚未保存的规则草稿');await writeRule(wrapper.getComponent(RuleEditor),rules)
   request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(wrapper.text()).toContain('应用识别规则')
-  await click('创建规则');expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).toContain('创建应用识别规则')
   await router.push('/rules');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.querySelector<HTMLInputElement>('#rule-package_name')?.value).toBe('尚未保存的规则草稿');expect(document.body.textContent).not.toContain('创建应用识别规则')
+  expect(wrapper.getComponent(RuleEditor).get('.cm-content').text()).toBe(rules)
+ })
+ it('跨规则工作区切换时只保留当前业务的弹窗',async()=>{
+  const {router}=await workspace();await click('创建规则包');request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0)
+  await click('创建规则');expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).toContain('创建应用识别规则');await router.push('/rules');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).not.toContain('创建应用识别规则')
  })
  it('无数据与读取失败有恢复入口，字段摘要与修订正确显示',async()=>{
   request.mockResolvedValue({items:[]});const{wrapper}=await workspace();expect(wrapper.text()).toContain('暂无规则包');request.mockRejectedValueOnce('offline');await click('刷新');expect(wrapper.text()).toContain('规则包读取失败');request.mockResolvedValueOnce({items:[rulePackage]});await click('重试');expect(wrapper.text()).toContain(rulePackage.name);expect(wrapper.text()).toContain('4');expect(wrapper.findAll('.ant-table')).toHaveLength(1)

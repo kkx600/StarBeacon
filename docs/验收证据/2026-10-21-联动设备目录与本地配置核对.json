@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "product": "星烽 StarBeacon",
+  "reviewed_at": "2026-10-21T00:55:29.166683+00:00",
+  "scope": "engineering_response_device_directory_and_local_configuration_checks_not_formal_product_acceptance",
+  "status": "passed_with_explicit_product_gaps",
+  "formal_release_qualified": false,
+  "features": {
+    "platform": "按执行探针、设备和原始核验状态过滤，使用绑定条件的稳定游标；核对心跳、设备观测、权限及配置，再提交固定设备任务；受理后按原编号读取详情。",
+    "collector": "只读核对固定本机配置文件的权限、结构与运行绑定；不读取凭据、测试设备、加载配置或触发安全动作。"
+  },
+  "provenance": {
+    "backend_source_sha256": "91ae99fabc19ddccd531012455b57232b393309a66c86d66e7bfba6a6038966e",
+    "backend_files": 598,
+    "frontend_source_sha256": "bf0b87c0bb478d7905bb6376bcac7f67df95fdf8cbff2f74c4b5b3b148386f25",
+    "frontend_files": 350,
+    "build_parent_commit": "b8f0e77270b746cd7e802095f0fef4797c075773",
+    "original_clean_commit": false,
+    "ui_executed_frontend_source": "eca1f4746957a1839335f9019c7b1818ce68bb5701e1db5493150abbc4d45d2c",
+    "later_source_delta": [
+      "web/tests/workspaces.test.ts"
+    ],
+    "local_and_remote_current_dist_bytes_equal": true,
+    "note": "原始父提交和非干净快照记录保持。后续仅拆分超时的既有测试并等待实际详情，页面代码未变化；当前同源本机与远程双端构建字节逐文件一致。提交后再核对 Git blob，不追补干净发行资格。"
+  },
+  "backend": {
+    "environment": "专属远程 Linux amd64 Docker，真实依赖与原生 AF_PACKET",
+    "tests": {
+      "go_unit_top_level": 519,
+      "integration_top_level": 126,
+      "live_af_packet_top_level": 1
+    },
+    "coverage": {
+      "covered": 20637,
+      "total": 22864,
+      "percentage": 90.25979706088174,
+      "minimum": 90
+    },
+    "test_case_failures": 0,
+    "test_case_skips": 0,
+    "note": "语句覆盖率沿用既有业务、CLI 和同源码实时网卡计数合并范围；一个无测试包的 package skip 不计作测试用例跳过。吞吐、长期完整性和办公服务商送达不由此授予资格。"
+  },
+  "frontend": {
+    "environment": "远程官方 Node.js 24.19.0 Docker，pnpm 12.6.0；独立可执行 tmpfs，四个测试进程",
+    "tests": 881,
+    "test_files": 59,
+    "tool_tests": 9,
+    "coverage_percent": {
+      "statements": 95.20262216924911,
+      "branches": 92.91808873720136,
+      "functions": 91.38611562572557,
+      "lines": 98.81070366699703
+    },
+    "local_coverage_percent": {
+      "statements": 95.19517282479141,
+      "branches": 92.91808873720136,
+      "functions": 91.36289760854423,
+      "lines": 98.81070366699703
+    },
+    "coverage_minimum_each": 90,
+    "coverage_denominator_scope": "前端自有源码；不将需求交付比例等同于代码覆盖率",
+    "local_full_check": "passed",
+    "remote_full_check": "passed",
+    "typecheck": "passed",
+    "both_app_builds": "passed",
+    "test_timeout_ms_unchanged": 5000,
+    "coverage_command_timeout_seconds_unchanged": 600
+  },
+  "http_protocol_ui": {
+    "status": "passed",
+    "scope": "isolated_http_protocol_ui_no_real_firewall_effect",
+    "backend_source": "91ae99fabc19ddccd531012455b57232b393309a66c86d66e7bfba6a6038966e",
+    "frontend_source": "eca1f4746957a1839335f9019c7b1818ce68bb5701e1db5493150abbc4d45d2c",
+    "target_ip": "198.51.100.173",
+    "tasks": {
+      "block": "task_ee1bc11f2b1559a1300e4ade81809e64",
+      "read_active": "task_a471b09c870f332955c289c21d1e6f2c",
+      "revoke": "task_7ff5918b01286cf5d6e7c70ac46a87e8",
+      "read_revoked": "task_de98055dc2abef7a85ef26d2fade0b6b"
+    },
+    "traffic_effect": "not_observed",
+    "checks": [
+      "设备目录冻结原连接器与配置",
+      "受理后独立详情不依赖列表窗口",
+      "原租约回读有效",
+      "条件解除回读已解除",
+      "再次回读原租约已解除"
+    ],
+    "after_restore": "passed",
+    "real_firewall_or_edr_effect_qualified": false
+  },
+  "local_configuration_ui": {
+    "consistent": "passed",
+    "valid_file_drift_requires_restart": "passed",
+    "permissions_0644_invalid": "passed",
+    "original_bytes_and_permissions_0600_restored": "passed",
+    "configuration_applied": false,
+    "credential_or_ca_contents_read": false
+  },
+  "navigation_and_ui": {
+    "groups": 12,
+    "workspaces": 43,
+    "available_screens": 40,
+    "workspaces_with_available_screens": 26,
+    "unprovided_workspaces": 17,
+    "platform_geometry": 399,
+    "collector_geometry": 42,
+    "device_detail_geometry": 7,
+    "platform_routes": 106,
+    "collector_routes": 8,
+    "pc_sizes": [
+      [
+        1024,
+        768
+      ],
+      [
+        1280,
+        720
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1440,
+        900
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2560,
+        1440
+      ],
+      [
+        3840,
+        2160
+      ]
+    ],
+    "root_horizontal_overflow": false,
+    "maximum_business_tables_per_page": 1,
+    "scope": "已登记视图只读几何及选定交互；不替代全部 CRUD、异常分支或全产品验收"
+  },
+  "prototype": {
+    "themeSha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "layoutSha256": "7cd8fc109ef3462f84a1c4e1a66bbcfbe7813b5b3fcb8a389fbe31247c82ab65",
+    "renderTreeSha256": "fed97407c1a3e1081fe3f387c60bb9c970797a24022449ee69f34113e5dfd47f",
+    "renderTreeFiles": 322,
+    "base_images": 797,
+    "supplemental_images": 105,
+    "total_images": 902,
+    "capture_dimensions": [
+      1440,
+      900
+    ],
+    "format": "浏览器原生 JPEG，未转码或修改像素",
+    "online_gallery_check": "passed",
+    "source_check": "主题、布局、完整渲染树和登记组件逐文件校验；采集器路径保持摘要核对，父目录穿越被拒绝",
+    "tool_tests": 11,
+    "synthetic": true
+  },
+  "deployment": {
+    "status": "passed",
+    "backend_image": "sha256:8183d38ea2689ec24229e1377ba5116d00b107660003e8e0d22703203488a8e5",
+    "static_files_verified": 95,
+    "programs_verified": 5,
+    "running_roles": 4,
+    "readiness_checks": 4,
+    "database_migration": 47,
+    "history_gateway_paths": 58,
+    "missing_static_status": 404,
+    "base_runtime_restored": true,
+    "identity_and_wal_unchanged": true,
+    "production_installation_tls_ha_or_capacity_qualified": false
+  },
+  "cleanup": {
+    "status": "passed",
+    "owned_stopped_frontend_containers_removed": 13,
+    "owned_frontend_networks_removed": 1,
+    "owned_build_and_frontend_logical_bytes_removed": 3535478408,
+    "protocol_fixture_and_overlay_logical_bytes_removed": 17623657,
+    "local_temporary_binary_bytes_removed": 17599686,
+    "fixture_actual_stop_exit_code": 143,
+    "fixture_oom_killed": false,
+    "private_fixture_credentials_destroyed": true,
+    "post_cleanup_absence_check": "passed",
+    "allocated_or_instant_host_free_space_not_inferred": true,
+    "persistent_identity_wal_ca_business_history_and_archives_retained": true,
+    "other_project_resources_untouched": true,
+    "global_prune": false
+  },
+  "checks": {
+    "quality_tests": 70,
+    "acceptance_tool_tests": 86,
+    "prototype_tool_tests": 11,
+    "alignment": "107 requirements; 134 platform HTTP operations; 19 collector HTTP operations",
+    "go_vet_and_gofmt": "passed"
+  },
+  "superseded_attempts": {
+    "retained": true,
+    "summary": "保留旧来源截图、浏览器连接中断、检查程序前置条件偏差、初始来源路径遗漏、依赖准备失败、串行测试超过 600 秒和并发测试超过既有 5 秒等原始记录。修正后的完整同源检查独立执行；未提高超时、缩减用例、放宽断言或降低覆盖率门槛。",
+    "raw_failure_status_not_restamped": true
+  },
+  "requirement_status": {
+    "partial": 62,
+    "missing": 45
+  },
+  "formal_requirement_acceptance_passed": 0,
+  "requirements_total": 107,
+  "remaining_release_gaps": [
+    "完整网络域、设备 HA、执行器排他接管、集中配置生命周期和浏览器认证插件",
+    "规则来源与 TUF、生产规模发布效果门禁和自动故障回退",
+    "关联检测、情报生命周期、风险治理及文件与沙箱",
+    "应用会话字节计量及真实产品样本效果",
+    "真实外部模型、通知服务商、真实防火墙和 EDR 效果",
+    "完整安装与平台升级、生产 TLS、跨站点 HA／灾备、容量与长稳、全部 PC 交互",
+    "当前同源 Linux UPX ZIP 发行包及完整产品发布验收"
+  ],
+  "archives": [
+    {
+      "scope": "current_frozen_backend_sources_raw_qualification_and_observer",
+      "archive": "devices958-backend-raw.tar.gz",
+      "sha256": "b1222fde7a68ec1bf602ed4c7784977fa62705993df6bb13ffe9d0bb32fc64b8",
+      "bytes": 10729803,
+      "members_readback_verified": 637
+    },
+    {
+      "scope": "private_qualified_sources_current_ui_prototypes_and_superseded_attempts_no_private_credentials",
+      "archive": "devices961-qualified-raw.tar.gz",
+      "sha256": "9a7e6e4cff0ea8ca6b20d9491697127da04d6e11dd657dc9b2b6de92cd126021",
+      "bytes": 89988242,
+      "members_readback_verified": 5089
+    },
+    {
+      "scope": "post_cleanup_runtime_absence_and_owned_fixture_cleanup_evidence",
+      "archive": "devices966-post-cleanup-raw.tar.gz",
+      "sha256": "273dd4cda80d0d22a609d030be824e2a32227a39e92f0839998296dfbbe31ef7",
+      "bytes": 120206,
+      "members_readback_verified": 20
+    },
+    {
+      "scope": "isolated_protocol_program_and_public_state_private_keys_and_bearer_excluded",
+      "archive": "devices962-fixture-raw.tar.gz",
+      "sha256": "b8012ee57d4aa9ed02e5096d1403638a4d519d5ba415ad7df17cccf802c817ed",
+      "bytes": 9651755,
+      "members_readback_verified": 9,
+      "ephemeral_private_keys_and_bearer_excluded": true
+    }
+  ],
+  "archive_visibility": "原始源码、失败和通过记录保存在 Git 忽略的私有验收目录；本文件仅为脱敏摘要与校验值，不授予正式发行资格。"
+}

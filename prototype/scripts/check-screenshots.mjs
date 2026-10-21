@@ -48,7 +48,7 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
     if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)throw new Error('截图导航或布局与当前源码不同，需要从浏览器重新捕获')
     if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)throw new Error('截图界面源码与当前版本不同，需要从浏览器重新捕获')
     for(const input of source.renderInputs??[]){
-      if(typeof input.path!=='string'||input.path.split('/').includes('..')||! /^(prototype\/src|web\/(platform|packages\/shared)\/src)\/[A-Za-z0-9_./-]+$/.test(input.path))throw new Error('截图组件来源路径无效')
+      if(typeof input.path!=='string'||input.path.split('/').includes('..')||! /^(prototype\/src|web\/(platform|collector|packages\/shared)\/src)\/[A-Za-z0-9_./-]+$/.test(input.path))throw new Error('截图组件来源路径无效')
       if(createHash('sha256').update(await readFile(new URL('../../'+input.path,import.meta.url))).digest('hex')!==input.sha256)throw new Error('截图组件与当前源码不同，需要从浏览器重新捕获')
     }
     const bytes=await readFile(new URL(file,root))

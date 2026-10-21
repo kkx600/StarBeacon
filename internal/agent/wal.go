@@ -41,6 +41,7 @@ type WAL struct {
 	packetArchives                            *PacketArchiveController
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
+	responseConfigCheck                       func() response.ConfigCheck
 	applicationState                          func() json.RawMessage
 	protocolSnapshot                          func(context.Context) *protocolcap.Report
 	engineSnapshot                            func(context.Context) *enginehealth.Report

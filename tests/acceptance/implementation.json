@@ -1240,6 +1240,36 @@
         "web/tests/response.test.ts"
       ],
       "boundary": "独立管理员入口检索本租户留存期内的 response.block/read/revoke；固定创建时间窗口最多 31 天、每页 1–100 项、筛选绑定游标和时间/标识排序，不受最近 200 项上限限制。按执行探针、设备、单 IP、类型及当前执行状态精确筛选；详情独立核对原授权、原租约和回执，不依赖设备在线或新配置。读取不修改任务、回执或设备；未知联动提交保留原输入与键，在当前页面会话内确认原受理结果。当前不提供 EDR 隔离/恢复、跨设备冲突、全局停止或真实封禁效果资格；同源远程及页面验收以独立记录为准。"
+    },
+    {
+      "id": "response_devices",
+      "name": "联动设备目录与本地配置核对",
+      "code": [
+        "internal/response/connectors.go",
+        "internal/store/response_connectors.go",
+        "internal/platform/response_connectors.go",
+        "internal/agent/response.go",
+        "internal/agent/localapi.go",
+        "web/platform/src/views/ResponseDevicesView.vue",
+        "web/collector/src/features/network/ResponseConfiguration.vue",
+        "web/packages/shared/src/responseDevices.ts",
+        "web/packages/shared/src/components/ResponseDeviceTable.vue",
+        "web/packages/shared/src/components/ResponseDeviceDetail.vue",
+        "web/packages/shared/src/components/ResponseConfigCheckDialog.vue",
+        "prototype/src/components/ResponseDevicesPreview.vue"
+      ],
+      "pages": [
+        "platform:/response/devices",
+        "collector:/network?view=responses"
+      ],
+      "tests": [
+        "internal/response/connectors_test.go",
+        "internal/platform/response_connectors_test.go",
+        "internal/agent/response_config_test.go",
+        "tests/integration/response_connectors_test.go",
+        "web/tests/response-devices.test.ts"
+      ],
+      "boundary": "管理员按执行探针、设备及原始核验状态分页读取本租户最多每探针八个 HTTP 连接器。目录保留离线及停用历史，设备核验、探针心跳与实际流量效果分开表达。探针及连接器升序游标绑定所有筛选与页大小，不承诺跨心跳状态快照。限时封禁冻结所选设备、配置摘要及注册身份，提交仍由已有任务链复核权限与本地目标范围；相关动作按探针及设备关联。采集器只核对启动时固定私有配置文件的权限、结构及运行绑定，不接受任意路径、不读取凭据、不连设备、不应用配置；CA 内容与同路径凭据轮换不在此核对范围。管理地址与凭据仍由本机私有文件管理，不提供集中凭据托管、网络域配置、设备 HA、排他接管、认证插件或商业设备效果验收。工程验证以独立记录为准。"
     }
   ],
   "requirements": [
@@ -2014,13 +2044,19 @@
     },
     {
       "id": "SB-RSP-002",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "response_http",
+        "response_devices"
+      ],
+      "implemented": [
+        "平台集中分页目录、执行探针绑定、设备身份与配置摘要、观测时效、任务关联及固定设备限时封禁入口",
+        "采集器固定私有文件的结构与运行绑定核对，区分匹配、待重启、无效和未配置状态"
+      ],
       "remaining": [
-        "设备能力中心/采集器绑定/网络域",
-        "范围校验与执行器排他接管"
+        "完整设备能力中心与网络域管理",
+        "集中配置生命周期、执行器排他接管、设备 HA 与商业设备实机验收"
       ]
     },
     {

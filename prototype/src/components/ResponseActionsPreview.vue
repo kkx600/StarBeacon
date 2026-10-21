@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import {computed,reactive,watch} from 'vue'
+import {useRoute} from 'vue-router'
 import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
 import TaskTable from '../../../web/packages/shared/src/components/TaskTable.vue'
 import ResponseActionFilters from '../../../web/packages/shared/src/components/ResponseActionFilters.vue'
-import {defaultResponseFilters} from '../../../web/packages/shared/src/responseCatalog'
+import {defaultResponseFilters,linkedResponseFilters} from '../../../web/packages/shared/src/responseCatalog'
 import type {SensorTask,TaskDetailState} from '../../../web/packages/shared/src/types'
 import type {PreviewState} from '../models'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
 const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>(),message=useFeedback()
 const filters=reactive(defaultResponseFilters())
+const route=useRoute()
+watch(()=>[route.query.sensor_id,route.query.device_id],()=>{try{Object.assign(filters,linkedResponseFilters(route.query))}catch{message.error('关联动作条件无效，请核对探针与设备标识。')}},{immediate:true})
 const rows:SensorTask[]=['unknown','succeeded','queued'].map((state,i)=>{
  const id=['task_action_unknown','task_action_verified','task_action_pending'][i]!,at=Date.now()-(i===2?5000:3600000),created=new Date(at).toISOString(),leaseEnd=new Date(at+300000).toISOString(),finished=new Date(at+10000).toISOString()
  const action={schema_version:'response.action.v1' as const,connector_id:'connector_hq',config_sha256:'a'.repeat(64),device_id:'device_hq',lease_id:id,owner_sha256:'b'.repeat(64),target_ip:'198.51.100.'+(24+i),requested_at:created,expires_at:leaseEnd,reason:'合成限时处置示例'}

@@ -23,15 +23,17 @@ type responseRecord struct {
 	RetainUntil time.Time        `json:"retain_until"`
 }
 type ResponseService struct {
-	WAL        *WAL
-	mu         sync.Mutex
-	healthMu   sync.RWMutex
-	clients    map[string]*response.Client
-	health     map[string]response.Health
-	retention  int
-	management []string
-	addresses  func() ([]net.Addr, error)
-	resolve    func(context.Context, string, string) ([]netip.Addr, error)
+	WAL          *WAL
+	mu           sync.Mutex
+	healthMu     sync.RWMutex
+	clients      map[string]*response.Client
+	health       map[string]response.Health
+	retention    int
+	management   []string
+	addresses    func() ([]net.Addr, error)
+	resolve      func(context.Context, string, string) ([]netip.Addr, error)
+	configPath   string
+	configSHA256 string
 }
 
 func NewResponseService(w *WAL, path string, management ...string) (*ResponseService, error) {
@@ -40,6 +42,7 @@ func NewResponseService(w *WAL, path string, management ...string) (*ResponseSer
 		return nil, err
 	}
 	s := &ResponseService{WAL: w, clients: map[string]*response.Client{}, health: map[string]response.Health{}, retention: file.RetentionDays, management: management, addresses: net.InterfaceAddrs, resolve: net.DefaultResolver.LookupNetIP}
+	s.configPath, s.configSHA256 = path, file.SHA256()
 	for _, config := range file.Connectors {
 		client, err := response.NewClient(config)
 		if err != nil {
@@ -60,6 +63,25 @@ func (s *ResponseService) Close() {
 	for _, c := range s.clients {
 		c.Close()
 	}
+}
+
+func (s *ResponseService) CheckConfiguration() response.ConfigCheck {
+	out := response.ConfigCheck{SchemaVersion: "response.config-check.v1", State: "not_configured", CheckedAt: time.Now().UTC()}
+	if s == nil {
+		return out
+	}
+	out.RunningCount = len(s.clients)
+	file, err := response.LoadFile(s.configPath)
+	if err != nil {
+		out.State = "invalid"
+		return out
+	}
+	out.FileCount = len(file.Connectors)
+	out.State = "current"
+	if file.SHA256() != s.configSHA256 {
+		out.State = "restart_required"
+	}
+	return out
 }
 func (s *ResponseService) Health() []response.Health {
 	s.healthMu.RLock()

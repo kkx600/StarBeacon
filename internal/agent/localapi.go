@@ -149,6 +149,18 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 		httpapi.JSON(w, 200, out)
 	}))
 	m.HandleFunc("GET /api/local/v1/health", auth.Require(true, func(w http.ResponseWriter, r *http.Request) { httpapi.JSON(w, 200, wal.Health(r.Context(), statePath)) }))
+	m.HandleFunc("GET /api/local/v1/response-config-check", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RawQuery != "" {
+			httpapi.Fail(w, r, 400, "invalid_response_config_check", "本地配置核对不接受文件路径或其他参数")
+			return
+		}
+		var service *ResponseService
+		out := service.CheckConfiguration()
+		if wal.responseConfigCheck != nil {
+			out = wal.responseConfigCheck()
+		}
+		httpapi.JSON(w, 200, out)
+	}))
 	m.HandleFunc("GET /api/local/v1/network/interfaces", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		v, e := Interfaces()
 		if e != nil {

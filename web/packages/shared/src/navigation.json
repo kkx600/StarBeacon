@@ -652,6 +652,14 @@
       "admin": true
     },
     {
+      "id": "devices",
+      "workspace": "devices",
+      "path": "/response/devices",
+      "title": "联动设备",
+      "module": "responseDevices",
+      "admin": true
+    },
+    {
       "id": "actions",
       "workspace": "actions",
       "path": "/response/actions",

@@ -1708,6 +1708,95 @@
         },
         "x-required-role": "admin"
       }
+    },
+    "/api/local/v1/response-config-check": {
+      "get": {
+        "summary": "核对本地连接器配置",
+        "description": "只核对启动时指定的私有文件权限、结构与运行配置绑定；不接受路径或查询参数，不读取凭据、不测试连通性、不应用配置。CA 内容变化与同路径凭据轮换不由该结果验证，设备认证以独立健康核验为准。",
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseConfigCheck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求无效、不可访问、提交冲突、额度受限或依赖不可用；以 code/message 为准。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
     }
   },
   "components": {
@@ -3915,6 +4004,44 @@
             }
           }
         ]
+      },
+      "ResponseConfigCheck": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "state",
+          "running_count",
+          "file_count",
+          "checked_at"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "response.config-check.v1"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "not_configured",
+              "invalid",
+              "current",
+              "restart_required"
+            ]
+          },
+          "running_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "file_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   }

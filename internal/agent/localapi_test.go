@@ -16,6 +16,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/clientip"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	bolt "go.etcd.io/bbolt"
 )
@@ -74,7 +75,7 @@ func TestLocalManagementAuthenticationNetworkConfigurationAndStorageFailure(t *t
 		}
 		return data
 	}
-	for _, path := range []string{"/api/local/v1/network/interfaces", "/api/local/v1/capture-config", "/api/local/v1/health", "/api/local/v1/identity"} {
+	for _, path := range []string{"/api/local/v1/network/interfaces", "/api/local/v1/capture-config", "/api/local/v1/health", "/api/local/v1/identity", "/api/local/v1/response-config-check"} {
 		request("GET", path, "", 401)
 	}
 	request("POST", "/api/local/v1/auth/login", `{"username":"unknown","password":"local-test-password"}`, 401)
@@ -92,6 +93,16 @@ func TestLocalManagementAuthenticationNetworkConfigurationAndStorageFailure(t *t
 	}
 	login()
 	request("GET", "/api/local/v1/auth/me", "", 200)
+	if !strings.Contains(string(request("GET", "/api/local/v1/response-config-check", "", 200)), `"state":"not_configured"`) {
+		t.Fatal("未配置状态未返回")
+	}
+	request("GET", "/api/local/v1/response-config-check?path=/etc/passwd", "", 400)
+	wal.responseConfigCheck = func() response.ConfigCheck {
+		return response.ConfigCheck{SchemaVersion: "response.config-check.v1", State: "current", RunningCount: 1, FileCount: 1, CheckedAt: time.Now().UTC()}
+	}
+	if !strings.Contains(string(request("GET", "/api/local/v1/response-config-check", "", 200)), `"state":"current"`) {
+		t.Fatal("运行配置核对未接通")
+	}
 	var interfaces struct {
 		Items []NetworkInterface `json:"items"`
 	}
