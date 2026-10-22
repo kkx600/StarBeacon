@@ -3,6 +3,7 @@ import type {RouteRecordRaw,RouteLocationNormalized,RouteLocationRaw} from 'vue-
 import {navigationGroups,navigationWorkspaces,platformScreens,workspacePath,type PlatformScreen} from '@starbeacon/shared/navigation.ts'
 
 const components:Record<string,NonNullable<RouteRecordRaw['component']>>={
+	watchlists:()=>import('./views/WatchlistsView.vue'),
 	correlation:()=>import('./views/CorrelationView.vue'),
   syslogSources:()=>import('./views/SyslogSourcesView.vue'),logs:()=>import('./views/LogsView.vue'),
   overview:()=>import('./views/OverviewView.vue'),screen:()=>import('./views/OverviewView.vue'),

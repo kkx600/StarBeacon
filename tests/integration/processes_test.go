@@ -303,7 +303,8 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			if _, err := tx.Exec(clean, `DELETE FROM starbeacon_jobs.river_job WHERE args->>'tenant_id'=$1`, tenant); err != nil {
 				return err
 			}
-			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			// 隔离测试租户按外键依赖先清理任务授权证明，再清理任务本身。
+			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "response_watchlist_checks", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}

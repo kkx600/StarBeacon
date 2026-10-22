@@ -16,10 +16,13 @@ import (
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/triage"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 func decisionResponseFailure(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, watchlist.ErrProtected):
+		httpapi.Fail(w, r, 409, "response_target_protected", "目标命中当前有效保护名单，未创建封禁任务；请核对名单范围。")
 	case errors.Is(err, decision.ErrInput), errors.Is(err, response.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_decision_response", "请确认原评估、探针、联动设备、期限及处置依据")
 	case errors.Is(err, decision.ErrSource), errors.Is(err, store.ErrAlertIdentity):

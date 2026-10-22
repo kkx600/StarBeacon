@@ -15,6 +15,8 @@ const themeSha256=themeHash.digest('hex')
 const manifest=JSON.parse(await readFile(new URL('../public/page-manifest.json',import.meta.url),'utf8'))
 const log=JSON.parse(await readFile(new URL('capture-log.json',root),'utf8'))
 const expected=[...manifest.pages.flatMap(p=>p.states.map(s=>s.image)),...(manifest.collector?.pages??[]).flatMap(p=>p.states.map(s=>s.image)),...[...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>`boundary/${p.id}.jpg`)]
+const expectedPages=new Map([...manifest.pages,...(manifest.collector?.pages??[])].flatMap(p=>p.states.map(s=>[s.image,{page:p.id,state:s.state}])))
+const expectedBoundaries=new Map([...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>[`boundary/${p.id}.jpg`,p.url]))
 const refresh=process.argv.includes('--refresh')
 const prior=refresh?null:JSON.parse(await readFile(new URL('provenance.json',root),'utf8'))
 const entries=[]
@@ -44,6 +46,10 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
   try{
     const source=log.entries.findLast(e=>e.file===file)
     if(!source||!source.stateVerified||!(source.renderer==='Codex in-app browser'||source.renderer==='Chrome DevTools MCP'&&source.captureMethod==='chrome-devtools-mcp-native'))throw new Error('缺少已核对的浏览器截图来源')
+    const target=expectedPages.get(file)
+    if(target&&(source.viewport?.page!==target.page||source.viewport?.state!==target.state))throw new Error('截图可见页面或状态与页面目录不同')
+    const boundary=expectedBoundaries.get(file)
+    if(boundary&&(source.viewport?.page!=null||new URL(source.url).pathname!==new URL(boundary,'http://localhost').pathname))throw new Error('边界截图仍停留在业务页面或错误路由')
     if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)throw new Error('截图主题与当前全局主题不同，需要从浏览器重新捕获')
     if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)throw new Error('截图导航或布局与当前源码不同，需要从浏览器重新捕获')
     if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)throw new Error('截图界面源码与当前版本不同，需要从浏览器重新捕获')

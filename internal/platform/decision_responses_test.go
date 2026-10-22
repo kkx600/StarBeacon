@@ -11,6 +11,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/decision"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 func TestDecisionResponseHTTPStrictAuthorizationInput(t *testing.T) {
@@ -70,6 +71,8 @@ func TestDecisionResponseFailureDoesNotReportAccepted(t *testing.T) {
 		status int
 		code   string
 	}{
+		{watchlist.ErrProtected, 409, "response_target_protected"},
+		{errors.Join(response.ErrInput, watchlist.ErrProtected), 409, "response_target_protected"},
 		{decision.ErrInput, 400, "invalid_decision_response"}, {response.ErrInput, 400, "invalid_decision_response"},
 		{decision.ErrSource, 409, "decision_response_source_changed"}, {store.ErrAlertIdentity, 409, "decision_response_source_changed"},
 		{store.ErrConflict, 409, "decision_response_conflict"}, {response.ErrUnavailable, 409, "response_device_unavailable"},

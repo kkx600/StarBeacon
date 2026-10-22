@@ -6,7 +6,7 @@ import {formatTime} from '@starbeacon/shared/types.ts'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import {incidentStatuses,incidentCategories,incidentSeverities,type IncidentRecord} from './incident'
 defineProps<{record:IncidentRecord|null;pending:boolean;error:string;history:readonly IncidentRecord[];historyPending:boolean;historyError:string;next:string}>()
-const emit=defineEmits<{close:[];edit:[];tasks:[];reload:[];history:[before?:string]}>()
+const emit=defineEmits<{close:[];edit:[];tasks:[];notes:[];reload:[];history:[before?:string]}>()
 const active=ref('overview')
 function changeTab(value:unknown){if(value==='history')emit('history')}
 </script>
@@ -14,7 +14,7 @@ function changeTab(value:unknown){if(value==='history')emit('history')}
  <a-modal :open="true" title="事件调查" :width="920" :footer="null" @cancel="emit('close')">
   <StatePanel :loading="pending" :error="error" @retry="emit('reload')">
    <template v-if="record">
-    <div class="incident-detail-actions"><a-tag :color="record.spec.status==='closed'?'green':record.spec.status==='investigating'?'blue':'orange'">{{incidentStatuses[record.spec.status]}}</a-tag><div class="filter-actions"><a-button @click="emit('tasks')">协作任务</a-button><a-button type="primary" @click="emit('edit')">{{record.spec.status==='closed'?'重开或复核':'记录调查'}}</a-button></div></div>
+    <div class="incident-detail-actions"><a-tag :color="record.spec.status==='closed'?'green':record.spec.status==='investigating'?'blue':'orange'">{{incidentStatuses[record.spec.status]}}</a-tag><div class="filter-actions"><a-button @click="emit('notes')">调查笔记</a-button><a-button @click="emit('tasks')">协作任务</a-button><a-button type="primary" @click="emit('edit')">{{record.spec.status==='closed'?'重开或复核':'记录调查'}}</a-button></div></div>
     <a-tabs v-model:active-key="active" @change="changeTab"><a-tab-pane key="overview" tab="调查概览">
      <h2 class="incident-title">{{record.spec.title}}</h2><p class="incident-text">{{record.spec.summary}}</p>
      <a-descriptions bordered :column="1" size="small"><a-descriptions-item label="事件标识"><span class="technical">{{record.id}}</span></a-descriptions-item><a-descriptions-item label="分类 / 严重度">{{incidentCategories[record.spec.category]}} / {{incidentSeverities[record.spec.severity]}}</a-descriptions-item><a-descriptions-item label="责任人">{{record.owner_name||'待分派'}}</a-descriptions-item><a-descriptions-item label="调查修订 / 记录时间">{{record.revision}} / {{formatTime(record.recorded_at)}}</a-descriptions-item><a-descriptions-item label="建立时间">{{formatTime(record.created_at)}}</a-descriptions-item><a-descriptions-item label="当前修订保留期限">{{formatTime(record.expires_at)}} · {{record.spec.status==='closed'?'已结案记录按固化期限保留':'未关闭事件及其历史受保护'}}</a-descriptions-item></a-descriptions>

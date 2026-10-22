@@ -113,7 +113,7 @@ func (r ContinuousRecord) Seal() (ContinuousRecord, error) {
 		if mode != "approval" || r.Code != "manual_confirmation_required" || r.TaskID != "" {
 			return ContinuousRecord{}, ErrSource
 		}
-	} else if r.State != "skipped" || r.TaskID != "" || !slices.Contains([]string{"policy_not_matched", "model_binding_changed", "score_below_threshold", "conclusion_not_eligible", "evidence_limited", "references_incomplete", "sensor_binding_changed", "evidence_changed", "target_cooldown", "event_already_authorized", "hourly_quota", "device_unavailable", "task_conflict", "tenant_quota"}, r.Code) {
+	} else if r.State != "skipped" || r.TaskID != "" || !slices.Contains([]string{"policy_not_matched", "model_binding_changed", "score_below_threshold", "conclusion_not_eligible", "evidence_limited", "references_incomplete", "sensor_binding_changed", "evidence_changed", "target_cooldown", "event_already_authorized", "hourly_quota", "device_unavailable", "target_protected", "task_conflict", "tenant_quota"}, r.Code) {
 		return ContinuousRecord{}, ErrSource
 	}
 	r.SHA256 = ""

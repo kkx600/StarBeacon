@@ -16,24 +16,26 @@ import (
 	"github.com/kkx600/StarBeacon/internal/model"
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/transport"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 var ErrConflict = errors.New("资源修订或在途任务冲突")
 
 type SensorTask struct {
-	ResponseAction *responseapi.Action `json:"response_action,omitempty"`
-	ID             string              `json:"id"`
-	SensorID       string              `json:"sensor_id"`
-	Kind           string              `json:"kind"`
-	State          string              `json:"state"`
-	CreatedBy      string              `json:"created_by"`
-	CreatedAt      time.Time           `json:"created_at"`
-	ExpiresAt      time.Time           `json:"expires_at"`
-	RetainUntil    time.Time           `json:"retain_until"`
-	DeliveryCount  int                 `json:"delivery_count"`
-	UpdatedAt      time.Time           `json:"updated_at"`
-	Receipt        json.RawMessage     `json:"receipt"`
-	RuleResolution json.RawMessage     `json:"rule_resolution,omitempty"`
+	ResponseProtection *ResponseProtection `json:"response_protection,omitempty"`
+	ResponseAction     *responseapi.Action `json:"response_action,omitempty"`
+	ID                 string              `json:"id"`
+	SensorID           string              `json:"sensor_id"`
+	Kind               string              `json:"kind"`
+	State              string              `json:"state"`
+	CreatedBy          string              `json:"created_by"`
+	CreatedAt          time.Time           `json:"created_at"`
+	ExpiresAt          time.Time           `json:"expires_at"`
+	RetainUntil        time.Time           `json:"retain_until"`
+	DeliveryCount      int                 `json:"delivery_count"`
+	UpdatedAt          time.Time           `json:"updated_at"`
+	Receipt            json.RawMessage     `json:"receipt"`
+	RuleResolution     json.RawMessage     `json:"rule_resolution,omitempty"`
 }
 type TaskDelivery struct {
 	ID                 string
@@ -55,6 +57,7 @@ func (p *Postgres) CreateTask(ctx context.Context, u model.Principal, sensor, ki
 func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kind, key string, payload json.RawMessage, signer ed25519.PrivateKey, mustCreate bool) (string, error) {
 	var id string
 	var sampleID *string
+	var protection *watchlist.ResponseCheck
 	request := control.Digest(append([]byte(sensor+"\x00"+kind+"\x00"), payload...))
 	if strings.HasPrefix(kind, "response.") || kind == "applications.apply" {
 		request = control.Digest(append([]byte(u.ID+"\x00"+sensor+"\x00"+kind+"\x00"), payload...))
@@ -148,6 +151,12 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 			if e != nil {
 				return e
 			}
+			if kind == "response.block" {
+				protection, e = responseProtectionCheck(ctx, tx, u.TenantID, sensor, registration, c.Payload, now)
+				if e != nil {
+					return e
+				}
+			}
 		}
 		raw, signature, e := control.Encode(c, signer)
 		if e != nil {
@@ -160,12 +169,15 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 			}
 			return e
 		}
+		if e = saveResponseProtection(ctx, tx, u.TenantID, id, control.Digest(raw), protection); e != nil {
+			return e
+		}
 		return insertOperationAudit(ctx, tx, u, "sensor.task."+kind, id, key)
 	}()
 	return id, e
 }
 
-const taskColumns = `id,sensor_id,kind,state,created_by,created_at,expires_at,retain_until,delivery_count,updated_at,COALESCE(receipt,'{}'::jsonb),rule_resolution,CASE WHEN kind LIKE 'response.%' THEN command ELSE NULL END,command_sha256,registration_id`
+const taskColumns = `id,sensor_id,kind,state,created_by,created_at,expires_at,retain_until,delivery_count,updated_at,COALESCE(receipt,'{}'::jsonb),rule_resolution,CASE WHEN kind LIKE 'response.%' THEN command ELSE NULL END,command_sha256,registration_id,(SELECT jsonb_build_object('schema_version','response.protection.v1','command_sha256',c.command_sha256,'check_sha256',c.check_sha256,'check',c.check_data) FROM response_watchlist_checks c WHERE c.tenant_id=sensor_tasks.tenant_id AND c.task_id=sensor_tasks.id AND c.expires_at>now())`
 
 // 字段唯一性覆盖整个 JSON；命令封套与嵌套授权分别限定各自字段，不能混用层级。
 func storedResponseCommand(raw []byte) (control.Command, error) {
@@ -196,8 +208,9 @@ func storedTaskBinding(c control.Command, raw []byte, task SensorTask, tenant, r
 func scanSensorTask(row pgx.Row, tenant string) (SensorTask, error) {
 	var v SensorTask
 	var rawCommand []byte
+	var rawProtection []byte
 	var commandSHA, registration string
-	if err := row.Scan(&v.ID, &v.SensorID, &v.Kind, &v.State, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &v.RetainUntil, &v.DeliveryCount, &v.UpdatedAt, &v.Receipt, &v.RuleResolution, &rawCommand, &commandSHA, &registration); err != nil {
+	if err := row.Scan(&v.ID, &v.SensorID, &v.Kind, &v.State, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &v.RetainUntil, &v.DeliveryCount, &v.UpdatedAt, &v.Receipt, &v.RuleResolution, &rawCommand, &commandSHA, &registration, &rawProtection); err != nil {
 		return v, err
 	}
 	if strings.HasPrefix(v.Kind, "response.") {
@@ -210,6 +223,11 @@ func scanSensorTask(row pgx.Row, tenant string) (SensorTask, error) {
 			return v, err
 		}
 		v.ResponseAction = &a
+	}
+	var err error
+	v.ResponseProtection, err = readResponseProtection(rawProtection, commandSHA, v)
+	if err != nil {
+		return v, err
 	}
 	return v, nil
 }

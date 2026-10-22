@@ -1,7 +1,7 @@
 import {readFile,readdir,lstat} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
 
-export const renderRoots=['prototype/src','web/platform/src','web/packages/shared/src']
+export const renderRoots=['prototype/src','web/platform/src','web/collector/src','web/packages/shared/src']
 export async function digestRenderTree(project){
   const paths=[]
   for(const root of renderRoots){

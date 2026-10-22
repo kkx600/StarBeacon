@@ -3,7 +3,7 @@ import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedb
 import {palette} from '../theme'
 import {computed,ref,watch} from 'vue'
 import {Modal} from 'ant-design-vue'
-import {useRouter} from 'vue-router'
+import {useRoute,useRouter} from 'vue-router'
 import {PlusOutlined,SearchOutlined,ReloadOutlined,DownloadOutlined,SettingOutlined,FilterOutlined} from '@ant-design/icons-vue'
 import type {BusinessRecord,PageSpec,PreviewState} from '../models'
 import {metricsFor} from '../data/fixtures'
@@ -23,10 +23,12 @@ import type {QuerySnapshot} from './SavedQueries.vue'
 import SensorHealthSettings from './SensorHealthSettings.vue'
 import {healthFor,sensorMetrics} from '../data/sensorHealth'
 import {sensorThresholds} from '../composables/useSensorHealth'
+import {packetPreviewLocation,openPacketPreview,closePacketPreview} from '../composables/packetPreview'
+import {packetExampleLayers} from '../data/packetInspectionPreview'
 const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState;embedded?:boolean;localArchives?:boolean}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const {records,save,updateStatus}=useRecords(props.page)
-const router=useRouter()
+const router=useRouter(),route=useRoute()
 const query=ref('');const filterStatus=ref<string>();const scope=ref('全部网络域');const selectedKeys=ref<string[]>([]);const currentPage=ref(1);const pageSize=ref(8)
 const detailOpen=ref(false);const formOpen=ref(false);const selected=ref<BusinessRecord>();const editing=ref<BusinessRecord>();const activeQuery=ref('');const advanced=ref(false);const protocol=ref<string>();const method=ref<string>();const source=ref('');const destination=ref('');const path=ref('');const timeWindow=ref('最近 24 小时')
 const healthFilter=ref<string>()
@@ -34,8 +36,10 @@ const batchIds=ref<string[]>([])
 const sessionOpen=ref(false)
 const responseOpen=ref(false)
 const inspectionOpen=ref(false)
+const inspectionError=ref('')
 function canInspect(record:BusinessRecord){return props.localArchives?record.status==='等待上传':record.status==='已归档'}
-function inspect(record:BusinessRecord){if(!canInspect(record))return;detailOpen.value=false;formOpen.value=false;sessionOpen.value=false;selected.value=record;inspectionOpen.value=true}
+function inspect(record:BusinessRecord){if(!canInspect(record))return;detailOpen.value=false;formOpen.value=false;sessionOpen.value=false;selected.value=record;void router.push({query:openPacketPreview(route.query,record.id),hash:route.hash})}
+function closeInspection(){inspectionOpen.value=false;const query=closePacketPreview(route.query);if(props.state==='detail'||props.state==='action')query.state='data';void router.replace({query,hash:route.hash})}
 watch(()=>[props.state,props.page.id],()=>{inspectionOpen.value=false})
 const querySnapshot=computed<QuerySnapshot>(()=>({dataset:props.page.family==='alert'?'alerts':'context',mode:'visual',window:timeWindow.value,filter:'',terms:{keyword:activeQuery.value,source_ip:source.value,destination_ip:destination.value,protocol:protocol.value??'',method:method.value??'',path:path.value,status:filterStatus.value??'',network_scope:scope.value}}))
 function applySaved(value:QuerySnapshot){query.value=value.terms.keyword??'';activeQuery.value=query.value;source.value=value.terms.source_ip??'';destination.value=value.terms.destination_ip??'';protocol.value=value.terms.protocol||undefined;method.value=value.terms.method||undefined;path.value=value.terms.path??'';filterStatus.value=value.terms.status||undefined;scope.value=value.terms.network_scope??'全部网络域';timeWindow.value=value.window;advanced.value=true;currentPage.value=1;selectedKeys.value=[]}
@@ -49,6 +53,13 @@ const hasFilters=computed(()=>Boolean(activeQuery.value||filterStatus.value||hea
 const columns=computed(()=>[...props.page.columns.filter(c=>visibleCols.value.includes(c.key)).map(c=>({...c,dataIndex:c.key,ellipsis:c.key!=='status'&&c.key!=='name'&&!(props.page.family==='sensor'&&c.key==='lastSeen'),sorter:(a:BusinessRecord,b:BusinessRecord)=>compareCells(a[c.key],b[c.key],c)})),{title:'操作',key:'actions',width:props.page.family==='sensor'?100:props.page.family==='packet-archive'?220:120,fixed:'right' as const}])
 const metrics=computed(()=>props.page.family==='sensor'?sensorMetrics(filtered.value,sensorThresholds):metricsFor(props.page,props.state==='empty'))
 watch(()=>props.state,state=>{responseOpen.value=state==='action'&&props.page.family==='decision-evaluation';detailOpen.value=state==='detail'||Boolean(props.localArchives&&state==='action');sessionOpen.value=state==='action'&&props.page.family==='packet-archive'&&!props.localArchives;formOpen.value=state==='action'&&!sessionOpen.value&&!props.localArchives&&props.page.family!=='decision-evaluation';if(detailOpen.value||responseOpen.value)selected.value=props.localArchives&&state==='action'?(displayRecords.value.find(record=>record.status==='已归档')??displayRecords.value[0]):displayRecords.value[0];if(state==='action'){if(props.page.family==='packet-archive')selectedKeys.value=records.value.filter(row=>row.status==='已归档').slice(0,2).map(row=>row.id);editing.value=undefined;batchIds.value=props.page.family==='alert'?records.value.map(r=>r.id):[]}},{immediate:true})
+watch([()=>route.query.inspect,()=>route.query.inspect_archive,()=>route.query.packet,()=>route.query.layer,()=>route.query.inspection,()=>props.page.id,()=>props.state,displayRecords],()=>{
+ const location=packetPreviewLocation(route.query,packetExampleLayers)
+ if(props.page.family!=='packet-archive'||!location.open||props.state==='empty'||props.state==='error'||props.state==='loading'){inspectionOpen.value=false;return}
+ const record=location.archive?displayRecords.value.find(row=>row.id===location.archive&&canInspect(row)):displayRecords.value.find(canInspect)
+ selected.value=record;inspectionError.value=record?'':'所选合成目录不可查看，请从归档列表重新选择'
+ detailOpen.value=false;formOpen.value=false;sessionOpen.value=false;inspectionOpen.value=true
+},{immediate:true})
 function search(){activeQuery.value=query.value.trim();currentPage.value=1;selectedKeys.value=[]}
 function reset(){query.value='';activeQuery.value='';filterStatus.value=undefined;healthFilter.value=undefined;scope.value='全部网络域';protocol.value=undefined;method.value=undefined;source.value='';destination.value='';path.value='';timeWindow.value='最近 24 小时';currentPage.value=1;selectedKeys.value=[]}
 function view(record:BusinessRecord){selected.value=record;detailOpen.value=true}
@@ -87,6 +98,6 @@ function batch(){if(!selectedKeys.value.length)return;batchIds.value=[...selecte
   <RecordDetail :open="detailOpen" :page="page" :record="selected" :local-archive="localArchives" @close="close" @action="detailOpen=false;operate(selected!)" @respond="confirmResponse"/>
   <DecisionResponseDialog v-if="responseOpen&&selected" :record="selected" @close="close"/>
   <RecordForm :open="formOpen" :page="formPage" :record="editing" @close="close" @save="submit"/>
-  <PacketInspectionDialog v-if="page.family==='packet-archive'" :open="inspectionOpen" :record="selected" @close="close"/>
+  <PacketInspectionDialog v-if="page.family==='packet-archive'" :open="inspectionOpen" :record="selected" :selection-error="inspectionError" @close="closeInspection"/>
   <PacketSessionDialog v-if="page.family==='packet-archive'&&!localArchives" :open="sessionOpen" :archives="sessionArchives" @close="close"/>
 </template>

@@ -1,5 +1,5 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest'
-import {flushPromises,mount} from '@vue/test-utils'
+import {flushPromises,mount,type VueWrapper} from '@vue/test-utils'
 import {defineComponent,h,type ShallowRef} from 'vue'
 import {Select,Modal,Form,message} from 'ant-design-vue'
 import {registerAnt} from '../packages/shared/src/ant'
@@ -27,6 +27,12 @@ function host(){let state!:ReturnType<typeof useUsers>;const wrapper=mount(defin
 const formProps={record:null,busy:false,unconfirmed:false,error:'',selfId:principal.id}
 async function form(props:Record<string,unknown>={}){const w=mount(UserForm,{props:{...formProps,...props},global,attachTo:document.body});await flushPromises();return w}
 async function fill(id:string,value:string){const element=document.getElementById(id) as HTMLInputElement;element.value=value;element.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
+async function settledUsers(w:VueWrapper){await vi.waitFor(()=>{expect(w.findAll('table')).toHaveLength(1);expect(button('刷新').classList.contains('ant-btn-loading')).toBe(false)})}
+async function workspace(){
+ const fixture=clone({record,self,changed,page})
+ request.mockImplementation((path:string,options?:{method?:string;body?:unknown})=>Promise.resolve(clone(options?.method==='POST'?fixture.record:options?.method==='PATCH'?fixture.changed:path.startsWith('/users?')?fixture.page:path.endsWith('/'+fixture.self.id)?fixture.self:fixture.record)))
+ const w=mount(UsersWorkspace,{global,attachTo:document.body});await settledUsers(w);return w
+}
 
 describe('租户用户数据与凭据边界',()=>{
  it('账号和密码按 UTF-8 字节验证，修订与状态必须明确',()=>{
@@ -96,8 +102,23 @@ describe('用户管理页面与表单交互',()=>{
   const w=await form({record:self});expect(button('提交变更').disabled).toBe(true);w.getComponent(Form).vm.$emit('finish');await flushPromises();expect(w.emitted('save')).toBeUndefined();w.unmount()
   const d=mount(UserDetail,{props:{record:self,pending:false,error:'',selfId:principal.id},global,attachTo:document.body});await flushPromises();expect(document.body.textContent).toContain('当前登录账号受保护');expect(button('编辑用户').disabled).toBe(true);await d.setProps({record});await click('编辑用户');expect(d.emitted('edit')).toHaveLength(1);await d.setProps({record:null,error:'用户服务暂不可用'});await click('重试');expect(d.emitted('reload')).toHaveLength(1);await d.getComponent(Modal).vm.$emit('cancel');expect(d.emitted('close')).toHaveLength(1)
  })
- it('独立单表页面支持详情、编辑、创建、筛选与恢复原提交',async()=>{
-  const w=mount(UsersWorkspace,{global,attachTo:document.body});await flushPromises();expect(w.findAll('table').length).toBe(1);expect(w.text()).toContain('用户管理');expect(button('上一页').disabled).toBe(true);await click('查询');await click('重置');await click('刷新');await click('查看');expect(document.body.textContent).toContain('用户详情');await click('编辑用户');expect(document.body.textContent).toContain('编辑用户');const f=w.getComponent(UserForm);f.vm.$emit('save',change);await flushPromises();expect(request.mock.calls.some(c=>c[1]?.method==='PATCH')).toBe(true);expect(document.body.textContent).toContain('用户详情');await w.getComponent(UserDetail).vm.$emit('close');await flushPromises()
-  await click('创建用户');request.mockRejectedValueOnce(new Error('连接中断'));w.getComponent(UserForm).vm.$emit('save',input);await flushPromises();expect(document.body.textContent).toContain('字段已锁定');w.getComponent(UserForm).vm.$emit('close');await flushPromises();await click('核对原提交');expect((document.getElementById('user-name') as HTMLInputElement).value).toBe(input.username);w.getComponent(UserForm).vm.$emit('confirm');await flushPromises();expect(document.body.textContent).toContain('用户详情');await w.getComponent(UserDetail).vm.$emit('reload');await flushPromises()
+ it('独立单表目录支持查询、重置和刷新，分页状态明确',async()=>{
+  const w=await workspace();expect(w.findAll('table').length).toBe(1);expect(w.text()).toContain('用户管理');expect(button('上一页').disabled).toBe(true)
+  for(const label of ['查询','重置','刷新']){
+   const reads=request.mock.calls.filter(c=>String(c[0]).startsWith('/users?')).length
+   await click(label);await vi.waitFor(()=>expect(request.mock.calls.filter(c=>String(c[0]).startsWith('/users?'))).toHaveLength(reads+1));await settledUsers(w)
+  }
+ })
+ it('独立单表页面从详情编辑用户，确认变更后返回详情并关闭',async()=>{
+  const w=await workspace();await click('查看');await vi.waitFor(()=>{expect(w.getComponent(UserDetail).props('pending')).toBe(false);expect(w.getComponent(UserDetail).props('record')?.id).toBe(record.id)});expect(document.body.textContent).toContain('用户详情')
+  await click('编辑用户');await vi.waitFor(()=>expect(w.findComponent(UserForm).exists()).toBe(true));expect(document.body.textContent).toContain('编辑用户');const f=w.getComponent(UserForm);f.vm.$emit('save',change)
+  await vi.waitFor(()=>{expect(w.findComponent(UserForm).exists()).toBe(false);expect(w.getComponent(UserDetail).props('pending')).toBe(false);expect(w.getComponent(UserDetail).props('record')?.id).toBe(record.id)});expect(request.mock.calls.some(c=>c[1]?.method==='PATCH')).toBe(true);expect(document.body.textContent).toContain('用户详情');await w.getComponent(UserDetail).vm.$emit('close');await vi.waitFor(()=>expect(w.findComponent(UserDetail).exists()).toBe(false))
+ })
+ it('独立单表页面创建结果未知时保留原输入，确认后展示可刷新的详情',async()=>{
+  const w=await workspace();await click('创建用户');await vi.waitFor(()=>expect(w.findComponent(UserForm).exists()).toBe(true));request.mockRejectedValueOnce(new Error('连接中断'));w.getComponent(UserForm).vm.$emit('save',input)
+  await vi.waitFor(()=>expect(document.body.textContent).toContain('字段已锁定'));w.getComponent(UserForm).vm.$emit('close');await vi.waitFor(()=>expect(w.findComponent(UserForm).exists()).toBe(false));await click('核对原提交');await vi.waitFor(()=>expect(w.findComponent(UserForm).exists()).toBe(true));expect((document.getElementById('user-name') as HTMLInputElement).value).toBe(input.username)
+  w.getComponent(UserForm).vm.$emit('confirm');await vi.waitFor(()=>{expect(w.findComponent(UserForm).exists()).toBe(false);expect(w.getComponent(UserDetail).props('pending')).toBe(false);expect(w.getComponent(UserDetail).props('record')?.id).toBe(record.id)});expect(document.body.textContent).toContain('用户详情')
+  const reads=request.mock.calls.filter(c=>c[0]==='/users/'+record.id&&!c[1]?.method).length
+  await w.getComponent(UserDetail).vm.$emit('reload');await vi.waitFor(()=>{expect(request.mock.calls.filter(c=>c[0]==='/users/'+record.id&&!c[1]?.method)).toHaveLength(reads+1);expect(w.getComponent(UserDetail).props('pending')).toBe(false);expect(w.getComponent(UserDetail).props('record')?.id).toBe(record.id)})
  })
 })

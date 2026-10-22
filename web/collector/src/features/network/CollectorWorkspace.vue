@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import {useFeedback} from '@starbeacon/shared/composables/useFeedback.ts'
-import { defineAsyncComponent,shallowRef } from 'vue'
+import { computed,defineAsyncComponent,shallowRef } from 'vue'
+import {useRoute,useRouter} from 'vue-router'
 import ProtocolCapabilitiesDialog from '@starbeacon/shared/components/ProtocolCapabilitiesDialog.vue'
 import DetectionQualityDialog from '@starbeacon/shared/components/DetectionQualityDialog.vue'
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue'
 import HealthSummary from './HealthSummary.vue'
-import InterfaceTable from './InterfaceTable.vue'
+import CollectorInterfacePanel from './CollectorInterfacePanel.vue'
+import CollectorSyslogPanel from './CollectorSyslogPanel.vue'
 import CollectorIdentity from './CollectorIdentity.vue'
-import SyslogSources from '@starbeacon/shared/components/SyslogSources.vue'
 import ResponseConnectors from '@starbeacon/shared/components/ResponseConnectors.vue'
 import ResponseConfiguration from './ResponseConfiguration.vue'
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue'
@@ -15,29 +16,60 @@ import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceSta
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue'
 import {useWorkspaceView} from '@starbeacon/shared/utils/useWorkspaceView.ts'
 import { session } from '../../session'
+import {collectorScreens,collectorScreen,collectorWorkspaces} from '../../navigation'
 import { useCollector } from './useCollector'
+import {useCollectorDiagnostics} from './useCollectorDiagnostics'
 import type {CaptureSettings} from '@starbeacon/shared/types.ts'
 import {captureErrors} from '@starbeacon/shared/types.ts'
 const message=useFeedback()
 const ReplayWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/ReplayWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const PacketArchiveWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/PacketArchiveWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
-const {view,change}=useWorkspaceView(['interfaces','capture','archives','samples','tasks','responses','syslog'])
-const views=[{key:'interfaces',label:'网卡与状态'},{key:'capture',label:'采集配置'},{key:'archives',label:'原包归档'},{key:'samples',label:'重放样本'},{key:'tasks',label:'任务记录'},{key:'responses',label:'联动设备'},{key:'syslog',label:'Syslog 接收'}]
-const {health,interfaces,capture,pending,saving,error,refresh,save}=useCollector()
+const route=useRoute(),router=useRouter()
+const mountedPath=route.path,canonicalAtMount=typeof route.meta.workspaceView==='string'
+const {view,change:legacyChange}=useWorkspaceView(collectorScreens.map(screen=>screen.view),'interfaces')
+const views=collectorScreens.map(screen=>({key:screen.view,label:screen.title}))
+const screen=computed(()=>collectorScreen(view.value)!)
+const workspaceTitle=computed(()=>collectorWorkspaces.find(workspace=>workspace.id===route.meta.navWorkspace)?.title??'采集器管理')
+function change(key:string){
+  if(saving.value)return
+  const target=collectorScreen(key)
+  if(!target)return
+  if(typeof route.meta.workspaceView!=='string')return legacyChange(key)
+  const {view:ignoredView,task:ignoredTask,...query}=route.query
+  return router.push({path:target.path,query,hash:route.hash})
+}
+const administrator=computed(()=>session.current?.value?.role==='admin')
+const currentPath=computed(()=>!canonicalAtMount||route.path===mountedPath)
 const protocolsOpen=shallowRef(false)
 const qualityOpen=shallowRef(false)
+const observed=computed(()=>['overview','interfaces','capture','responses','syslog'].includes(view.value))
+const {health,interfaces,capture,pending,saving,error,refresh,save}=useCollector({resources:()=>{
+  if(!administrator.value||!currentPath.value)return []
+  const selected:('health'|'interfaces'|'capture')[]=[]
+  if(['overview','responses','syslog'].includes(view.value))selected.push('health')
+  if(['interfaces','capture'].includes(view.value))selected.push('interfaces')
+  if(view.value==='capture')selected.push('capture')
+  return selected
+}})
+const {health:diagnosticHealth,capture:diagnosticCapture,pending:diagnosticPending,error:diagnosticError,refresh:refreshDiagnostics}=useCollectorDiagnostics({enabled:()=>administrator.value&&currentPath.value,open:()=>protocolsOpen.value||qualityOpen.value})
 async function submit(settings:CaptureSettings){try{if(await save(settings)){const value=capture.value;if(value.status==='running')message.success('采集配置已生效');else if(value.status==='stopped')message.success('采集已停止');else if(value.error_code)message.warning(captureErrors[value.error_code]??'配置已保存，实际执行状态需要核对');else message.success('采集目标保存成功，等待应用')}}catch(e){message.error(e instanceof Error?e.message:'保存失败')}}
 </script>
 <template>
-  <header class="page-header"><div><h1>网络与采集</h1><p class="page-description">读取本机接口、运行状态与采集目标，核对采集器的实际环境。</p></div><div class="filter-actions"><a-button @click="qualityOpen=true">检测质量</a-button><a-button @click="protocolsOpen=true">协议能力</a-button><a-button v-if="['interfaces','capture','responses','syslog'].includes(view)" :loading="pending" @click="refresh">刷新</a-button></div></header>
-  <WorkspaceTabs :active="view" :items="views" label="网络与采集功能" @change="change" />
-  <StatePanel v-if="['interfaces','capture','responses','syslog'].includes(view)" :loading="pending" :error="error" @retry="refresh">
-    <template v-if="view==='interfaces'"><HealthSummary v-if="health" :health="health" /><CollectorIdentity v-if="session.current.value?.role==='admin'" /><section class="panel"><div class="panel-header"><h2>网卡列表</h2><span>{{ interfaces.length }} 个接口</span></div><InterfaceTable :items="interfaces" /></section></template>
-    <section v-else-if="view==='syslog'" class="panel"><div class="panel-header"><h2>Syslog 接收</h2></div><div class="panel-body"><a-alert type="info" show-icon message="来源由本机私有文件登记，按证书或授权网段绑定身份。计数仅涵盖本次运行，持久保存仅证明本地队列写入。"/></div><StatePanel :empty="!health?.syslog_sources?.length" description="尚未配置 Syslog 来源。请配置采集器来源文件并受控重启后核对监听状态。"><SyslogSources :items="health?.syslog_sources??[]" local/></StatePanel></section><template v-else-if="view==='responses'"><ResponseConfiguration/><ResponseConnectors :items="health?.response_connectors??[]"/></template>
+  <template v-if="administrator&&currentPath">
+  <header class="page-header"><div><h1>{{screen.title}}</h1><p class="page-description">{{screen.description}}</p></div><div class="filter-actions"><a-button :disabled="saving" @click="qualityOpen=true">检测质量</a-button><a-button :disabled="saving" @click="protocolsOpen=true">协议能力</a-button><a-button v-if="observed" :loading="pending" :disabled="saving" @click="refresh">刷新</a-button></div></header>
+  <WorkspaceTabs :active="view" :items="views" :label="workspaceTitle+'功能'" @change="change" />
+  <StatePanel v-if="observed" :loading="pending" :error="error" :empty="view==='overview'&&!health&&!pending&&!error" description="尚未取得本机运行状态。" @retry="refresh">
+    <template v-if="view==='overview'"><HealthSummary v-if="health" :health="health" /></template>
+    <CollectorInterfacePanel v-else-if="view==='interfaces'" :interfaces="interfaces" />
+    <CollectorSyslogPanel v-else-if="view==='syslog'" :health="health" />
+    <template v-else-if="view==='responses'"><ResponseConfiguration/><ResponseConnectors :items="health?.response_connectors??[]"/></template>
     <section v-else class="panel"><div class="panel-header"><h2>采集配置</h2></div><div class="panel-body"><CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" /></div></section>
   </StatePanel>
+  <CollectorIdentity v-else-if="view==='identity'" />
   <PacketArchiveWorkspace v-else-if="view==='archives'" :api="session.api" local/>
   <ReplayWorkspace v-else :api="session.api" :principal="session.current.value" local @tasks="change('tasks')" :view="view==='tasks'?'tasks':'samples'" />
-  <ProtocolCapabilitiesDialog :open="protocolsOpen" :report="health?.protocol_capabilities" :capture="capture" refreshable :loading="pending" @refresh="refresh" @close="protocolsOpen=false" />
-  <DetectionQualityDialog :open="qualityOpen" :capture="capture" :error="error" refreshable :loading="pending" @refresh="refresh" @close="qualityOpen=false" />
+  <ProtocolCapabilitiesDialog :open="protocolsOpen" :report="diagnosticHealth?.protocol_capabilities" :capture="diagnosticCapture" :error="diagnosticError" refreshable :loading="diagnosticPending" @refresh="refreshDiagnostics" @close="protocolsOpen=false" />
+  <DetectionQualityDialog :open="qualityOpen" :capture="diagnosticCapture" :error="diagnosticError" refreshable :loading="diagnosticPending" @refresh="refreshDiagnostics" @close="qualityOpen=false" />
+  </template>
+  <StatePanel v-else-if="!administrator" error="当前账号没有采集器本地管理权限。请使用具有管理权限的账号登录。" />
 </template>

@@ -69,7 +69,7 @@ const definitions: Definition[] = [
   ['SB-TI-002','indicators','detection','威胁指标','indicator','管理 IP、域名、URL 和哈希的来源、上下文及可信度。','name:指标值|type:指标类型|source:来源|confidence:可信度|expires:有效期|status:状态','创建指标'],
   ['SB-TI-003','intel-lifecycle','detection','情报有效性','intel-life','设置有效期、衰减和复核，保留历史命中依据。','name:指标|source:来源|confidence:当前可信度|decay:衰减策略|expires:到期时间|status:复核状态','配置生命周期'],
   ['SB-TI-004','intel-hits','detection','情报命中与回溯','intel-hit','查看实时命中和历史回溯任务，冻结所用情报版本。','name:命中对象|indicator:指标|asset:资产|version:情报版本|mode:匹配模式|status:任务状态','创建回溯'],
-  ['SB-TI-005','watchlists','detection','名单管理','watchlist','配置保护名单、例外与关注对象，并设置审批和到期。','name:名单对象|type:名单类型|scope:作用范围|reason:原因|expires:到期时间|status:状态','创建名单项'],
+  ['SB-TI-005','watchlists','detection','保护与观察名单','watchlist','配置保护与观察用途、固定探针范围、业务有效期及历史修订。','name:名单对象|type:名单类型|scope:作用范围|reason:原因|expires:到期时间|status:状态','创建名单项'],
   ['SB-TI-006','intel-sharing','detection','情报共享','intel-share','审核可共享字段、脱敏、许可和接收范围。','name:共享任务|scope:接收范围|format:格式|redaction:脱敏策略|license:许可|status:审核状态','创建共享申请'],
   ['SB-FIL-001','samples','detection','文件样本','sample','记录提取来源、截断、哈希、完整性与受控样本访问。','name:样本名称|type:类型|bytes:体积|sha256:SHA-256|source:提取来源|status:完整性','导入授权样本'],
   ['SB-FIL-002','static-analysis','detection','静态检测','static','管理 YARA-X、ClamAV 的引擎版本、规则与报告。','name:分析任务|engine:引擎|version:引擎版本|rules:规则版本|verdict:结果|status:任务状态','创建静态检测'],

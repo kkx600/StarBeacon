@@ -143,6 +143,15 @@ func TestContinuousArchiveSealsAuthorityAndNeverClaimsDeviceEffect(t *testing.T)
 	if _, err := r.Seal(); err != nil {
 		t.Fatal(err)
 	}
+	r.Code = "target_protected"
+	if _, err := r.Seal(); err != nil {
+		t.Fatal("保护名单阻止的新封禁必须保留跳过原因", err)
+	}
+	r.TaskID = "task_owned"
+	if _, err := r.Seal(); err == nil {
+		t.Fatal("受保护目标不能同时记录已授权任务")
+	}
+	r.TaskID = ""
 	r.State, r.Code = "awaiting_confirmation", "manual_confirmation_required"
 	r.Config.Automatic = nil
 	if _, err := r.Seal(); err != nil {

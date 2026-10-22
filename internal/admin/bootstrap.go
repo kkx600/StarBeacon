@@ -107,6 +107,9 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE ON correlation_rules TO starbeacon_app; GRANT SELECT,INSERT,DELETE ON correlation_rule_revisions TO starbeacon_app`); e != nil {
 		return e
 	}
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE ON watchlists TO starbeacon_app; GRANT SELECT,INSERT,DELETE ON watchlist_revisions TO starbeacon_app`); e != nil {
+		return e
+	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE ON decision_policies TO starbeacon_app; GRANT SELECT,INSERT,DELETE ON decision_policy_revisions TO starbeacon_app`); e != nil {
 		return e
 	}
@@ -114,6 +117,9 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 		return e
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON decision_responses TO starbeacon_app`); e != nil {
+		return e
+	}
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON response_watchlist_checks TO starbeacon_app`); e != nil {
 		return e
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON decision_continuous_runs TO starbeacon_app`); e != nil {
@@ -158,6 +164,9 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 		return e
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE,DELETE ON incident_tasks TO starbeacon_app; GRANT SELECT,INSERT,DELETE ON incident_task_changes TO starbeacon_app`); e != nil {
+		return e
+	}
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE,DELETE ON incident_notes TO starbeacon_app; GRANT SELECT,INSERT,DELETE ON incident_note_changes TO starbeacon_app`); e != nil {
 		return e
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE,DELETE ON sensor_quality_cursors,sensor_quality_outbox TO starbeacon_app`); e != nil {

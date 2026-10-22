@@ -148,10 +148,244 @@ def platform_navigation_routes(root):
     return {"/" + "/".join(path.strip("/").split("/")[:index]) for path in paths for index in range(1, len(path.strip("/").split("/")) + 1)}
 
 
+def _collector_route_tokens(source):
+    """只识别受控静态配置的词法单元，不执行源码或依赖前端运行环境。"""
+    if not isinstance(source, str) or len(source.encode("utf-8")) > 512 * 1024:
+        raise ValueError("采集器路由源码无效或超过静态核对预算")
+    tokens, offset = [], 0
+    while offset < len(source):
+        char = source[offset]
+        if char.isspace():
+            offset += 1
+            continue
+        if source.startswith("//", offset):
+            ends = [index for end in "\r\n\u2028\u2029" if (index := source.find(end, offset + 2)) >= 0]
+            offset = min(ends) + 1 if ends else len(source)
+            continue
+        if source.startswith("/*", offset):
+            end = source.find("*/", offset + 2)
+            if end < 0:
+                raise ValueError("采集器路由包含未结束的注释")
+            offset = end + 2
+            continue
+        start = offset
+        if char in "\"'":
+            quote = char
+            offset += 1
+            while offset < len(source) and source[offset] != quote:
+                if source[offset] in "\r\n\u2028\u2029":
+                    raise ValueError("采集器路由包含无法核对的字符串换行")
+                if source[offset] == "\\":
+                    if offset + 1 >= len(source) or source[offset + 1] in "\r\n\u2028\u2029":
+                        raise ValueError("采集器路由字符串转义不完整")
+                    offset += 1
+                offset += 1
+            if offset >= len(source):
+                raise ValueError("采集器路由字符串未结束")
+            offset += 1
+            tokens.append(("string", source[start + 1:offset - 1], start, offset))
+        elif char.isascii() and (char.isalpha() or char in "_$"):
+            offset += 1
+            while offset < len(source) and source[offset].isascii() and (source[offset].isalnum() or source[offset] in "_$"):
+                offset += 1
+            tokens.append(("name", source[start:offset], start, offset))
+        elif source.startswith("...", offset):
+            offset += 3
+            tokens.append(("symbol", "...", start, offset))
+        elif source.startswith("=>", offset):
+            offset += 2
+            tokens.append(("symbol", "=>", start, offset))
+        elif char in "{}[]():,;.=<>!?&|+-*%" or char.isascii() and char.isdigit():
+            offset += 1
+            tokens.append(("symbol", char, start, offset))
+        else:
+            raise ValueError("采集器路由包含无法静态核对的语法")
+        if len(tokens) > 30000:
+            raise ValueError("采集器路由词法单元超过核对预算")
+    return tokens
+
+
+def _collector_token_is(tokens, index, kind, value):
+    return index < len(tokens) and tokens[index][:2] == (kind, value)
+
+
+def _collector_static_object(tokens, start, shorthand=()):
+    """按括号配对切分顶层属性，嵌套元数据和重定向内容不作为路由。"""
+    if not _collector_token_is(tokens, start, "symbol", "{"):
+        raise ValueError("采集器路由必须使用静态对象")
+    fields, offset = {}, start + 1
+    pairs = {"(": ")", "[": "]", "{": "}"}
+    while offset < len(tokens) and not _collector_token_is(tokens, offset, "symbol", "}"):
+        key = tokens[offset]
+        if key[0] not in ("name", "string") or "\\" in key[1] or key[1] in fields:
+            raise ValueError("采集器路由属性重复或不能静态确认")
+        if not _collector_token_is(tokens, offset + 1, "symbol", ":"):
+            if key[0] == "name" and key[1] in shorthand and any(_collector_token_is(tokens, offset + 1, "symbol", end) for end in (",", "}")):
+                fields[key[1]] = [key]
+                offset += 1
+                if _collector_token_is(tokens, offset, "symbol", ","):
+                    offset += 1
+                continue
+            raise ValueError("采集器路由不接受展开、计算属性或未许可的简写属性")
+        offset += 2
+        begin, stack = offset, []
+        while offset < len(tokens):
+            value = tokens[offset][1]
+            if tokens[offset][0] != "string":
+                if not stack and value in (",", "}"):
+                    break
+                if value in pairs:
+                    stack.append(pairs[value])
+                    if len(stack) > 128:
+                        raise ValueError("采集器路由属性嵌套超过核对预算")
+                elif value in pairs.values():
+                    if not stack or stack.pop() != value:
+                        raise ValueError("采集器路由括号不匹配")
+            offset += 1
+        if offset == begin or stack:
+            raise ValueError("采集器路由属性为空或未结束")
+        fields[key[1]] = tokens[begin:offset]
+        if _collector_token_is(tokens, offset, "symbol", ","):
+            offset += 1
+        elif not _collector_token_is(tokens, offset, "symbol", "}"):
+            raise ValueError("采集器路由对象未结束")
+    if offset >= len(tokens):
+        raise ValueError("采集器路由对象未结束")
+    return fields, offset + 1
+
+
+def collector_route_paths(source):
+    """提取受控 collectorRoutes 静态树；未知结构失败，真实交互另由 Router 测试验收。"""
+    tokens = _collector_route_tokens(source)
+    syntax = [token[:2] for token in tokens]
+    pairs, stack, depths = {}, [], []
+    closing = {"(": ")", "[": "]", "{": "}"}
+    for index, (kind, value, _, _) in enumerate(tokens):
+        depths.append(len(stack))
+        if kind != "symbol":
+            continue
+        if value in closing:
+            stack.append((value, index))
+            if len(stack) > 128:
+                raise ValueError("采集器路由源码嵌套超过静态核对预算")
+        elif value in closing.values():
+            if not stack or closing[stack[-1][0]] != value:
+                raise ValueError("采集器路由源码括号不匹配")
+            pairs[stack.pop()[1]] = index
+    if stack:
+        raise ValueError("采集器路由源码括号未结束")
+    declarations = [index for index in range(len(tokens) - 2)
+                    if syntax[index:index + 3] == [("name", "function"), ("name", "collectorRoutes"), ("symbol", "(")]]
+    if (len(declarations) != 1 or syntax.count(("name", "collectorRoutes")) != 2
+            or depths[declarations[0]] != 0 or declarations[0] and syntax[declarations[0] - 1] in (("name", "async"), ("name", "declare"), ("name", "default"))):
+        raise ValueError("采集器必须声明并直接注册唯一的 collectorRoutes 静态工厂")
+    offset = declarations[0] + 3
+    if not _collector_token_is(tokens, offset, "symbol", ")"):
+        raise ValueError("采集器路由工厂不能依赖动态参数")
+    offset += 1
+    if _collector_token_is(tokens, offset, "symbol", ":"):
+        if syntax[offset:offset + 5] != [("symbol", ":"), ("name", "RouteRecordRaw"), ("symbol", "["), ("symbol", "]"), ("symbol", "{")]:
+            raise ValueError("采集器路由工厂返回类型无法确认")
+        offset += 4
+    if syntax[offset:offset + 2] != [("symbol", "{"), ("name", "return")]:
+        raise ValueError("采集器路由工厂只能直接返回静态数组")
+    body = offset
+    offset += 2
+    if offset >= len(tokens) or any(char in source[tokens[offset - 1][3]:tokens[offset][2]] for char in "\r\n\u2028\u2029"):
+        raise ValueError("采集器路由 return 不能通过自动分号变为未返回数组")
+
+    paths, names, catchalls = set(), set(), []
+    allowed = {"path", "component", "components", "redirect", "meta", "props", "name", "beforeEnter", "sensitive", "strict", "end", "children"}
+
+    def route_array(items, start, parent="", depth=0):
+        if depth > 16 or not _collector_token_is(items, start, "symbol", "["):
+            raise ValueError("采集器 children 必须为有界静态数组")
+        index = start + 1
+        while index < len(items) and not _collector_token_is(items, index, "symbol", "]"):
+            fields, index = _collector_static_object(items, index)
+            if set(fields) - allowed or "path" not in fields:
+                raise ValueError("采集器路由包含未知属性或缺少明确路径")
+            if "name" in fields:
+                name = fields["name"]
+                if len(name) != 1 or name[0][0] != "string" or not name[0][1] or "\\" in name[0][1] or name[0][1] in names:
+                    raise ValueError("采集器路由名称动态、无效或重复，无法确认实际注册范围")
+                names.add(name[0][1])
+            path_value = fields["path"]
+            if len(path_value) != 1 or path_value[0][0] != "string":
+                raise ValueError("采集器路由路径必须为单一字面量")
+            path = path_value[0][1]
+            if path == "/:pathMatch(.*)*":
+                if depth or "component" not in fields or "redirect" in fields or "children" in fields:
+                    raise ValueError("采集器必须提供独立的全局未知页面边界")
+                catchalls.append(path)
+            else:
+                if (not path or len(path) > 1024 or "\\" in path or path != "/" and not re.fullmatch(r"/?[a-z0-9-]+(?:/[a-z0-9-]+)*", path)
+                        or not parent and not path.startswith("/")):
+                    raise ValueError("采集器路由路径包含非法或动态段")
+                resolved = path if path.startswith("/") else parent.rstrip("/") + "/" + path
+                if (len(resolved) > 1024 or resolved in paths or resolved == "/invalid-page"
+                        or any(resolved == prefix or resolved.startswith(prefix + "/") for prefix in ("/api", "/assets"))):
+                    raise ValueError("采集器路由路径重复、占用保留范围或覆盖未知页面探针")
+                if not {"component", "components", "redirect"}.intersection(fields):
+                    raise ValueError("采集器路由必须具有实际页面或重定向")
+                paths.add(resolved)
+                if len(paths) > 4096:
+                    raise ValueError("采集器路由数量超过静态核对预算")
+                if "children" in fields and route_array(fields["children"], 0, resolved, depth + 1) != len(fields["children"]):
+                    raise ValueError("采集器 children 不接受动态拼接或变换")
+            if _collector_token_is(items, index, "symbol", ","):
+                index += 1
+            elif not _collector_token_is(items, index, "symbol", "]"):
+                raise ValueError("采集器路由数组未结束")
+        if index >= len(items):
+            raise ValueError("采集器路由数组未结束")
+        return index + 1
+
+    end = route_array(tokens, offset)
+    if _collector_token_is(tokens, end, "symbol", ";"):
+        end += 1
+    if end != pairs[body] or len(catchalls) != 1 or not {"/", "/login", "/access-denied"}.issubset(paths):
+        raise ValueError("采集器路由工厂或根、登录、权限、未知页面边界不完整")
+    calls = [index for index in range(len(tokens) - 1) if syntax[index:index + 2] == [("name", "createRouter"), ("symbol", "(")]]
+    if (len(calls) != 1 or any(kind in ("name", "string") and value in ("addRoute", "removeRoute", "clearRoutes") for kind, value, _, _ in tokens)
+            or any(syntax[index:index + 2] == [("symbol", "."), ("name", "routes")] or syntax[index:index + 3] == [("symbol", "["), ("string", "routes"), ("symbol", "]")] for index in range(len(tokens)))):
+        raise ValueError("采集器存在无法静态确认的路由注册或变更")
+    options, after = _collector_static_object(tokens, calls[0] + 2, shorthand={"history"})
+    if set(options) - {"history", "routes", "scrollBehavior", "parseQuery", "stringifyQuery", "linkActiveClass", "linkExactActiveClass", "strict", "sensitive", "end"} or "history" not in options:
+        raise ValueError("采集器 createRouter 包含未知配置或缺少 history")
+    route_call = [(token[0], token[1]) for token in options.get("routes", [])]
+    if route_call != [("name", "collectorRoutes"), ("symbol", "("), ("symbol", ")")] or not _collector_token_is(tokens, after, "symbol", ")"):
+        raise ValueError("采集器 createRouter 必须直接注册已核对的静态树")
+    # 路由实例只用于守卫和返回；实例转交、计算成员和重赋值无法由静态树证明。
+    call = calls[0]
+    if call < 3 or syntax[call - 3] != ("name", "const") or tokens[call - 2][0] != "name" or syntax[call - 1] != ("symbol", "="):
+        raise ValueError("采集器 createRouter 必须直接初始化独立 const 实例")
+    binding, declaration = tokens[call - 2][1], call - 2
+    scopes = [begin for begin, finish in pairs.items() if tokens[begin][:2] == ("symbol", "{") and begin < call < finish]
+    begin = max(scopes) if scopes else -1
+    finish = pairs[begin] if scopes else len(tokens)
+    for index in range(begin + 1, finish):
+        if syntax[index] != ("name", binding) or index == declaration:
+            continue
+        guard = (syntax[index + 1:index + 2] == [("symbol", ".")]
+                 and index + 3 < len(tokens) and tokens[index + 2][0] == "name"
+                 and tokens[index + 2][1] in {"beforeEach", "beforeResolve", "afterEach", "onError", "isReady"}
+                 and syntax[index + 3] == ("symbol", "("))
+        returned = (index > 0 and syntax[index - 1] == ("name", "return")
+                    and index + 1 < len(tokens) and syntax[index + 1] in (("symbol", ";"), ("symbol", "}")))
+        if not guard and not returned:
+            raise ValueError("采集器路由实例存在无法静态确认的转交或变更")
+    return paths
+
+
+def collector_navigation_routes(root):
+    return collector_route_paths((root / "web/collector/src/router.ts").read_text())
+
+
 def validate_routes(root, routes, inventory):
     for role in ("platform", "collector"):
         source = (root / f"web/{role}/src/router.ts").read_text()
-        declared = set(re.findall(r"path:\s*['\"]([^'\"]+)['\"]", source)) - {"/", "/:pathMatch(.*)*"}
+        declared = collector_route_paths(source) if role == "collector" else set(re.findall(r"path:\s*['\"]([^'\"]+)['\"]", source)) - {"/", "/:pathMatch(.*)*"}
         if role == "platform" and "...platformRoutes()" in source:
             declared |= platform_navigation_routes(root)
         listed = routes[role]

@@ -1,6 +1,6 @@
 # MCP 服务接入
 
-StarBeacon 使用官方 `github.com/modelcontextprotocol/go-sdk` 1.8.0 提供有界只读分析工具。接口与授权范围由部署配置和租户管理员登记决定，不能由调用参数扩大。[官方 SDK](https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.8.0)
+StarBeacon 使用官方 `github.com/modelcontextprotocol/go-sdk` 1.8.0 提供有界只读分析工具和元数据资源。接口与授权范围由部署配置和租户管理员登记决定，不能由调用参数扩大。[官方 SDK](https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.8.0)
 
 ## 部署与认证
 
@@ -24,13 +24,13 @@ StarBeacon 使用官方 `github.com/modelcontextprotocol/go-sdk` 1.8.0 提供有
 
 ## 服务身份
 
-“模型配置 → MCP 服务”提供单一身份列表及登记／配置弹窗。每个身份登记授权方的 `sub` 和调用方 OAuth `client_id`，绑定当前租户和登记人的账号。其他应用即使使用同一 `sub` 也不会继承权限；三元身份不允许被其他租户重新认领。
+“模型配置 → MCP 服务”提供单一身份列表及登记／配置弹窗。“工具与资源”弹窗分别展示软件工具目录和元数据资源接入说明；资源说明可以复制 URI，但不代表已经使用某个服务身份完成发现或读取。每个身份登记授权方的 `sub` 和调用方 OAuth `client_id`，绑定当前租户和登记人的账号。其他应用即使使用同一 `sub` 也不会继承权限；三元身份不允许被其他租户重新认领。
 
 权限取令牌 scope 与当前身份 scope 的交集，仅支持 `alerts:read`、`assets:read`、`sensors:read`、`traffic:read`。协议流量与告警分别授权，已有身份不会自动取得协议权限；授权方令牌与登记权限均需包含 `traffic:read` 才能调用协议工具。工具按只读角色执行，管理员登记不授予 Agent 管理员权限。有效期表单默认 180 天，可配置未来 3650 天内的到期时间；账号或租户停用、身份停用／删除／到期后拒绝后续调用。登记后的三元身份不可改绑，更新和删除按当前修订进行 CAS 校验。每个租户最多登记 100 个身份。
 
-认证路由表只保存三元身份 SHA-256 和租户／身份路由，不保存令牌、业务数据或授权范围。授权信息表启用并强制执行租户 RLS；认证后每次工具执行都重新读取有效身份与所属账号。查询完成后再次核对修订与账号，发生权限变更时丢弃途中取得的结果。
+认证路由表只保存三元身份 SHA-256 和租户／身份路由，不保存令牌、业务数据或授权范围。授权信息表启用并强制执行租户 RLS；认证后每次工具执行、资源发现与读取都重新读取有效身份与所属账号。返回前再次核对修订、账号与令牌有效期，发生权限变更时丢弃途中取得的结果。
 
-管理接口包括 `GET /api/v1/mcp`、`GET/POST /api/v1/mcp/bindings`、`DELETE /api/v1/mcp/bindings/{id}`，均需要管理员会话；写入还校验来源及 CSRF。身份登记、配置、删除和工具开始／成功／失败／拒绝／输出超限写入操作日志，保留策略默认 180 天，可配置。
+管理接口包括 `GET /api/v1/mcp`、`GET/POST /api/v1/mcp/bindings`、`DELETE /api/v1/mcp/bindings/{id}`，均需要管理员会话；写入还校验来源及 CSRF。身份登记、配置、删除，以及进入授权执行流程的工具和资源操作的开始／成功／失败／拒绝／输出超限写入操作日志，保留策略默认 180 天，可配置。未知 URI 或 SDK 参数校验阶段拒绝的请求不构造业务读取成功记录。
 
 ## 当前工具
 
@@ -56,7 +56,31 @@ Agent 可先调用所属数据集的 `fields`，使用返回的字段及运算�
 
 统一结果包含 `data`、`observed_at`、`request_id`、`limitations`、`truncated`。结构化结果最多 256 KiB，超限返回可读失败并要求缩小范围，不隐蔽丢弃内容。业务文本、名称和 URL 是不可信证据，不能作为执行指令；告警数量不代表利用成功、风险结论或已完成阻断。
 
-每个身份每分钟 1–120 次工具调用，默认 60；每租户每分钟最多 300 次工具调用，平台每分钟最多 600 个协议 POST。Redis 原子计数在多实例共享；每次工具调用单独计数，批量协议请求不能绕过工具预算。预算存储不可用时拒绝查询。租户时间窗聚合还受原有统计服务预算约束。
+每个身份每分钟 1–120 次授权执行，默认 60；每租户每分钟最多 300 次，平台每分钟最多 600 个协议 POST。工具调用、`resources/list`、`resources/templates/list` 和已登记资源的 `resources/read` 共用身份与租户预算，不单独获得元数据免费额度。Redis 原子计数在多实例共享；每次授权执行单独计数，批量协议请求不能绕过预算。预算存储不可用时拒绝访问。租户时间窗聚合还受原有统计服务预算约束。
+
+## 元数据资源
+
+资源读取使用 MCP 协议，不使用平台浏览器会话代替 Agent 令牌，也不通过 `GET /api/v1/mcp` 管理接口返回当前身份的资源清单。完成 MCP 初始化后，客户端先调用 `resources/list` 与 `resources/templates/list`，再将发现结果中的完整 URI 交给 `resources/read`。
+
+| 资源 URI | 内容 | 所需有效权限 |
+| --- | --- | --- |
+| `starbeacon://catalog/alerts/fields` | 告警数据集的字段、别名、类型、运算符和检索版本，`dataset=alerts` | `alerts:read` |
+| `starbeacon://catalog/context/fields` | 协议数据集的字段、别名、类型、运算符和检索版本，`dataset=context` | `traffic:read` |
+| `starbeacon://catalog/capabilities` | 本次身份可发现的工具、数据集、资源、资源模板和实际限制 | 任一有效的只读权限 |
+
+`resources/list` 只返回本次身份获授权的资源。只有资产或探针权限的身份可读取能力说明，但不会因此取得告警字段、协议字段或字段模板。字段模板为 `starbeacon://catalog/{dataset}/fields`，只在身份拥有告警或协议权限时出现在模板发现结果中；`dataset` 只接受 `alerts` 或 `context`，读取时仍需对应数据集权限。
+
+示例请求发送到已完成初始化的 `/mcp`，使用 Agent 自身的 Bearer 令牌和协商的协议请求头：
+
+```json
+{"jsonrpc":"2.0","id":2,"method":"resources/read","params":{"uri":"starbeacon://catalog/capabilities"}}
+```
+
+资源结果在 `contents[]` 中返回完整 `uri`、`mimeType=application/json` 和 `text`。解析 `text` 后得到与工具一致的结果信封：`data`、`observed_at`、`request_id`、`limitations` 和 `truncated`。能力说明的 `data.schema_version` 为 `mcp-metadata.v1`，`scopes`、`tools`、`datasets`、`resources`、`resource_templates` 都按当前有效授权裁剪；`max_request_bytes=65536`、`max_content_bytes=262144`、`read_timeout_seconds=10`，`raw_payloads`、`pcap_downloads`、`device_actions` 均为 `false`。
+
+URI 按登记值精确匹配，不把百分号编码或其他 URI 当作替代地址。未知资源、未登记的模板取值、`file:`、任意文件路径及网络地址不能转为文件或出站访问。资源目录不证明字段已经采集、数据已经索引、流量已经解密、攻击已经成功或生产客户端兼容性已验收。资源协议没有订阅、文件下载或设备执行能力；工具数仍为上表中的 9 个。
+
+资源发现与读取复用工具的身份重核对、取消、超时、输出限制及审计链路。读取结束时身份修订变化、账号停用、授权撤回或令牌到期，均不释放途中取得的结果；元数据操作不会因内容不含业务记录而绕过授权。
 
 ## 协议与验收边界
 
@@ -64,4 +88,4 @@ Agent 可先调用所属数据集的 `fields`，使用返回的字段及运算�
 
 本地测试覆盖官方 SDK 客户端发现与实际调用、越权输入、令牌声明、Origin、撤销、审计故障和输出预算；远程集成测试使用独立 PG／ES／Redis 与受控 TLS 授权方。该授权方验证协议与业务授权，不代表真实企业身份系统、客户 Agent 或生产 TLS 已接通。完整验收以对应源码快照的原始报告为准。
 
-资源读取与下载、事件／情报／规则／报告扩展工具、带费用的分析任务及响应提议尚未发布。未来工具需要复用现有任务身份、幂等、费用配额和结果查询，不能因 MCP 接入绕过审批、输出范围或下游设备执行权限。
+当前资源仅覆盖上述软件能力与检索字段元数据。事件／情报／规则／报告资源和扩展工具、原始证据或 PCAP 下载、带费用的分析任务及响应提议尚未发布。未来能力需要复用现有任务身份、幂等、费用配额和结果查询，不能因 MCP 接入绕过审批、输出范围或下游设备执行权限。

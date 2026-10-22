@@ -112,14 +112,29 @@
     "/detection/correlation/backtest"
   ],
   "collector": [
+    "/",
     "/login",
+    "/access-denied",
+    "/overview",
+    "/overview/status",
     "/network",
+    "/network/interfaces",
+    "/network/capture",
+    "/network/archives",
+    "/network/syslog",
+    "/connection",
+    "/connection/identity",
+    "/rules",
+    "/rules/samples",
+    "/rules/tasks",
+    "/response",
+    "/response/devices",
+    "/invalid-page",
     "/network?view=capture",
     "/network?view=archives",
     "/network?view=samples",
     "/network?view=tasks",
     "/network?view=responses",
-    "/invalid-page",
     "/network?view=syslog"
   ]
 }

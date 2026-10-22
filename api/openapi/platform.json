@@ -11925,7 +11925,7 @@
     "/api/v1/sensors/{id}/response-tasks": {
       "post": {
         "summary": "向选定探针提交 HTTP 联动任务",
-        "description": "管理员显式授权的单 IP 限时封禁、原租约回读或解除。模型影子评估不产生执行授权。事务内核对当前账号、租户、采集器注册代次、任务签名信任和 35 秒内设备状态。请求键绑定当前用户与原输入；同键确认不重新计时。封禁期限 30–3600 秒且不超过设备限制；任务投递期限与租约绝对到期分别记录。租户滚动 24 小时最多 1024 项，重复确认不消耗第二次额度。回读或解除只接受原封禁任务引用，禁止修改原 IP 和期限。探针在本地校验允许/保护网段及管理通道，私有文件凭据访问固定 HTTPS 接口。202 只代表平台受理；设备独立回读确认配置，真实流量效果另行验收。",
+        "description": "管理员显式授权的单 IP 限时封禁、原租约回读或解除。模型影子评估不产生执行授权。事务内核对当前账号、租户、采集器注册代次、任务签名信任和 35 秒内设备状态。请求键绑定当前用户与原输入；同键确认不重新计时。封禁期限 30–3600 秒且不超过设备限制；任务投递期限与租约绝对到期分别记录。租户滚动 24 小时最多 1024 项，重复确认不消耗第二次额度。回读或解除只接受原封禁任务引用，禁止修改原 IP 和期限。探针在本地校验允许/保护网段及管理通道，私有文件凭据访问固定 HTTPS 接口。202 只代表平台受理；设备独立回读确认配置，真实流量效果另行验收。 新 response.block 授权在同一事务核对当前生效的保护名单；命中返回 409 response_target_protected，未命中时任务保存 response_protection。原幂等请求回读原结果，不重算名单、不延长租约；回读和解除不受新封禁保护门禁影响。",
         "x-required-role": "admin",
         "responses": {
           "202": {
@@ -11989,7 +11989,7 @@
             }
           },
           "409": {
-            "description": "具体原因见 code/message。",
+            "description": "具体原因见 code/message。 保护名单命中时 code=response_target_protected。",
             "content": {
               "application/json": {
                 "schema": {
@@ -12179,7 +12179,7 @@
       },
       "post": {
         "summary": "管理员确认原研判的单次限时处置",
-        "description": "从原评估派生唯一源 IP，不接收 target_ip。原评估必须 matched/block_source、未到期，当前策略修订、定义、本人研判、实际 ES 告警白名单和判断结果须保持一致；重新核对观测时限、注册代次、签名及 35 秒内连接器状态。授权档案、签名任务及两份审计在同一事务提交；任一失败整体回滚。同一评估只接受一次授权，换请求键不补发。原键绑定账号与全部原输入，重复确认先读取原档案，不重复读取模型、不依赖已回收材料、不延长期限；账号实时资格仍需成立。每实例最多两个并发确认，最近 24 小时租户响应任务最多 1024 项。未知提交应保留原键。202 仅代表人工任务受理，设备配置回读和实际流量效果分别核验。此接口只提供独立人工确认；持续策略授权通过独立档案记录，多级审批尚未提供。",
+        "description": "从原评估派生唯一源 IP，不接收 target_ip。原评估必须 matched/block_source、未到期，当前策略修订、定义、本人研判、实际 ES 告警白名单和判断结果须保持一致；重新核对观测时限、注册代次、签名及 35 秒内连接器状态。授权档案、签名任务及两份审计在同一事务提交；任一失败整体回滚。同一评估只接受一次授权，换请求键不补发。原键绑定账号与全部原输入，重复确认先读取原档案，不重复读取模型、不依赖已回收材料、不延长期限；账号实时资格仍需成立。每实例最多两个并发确认，最近 24 小时租户响应任务最多 1024 项。未知提交应保留原键。202 仅代表人工任务受理，设备配置回读和实际流量效果分别核验。此接口只提供独立人工确认；持续策略授权通过独立档案记录，多级审批尚未提供。 新封禁在授权事务内核对有效保护名单；命中返回 409 response_target_protected，不生成任务。授权成功的原任务保存 response_protection，原请求确认仍返回原回执。",
         "x-required-role": "admin",
         "responses": {
           "202": {
@@ -12233,7 +12233,7 @@
             }
           },
           "409": {
-            "description": "具体原因见 code/message。",
+            "description": "具体原因见 code/message。 命中保护名单时 code=response_target_protected。",
             "content": {
               "application/json": {
                 "schema": {
@@ -16386,6 +16386,1868 @@
           }
         }
       }
+    },
+    "/api/v1/watchlists": {
+      "get": {
+        "operationId": "listWatchlists",
+        "summary": "列出保护与观察名单",
+        "description": "读取本租户当前头，按ID升序有界分页，包括业务已到期但仍为当前配置的记录。active只筛配置启停标志，不表示当前业务生效。拒绝未知／重复查询参数、非法百分号编码和分号；目录不承诺跨页快照。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功，返回当前实际结果或同一原请求的原回执。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：输入、JSON、重复／未知字段、非法编码／查询、规范值、时间或范围无效。32 KiB 请求体超限也返回400，不静默截断。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库／审计不可用或当前配置损坏，未交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin",
+          "viewer"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "规范十进制整数；不接受前导零、符号或空值。修改后清空cursor。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^$|^[A-Za-z0-9_-]+$",
+              "default": ""
+            },
+            "description": "服务端返回的规范base64url游标，绑定租户及全部筛选／limit；首屏为空。"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 128,
+              "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+              "description": "按 Unicode 字符数限制；有效 UTF-8、首尾无空白，不接受控制字符或换行。"
+            },
+            "description": "按名称进行字面子串匹配；%和_按普通字符处理，不是通配符。首尾空白和控制字符不接受。"
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "true",
+                "false"
+              ],
+              "default": ""
+            },
+            "description": "配置启停筛选；为空表示全部，不按当前有效期筛选。"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "protect",
+                "observe"
+              ],
+              "default": ""
+            },
+            "description": "保护／观察类型；为空表示全部。"
+          }
+        ]
+      },
+      "post": {
+        "operationId": "saveWatchlist",
+        "summary": "保存保护与观察名单修订",
+        "description": "仅当前管理员。严格JSON最大32768字节，CSRF和Idempotency-Key必需，拒绝所有查询参数。不可变修订、当前头和操作审计同事务提交。创建、改定义和启用核对当前使用中探针注册；仅停用相同原定义允许旧注册。过宽IPv4/IPv6前缀或到期名单不能启用。历史按operations策略固化，默认180天；当前头引用不因历史期限到达失效。新保护只约束之后的封禁授权，不删除告警、不自动撤销旧动作；观察名单不自动改写研判。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功，返回当前实际结果或同一原请求的原回执。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：输入、JSON、重复／未知字段、非法编码／查询、规范值、时间或范围无效。32 KiB 请求体超限也返回400，不静默截断。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found：目标名单／修订不存在，或非当前历史已过留存期限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "watchlist_conflict：CAS、原请求键输入、原回执期限或探针当前注册状态冲突；不得自动换键重发。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "watchlist_quota：本租户最多256条当前配置，最近24小时最多2048个实际修订；精确原请求确认不重复消耗。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库／审计不可用或当前配置损坏，未交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            "description": "取自当前登录／auth/me 的 csrf_token；同时执行同源 Origin 与 Sec-Fetch-Site 核对。"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WatchlistID"
+            },
+            "description": "仅保存操作使用。按当前租户及操作者绑定完整输入；超时、未知结果复用相同键和原输入确认，不自动换键。保留期默认180天；精确重试不重写历史或当前指针。"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistChange"
+              }
+            }
+          }
+        },
+        "x-max-request-bytes": 32768
+      }
+    },
+    "/api/v1/watchlists/{id}/revisions/{revision}": {
+      "get": {
+        "operationId": "getWatchlistRevision",
+        "summary": "读取保护与观察名单修订",
+        "description": "管理员与查看角色可读取本租户未过期历史或当前头引用修订。拒绝查询参数；历史读取不重新启用配置、不授予动作权限。业务valid_until与历史expires_at分别解释。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功，返回当前实际结果或同一原请求的原回执。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：输入、JSON、重复／未知字段、非法编码／查询、规范值、时间或范围无效。32 KiB 请求体超限也返回400，不静默截断。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found：目标名单／修订不存在，或非当前历史已过留存期限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库／审计不可用或当前配置损坏，未交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin",
+          "viewer"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WatchlistID"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "description": "规范十进制修订；不接受前导零、符号或非整数。"
+          }
+        ]
+      }
+    },
+    "/api/v1/watchlists/preview": {
+      "post": {
+        "operationId": "previewWatchlist",
+        "summary": "预览名单范围与材料匹配",
+        "description": "仅当前管理员，CSRF必需，严格JSON最大32768字节，不接受查询参数。检查定义中的当前探针注册并保存独立预览审计；不持久保存配置、不查询全部历史告警、不产生设备动作。targets可为空，最多128项。匹配与active/实际生效分开，未生效或停用定义仍可展示材料匹配。该预览无幂等保存语义，不要求或消费Idempotency-Key；重复请求各自记录预览审计。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功，返回当前实际结果或同一原请求的原回执。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：输入、JSON、重复／未知字段、非法编码／查询、规范值、时间或范围无效。32 KiB 请求体超限也返回400，不静默截断。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "watchlist_conflict：CAS、原请求键输入、原回执期限或探针当前注册状态冲突；不得自动换键重发。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库／审计不可用或当前配置损坏，未交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            "description": "取自当前登录／auth/me 的 csrf_token；同时执行同源 Origin 与 Sec-Fetch-Site 核对。"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistPreviewRequest"
+              }
+            }
+          }
+        },
+        "x-max-request-bytes": 32768
+      }
+    },
+    "/api/v1/incidents/{id}/notes": {
+      "get": {
+        "summary": "读取调查笔记列表",
+        "operationId": "incidentNotes",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "description": "仅允许当前租户管理员查阅；事务内重新核对有效管理员资格。活动事件保护其笔记及历史材料，即使材料的冻结到期时间已到仍可读；已结案事件仅可读取自身和材料均未到期的记录。不存在、跨租户及不可读对象统一返回 404。 笔记与每次修订按 incidents 留存策略冻结到期时间，默认 180 天，可由租户配置。活动事件保护材料，结案后按冻结期限读取与清理；撤回不删除正文或历史。 固定每页 20 条，按首次创建时间与标识降序排列，before 为排他续点。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "当前租户的事件标识。"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "active",
+                "withdrawn"
+              ]
+            },
+            "description": "省略或空字符串读取全部状态。"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^(?:|[a-z0-9][a-z0-9_-]{0,63})$"
+            },
+            "description": "省略或空字符串读取首屏；否则使用上次 next_cursor。续点必须是同租户同事件下仍可读取的笔记，不要求与 status 筛选一致。"
+          }
+        ],
+        "x-reject-unknown-query-parameters": true,
+        "x-reject-duplicate-query-parameters": true,
+        "responses": {
+          "200": {
+            "description": "通过当前租户范围、管理员资格与材料留存核对的查询结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNotePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "路径标识、状态筛选或游标无效；重复及未知查询参数均被拒绝。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "invalid_incident_note"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "invalid_incident_note"
+            ]
+          },
+          "401": {
+            "description": "会话缺失、格式无效或已失效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "unauthenticated",
+                            "session_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "unauthenticated",
+              "session_expired"
+            ]
+          },
+          "403": {
+            "description": "当前会话不具备管理员权限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "forbidden"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "forbidden"
+            ]
+          },
+          "404": {
+            "description": "当前租户事件、笔记或列表续点不存在、已超过可读期限或不可访问；认证后事务核对发现操作人不再具备有效管理员资格时也返回此码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "not_found"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "not_found"
+            ]
+          },
+          "500": {
+            "description": "HTTP 全局异常恢复处理返回的未预期内部错误。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "internal_error"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "internal_error"
+            ]
+          },
+          "503": {
+            "description": "认证或事件存储服务暂不可用。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "auth_unavailable",
+                            "incident_unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "auth_unavailable",
+              "incident_unavailable"
+            ]
+          }
+        }
+      },
+      "post": {
+        "summary": "建立调查笔记",
+        "operationId": "createIncidentNote",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "description": "当前有效管理员可在未结案事件内建立纯文本笔记；作者取自会话与数据库，不允许代填作者、附件或私密共享。事件修订 CAS、笔记目录、不可变修订与操作审计原子提交；不递增事件修订。 笔记与每次修订按 incidents 留存策略冻结到期时间，默认 180 天，可由租户配置。活动事件保护材料，结案后按冻结期限读取与清理；撤回不删除正文或历史。 原请求回执检查先于当前事件状态和 CAS：相同操作人以原键及完全相同输入确认时，在原回执到期前返回该次不可变回执，即使事件或笔记已有后续修订、事件已结案或其自身到期；不会重做操作、覆盖后续修订或续期。操作人撤权后仍不可确认；原回执到期返回 410，键冲突返回 409。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "当前租户的事件标识。"
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "必须与当前会话的 CSRF 值一致。Origin 允许省略；提供时必须与平台配置的来源完全一致，且 Sec-Fetch-Site 不得为 cross-site。"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "必须且只能出现一次。作用域为当前租户、实际操作人及 create/change 操作；指纹涵盖事件、笔记、操作、事件修订、预期笔记修订、spec 与原因。未知提交结果必须保留原键及原输入确认，不得自动换键。"
+          }
+        ],
+        "x-reject-unknown-query-parameters": true,
+        "x-reject-duplicate-query-parameters": true,
+        "responses": {
+          "200": {
+            "description": "该次操作已提交或原请求精确确认的不可变笔记回执；首次建立也返回 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效：路径、重复/未知查询参数、JSON 类型或字段、重复/未知/大小写不符字段、空值、文本约束、请求键数量或格式不符合契约。请求体需为单个 application/json 对象；HTTP 请求体上限 2097152 字节，解析出的 JSON 对象编码文本（不含对象外空白）上限 65536 字节。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "invalid_incident_note"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "invalid_incident_note"
+            ]
+          },
+          "401": {
+            "description": "会话缺失、格式无效或已失效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "unauthenticated",
+                            "session_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "unauthenticated",
+              "session_expired"
+            ]
+          },
+          "403": {
+            "description": "需要管理员会话，并通过 CSRF 与请求来源校验。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "forbidden",
+                            "csrf_failed"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "forbidden",
+              "csrf_failed"
+            ]
+          },
+          "404": {
+            "description": "当前租户事件、笔记或列表续点不存在、已超过可读期限或不可访问；认证后事务核对发现操作人不再具备有效管理员资格时也返回此码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "not_found"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "not_found"
+            ]
+          },
+          "409": {
+            "description": "incident_conflict：事件或笔记 CAS 修订不符，或相同作用域请求键改变了输入。incident_note_readonly：对已结案且未过可读期限的事件发起新笔记操作；先重开事件才能继续记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_conflict",
+                            "incident_note_readonly"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_conflict",
+              "incident_note_readonly"
+            ]
+          },
+          "410": {
+            "description": "该租户、操作人和操作类型下原请求键对应的回执已超过其冻结到期时间；在核对输入指纹前即返回此码。原操作不可重建或续期。已关闭事件自身到期而无可确认原回执时返回 404。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_expired"
+            ]
+          },
+          "429": {
+            "description": "笔记或变更额度用尽：建立时每事件最多 128 条、每租户最多 10000 条笔记（均计入仍保留的撤回笔记）；建立与修订合计每租户每 UTC 日最多 4096 次；单笔记最多 1000 个修订。原请求精确重试不占新额度。Retry-After 为 60 秒提示，不保证固定对象额度届时释放。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_note_quota"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_note_quota"
+            ],
+            "headers": {
+              "Retry-After": {
+                "description": "固定 60 秒重试提示；事件或笔记额度需要通过留存清理释放，并非 60 秒后必然可用。",
+                "schema": {
+                  "type": "string",
+                  "const": "60"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "HTTP 全局异常恢复处理返回的未预期内部错误；写入结果仍需通过原请求确认。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "internal_error"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "internal_error"
+            ]
+          },
+          "503": {
+            "description": "认证或事件存储服务暂不可用。写入结果可能未知，恢复后使用相同 Idempotency-Key 与相同输入确认原回执，禁止仅据此响应认定提交失败或自动建立新操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "auth_unavailable",
+                            "incident_unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "auth_unavailable",
+              "incident_unavailable"
+            ]
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentNoteCreate"
+              }
+            }
+          }
+        },
+        "x-reject-duplicate-json-members": true,
+        "x-json-member-names-case-sensitive": true,
+        "x-idempotency": {
+          "header": "Idempotency-Key",
+          "scope": [
+            "tenant_id",
+            "actor_id",
+            "operation"
+          ],
+          "fingerprint": [
+            "incident_id",
+            "note_id",
+            "operation",
+            "incident_revision",
+            "expected_revision",
+            "spec",
+            "reason"
+          ],
+          "exact-retry-returns-original-receipt": true,
+          "retry-renews-retention": false
+        },
+        "x-quotas": {
+          "notes-per-incident": 128,
+          "notes-per-tenant": 10000,
+          "changes-per-tenant-utc-day": 4096,
+          "revisions-per-note": 1000
+        },
+        "x-http-body-limit-bytes": 2097152,
+        "x-json-document-limit-bytes": 65536
+      }
+    },
+    "/api/v1/incidents/{id}/notes/{note}": {
+      "get": {
+        "summary": "读取调查笔记",
+        "operationId": "incidentNote",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "description": "仅允许当前租户管理员查阅；事务内重新核对有效管理员资格。活动事件保护其笔记及历史材料，即使材料的冻结到期时间已到仍可读；已结案事件仅可读取自身和材料均未到期的记录。不存在、跨租户及不可读对象统一返回 404。 返回笔记目录的当前版本。 笔记与每次修订按 incidents 留存策略冻结到期时间，默认 180 天，可由租户配置。活动事件保护材料，结案后按冻结期限读取与清理；撤回不删除正文或历史。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "当前租户的事件标识。"
+          },
+          {
+            "name": "note",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "该事件下的笔记标识；禁止跨租户或跨事件访问。"
+          }
+        ],
+        "x-reject-unknown-query-parameters": true,
+        "x-reject-duplicate-query-parameters": true,
+        "responses": {
+          "200": {
+            "description": "通过当前租户范围、管理员资格与材料留存核对的查询结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "路径标识、状态筛选或游标无效；重复及未知查询参数均被拒绝。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "invalid_incident_note"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "invalid_incident_note"
+            ]
+          },
+          "401": {
+            "description": "会话缺失、格式无效或已失效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "unauthenticated",
+                            "session_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "unauthenticated",
+              "session_expired"
+            ]
+          },
+          "403": {
+            "description": "当前会话不具备管理员权限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "forbidden"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "forbidden"
+            ]
+          },
+          "404": {
+            "description": "当前租户事件、笔记或列表续点不存在、已超过可读期限或不可访问；认证后事务核对发现操作人不再具备有效管理员资格时也返回此码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "not_found"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "not_found"
+            ]
+          },
+          "500": {
+            "description": "HTTP 全局异常恢复处理返回的未预期内部错误。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "internal_error"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "internal_error"
+            ]
+          },
+          "503": {
+            "description": "认证或事件存储服务暂不可用。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "auth_unavailable",
+                            "incident_unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "auth_unavailable",
+              "incident_unavailable"
+            ]
+          }
+        }
+      },
+      "post": {
+        "summary": "修订调查笔记",
+        "operationId": "changeIncidentNote",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "description": "仅当前有效管理员中的原作者可在未结案事件内修改、撤回或恢复笔记。全量提交 spec 与非空操作原因，同时核对事件 incident_revision 和笔记 expected_revision。笔记修订、不可变历史与操作审计原子提交；不递增事件修订。 笔记与每次修订按 incidents 留存策略冻结到期时间，默认 180 天，可由租户配置。活动事件保护材料，结案后按冻结期限读取与清理；撤回不删除正文或历史。 原请求回执检查先于当前事件状态和 CAS：相同操作人以原键及完全相同输入确认时，在原回执到期前返回该次不可变回执，即使事件或笔记已有后续修订、事件已结案或其自身到期；不会重做操作、覆盖后续修订或续期。操作人撤权后仍不可确认；原回执到期返回 410，键冲突返回 409。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "当前租户的事件标识。"
+          },
+          {
+            "name": "note",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "该事件下的笔记标识；禁止跨租户或跨事件访问。"
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "必须与当前会话的 CSRF 值一致。Origin 允许省略；提供时必须与平台配置的来源完全一致，且 Sec-Fetch-Site 不得为 cross-site。"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "必须且只能出现一次。作用域为当前租户、实际操作人及 create/change 操作；指纹涵盖事件、笔记、操作、事件修订、预期笔记修订、spec 与原因。未知提交结果必须保留原键及原输入确认，不得自动换键。"
+          }
+        ],
+        "x-reject-unknown-query-parameters": true,
+        "x-reject-duplicate-query-parameters": true,
+        "responses": {
+          "200": {
+            "description": "该次操作已提交或原请求精确确认的不可变笔记回执；首次建立也返回 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效：路径、重复/未知查询参数、JSON 类型或字段、重复/未知/大小写不符字段、空值、文本约束、请求键数量或格式不符合契约。请求体需为单个 application/json 对象；HTTP 请求体上限 2097152 字节，解析出的 JSON 对象编码文本（不含对象外空白）上限 65536 字节。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "invalid_incident_note"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "invalid_incident_note"
+            ]
+          },
+          "401": {
+            "description": "会话缺失、格式无效或已失效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "unauthenticated",
+                            "session_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "unauthenticated",
+              "session_expired"
+            ]
+          },
+          "403": {
+            "description": "需要管理员会话，并通过 CSRF 与请求来源校验。只有当前仍具备有效管理员权限的原作者可修改、撤回或恢复笔记。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "forbidden",
+                            "csrf_failed",
+                            "incident_note_author_required"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "forbidden",
+              "csrf_failed",
+              "incident_note_author_required"
+            ]
+          },
+          "404": {
+            "description": "当前租户事件、笔记或列表续点不存在、已超过可读期限或不可访问；认证后事务核对发现操作人不再具备有效管理员资格时也返回此码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "not_found"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "not_found"
+            ]
+          },
+          "409": {
+            "description": "incident_conflict：事件或笔记 CAS 修订不符，或相同作用域请求键改变了输入。incident_note_readonly：对已结案且未过可读期限的事件发起新笔记操作；先重开事件才能继续记录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_conflict",
+                            "incident_note_readonly"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_conflict",
+              "incident_note_readonly"
+            ]
+          },
+          "410": {
+            "description": "该租户、操作人和操作类型下原请求键对应的回执已超过其冻结到期时间；在核对输入指纹前即返回此码。原操作不可重建或续期。已关闭事件自身到期而无可确认原回执时返回 404。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_expired"
+            ]
+          },
+          "429": {
+            "description": "笔记或变更额度用尽：建立时每事件最多 128 条、每租户最多 10000 条笔记（均计入仍保留的撤回笔记）；建立与修订合计每租户每 UTC 日最多 4096 次；单笔记最多 1000 个修订。原请求精确重试不占新额度。Retry-After 为 60 秒提示，不保证固定对象额度届时释放。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "incident_note_quota"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "incident_note_quota"
+            ],
+            "headers": {
+              "Retry-After": {
+                "description": "固定 60 秒重试提示；事件或笔记额度需要通过留存清理释放，并非 60 秒后必然可用。",
+                "schema": {
+                  "type": "string",
+                  "const": "60"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "HTTP 全局异常恢复处理返回的未预期内部错误；写入结果仍需通过原请求确认。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "internal_error"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "internal_error"
+            ]
+          },
+          "503": {
+            "description": "认证或事件存储服务暂不可用。写入结果可能未知，恢复后使用相同 Idempotency-Key 与相同输入确认原回执，禁止仅据此响应认定提交失败或自动建立新操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "auth_unavailable",
+                            "incident_unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "auth_unavailable",
+              "incident_unavailable"
+            ]
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentNoteChange"
+              }
+            }
+          }
+        },
+        "x-reject-duplicate-json-members": true,
+        "x-json-member-names-case-sensitive": true,
+        "x-idempotency": {
+          "header": "Idempotency-Key",
+          "scope": [
+            "tenant_id",
+            "actor_id",
+            "operation"
+          ],
+          "fingerprint": [
+            "incident_id",
+            "note_id",
+            "operation",
+            "incident_revision",
+            "expected_revision",
+            "spec",
+            "reason"
+          ],
+          "exact-retry-returns-original-receipt": true,
+          "retry-renews-retention": false
+        },
+        "x-quotas": {
+          "notes-per-incident": 128,
+          "notes-per-tenant": 10000,
+          "changes-per-tenant-utc-day": 4096,
+          "revisions-per-note": 1000
+        },
+        "x-http-body-limit-bytes": 2097152,
+        "x-json-document-limit-bytes": 65536
+      }
+    },
+    "/api/v1/incidents/{id}/notes/{note}/history": {
+      "get": {
+        "summary": "读取调查笔记修订记录",
+        "operationId": "incidentNoteHistory",
+        "x-required-role": "admin",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "description": "仅允许当前租户管理员查阅；事务内重新核对有效管理员资格。活动事件保护其笔记及历史材料，即使材料的冻结到期时间已到仍可读；已结案事件仅可读取自身和材料均未到期的记录。不存在、跨租户及不可读对象统一返回 404。 先核对当前笔记目录，再读取同一笔记的不可变历史，每页最多 20 条，按 revision 降序。历史中的原作者、原作者名称与首次创建时间必须与当前目录一致；不存在或损坏的存储不会被补造为有效材料。 笔记与每次修订按 incidents 留存策略冻结到期时间，默认 180 天，可由租户配置。活动事件保护材料，结案后按冻结期限读取与清理；撤回不删除正文或历史。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "当前租户的事件标识。"
+          },
+          {
+            "name": "note",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/IncidentNoteIdentifier"
+            },
+            "description": "该事件下的笔记标识；禁止跨租户或跨事件访问。"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4,
+              "pattern": "^(?:|[1-9][0-9]{0,2}|1000)$"
+            },
+            "description": "省略或空字符串读取全部可见修订的首屏；否则仅返回 revision 小于该值的记录。取值为 1..1000 的规范十进制字符串，不含前导零，无需该修订实际存在。"
+          }
+        ],
+        "x-reject-unknown-query-parameters": true,
+        "x-reject-duplicate-query-parameters": true,
+        "responses": {
+          "200": {
+            "description": "通过当前租户范围、管理员资格与材料留存核对的查询结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteHistoryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "路径标识、状态筛选或游标无效；重复及未知查询参数均被拒绝。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "invalid_incident_note"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "invalid_incident_note"
+            ]
+          },
+          "401": {
+            "description": "会话缺失、格式无效或已失效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "unauthenticated",
+                            "session_expired"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "unauthenticated",
+              "session_expired"
+            ]
+          },
+          "403": {
+            "description": "当前会话不具备管理员权限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "forbidden"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "forbidden"
+            ]
+          },
+          "404": {
+            "description": "当前租户事件、笔记或列表续点不存在、已超过可读期限或不可访问；认证后事务核对发现操作人不再具备有效管理员资格时也返回此码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "not_found"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "not_found"
+            ]
+          },
+          "500": {
+            "description": "HTTP 全局异常恢复处理返回的未预期内部错误。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "internal_error"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "internal_error"
+            ]
+          },
+          "503": {
+            "description": "认证或事件存储服务暂不可用。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IncidentNoteError"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "auth_unavailable",
+                            "incident_unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "x-error-codes": [
+              "auth_unavailable",
+              "incident_unavailable"
+            ]
+          }
+        }
+      }
     }
   },
   "components": {
@@ -17195,6 +19057,9 @@
             "type": "string",
             "format": "date-time",
             "description": "记录保留截止，与任务执行截止 expires_at 分开；默认为创建时操作留存策略的 180 天，不追溯修改既有记录。"
+          },
+          "response_protection": {
+            "$ref": "#/components/schemas/ResponseProtection"
           }
         },
         "required": [
@@ -29638,6 +31503,976 @@
         ],
         "additionalProperties": false,
         "description": "结果来自告警元数据 PIT 快照，最多 5000 条、8 MiB 与 512 个分组窗口。快照、分页、分片、身份、权限、摘要、审计或资源限制任一失败不交付部分结果。没有结果不代表流量安全或覆盖完整；结果不创建告警、持续任务或处置授权。"
+      },
+      "WatchlistID": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "WatchlistSHA256": {
+        "type": "string",
+        "minLength": 64,
+        "maxLength": 64,
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "WatchlistSensorScope": {
+        "type": "object",
+        "properties": {
+          "sensor_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "registration_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "registration_id"
+        ],
+        "additionalProperties": false,
+        "description": "冻结本租户探针和注册代次。创建、变更定义或启用时必须是当前使用中探针的相同注册；重新注册不继承旧范围。"
+      },
+      "WatchlistDefinition": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "watchlist.v1"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "protect",
+              "observe"
+            ],
+            "description": "protect 仅参与平台新封禁授权的保护检查；observe 保留观察记录和材料匹配，不自动修改告警、模型结论或设备。"
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "ip",
+              "cidr",
+              "domain"
+            ],
+            "description": "一条名单只使用一种类型；域名仅精确匹配，不支持通配、子串或后缀操作。"
+          },
+          "values": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253,
+              "description": "依 match_type 校验规范值：ip 为 netip 规范 IPv4/IPv6，禁止 zone、IPv4-mapped IPv6、未指定或多播地址；cidr 必须为 masked 规范前缀且禁止 mapped/zone；domain 必须是小写 ASCII/IDNA punycode 精确域名、至少两个 label、不得是公共后缀、IP、通配、URL或尾点，不进行DNS查询或IP归属推断。"
+            }
+          },
+          "sensors": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistSensorScope"
+            },
+            "description": "sensor_id 必须唯一，即使 registration_id 不同也不能重复；业务范围不自动扩大到全租户。"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.0+)?(?:Z|[+-]00:00)$",
+            "description": "UTC 零偏移、整秒 RFC 3339 时间；允许零小数，服务端规范输出省略零小数并使用 Z。"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.0+)?(?:Z|[+-]00:00)$",
+            "description": "UTC 零偏移、整秒 RFC 3339 时间；允许零小数，服务端规范输出省略零小数并使用 Z。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "kind",
+          "match_type",
+          "values",
+          "sensors",
+          "valid_from",
+          "valid_until"
+        ],
+        "additionalProperties": false,
+        "description": "业务有效期使用 [valid_from,valid_until)，起点不得早于 2000-01-01T00:00:00Z，结束须晚于起点，跨度最多 3650×24 小时。IPv4 CIDR 小于 /24 或 IPv6 小于 /120 属于过宽范围，可停用保存但不可启用；没有自动审批或放宽。该期限与历史 expires_at 完全独立。",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "match_type": {
+                  "const": "ip"
+                }
+              },
+              "required": [
+                "match_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "values": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "ipv4"
+                      },
+                      {
+                        "type": "string",
+                        "format": "ipv6"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "match_type": {
+                  "const": "cidr"
+                }
+              },
+              "required": [
+                "match_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "values": {
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?:[0-9.]+/(?:[0-9]|[12][0-9]|3[0-2])|[0-9a-f:]+/(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-8]))$"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "match_type": {
+                  "const": "domain"
+                }
+              },
+              "required": [
+                "match_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "values": {
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+(?:\\.[a-z0-9-]+)+$"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "WatchlistChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999999,
+            "default": 0,
+            "description": "0 表示创建，更新须为当前修订；省略在当前 Go 解码中按 0 处理，更新不会绕过 CAS。客户端应始终显式提交。"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "按 Unicode 字符数限制；有效 UTF-8、首尾无空白，不接受控制字符或换行。"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "按 Unicode 字符数限制；有效 UTF-8、首尾无空白，不接受控制字符或换行。"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "配置启停标志，必填；true 不代表当前时间已生效。过宽或已到期定义不能启用。"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/WatchlistDefinition"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "active",
+          "definition"
+        ],
+        "additionalProperties": false,
+        "description": "保存创建或更新为新不可变修订；不提供物理删除。只停用原 definition（或保持停用且 definition 不变）允许保留已失效的探针注册，避免旧策略无法停用。其他创建、启用、变更定义均核对当前探针注册。"
+      },
+      "WatchlistRecord": {
+        "type": "object",
+        "properties": {
+          "tenant_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "按 Unicode 字符数限制；有效 UTF-8、首尾无空白，不接受控制字符或换行。"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "按 Unicode 字符数限制；有效 UTF-8、首尾无空白，不接受控制字符或换行。"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/WatchlistDefinition"
+          },
+          "definition_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "不可变历史按创建当时 operations 分类策略固化的留存到期时间，默认 created_at 后 180 天。它不是业务生效期限；当前头引用的配置不会仅因该历史期限到达被删除或隐藏。"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "id",
+          "revision",
+          "name",
+          "description",
+          "active",
+          "definition",
+          "definition_sha256",
+          "created_by",
+          "created_at",
+          "expires_at"
+        ],
+        "additionalProperties": false,
+        "description": "原提交回执绑定操作者、输入和原请求键；重试可能返回旧修订而不是当前头，客户端须分别核对。definition_sha256 为 Go 类型化定义规范 JSON 的 SHA-256，字段顺序与 Definition 定义保持。"
+      },
+      "WatchlistPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistRecord"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 2048,
+            "pattern": "^$|^[A-Za-z0-9_-]+$",
+            "description": "无 padding 的规范 base64url；绑定租户、keyword、active、kind、limit 和上一页最后 ID。无下一页为空；变更筛选或页大小后须清空。"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "additionalProperties": false,
+        "description": "按当前头的 ID 升序读取；不是跨页持久快照，配置变更可能影响后续页。"
+      },
+      "WatchlistTarget": {
+        "type": "object",
+        "properties": {
+          "sensor_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "registration_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ip",
+              "domain"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "description": "依 match_type 校验规范值：ip 为 netip 规范 IPv4/IPv6，禁止 zone、IPv4-mapped IPv6、未指定或多播地址；cidr 必须为 masked 规范前缀且禁止 mapped/zone；domain 必须是小写 ASCII/IDNA punycode 精确域名、至少两个 label、不得是公共后缀、IP、通配、URL或尾点，不进行DNS查询或IP归属推断。"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "registration_id",
+          "type",
+          "value"
+        ],
+        "additionalProperties": false,
+        "description": "用户提交的匹配材料，不来自完整事件检索。ip 不接受 CIDR；domain 仍为规范精确域名。探针或注册不同的材料不会命中定义范围，不会为此查询其他租户。",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "ip"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "ipv4"
+                    },
+                    {
+                      "type": "string",
+                      "format": "ipv6"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "domain"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+(?:\\.[a-z0-9-]+)+$"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "WatchlistPreviewRequest": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/WatchlistDefinition"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "targets": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 128,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistTarget"
+            },
+            "description": "必须提供数组，可为空以只检查范围；缺失/null/超额均为 invalid_watchlist。"
+          }
+        },
+        "required": [
+          "definition",
+          "active",
+          "targets"
+        ],
+        "additionalProperties": false,
+        "description": "本次定义和用户材料的匹配及范围预览，不读取或扫描全部历史告警，不发布配置、不删除事实、不生成设备任务。定义中的探针必须为当前有效注册；旧注册停用保存的例外不适用于预览。"
+      },
+      "WatchlistPreviewMatch": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 127
+          },
+          "matched": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "index",
+          "matched"
+        ],
+        "additionalProperties": false,
+        "description": "index 对应 targets 的从零序号。matched 只表示材料与范围及值匹配，不受 active 或业务时间影响；实际是否生效由 effective 单独表达。"
+      },
+      "WatchlistPreview": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "watchlist-preview.v1"
+          },
+          "definition_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "admissible": {
+            "type": "boolean",
+            "description": "定义规范、范围不过宽且未到期时可启用；不等于已启用，未来生效定义也可为 true。"
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "仅在 active=true、范围不过宽且 checked_at 位于业务有效期内时为 true。"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "服务端读取的 PG 当前时间，UTC 输出。"
+          },
+          "scope_sensor_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "value_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "scope_too_broad",
+                "expired",
+                "not_yet_valid",
+                "inactive"
+              ]
+            },
+            "description": "过宽、到期／未生效、停用分别列示；范围可接受且当前启用生效时为空。"
+          },
+          "matches": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistPreviewMatch"
+            },
+            "description": "与输入 targets 同序且等长；空输入返回空数组。"
+          },
+          "execution_authorized": {
+            "type": "boolean",
+            "const": false
+          },
+          "fact_deletion_allowed": {
+            "type": "boolean",
+            "const": false
+          }
+        },
+        "required": [
+          "schema_version",
+          "definition_sha256",
+          "active",
+          "admissible",
+          "effective",
+          "checked_at",
+          "scope_sensor_count",
+          "value_count",
+          "reasons",
+          "matches",
+          "execution_authorized",
+          "fact_deletion_allowed"
+        ],
+        "additionalProperties": false,
+        "description": "结果仅为范围和用户材料预览，不授予设备执行权限，不认定目标安全、攻击成功或封禁效果。"
+      },
+      "WatchlistReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "definition_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "definition_sha256"
+        ],
+        "additionalProperties": false,
+        "description": "固定名单修订和定义摘要；不引用后续修订替换原依据。"
+      },
+      "WatchlistResponseCheck": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "watchlist-response-check.v1"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "保护检查在取得名单配置事务共享锁后读取的 PG clock_timestamp，UTC 输出；不使用等待前或客户端时刻判定业务有效期。"
+          },
+          "state_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "matches": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistReference"
+            },
+            "description": "当前探针及注册、当前有效 protect IP/CIDR 的命中依据。observe 和 domain 不据此拒绝 IP 封禁。非空时拒绝新封禁；已成功签发任务的检查证据必须为空数组。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "checked_at",
+          "state_sha256",
+          "matches"
+        ],
+        "additionalProperties": false,
+        "description": "保护门禁的内部证据，由任务证据对象另行绑定同一命令 SHA-256、租户、探针注册及授权时间；不能单独将此对象当执行授权。state_sha256 是按 ID 排序的当前头修订引用数组摘要，包括停用/观察项。只约束平台之后新授权的封禁，不自动撤销既有签名或已执行动作，也不声称采集器执行时重新检查；回读及解封不受名单阻断。"
+      },
+      "ResponseProtection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": "response.protection.v1"
+          },
+          "command_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "check_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "check": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WatchlistResponseCheck"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "matches": {
+                    "type": "array",
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "command_sha256",
+          "check_sha256",
+          "check"
+        ],
+        "description": "原封禁授权事务保存的不可变名单核对记录，绑定原命令摘要、核对摘要和当时有效名单状态。只有成功的新 response.block 授权保存，matches 必须为空。旧任务可缺省；后续名单变更不自动撤销既有签名任务或租约，不表示设备执行时再次核对名单。checked_at 采用数据库取得名单读锁后的时间，须位于原 requested_at 前后 30 秒内且早于原 expires_at。"
+      },
+      "IncidentNoteIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+        "description": "标识符仅包含小写字母、数字、下划线和连字符，以字母或数字开头。"
+      },
+      "IncidentNoteRevision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "事件或笔记修订号；请求 JSON 必须使用不带小数点或指数的整数数值。"
+      },
+      "IncidentNoteSpec": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "body",
+          "status",
+          "withdrawal_reason"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u001f\\u007f-\\u009f])",
+            "description": "调查笔记标题。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白，禁止 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": []
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f])",
+            "description": "纯文本正文；不解析 HTML、Markdown 或脚本，不承载附件。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白。允许换行 LF 和制表符 TAB，禁止其他 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": [
+              "U+0009",
+              "U+000A"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "description": "active 表示有效笔记，withdrawn 表示已撤回；撤回保留正文与修订记录。"
+          },
+          "withdrawal_reason": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 2048,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f])",
+            "description": "撤回说明；active 时必须为空字符串，withdrawn 时必须非空。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白。允许换行 LF 和制表符 TAB，禁止其他 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": [
+              "U+0009",
+              "U+000A"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "withdrawn"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "properties": {
+                "withdrawal_reason": {
+                  "minLength": 1
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "withdrawal_reason": {
+                  "const": ""
+                }
+              }
+            }
+          }
+        ],
+        "description": "所有字段必须显式提供，且均不得为 null。正文与说明保持纯文本；当前租户管理员可查阅撤回材料。"
+      },
+      "IncidentNoteCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "incident_revision",
+          "spec"
+        ],
+        "properties": {
+          "incident_revision": {
+            "$ref": "#/components/schemas/IncidentNoteRevision",
+            "description": "当前事件修订；在与事件结案相同的事务串行边界内核对。笔记写入不递增事件修订。"
+          },
+          "spec": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IncidentNoteSpec"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "const": "active"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "基于当前未结案事件建立有效笔记，笔记修订从 1 开始。作者、租户与记录时间均由服务端确定，不接受客户端伪造。"
+      },
+      "IncidentNoteChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "incident_revision",
+          "expected_revision",
+          "spec",
+          "reason"
+        ],
+        "properties": {
+          "incident_revision": {
+            "$ref": "#/components/schemas/IncidentNoteRevision",
+            "description": "当前事件修订，必须与服务端锁定的事件修订相同；笔记写入不递增事件修订。"
+          },
+          "expected_revision": {
+            "$ref": "#/components/schemas/IncidentNoteRevision",
+            "description": "当前笔记修订，必须与服务端锁定的笔记修订相同。当前修订为 1000 时拒绝继续修订并返回 429。"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/IncidentNoteSpec"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f])",
+            "description": "本次修订、撤回或恢复的原因；与撤回说明分别保存。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白。允许换行 LF 和制表符 TAB，禁止其他 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": [
+              "U+0009",
+              "U+000A"
+            ]
+          }
+        },
+        "description": "完整替换笔记业务字段；仅仍具备当前租户管理员权限的原作者可操作。active 与 withdrawn 可相互转换，每次以新请求键接受的操作形成 expected_revision + 1 修订，即使正文未变化。"
+      },
+      "IncidentNoteRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "incident_id",
+          "incident_revision",
+          "revision",
+          "spec",
+          "author_id",
+          "author_name",
+          "reason",
+          "actor_id",
+          "actor_name",
+          "created_at",
+          "recorded_at",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IncidentNoteIdentifier",
+            "description": "服务端生成的笔记标识，同一笔记的全部修订保持一致。"
+          },
+          "incident_id": {
+            "$ref": "#/components/schemas/IncidentNoteIdentifier",
+            "description": "当前租户所属事件标识。"
+          },
+          "incident_revision": {
+            "$ref": "#/components/schemas/IncidentNoteRevision",
+            "description": "本次笔记操作核对的事件修订快照；不一定等于事件后续修订。"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/IncidentNoteRevision"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/IncidentNoteSpec"
+          },
+          "author_id": {
+            "$ref": "#/components/schemas/IncidentNoteIdentifier",
+            "description": "服务端确定的原作者标识，不随修订改变。"
+          },
+          "author_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u001f\\u007f-\\u009f])",
+            "description": "建立笔记时读取的原作者账号名称快照，不随账号改名或笔记修订改变。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白，禁止 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": []
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f])",
+            "description": "本次操作原因；建立时固定为“建立调查笔记”，后续取提交的 reason。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白。允许换行 LF 和制表符 TAB，禁止其他 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": [
+              "U+0009",
+              "U+000A"
+            ]
+          },
+          "actor_id": {
+            "$ref": "#/components/schemas/IncidentNoteIdentifier",
+            "description": "实际操作人标识；当前能力仅允许作者操作，因此必须等于 author_id。"
+          },
+          "actor_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^(?![\\s\\S]*[\\u0000-\\u001f\\u007f-\\u009f])",
+            "description": "本次操作时读取的账号名称快照，账号改名后可能与 author_name 不同。 以 Unicode 码点计数；首尾不得有 Go strings.TrimSpace 所识别的空白，禁止 Unicode Cc 控制字符。",
+            "x-trimmed": true,
+            "x-allowed-control-code-points": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "首次建立时间；各修订保持一致，非零时间。"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "本次操作记录时间，不早于 created_at。"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "本修订操作时按 incidents 留存策略冻结的到期时间，默认 recorded_at 后 180 天，且严格晚于 recorded_at。精确重试不续期；活动事件继续保护材料。"
+          }
+        },
+        "description": "经过目录字段一致性核对的笔记修订记录。写接口返回该次操作的不可变原回执，可能早于当前笔记或事件的最新修订；查询详情返回当前笔记目录版本。作者、创建时间、租户范围和审计由服务端在同一事务内确定。",
+        "x-cross-field-invariants": [
+          "actor_id == author_id",
+          "recorded_at >= created_at",
+          "expires_at > recorded_at"
+        ],
+        "x-retention-category": "incidents",
+        "x-default-retention-days": 180
+      },
+      "IncidentNotePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/IncidentNoteRecord"
+            },
+            "description": "按 created_at 降序、id 降序排列；无数据时为空数组。"
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^(?:|[a-z0-9][a-z0-9_-]{0,63})$",
+            "description": "无后续记录时为空字符串；否则为本页第 20 条笔记 id，用于下一次 before。只有本页 20 条且服务端读到额外记录时才非空。"
+          }
+        },
+        "description": "固定每页最多 20 条，无 total 或客户端 page_size。游标基于不变的创建时间与标识，不提供跨请求快照隔离保证。"
+      },
+      "IncidentNoteHistoryPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/IncidentNoteRecord"
+            },
+            "description": "同一笔记的历史修订按 revision 降序排列；包括当前修订（未传 before 时）。原作者、原作者名称与首次创建时间均与笔记目录一致。"
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 4,
+            "pattern": "^(?:|[1-9][0-9]{0,2}|1000)$",
+            "description": "无后续修订时为空字符串；否则为本页第 20 条的十进制 revision，不含前导零。只有本页 20 条且服务端读到额外记录时才非空。"
+          }
+        },
+        "description": "固定每页最多 20 条。before 为排他的修订上界；留存策略可能使部分早期修订不可见，页序号不代表完整历史。"
+      },
+      "IncidentNoteError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_incident_note",
+              "unauthenticated",
+              "session_expired",
+              "forbidden",
+              "csrf_failed",
+              "incident_note_author_required",
+              "not_found",
+              "incident_conflict",
+              "incident_note_readonly",
+              "incident_expired",
+              "incident_note_quota",
+              "auth_unavailable",
+              "incident_unavailable",
+              "internal_error"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "面向用户的错误说明；业务处理应依据 code。"
+          },
+          "request_id": {
+            "type": "string",
+            "description": "服务端请求追踪标识。"
+          }
+        },
+        "description": "错误响应统一包含 code、message、request_id；不会返回其他租户记录标识或笔记内容。"
       }
     }
   }

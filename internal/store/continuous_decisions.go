@@ -15,6 +15,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/model"
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/triage"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 type DecisionCandidate struct {
@@ -257,6 +258,8 @@ func authorizeContinuousTask(ctx context.Context, tx pgx.Tx, u model.Principal, 
 			return errors.Join(err, re)
 		}
 		switch {
+		case errors.Is(err, watchlist.ErrProtected):
+			r.Code = "target_protected"
 		case errors.Is(err, responseapi.ErrUnavailable):
 			r.Code = "device_unavailable"
 		case errors.Is(err, responseapi.ErrQuota):

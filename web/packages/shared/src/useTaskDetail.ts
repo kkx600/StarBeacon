@@ -2,6 +2,7 @@ import {onScopeDispose,reactive,watch,type ComputedRef} from 'vue'
 import type {SensorTask,TaskDetailState,Principal} from './types'
 import type {ApiClient} from './api'
 import {validApplicationState} from './application'
+import {validResponseProtection} from './responseProtection'
 
 const id=/^[a-z0-9][a-z0-9_-]{0,63}$/
 const kinds=new Set(['diagnostics','capture.configure','applications.apply','rules.validate','rules.replay','rules.apply','rules.reconcile','response.block','response.read','response.revoke'])
@@ -25,7 +26,9 @@ export function validTask(v:unknown,requested:string,sensor?:string,local=false)
  if(String(v.kind).startsWith('response.')){
   const a=v.response_action
   if(!object(a)||a.schema_version!=='response.action.v1'||!['connector_id','device_id','lease_id'].every(key=>typeof a[key]==='string'&&id.test(a[key] as string))||!['config_sha256','owner_sha256'].every(key=>typeof a[key]==='string'&&/^[a-f0-9]{64}$/.test(a[key] as string))||typeof a.target_ip!=='string'||!a.target_ip||typeof a.reason!=='string'||!a.reason||!['requested_at','expires_at'].every(key=>typeof a[key]==='string'&&Number.isFinite(Date.parse(a[key] as string)))||v.kind==='response.block'&&a.lease_id!==requested)return false
+  if(!validResponseProtection(v.response_protection,String(v.kind),String(a.requested_at),String(a.expires_at)))return false
  }
+ if(v.response_protection!==undefined&&!String(v.kind).startsWith('response.'))return false
  return true
 }
 

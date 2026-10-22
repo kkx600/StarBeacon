@@ -17,7 +17,7 @@ import {click,button,deferred,principal} from './fixtures'
 
 const {platformRequest,collectorRequest}=vi.hoisted(()=>({platformRequest:vi.fn(),collectorRequest:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request:platformRequest},current:(await import('vue')).shallowRef(null)}}))
-vi.mock('../collector/src/session',()=>({session:{api:{request:collectorRequest}}}))
+vi.mock('../collector/src/session',async()=>({session:{api:{request:collectorRequest},current:(await import('vue')).shallowRef({id:'u_admin',tenant_id:'t_office',username:'admin',role:'admin',csrf_token:'test-csrf'})}}))
 const global={plugins:[registerAnt]}
 const stamp='2026-10-03T01:00:00Z'
 const capture:PacketCapture={id:'packet_owned',tenant_id:principal.tenant_id,sensor_id:'probe_owned',registration_id:'reg_owned',run_id:'run_owned',interface:'eth0',interface_mac:'02:00:00:00:00:01',settings_sha256:'a'.repeat(64),bpf_filter:'tcp port 8088',promiscuous:false,started_at:stamp,ended_at:'2026-10-03T01:00:03Z',first_packet_at:stamp,last_packet_at:'2026-10-03T01:00:01Z',packets:12,packet_bytes:800,truncated_packets:0,vlan_offload_packets:0,kernel_drops:'0',counter_state:'observed',termination:'rotation',format:'pcapng',source:'AF_PACKET',snap_length:262144}

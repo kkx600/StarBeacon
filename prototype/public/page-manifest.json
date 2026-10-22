@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "3674c441321cd78663ba12a2b329415b07f1ac24355d50992c24b0e7f43f721b"
+    "renderTreeSha256": "8991ddaa0718f7ad30ed6c5c6d33b3af4379aa88eb8947d803d59767a0bfaa8c"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -3824,10 +3824,10 @@
     {
       "id": "watchlists",
       "workspace": "保护与观察名单",
-      "title": "名单管理",
+      "title": "保护与观察名单",
       "group": "detection",
       "kind": "table",
-      "description": "配置保护名单、例外与关注对象，并设置审批和到期。",
+      "description": "配置保护与观察用途、固定探针范围、业务有效期及历史修订。",
       "requirements": [
         "SB-TI-005"
       ],
@@ -3835,37 +3835,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/watchlists?state=data",
+          "url": "/detection/watchlists?state=data",
           "image": "watchlists/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/watchlists?state=empty",
+          "url": "/detection/watchlists?state=empty",
           "image": "watchlists/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/watchlists?state=detail",
+          "url": "/detection/watchlists?state=detail",
           "image": "watchlists/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/watchlists?state=action",
+          "url": "/detection/watchlists?state=action",
           "image": "watchlists/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/watchlists?state=loading",
+          "url": "/detection/watchlists?state=loading",
           "image": "watchlists/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/watchlists?state=error",
+          "url": "/detection/watchlists?state=error",
           "image": "watchlists/error.jpg"
         }
       ]

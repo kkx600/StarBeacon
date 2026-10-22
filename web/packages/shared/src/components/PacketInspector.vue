@@ -8,37 +8,56 @@ import {formatBytes} from '../utils/format'
 import StatePanel from './StatePanel.vue'
 import ByteViewer from './ByteViewer.vue'
 const ADescriptionsItem=ADescriptions.Item,ACollapsePanel=ACollapse.Panel
-const props=defineProps<{api:ApiClient;record:PacketRecord|null}>()
-const emit=defineEmits<{close:[]}>()
+const props=defineProps<{api:ApiClient;record:PacketRecord|null;initialNumber?:number;initialLayer?:number|null}>()
+const emit=defineEmits<{close:[];select:[number:number];layers:[layers:number[]]}>()
 const number=ref<number|undefined>(1),selectedNumber=shallowRef(1),data=shallowRef<PacketInspection|null>(null),pending=shallowRef(false),error=shallowRef(''),numberID=useId()
+const activeLayers=shallowRef<string[]>(['0'])
 const total=computed(()=>props.record?packetCapture(props.record).packets:0),byteSource=computed(()=>data.value?JSON.stringify({packet:data.value.packet}):'')
 let controller:AbortController|undefined
 function inputNumber(value:string){const parsed=/^[1-9][0-9]*$/.test(value)?Number(value):NaN;number.value=Number.isSafeInteger(parsed)?parsed:undefined}
-function stop(){controller?.abort();controller=undefined;data.value=null;pending.value=false;error.value=''}
+function stop(){controller?.abort();controller=undefined;data.value=null;pending.value=false;error.value='';activeLayers.value=[]}
+function restoreLayer(){
+ const layer=props.initialLayer===undefined?1:props.initialLayer
+ activeLayers.value=layer!==null&&Number.isSafeInteger(layer)&&layer>=1&&layer<=(data.value?.layers.length??0)?[String(layer-1)]:[]
+}
+function changeLayers(value:unknown){
+ const keys=Array.isArray(value)?value:[value],maximum=data.value?.layers.length??0
+ activeLayers.value=[...new Set(keys.map(String).filter(key=>/^(0|[1-9][0-9]*)$/.test(key)&&Number(key)<maximum))]
+ emit('layers',activeLayers.value.map(key=>Number(key)+1))
+}
 async function read(index:number){
  const record=props.record
  if(!record||pending.value||!Number.isSafeInteger(index)||index<1||index>total.value)return
- stop();selectedNumber.value=index;number.value=index;pending.value=true
+ stop();selectedNumber.value=index;number.value=index;pending.value=true;emit('select',index)
  const active=new AbortController();controller=active
  try{
   const raw=await props.api.request<unknown>('/packet-archives/'+encodeURIComponent(record.id)+'/packets/'+index,{signal:active.signal})
   const result=await verifyPacketInspection(raw,record,index)
-  if(!active.signal.aborted&&props.record===record)data.value=result
+  if(!active.signal.aborted&&props.record===record){data.value=result;restoreLayer()}
  }catch(e){if(!active.signal.aborted)error.value=e instanceof Error?e.message:'原包无法读取，请稍后重试'}
  finally{if(!active.signal.aborted)pending.value=false}
 }
-watch(()=>props.record,record=>{stop();number.value=1;selectedNumber.value=1;if(record)void read(1)},{immediate:true})
+watch([()=>props.record,()=>props.initialNumber],([record,initial],previous)=>{
+ const selected=initial===undefined?1:initial
+ if(record===previous?.[0]&&selected===selectedNumber.value)return
+ stop();number.value=Number.isSafeInteger(selected)?selected:undefined;selectedNumber.value=Number.isSafeInteger(selected)?selected:1
+ if(!record)return
+ if(!Number.isSafeInteger(selected)||selected<1||selected>1048576||total.value>0&&selected>total.value){error.value='包序号不在所选归档的有效范围内，请重新选择';return}
+ if(total.value>0)void read(selected)
+},{immediate:true})
+watch(()=>props.initialLayer,restoreLayer)
 onScopeDispose(stop)
 </script>
 <template>
  <a-modal title="原包协议查看" :open="record!==null" :width="1000" :footer="null" :body-style="{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}" @cancel="emit('close')">
+  <slot name="notice"/>
   <p class="muted inspector-note">按所选切片的捕获顺序查看，每次完整核验归档后读取一个包；最多解析 16 层。捕获时间不等于双向入站／出站时间，未重组应用正文、校验报文校验和或解密 TLS。</p>
   <form class="inspector-toolbar" @submit.prevent="number!==undefined&&read(number)"><span>共 {{total.toLocaleString('zh-CN')}} 包</span><label :for="numberID">包序号</label><a-input-number :id="numberID" :value="number??''" @input="inputNumber" @update:value="value=>number=typeof value==='number'?value:undefined" :min="1" :max="total||1" :precision="0" :disabled="pending"/><a-button html-type="submit" :disabled="pending||number===undefined||number<1||number>total">查看原包</a-button><a-button :disabled="pending||selectedNumber<=1" @click="read(selectedNumber-1)">上一包</a-button><a-button :disabled="pending||selectedNumber>=total" @click="read(selectedNumber+1)">下一包</a-button></form>
   <StatePanel :loading="pending" :error="error" :empty="!pending&&!error&&!data" description="所选归档没有可查看的原包" @retry="read(selectedNumber)">
    <template v-if="data">
     <a-alert v-if="data.truncated||data.vlan_offload||data.decode_status!=='parsed'" type="warning" show-icon class="section-gap" :message="`${inspectionStates[data.decode_status]}${data.truncated?' · 捕获内容被截断':''}${data.vlan_offload?' · 存在 VLAN 卸载元数据，未向原字节补写标签':''}`"/>
     <a-descriptions bordered :column="1" size="small"><a-descriptions-item label="归档 / 包序号"><span class="technical">{{data.archive_id}}</span> / {{data.number.toLocaleString('zh-CN')}}</a-descriptions-item><a-descriptions-item label="网卡捕获时间（UTC）"><time class="technical" :datetime="data.captured_at">{{data.captured_at}}</time></a-descriptions-item><a-descriptions-item label="实际捕获 / 原始帧长度">{{formatBytes(data.captured_length)}} / {{formatBytes(data.original_length)}} · {{inspectionStates[data.decode_status]}}</a-descriptions-item><a-descriptions-item label="所选包 SHA-256"><span class="technical">{{data.packet_sha256}}</span></a-descriptions-item><a-descriptions-item label="归档原始内容 SHA-256"><span class="technical">{{data.raw_sha256}}</span></a-descriptions-item></a-descriptions>
-    <section class="protocol-layers" aria-label="协议层"><h2>协议层</h2><a-collapse :default-active-key="['0']"><a-collapse-panel v-for="(layer,index) in data.layers" :key="String(index)" :header="`${index+1}. ${layer.name} · ${layer.offset===null?'字节范围未确认':`偏移 ${layer.offset} B`} · ${formatBytes(layer.length)}`"><dl v-if="layer.fields.length" class="protocol-fields"><template v-for="field in layer.fields" :key="field.name"><dt class="technical">{{field.name}}</dt><dd class="technical">{{field.value}}</dd></template></dl><p v-else class="muted">该层未提供结构字段；请对照原始字节。载荷名称不代表应用正文已解码。</p></a-collapse-panel></a-collapse></section>
+    <section class="protocol-layers" aria-label="协议层"><h2>协议层</h2><a-collapse :active-key="activeLayers" @change="changeLayers"><a-collapse-panel v-for="(layer,index) in data.layers" :key="String(index)" :header="`${index+1}. ${layer.name} · ${layer.offset===null?'字节范围未确认':`偏移 ${layer.offset} B`} · ${formatBytes(layer.length)}`"><dl v-if="layer.fields.length" class="protocol-fields"><template v-for="field in layer.fields" :key="field.name"><dt class="technical">{{field.name}}</dt><dd class="technical">{{field.value}}</dd></template></dl><p v-else class="muted">该层未提供结构字段；请对照原始字节。载荷名称不代表应用正文已解码。</p></a-collapse-panel></a-collapse></section>
     <ByteViewer :original="byteSource" source="frame"/>
    </template>
   </StatePanel>

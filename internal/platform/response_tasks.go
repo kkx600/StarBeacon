@@ -9,6 +9,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/response"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 func (a *API) createResponseTask(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,8 @@ func (a *API) createResponseTask(w http.ResponseWriter, r *http.Request) {
 	id, err := a.DB.CreateResponseTask(r.Context(), u, r.PathValue("id"), keys[0], input, a.Signer)
 	if err != nil {
 		switch {
+		case errors.Is(err, watchlist.ErrProtected):
+			httpapi.Fail(w, r, 409, "response_target_protected", "目标命中当前有效保护名单，未创建封禁任务；请核对名单范围。回读与解除不受此限制。")
 		case errors.Is(err, response.ErrInput):
 			httpapi.Fail(w, r, 400, "invalid_response_request", err.Error())
 		case errors.Is(err, response.ErrPermission):

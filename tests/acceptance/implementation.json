@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-21",
+  "review_date": "2026-10-22",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -59,13 +59,20 @@
         "internal/platform/sensor_management.go",
         "migrations/00031_sensor_groups.sql",
         "web/platform/src/features/sensors/ManagementForm.vue",
-        "web/packages/shared/src/sensors.ts"
+        "web/packages/shared/src/sensors.ts",
+        "web/collector/src/navigation.ts",
+        "web/collector/src/router.ts",
+        "web/collector/src/features/network/CollectorInterfacePanel.vue",
+        "web/collector/src/features/network/CollectorSyslogPanel.vue"
       ],
       "pages": [
         "platform:/sensors",
         "platform:/sensors?view=groups",
         "collector:/network",
-        "collector:/network?view=capture"
+        "collector:/network?view=capture",
+        "collector:/overview/status",
+        "collector:/network/interfaces",
+        "collector:/network/capture"
       ],
       "tests": [
         "internal/admin/pki_test.go",
@@ -92,9 +99,11 @@
         "internal/platform/sensor_management_test.go",
         "tests/integration/sensor_management_test.go",
         "web/tests/sensor-management.test.ts",
-        "internal/agent/capture_spool_recovery_test.go"
+        "internal/agent/capture_spool_recovery_test.go",
+        "web/tests/collector-navigation.test.ts",
+        "tests/quality/test_collector_routes.py"
       ],
-      "boundary": "设备证书和注册代次隔离；CPU、内存、磁盘、网络接口、版本、WAL 与托管引擎实际状态上报。本机和平台均可配置 AF_PACKET 网卡、线程、混杂模式与 BPF；平台签名任务在数据库事务和设备配置事务中核对冻结修订及摘要，成功回执必须包含生效参数和原生进程状态。实时捕获与手动规则发布具备真实链路；升级、规则订阅自动同步、自动灰度及具体设备兼容验收仍未完成；通用 HTTP 联动工程由 response_http 提供。 独立原包捕获和目录见原包捕获与归档能力，完整验收仍待完成。 管理目录支持有界分页、分组与站点筛选；分组和管理信息通过注册代次、CAS、租户权限、原请求回执与原子审计维护，分组不改变采集或执行范围。 任务目标按租户与探针主键查询，不受目录上限影响；有界 MCP 列表不用于设备授权或任务选择。 EVE 容量保护停机后保留原始来源，只有写端标记消失、同一文件核对及 WAL 持久排空后回收；来源丢失仍拒绝推进检查点。该恢复路径的本地回归通过，最新远程资格仍待核验。"
+      "boundary": "设备证书和注册代次隔离；CPU、内存、磁盘、网络接口、版本、WAL 与托管引擎实际状态上报。本机和平台均可配置 AF_PACKET 网卡、线程、混杂模式与 BPF；平台签名任务在数据库事务和设备配置事务中核对冻结修订及摘要，成功回执必须包含生效参数和原生进程状态。实时捕获、手动规则发布、固定批准修订的自动同步与有界多探针分批发布具有工程流程；现场 CLI 支持 Agent 程序切换、失败回退和恢复核对。平台升级编排、规则源订阅、系统／引擎升级、生产规模及具体设备兼容验收仍未完成；通用 HTTP 联动工程由 response_http 提供。 独立原包捕获和目录见原包捕获与归档能力，完整验收仍待完成。 管理目录支持有界分页、分组与站点筛选；分组和管理信息通过注册代次、CAS、租户权限、原请求回执与原子审计维护，分组不改变采集或执行范围。 任务目标按租户与探针主键查询，不受目录上限影响；有界 MCP 列表不用于设备授权或任务选择。 EVE 容量保护停机后保留原始来源，只有写端标记消失、同一文件核对及 WAL 持久排空后回收；来源丢失仍拒绝推进检查点。该恢复路径的本地回归通过，最新远程资格仍待核验。 采集器实际提供运行状态、网卡、采集、归档、Syslog、只读通信身份、样本、任务与联动设备九个分级视图；本机 API 均要求管理员，页面不把只读身份展示当作密钥编辑或管理网配置。"
     },
     {
       "id": "pipeline",
@@ -206,7 +215,8 @@
       "pages": [
         "platform:/sensors?view=tasks",
         "platform:/rules?view=tasks",
-        "collector:/network?view=tasks"
+        "collector:/network?view=tasks",
+        "collector:/rules/tasks"
       ],
       "tests": [
         "internal/control/command_test.go",
@@ -312,7 +322,9 @@
         "platform:/rules?view=samples",
         "platform:/rules?view=tasks",
         "collector:/network?view=samples",
-        "collector:/network?view=tasks"
+        "collector:/network?view=tasks",
+        "collector:/rules/samples",
+        "collector:/rules/tasks"
       ],
       "tests": [
         "internal/agent/replay_test.go",
@@ -470,7 +482,10 @@
         "internal/store/lifecycle.go",
         "migrations/00011_retention_policies.sql",
         "internal/store/history_cleanup.go",
-        "migrations/00015_history_cleanup.sql"
+        "migrations/00015_history_cleanup.sql",
+        "migrations/00050_watchlists.sql",
+        "migrations/00051_incident_notes.sql",
+        "migrations/00052_response_watchlist_checks.sql"
       ],
       "pages": [
         "platform:/retention"
@@ -486,9 +501,12 @@
         "tests/integration/retention_policy_test.go",
         "web/tests/retention.test.ts",
         "tests/integration/history_cleanup_test.go",
-        "tests/integration/storage_failures_test.go"
+        "tests/integration/storage_failures_test.go",
+        "tests/integration/watchlists_test.go",
+        "tests/integration/incident_notes_test.go",
+        "tests/integration/response_protection_test.go"
       ],
-      "boundary": "十一类策略默认 180 天，管理员预览、CAS／幂等发布与审计；仅影响未来对象，既有分区不调整。PG 历史与运行对象按固化期限有界回收，分类进度与删除同事务提交；当前版本、活动任务、未决规则安装与引用版本受保护。匿名登录审计使用独立维护作用域。文件流水线、规则历史清理、全域保全、存量重算、物理分区和备份销毁仍缺失。测试入口不代表新回收路径已验收，实际远程结果见工程实现与开发。"
+      "boundary": "十一类策略默认 180 天，管理员预览、CAS／幂等发布与审计；仅影响未来对象，既有分区不调整。PG 历史与运行对象按固化期限有界回收，分类进度与删除同事务提交；当前版本、活动任务、未决规则安装与引用版本受保护。匿名登录审计使用独立维护作用域。文件流水线、规则历史清理、全域保全、存量重算、物理分区和备份销毁仍缺失。测试入口不代表新回收路径已验收，实际远程结果见工程实现与开发。 名单当前修订、未关闭事件的笔记及历史、未结束封禁任务的名单核对记录受独立保护；回收先删除符合期限的子记录，后续轮次再回收无引用父记录。"
     },
     {
       "id": "delivery",
@@ -632,7 +650,8 @@
         "web/platform/src/features/mcp/BindingForm.vue",
         "internal/searchfilter/filter.go",
         "internal/platform/traffic.go",
-        "internal/traffic/details.go"
+        "internal/traffic/details.go",
+        "internal/mcpserver/resources.go"
       ],
       "pages": [
         "platform:/models?view=mcp"
@@ -646,9 +665,11 @@
         "tests/integration/http_failures_test.go",
         "internal/mcpserver/search_tools_test.go",
         "internal/searchfilter/datasets_test.go",
-        "internal/store/traffic_test.go"
+        "internal/store/traffic_test.go",
+        "internal/mcpserver/resources_test.go",
+        "tests/integration/mcp_resources_test.go"
       ],
-      "boundary": "官方 Go SDK 1.8.0 的无会话 HTTP POST、TLS/OAuth 资源发现和可信内省；身份三元组绑定、强制 RLS、修订、停用/删除/到期、所属账号停用、调用预算、审计及 256 KiB 结构化输出上限。发布九个有界只读工具：告警检索/统计、告警字段/表达式校验、资产、探针，以及独立 traffic:read 的协议检索/字段/表达式校验。浏览器和 MCP 共用数据集目录及编译器，返回可见 TLS/DNS、MAC 和会话计数，保留累计计数和方向限制，不返回原始载荷或注册标识；收费分析/报告/规则和响应动作工具、资源下载、真实企业授权方及客户兼容矩阵尚未验收。 协议查询和数据集表达式的本地官方客户端回归已通过；工程远程资格以对应源码的独立原始报告为准。"
+      "boundary": "官方 Go SDK 1.8.0 的无会话 HTTP POST、TLS/OAuth 资源发现和可信内省；身份三元组绑定、强制 RLS、修订、停用/删除/到期、所属账号停用、调用预算、审计及 256 KiB 结构化输出上限。发布九个有界只读工具：告警检索/统计、告警字段/表达式校验、资产、探针，以及独立 traffic:read 的协议检索/字段/表达式校验。浏览器和 MCP 共用数据集目录及编译器，返回可见 TLS/DNS、MAC 和会话计数，保留累计计数和方向限制，不返回原始载荷或注册标识；收费分析/报告/规则和响应动作工具、资源下载、真实企业授权方及客户兼容矩阵尚未验收。 协议查询和数据集表达式的本地官方客户端回归已通过；工程远程资格以对应源码的独立原始报告为准。 提供 resources/list、resources/templates/list 与 resources/read：按 alerts:read／traffic:read 裁剪的告警及协议字段资源、当前授权能力说明和限定字段模板；与工具共用跨实例调用预算、审计、取消和响应前权限复核。资源仅说明软件元数据，不证明实际采集覆盖，不开放文件、PCAP、原始载荷或设备动作；九个工具的数量及原有权限不变。"
     },
     {
       "id": "assessment",
@@ -692,7 +713,8 @@
       "pages": [
         "platform:/rules?view=generation",
         "platform:/rules?view=samples",
-        "collector:/network?view=samples"
+        "collector:/network?view=samples",
+        "collector:/rules/samples"
       ],
       "tests": [
         "internal/rulegen/generation_test.go",
@@ -769,7 +791,8 @@
       ],
       "pages": [
         "platform:/traffic?view=archives",
-        "collector:/network?view=archives"
+        "collector:/network?view=archives",
+        "collector:/network/archives"
       ],
       "tests": [
         "internal/packetarchive/codec_test.go",
@@ -806,7 +829,14 @@
         "migrations/00044_incident_tasks.sql",
         "web/platform/src/features/incidents/IncidentTasksModal.vue",
         "web/platform/src/features/incidents/IncidentTaskForm.vue",
-        "web/platform/src/features/incidents/useIncidentTasks.ts"
+        "web/platform/src/features/incidents/useIncidentTasks.ts",
+        "internal/incident/notes.go",
+        "internal/store/incident_notes.go",
+        "internal/platform/incident_notes.go",
+        "migrations/00051_incident_notes.sql",
+        "web/platform/src/features/incidents/IncidentNotesModal.vue",
+        "web/platform/src/features/incidents/IncidentNoteForm.vue",
+        "web/platform/src/features/incidents/useIncidentNotes.ts"
       ],
       "pages": [
         "platform:/incidents"
@@ -819,9 +849,14 @@
         "internal/incident/tasks_test.go",
         "internal/platform/incident_tasks_test.go",
         "tests/integration/incident_tasks_test.go",
-        "web/tests/incident-tasks.test.ts"
+        "web/tests/incident-tasks.test.ts",
+        "internal/incident/notes_test.go",
+        "internal/store/incident_notes_test.go",
+        "internal/platform/incident_notes_test.go",
+        "tests/integration/incident_notes_test.go",
+        "web/tests/incident-notes.test.ts"
       ],
-      "boundary": "管理员租户内手工线索、唯一告警关联、责任分派、版本调查、结构化结案、重开、分页时间线、同事务审计和分类期限。独立人工协作任务具备负责人、可选截止、状态、完成依据、取消、重开、CAS、原请求回执和独立历史；未完成任务阻止结案，已结案任务只读，活动调查保护历史，默认180天。代码与用例不授予同源码远程和浏览器全项验收资格；不含附件、私密共享、自动分派、SLA、外部工单或攻击成功判定。"
+      "boundary": "管理员租户内手工线索、唯一告警关联、责任分派、版本调查、结构化结案、重开、分页时间线、同事务审计和分类期限。独立人工协作任务具备负责人、可选截止、状态、完成依据、取消、重开、CAS、原请求回执和独立历史；未完成任务阻止结案，已结案任务只读，活动调查保护历史，默认180天。代码与用例不授予同源码远程和浏览器全项验收资格；不含附件、私密共享、自动分派、SLA、外部工单或攻击成功判定。 独立纯文本调查笔记保存固定作者、编辑／撤回／恢复、不可变修订及原请求回执；只有仍具备调查权限的原作者可变更，父事件修订和笔记修订同时核对，结案后只读。笔记及历史采用 incidents 期限、默认 180 天，未关闭事件保护材料；作者退出不授予他人代写权限。附件、私密分享和更多可观测对象仍待交付。"
     },
     {
       "id": "users",
@@ -1002,12 +1037,17 @@
         "migrations/00036_response_tasks.sql",
         "web/platform/src/features/sensors/ResponseDialog.vue",
         "web/packages/shared/src/components/ResponseConnectors.vue",
-        "web/platform/src/features/sensors/TaskWorkspace.vue"
+        "web/platform/src/features/sensors/TaskWorkspace.vue",
+        "internal/store/response_protection.go",
+        "migrations/00052_response_watchlist_checks.sql",
+        "web/packages/shared/src/components/ResponseProtectionSummary.vue",
+        "web/packages/shared/src/responseProtection.ts"
       ],
       "pages": [
         "platform:/sensors",
         "platform:/sensors?view=tasks",
-        "collector:/network?view=responses"
+        "collector:/network?view=responses",
+        "collector:/response/devices"
       ],
       "tests": [
         "internal/response/client_test.go",
@@ -1016,9 +1056,12 @@
         "internal/platform/response_tasks_test.go",
         "tests/integration/response_tasks_test.go",
         "tests/integration/processes_test.go",
-        "web/tests/response.test.ts"
+        "web/tests/response.test.ts",
+        "internal/store/response_protection_test.go",
+        "tests/integration/response_protection_test.go",
+        "web/tests/response-protection.test.ts"
       ],
-      "boundary": "管理员显式提交，绑定采集器注册代次与签名信任；本地私有文件中的固定 HTTPS 管理 IP、CA 与 Bearer 引用，允许/保护网段及本机与平台管理通道保护。独立租约、绝对 TTL、条件解除、超时原键确认和单次写后 GET 核对；副作用前本地落盘，重启只回读，原执行回执不可改写。任务和本地租约历史默认 180 天，可配置；本地最多 1024 条历史，租户滚动 24 小时最多 1024 项。设备须提供原生到期和独立租约协议。受控 Docker HTTPS 端点只验证协议行为，不能证明商业设备或真实流量阻断；连接器不独立授予模型执行权限，自动授权由持续决策能力提供；尚无设备品牌适配、浏览器认证插件、MFA 或 HA。远程验收按当前源码的独立执行记录核对。"
+      "boundary": "管理员显式提交，绑定采集器注册代次与签名信任；本地私有文件中的固定 HTTPS 管理 IP、CA 与 Bearer 引用，允许/保护网段及本机与平台管理通道保护。独立租约、绝对 TTL、条件解除、超时原键确认和单次写后 GET 核对；副作用前本地落盘，重启只回读，原执行回执不可改写。任务和本地租约历史默认 180 天，可配置；本地最多 1024 条历史，租户滚动 24 小时最多 1024 项。设备须提供原生到期和独立租约协议。受控 Docker HTTPS 端点只验证协议行为，不能证明商业设备或真实流量阻断；连接器不独立授予模型执行权限，自动授权由持续决策能力提供；尚无设备品牌适配、浏览器认证插件、MFA 或 HA。远程验收按当前源码的独立执行记录核对。 新封禁授权在同一事务内核对有效 IP／CIDR 保护名单与冻结探针注册范围，命中拒绝新签名任务；非命中记录以名单状态、命令和核对摘要绑定原任务。已有任务的原键确认不重新授权或续期，名单变更不自动撤销旧任务，原租约回读及解除仍可使用；设备执行时不假称再次读取当前平台名单。"
     },
     {
       "id": "decision_response",
@@ -1059,7 +1102,8 @@
         "internal/worker/indexer.go",
         "migrations/00040_automatic_triage.sql",
         "web/platform/src/features/decisions/AutomaticTriagePanel.vue",
-        "web/platform/src/features/decisions/automaticTriage.ts"
+        "web/platform/src/features/decisions/automaticTriage.ts",
+        "internal/store/response_protection.go"
       ],
       "pages": [
         "platform:/models?view=policies",
@@ -1072,9 +1116,10 @@
         "tests/integration/processes_test.go",
         "web/tests/continuous-decisions.test.ts",
         "tests/integration/automatic_triage_test.go",
-        "tests/integration/platform_startup_readiness_test.go"
+        "tests/integration/platform_startup_readiness_test.go",
+        "tests/integration/response_protection_test.go"
       ],
-      "boundary": "仅处理当前维护者在策略修订保存后创建并完成的指定模型研判；默认不自动发起模型调用；独立勾选数据使用及费用许可后，仅指定探针、注册代次和等级的新观测告警登记自动研判；按 UTC 日历日跨修订限量、全租户最多八个有效触发策略，并受模型/租户共享费用额度约束。平台在队列及就绪状态绑定完成后才启动持续轮询，避免初始化并发读写。登记、队列与审计原子提交，原键重复不追加收费请求，执行前重新核对策略/账号/模型/探针许可；登记与拒绝可在本人策略修订的自动研判记录查看。持续人工确认与自动模式分别留档，判断结果本身不持有执行授权。自动固定门槛包括阈值、确认攻击尝试、封禁建议、源 IP/规则事实引用、完整白名单材料、观测探针与注册、保护网段、设备/签名就绪、独立 TTL、目标冷却、原告警去重及小时/租户配额。授权、签名任务和审计原子提交；确定性拒绝留档，不盲目续期或重发。账号停用/降权、策略停用或修订及模型变更阻止新授权。档案不可改写，默认 operations 180 天；模型评分未经校准、真实设备流量效果、跨账号触发、自动研判的生产规模与故障恢复、多级审批和大规模队列吞吐仍需独立验收。"
+      "boundary": "仅处理当前维护者在策略修订保存后创建并完成的指定模型研判；默认不自动发起模型调用；独立勾选数据使用及费用许可后，仅指定探针、注册代次和等级的新观测告警登记自动研判；按 UTC 日历日跨修订限量、全租户最多八个有效触发策略，并受模型/租户共享费用额度约束。平台在队列及就绪状态绑定完成后才启动持续轮询，避免初始化并发读写。登记、队列与审计原子提交，原键重复不追加收费请求，执行前重新核对策略/账号/模型/探针许可；登记与拒绝可在本人策略修订的自动研判记录查看。持续人工确认与自动模式分别留档，判断结果本身不持有执行授权。自动固定门槛包括阈值、确认攻击尝试、封禁建议、源 IP/规则事实引用、完整白名单材料、观测探针与注册、保护网段、设备/签名就绪、独立 TTL、目标冷却、原告警去重及小时/租户配额。授权、签名任务和审计原子提交；确定性拒绝留档，不盲目续期或重发。账号停用/降权、策略停用或修订及模型变更阻止新授权。档案不可改写，默认 operations 180 天；模型评分未经校准、真实设备流量效果、跨账号触发、自动研判的生产规模与故障恢复、多级审批和大规模队列吞吐仍需独立验收。 当前有效保护名单命中以 target_protected 留为确定性拒绝，不进入设备写入重试；同一保护校验亦适用于人工封禁和研判确认授权。"
     },
     {
       "id": "protocol_capabilities",
@@ -1091,7 +1136,8 @@
       ],
       "pages": [
         "platform:/sensors",
-        "collector:/network"
+        "collector:/network",
+        "collector:/overview/status"
       ],
       "tests": [
         "internal/protocolcap/catalog_test.go",
@@ -1124,7 +1170,8 @@
       ],
       "pages": [
         "platform:/sensors?view=identity",
-        "collector:/network"
+        "collector:/network",
+        "collector:/connection/identity"
       ],
       "tests": [
         "internal/probepki/identity_test.go",
@@ -1169,7 +1216,8 @@
       "pages": [
         "platform:/sensors",
         "collector:/network",
-        "platform:/sensors?view=quality"
+        "platform:/sensors?view=quality",
+        "collector:/overview/status"
       ],
       "tests": [
         "internal/detectionquality/quality_test.go",
@@ -1198,7 +1246,10 @@
         "web/packages/shared/src/components/NavigationMenu.vue",
         "web/platform/src/features/settings/SettingsWorkspace.vue",
         "prototype/src/data/navigation.ts",
-        "prototype/scripts/check-screenshots.mjs"
+        "prototype/scripts/check-screenshots.mjs",
+        "web/collector/src/navigation.ts",
+        "web/collector/src/router.ts",
+        "web/collector/src/views/AccessDeniedView.vue"
       ],
       "pages": [
         "platform:/system/settings",
@@ -1206,15 +1257,27 @@
         "platform:/system/operations/health",
         "platform:/system/governance/retention",
         "platform:/system/audit/operations",
-        "platform:/system/audit/logins"
+        "platform:/system/audit/logins",
+        "collector:/overview/status",
+        "collector:/network/interfaces",
+        "collector:/network/capture",
+        "collector:/network/archives",
+        "collector:/network/syslog",
+        "collector:/connection/identity",
+        "collector:/rules/samples",
+        "collector:/rules/tasks",
+        "collector:/response/devices",
+        "collector:/access-denied"
       ],
       "tests": [
         "web/tests/navigation.test.ts",
         "web/tests/application.test.ts",
         "tests/quality/test_alignment.py",
-        "prototype/scripts/check-screenshots.test.mjs"
+        "prototype/scripts/check-screenshots.test.mjs",
+        "web/tests/collector-navigation.test.ts",
+        "tests/quality/test_collector_routes.py"
       ],
-      "boundary": "原型与实际平台共用 12 个业务分组、43 个工作区及工程页面归属。独立系统设置目录链接已有账号、运维、留存与审计入口；二、三级 history 路由保留旧链接窗口和定位，查看角色隐藏管理员工作区。未提供的功能保留明确范围说明，不提供虚假保存与执行操作；布局与导航源码摘要参与严格截图检查。目录不等于业务功能、生产运维设置或全产品验收。"
+      "boundary": "原型与实际平台共用 12 个业务分组、43 个工作区及工程页面归属。独立系统设置目录链接已有账号、运维、留存与审计入口；二、三级 history 路由保留旧链接窗口和定位，查看角色隐藏管理员工作区。未提供的功能保留明确范围说明，不提供虚假保存与执行操作；布局与导航源码摘要参与严格截图检查。目录不等于业务功能、生产运维设置或全产品验收。 采集器按五个实际工作区组织九个独立视图，父路由可刷新重定向，旧 /network?view= 链接迁移保留其他查询条件和定位；权限拒绝不读取本机 API，页面切换取消旧读取。原型保留目标设计并标明当前可用范围，不把系统升级或管理网络配置原型当作可执行功能。"
     },
     {
       "id": "response_catalog",
@@ -1260,7 +1323,8 @@
       ],
       "pages": [
         "platform:/response/devices",
-        "collector:/network?view=responses"
+        "collector:/network?view=responses",
+        "collector:/response/devices"
       ],
       "tests": [
         "internal/response/connectors_test.go",
@@ -1288,7 +1352,8 @@
       "pages": [
         "platform:/system/data-sources/syslog",
         "platform:/system/logs",
-        "collector:/network?view=syslog"
+        "collector:/network?view=syslog",
+        "collector:/network/syslog"
       ],
       "tests": [
         "internal/syslogdata/syslog_test.go",
@@ -1326,6 +1391,38 @@
         "web/tests/correlation-workspace.test.ts"
       ],
       "boundary": "仅当前启用固定修订的按需告警快照回测，支持 count/distinct、探针及注册代次隔离、PIT 来源核验、唯一事实去重、稳定窗口身份与证据摘要。单次最多一小时/5000 条/8 MiB/512 个窗口分组；边界不完整或缺测独立标记，最多展示 8 条样本。规则版本、目录分页、幂等提交与审计已实现；无实时关联、持续状态、序列、缺失事件推断、告警生成或设备处置。工程测试须按当前冻结来源核验，不构成整项正式验收。"
+    },
+    {
+      "id": "watchlists",
+      "name": "保护与观察名单",
+      "code": [
+        "internal/watchlist/watchlist.go",
+        "internal/store/watchlists.go",
+        "internal/platform/watchlists.go",
+        "migrations/00050_watchlists.sql",
+        "internal/store/response_protection.go",
+        "migrations/00052_response_watchlist_checks.sql",
+        "web/platform/src/features/watchlists/WatchlistsWorkspace.vue",
+        "web/platform/src/features/watchlists/useWatchlists.ts",
+        "web/platform/src/features/watchlists/useWatchlistPreview.ts",
+        "web/packages/shared/src/watchlists.ts",
+        "web/packages/shared/src/components/WatchlistForm.vue",
+        "web/packages/shared/src/components/WatchlistPreview.vue"
+      ],
+      "pages": [
+        "platform:/detection/watchlists"
+      ],
+      "tests": [
+        "internal/watchlist/watchlist_test.go",
+        "internal/platform/watchlists_test.go",
+        "tests/integration/watchlists_test.go",
+        "internal/store/response_protection_test.go",
+        "tests/integration/response_protection_test.go",
+        "web/tests/watchlists-contract.test.ts",
+        "web/tests/watchlists-workspace.test.ts",
+        "web/tests/response-protection.test.ts"
+      ],
+      "boundary": "管理员维护保护／观察目录、规范 IP／CIDR／精确域名、独立业务期限及冻结探针注册范围；配置修订不可改写，CAS、原请求确认、原子审计与历史默认 operations 180 天。每租户最多 256 项名单，单项 1–64 个值、1–32 个探针，每滚动 24 小时最多 2,048 次变更；启用拒绝过宽 IPv4 /24 或 IPv6 /120 之前的网段。材料预览最多核对 128 项显式输入，返回匹配、范围、可启用性与生效状态，不删除事实、不授予动作。有效 IP／CIDR 保护名单参与新封禁授权，绑定原任务的核对记录保留当时状态；域名不经 DNS 推测 IP。观察名单尚不自动回填告警或历史命中，预览不是全量 ES 影响扫描；多级审批、批量导入、跨账号细粒度权限、规模及完整真实浏览器验收仍待完成。"
     }
   ],
   "requirements": [
@@ -1836,13 +1933,18 @@
     },
     {
       "id": "SB-TI-005",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "watchlists"
+      ],
+      "implemented": [
+        "保护／观察名单目录、IP／CIDR／精确域名、业务期限和固定探针注册范围；CAS、不可变修订、原请求确认与原子审计",
+        "有界用户材料预览、范围及过宽网段准入核对；有效 IP／CIDR 保护名单在新封禁授权时核对并绑定原任务记录"
+      ],
       "remaining": [
-        "带期限和范围的白名单/提醒清单",
-        "范围预览与受控发布"
+        "观察命中与告警／事件的自动关联、既有历史数据影响扫描与完整受控发布",
+        "多级审批、批量导入、生产规模及同源码远程／全页面交互验收"
       ]
     },
     {
@@ -2027,10 +2129,11 @@
         "incidents"
       ],
       "implemented": [
-        "独立人工协作任务、责任分派、可选截止、进展、完成依据、取消与重开；原请求确认、CAS、原子历史审计及结案限制。"
+        "独立人工协作任务、责任分派、可选截止、进展、完成依据、取消与重开；原请求确认、CAS、原子历史审计及结案限制。",
+        "独立纯文本调查笔记、固定作者、编辑／撤回／恢复、不可变修订、事件与笔记双重 CAS、原请求回执及原子审计；结案后只读。"
       ],
       "remaining": [
-        "独立笔记、附件与可观测对象",
+        "附件与更多可观测对象",
         "私密共享和附件访问",
         "同源码远程及浏览器全流程验收"
       ]
@@ -2044,7 +2147,8 @@
       ],
       "implemented": [
         "不可变人工调查修订、真实来源标识与摘要、责任人与记录时间、分页时间线",
-        "独立任务修订、负责人、截止和完成依据，活动事件保护与到期子表先行回收。"
+        "独立任务修订、负责人、截止和完成依据，活动事件保护与到期子表先行回收。",
+        "独立笔记正文、作者、撤回依据与修订历史；未关闭事件保护笔记材料，到期历史和当前记录依次回收。"
       ],
       "remaining": [
         "自动活动及更多证据类型的统一时间线",
@@ -2110,7 +2214,8 @@
       "capabilities": [
         "decision_policies",
         "decision_response",
-        "continuous_decisions"
+        "continuous_decisions",
+        "watchlists"
       ],
       "implemented": [
         "租户策略目录与不可变修订、CAS、原提交确认及保护网段",
@@ -2118,7 +2223,8 @@
         "持久评估结果、策略快照、本人历史目录与原提交确认",
         "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键",
         "完成本人指定模型新研判的持续判断；人工确认候选与绑定设备的限时自动授权；固定门槛、目标冷却、告警去重、小时预算及独立不可变档案",
-        "独立授权的索引后新告警自动研判登记、共享费用预算、队列幂等、执行前许可核对及本人触发记录"
+        "独立授权的索引后新告警自动研判登记、共享费用预算、队列幂等、执行前许可核对及本人触发记录",
+        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。"
       ],
       "remaining": [
         "跨账号授权范围与多级审批/编排",
@@ -2167,13 +2273,15 @@
         "response_http",
         "decision_response",
         "continuous_decisions",
-        "response_catalog"
+        "response_catalog",
+        "watchlists"
       ],
       "implemented": [
         "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
         "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键",
         "持续策略依据本人指定模型的新研判签发限时源 IP 任务；模型、观测、探针及设备绑定，告警去重、目标冷却与小时预算约束",
-        "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认"
+        "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认",
+        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",
@@ -2319,10 +2427,11 @@
         "平台会话授权 HTTP API",
         "有界查询与受控异步探针任务",
         "官方 MCP 协议、TLS/OAuth 资源发现、服务身份三元绑定、修订与撤销",
-        "九个只读工具：告警/协议检索、字段目录、表达式校验、统计、资产和探针；独立协议权限、共享业务授权、预算、输出上限与查询审计"
+        "九个只读工具：告警/协议检索、字段目录、表达式校验、统计、资产和探针；独立协议权限、共享业务授权、预算、输出上限与查询审计",
+        "按当前协议范围裁剪的元数据资源与字段模板发现／读取，复用预算、审计、取消和响应前权限复核；不读取原始文件或 PCAP。"
       ],
       "remaining": [
-        "资源读取/下载授权",
+        "业务证据资源、文件／PCAP 下载授权与保全范围",
         "收费分析/规则/报告工具及费用越权验收",
         "真实企业授权方与实际客户 Agent 兼容矩阵"
       ]
@@ -2690,14 +2799,16 @@
       "acceptance": "pending",
       "capabilities": [
         "retention",
-        "navigation"
+        "navigation",
+        "watchlists"
       ],
       "implemented": [
         "十一类策略默认 180 天；事件调查当前状态及未关闭历史受保护",
         "管理员分类策略页／影响预览／CAS／幂等发布与审计",
         "按租户新建日期分区固定 ES ILM／既有分区不变",
         "已接入类别新记录的到期字段／重放样本回收",
-        "已固化期限的 PG 历史回收、持久分类进度、RLS 删除期限与当前／活动／引用保护"
+        "已固化期限的 PG 历史回收、持久分类进度、RLS 删除期限与当前／活动／引用保护",
+        "名单当前修订、活动事件笔记与未结束封禁任务核对记录受保护，分类回收保留持久游标和父子引用。"
       ],
       "remaining": [
         "未接入的 PG 规则历史、物理分区及高容量回收验收",
@@ -2713,13 +2824,15 @@
         "operations",
         "identity",
         "users",
-        "navigation"
+        "navigation",
+        "watchlists"
       ],
       "implemented": [
         "关键业务写与审计同事务",
         "登录验证记录和稳定游标页面",
         "凭据不回显",
-        "用户角色与停用变更、会话撤销、操作审计和幂等回执原子提交"
+        "用户角色与停用变更、会话撤销、操作审计和幂等回执原子提交",
+        "名单配置／材料预览、调查笔记变更及新封禁授权名单依据纳入原子操作审计；历史不可改写。"
       ],
       "remaining": [
         "查询/导出/研判/动作全过程审计",
@@ -3035,7 +3148,7 @@
     "Go 全量语句覆盖率与前端语句、分支、函数、行覆盖率必须按实际源码快照达到 90%；执行指标见工程实现与开发。覆盖率达标仅证明已有代码，不授予完整产品发布资格。",
     "持续 PCAP 捕获、独立帧压缩及有界普通 TCP 完整会话导出已有实际工程流程和远程功能测试；历史同源码全量覆盖率达到 90%；仍需对后续源码重新验收。精确包索引、规则来源、自动灰度和在线检测质量矩阵未完成。",
     "置信度校准、具体防火墙／EDR 的实际封禁效果及插件式认证未验收；通用 HTTP 限时租约链路单独核验。",
-    "统计对话、周期报告、告警模型研判、AI 规则生成及 MCP 有界只读工具已有工程实现；同源码端到端、真实模型领域效果、自动研判的规模与恢复、多级审批和剧本编排、自然语言检索、知识库、MCP 扩展、应用识别、事件调查完整协作/情报/风险及文件沙箱仍有缺口。",
+    "统计对话、周期报告、告警模型研判、AI 规则生成、九个 MCP 只读工具及受限元数据资源、调查笔记和保护名单已有工程子流程；本批次定向测试不能代替同源码远程、原生与浏览器验收。真实模型领域效果、自动研判规模与恢复、多级审批和剧本编排、自然语言检索、知识库、业务证据资源与下载、应用识别、事件调查完整协作／情报／风险及文件沙箱仍有缺口。",
     "生产 TLS/R3 队列/HA/备份恢复、真实办公渠道/模型/对象存储/设备/沙箱验收、1–200+ 探针容量和七档 PC 全路由交互验收未完成。",
     "正式验收证据工作流 .github/workflows/acceptance.yml 已提供来源与完整报告核验；完整远程业务断言执行器和生产验收输入制品尚未交付。两个实际 Linux UPX ZIP 的历史子流程按原来源核验；工程预览 v0.1.0-rc.3 已发布，当前全部改动仍需干净提交、同源制品与完整生产验收，不能正式发布。"
   ]

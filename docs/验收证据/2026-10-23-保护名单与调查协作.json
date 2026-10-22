@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "product": "StarBeacon",
+  "reviewed_at": "2026-10-22T19:54:33.394267+00:00",
+  "status": "engineering_and_gallery_verified_not_formal_acceptance",
+  "scope": "保护与观察名单、调查笔记、MCP 元数据资源、采集器导航及当前工程验证；不代表 107 项完整产品验收",
+  "formal_product_acceptance": false,
+  "formal_release_qualified": false,
+  "release_qualification": false,
+  "features": [
+    "保护与观察名单的租户目录、不可变修订、期限及固定探针注册范围、CAS、幂等确认、材料预览与审计",
+    "人工、模型确认及持续自动封禁的新授权事务核对有效 IP／CIDR 保护项，原任务保留不可变核对依据",
+    "独立纯文本作者笔记、编辑／撤回／恢复、双重修订核对、不可变历史及活动事件保护，结案后只读",
+    "MCP 按当前授权范围发现及读取字段和能力元数据资源，与既有九个只读工具共用预算、审计和撤权复核",
+    "采集器五工作区、九个规范功能视图、兼容路由迁移、本机管理员权限及迟到读取隔离",
+    "共享名单组件、笔记表单、原包逐包查看及采集器导航；原型数据始终为合成示例"
+  ],
+  "feature_limits": [
+    "观察名单尚不自动命中、关联或回溯全部历史告警，域名不自动解析为封禁保护",
+    "保护项只在新封禁授权时核对，后续名单变化不自动撤销原任务或租约，也不证明实际流量阻断",
+    "调查笔记附件及私密共享未实现",
+    "MCP 元数据不包含原始通信载荷、PCAP 下载、收费分析、写入或设备动作，真实企业 OAuth／Agent 兼容未验收",
+    "管理网络生效／回退、接入密钥编辑、系统／引擎升级及维护 Web 仍未完整交付",
+    "原型 MCP 身份维护仍为通用示例表单，归档及重放字段和部分交互仍有工程差异"
+  ],
+  "provenance": {
+    "backend_source_sha256": "9672263df9fc1e3f9a3c110aa2e69f0aca271eaf303622765ba7785e8e9bce87",
+    "frontend_source_sha256": "1daf8e03bdcf53134d7df0e6fc89ba3d09310cd5ed6e32f1fe6ba4658a8630f1",
+    "frontend_source_files": 407,
+    "build_parent_commit": "cfc703352b43db23d5d10bd4f6be9c299b753a5f",
+    "original_clean_commit": false,
+    "source_scope": "父提交后的冻结工作区；后续 Git 提交不追补干净候选构建资格",
+    "evidence_summary": "公开摘要仅引用原始归档的大小、SHA-256 及限定结论；原始账号、身份、通信端点和服务器路径不公开"
+  },
+  "backend": {
+    "status": "passed",
+    "qualification_run": "Go163",
+    "environment": "remote_docker_development",
+    "go_unit_top_level": 564,
+    "integration_top_level": 142,
+    "live_af_packet_top_level": 1,
+    "test_failures": 0,
+    "test_skips": 0,
+    "coverage": {
+      "covered": 22630,
+      "total": 25101,
+      "percentage": 90.15577068642683,
+      "minimum": 90,
+      "basis": "同一冻结来源的业务、CLI 与真实 AF_PACKET 计数合并",
+      "unchanged_exclusions": [
+        "api/sensor/",
+        "internal/testpcap/"
+      ]
+    },
+    "baseline_coverage_before_native": {
+      "covered": 22425,
+      "total": 25101,
+      "percentage": 89.33907015656747,
+      "qualifies_independently": false
+    },
+    "completion_actual_exit_code": 0,
+    "fetch_actual_exit_code": 0,
+    "included_targeted_integrations": {
+      "watchlists": 4,
+      "incident_notes": 3,
+      "mcp_resources": 1,
+      "new_block_protection": 4,
+      "included_in_integration_total": true
+    },
+    "scope_limit": "固定用例证明受限工程链路可运行，不证明生产吞吐、全部协议、单条告警时延或真实设备阻断"
+  },
+  "frontend": {
+    "status": "passed",
+    "qualification_run": "FE186",
+    "environment": "remote_docker_development",
+    "tests": 1148,
+    "test_files": 70,
+    "tool_tests": 9,
+    "test_failures": 0,
+    "test_pending": 0,
+    "test_skips": 0,
+    "coverage": {
+      "statements": {
+        "covered": 15145,
+        "total": 15943,
+        "percentage": 94.9946685065546
+      },
+      "branches": {
+        "covered": 17737,
+        "total": 19116,
+        "percentage": 92.78614772965055
+      },
+      "functions": {
+        "covered": 4640,
+        "total": 5083,
+        "percentage": 91.28467440487901
+      },
+      "lines": {
+        "covered": 5784,
+        "total": 5854,
+        "percentage": 98.80423641954219
+      },
+      "minimum_each": 90
+    },
+    "typecheck": "passed",
+    "platform_build": "passed",
+    "collector_build": "passed",
+    "report_attachments_verified": 346,
+    "container_actual_exit_code": 0,
+    "fetch_actual_exit_code": 0,
+    "oom_killed": false,
+    "started_at": "2026-10-22T18:34:09.785094+00:00",
+    "finished_at": "2026-10-22T18:44:24.850783+00:00",
+    "scope_limit": "组件、选定原型包装和构建资格不等于全部真实页面、完整无障碍或全产品验收；构建警告保留"
+  },
+  "navigation_and_ui": {
+    "status": "passed",
+    "qualification_run": "UI182-rerun04",
+    "renderer": "内置浏览器",
+    "scope": "当前远程页面的导航、七档 PC 几何与六项具名交互，不代表 107 项正式验收",
+    "platform_entrances": 59,
+    "collector_entrances": 9,
+    "geometry_checks": 476,
+    "platform_geometry_checks": 413,
+    "collector_geometry_checks": 63,
+    "route_checks": 134,
+    "platform_routes": 110,
+    "collector_routes": 24,
+    "accepted_page_images": 68,
+    "page_image_attempts": 68,
+    "rejected_page_image_attempts": 0,
+    "selected_manual_interactions": 6,
+    "interaction_images": 6,
+    "all_74_image_hashes_read_back_verified": true,
+    "image_viewport": [
+      1440,
+      900
+    ],
+    "images_published": false,
+    "image_visibility": "真实页面图含专属验收身份，仅保留于受限原始证据，不提交公共 Git",
+    "pc_viewports": [
+      [
+        1024,
+        768
+      ],
+      [
+        1280,
+        720
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1440,
+        900
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2560,
+        1440
+      ],
+      [
+        3840,
+        2160
+      ]
+    ],
+    "interactions": [
+      "MCP 资源说明、字段 URI 复制及关闭后重开",
+      "同案调查笔记筛选重开与准确空状态",
+      "三个调查笔记修订的只读历史及撤回依据",
+      "停用名单当前与历史修订、固定探针注册范围",
+      "名单材料正负匹配，命中时仍保持停用和未生效说明",
+      "采集诊断打开、刷新、关闭后保留线程与 BPF 草稿，未保存采集目标"
+    ],
+    "limitations": [
+      "入口包含目录和未提供业务的状态，不计作 68 个完整业务",
+      "未启用企业 OAuth MCP，未编辑笔记、启用名单、保存采集目标或执行设备动作",
+      "限定交互和几何不能替代全部 CRUD、权限、并发、恢复、模型质量或物理阻断",
+      "真实页面截图与合成原型图库分别记录，不更改像素或重标浏览器来源"
+    ],
+    "finished_at": "2026-10-22T19:03:49.797Z"
+  },
+  "prototype": {
+    "status": "passed",
+    "scope": "最终合成原型图库的源码、页面状态、原始图片字节及严格门禁；不代表实际功能验收",
+    "final_result_included": true,
+    "gallery_run": "Chrome194",
+    "renderer": "Chrome DevTools MCP",
+    "capture_method": "chrome-devtools-mcp-native",
+    "synthetic": true,
+    "base_images": 803,
+    "supplemental_images": 187,
+    "supplemental_existing_scenarios": 113,
+    "supplemental_extended_scenarios": 74,
+    "total_images": 990,
+    "viewport": [
+      1440,
+      900
+    ],
+    "native_jpeg_bytes_unmodified": true,
+    "render_tree_sha256": "8991ddaa0718f7ad30ed6c5c6d33b3af4379aa88eb8947d803d59767a0bfaa8c",
+    "render_tree_files": 389,
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "theme_changed": false,
+    "capture_started_at": "2026-10-22T19:10:24.580Z",
+    "capture_finished_at": "2026-10-22T19:49:10.230Z",
+    "strict_current_source_state_and_byte_checks": "passed",
+    "qualified_capture_log_errors": 0,
+    "superseded_entries_in_qualified_gallery": 0,
+    "source_metadata": [
+      {
+        "repository_path": "prototype/public/screenshots/capture-log.json",
+        "sha256": "aa667684ac9c35d3dc7f08e225e51c7076d9d77712f5d51e307a776d8cf33bfd"
+      },
+      {
+        "repository_path": "prototype/public/screenshots/provenance.json",
+        "sha256": "1a01ec0b070021fc2ef621ef7ffcfd7cb6ded3df49f5cb4e0d18cf1957eca3c7"
+      }
+    ],
+    "final_checks": {
+      "status": "passed",
+      "steps": 7,
+      "script_tests": 24,
+      "script_test_failures": 0,
+      "workspaces": "passed",
+      "collector": "passed",
+      "theme": "passed",
+      "typecheck_and_build": "passed",
+      "gallery_strict": "passed",
+      "source_inputs_unchanged": true,
+      "report_sha256": "2d37b13ddc1cdec2505eefc979784f03be9115cd474f3004c04f8e7f0797265d"
+    },
+    "limitations": [
+      "全部为合成示例，不替代实际工程功能、全项交互、无障碍或 107 项正式验收",
+      "前期内置浏览器原型材料不重标为 Chrome 来源，真实工程 UI 图片不公开",
+      "自动化失败和原始重试保留于受限原始材料，不作为合格条目，也不以空错误清单抹去历史失败"
+    ]
+  },
+  "deployment": {
+    "status": "passed",
+    "qualification_runs": [
+      "deployment191",
+      "runtime187"
+    ],
+    "scope": "独立持久开发验收环境，不授予正式生产部署资格",
+    "image": "sha256:6c677f44338419c9ef6f1c2eb681880aff06863ebccc3a75e204162698713edd",
+    "frontend_dist_sha256": "2d6327902fc7e4cac01ed7e9f92332eb2fffe15b6b62652274cfc997a77754f0",
+    "update_actual_exit_code": 0,
+    "update_duration_seconds": 29.105,
+    "reference_programs": 5,
+    "running_roles": 4,
+    "readiness_checks": 4,
+    "static_files_verified": 108,
+    "gateway_checks": "passed",
+    "frontend_archive_and_346_attachments_readback": "passed",
+    "identity_material_count": 13,
+    "identity_aggregate_unchanged": true,
+    "wal_device_and_inode_unchanged": true,
+    "existing_local_tunnels_readonly_verified": true,
+    "tunnel_restarted": false,
+    "independent_persistent_managed_capture_configured": false,
+    "formal_product_acceptance": false,
+    "limitations": [
+      "常驻实例为外部 EVE 模式，独立网卡用例不证明该实例持续 Suricata 捕获或原包记录",
+      "企业 OAuth MCP 未在该常驻实例启用，开发网关的相应 404 不作为企业客户端通过",
+      "运行和字节一致不证明生产 TLS、HA、长期留存、容量、真实模型或设备效果"
+    ]
+  },
+  "cleanup": {
+    "status": "completed_with_retained_evidence",
+    "cross_compiled_binaries_removed": 10,
+    "cross_compiled_logical_bytes_unlinked": 919309572,
+    "archived_historical_coverage_files_removed": 267,
+    "historical_coverage_logical_bytes_unlinked": 891968174,
+    "historical_coverage_archives_retained": 22,
+    "all_retained_archive_hashes_reverified": true,
+    "source_inputs_modified": false,
+    "current_reports_or_images_deleted": false,
+    "remote_commands_executed": false,
+    "actual_filesystem_free_space_delta_claimed": false,
+    "measurement": "删除前普通文件逻辑大小，不等同文件系统实际可用空间增量"
+  },
+  "superseded_attempts": [
+    {
+      "scope": "早期后端与前端全量",
+      "status": "preserved_not_qualified_as_current",
+      "reason": "进程夹具外键清理顺序失败和前端名单交互失败分别保留；当前资格来自修复后的同源完整重跑，FE172 只作历史来源"
+    },
+    {
+      "scope": "UI182-rerun02",
+      "status": "failed_preserved",
+      "reason": "多标签视口目标准备失败，不作为产品通过"
+    },
+    {
+      "scope": "UI182-rerun03",
+      "status": "failed_preserved",
+      "reason": "ENOSPC 导致第 221 行失败；rerun04 独立完成，不拼接旧轮次作为通过"
+    },
+    {
+      "scope": "最终原型图库自动化采集",
+      "status": "failed_attempts_preserved_not_qualified",
+      "reason": "原始自动化失败、重试及前期内置浏览器材料保留于受限证据；最终合格清单仅包含独立核验的 990 张 Chrome 原生图片"
+    }
+  ],
+  "requirement_status": {
+    "partial": 66,
+    "missing": 41,
+    "implemented_pending_acceptance": 0,
+    "formal_passed": 0,
+    "acceptance_pending": 107
+  },
+  "requirements_total": 107,
+  "implementation_capabilities": 39,
+  "formal_requirement_acceptance_passed": 0,
+  "implementation_catalog": {
+    "platform_http_operations": 150,
+    "collector_http_operations": 20,
+    "platform_navigation_groups": 12,
+    "platform_workspaces": 43,
+    "platform_available_workspaces": 29,
+    "platform_actual_views": 45,
+    "platform_unprovided_workspaces": 14,
+    "platform_design_views": 127,
+    "platform_design_ids_without_independent_binding": 82,
+    "collector_workspaces": 5,
+    "collector_actual_views": 9
+  },
+  "remaining_release_gaps": [
+    "41 项无业务流程及 66 项部分实现的剩余内容，107 项复合需求仍需正式逐项验收",
+    "MCP 身份表单及归档／重放字段差异、14 个未提供业务工作区、82 个设计映射差异及全部业务交互",
+    "实时关联、持续资产发现与地址关系、应用会话计量、情报、风险、狩猎、文件与沙箱",
+    "附件与私密协作、工单与 SLA、剧本编排、审批及应急控制",
+    "采集器管理网络回退、完整安装和升级、细粒度权限、租户配额、保全和灾备恢复",
+    "真实外部设备、办公服务商、企业 OAuth／Agent、模型领域效果及 200+ 探针规模长稳",
+    "生产 TLS、HA、真实对象存储及 180 天容量、同一干净候选的两个 Linux UPX ZIP 和完整正式发布门禁"
+  ],
+  "archives": [
+    {
+      "file": "alignment193-final-evidence.tar.gz",
+      "bytes": 9246975,
+      "sha256": "e1eb356ddb94ec9849a2cbc1c0b2a47be74c22698629538f90dd39015550b5de",
+      "members_readback_verified": 1124,
+      "scope": "本轮最终前端、实际页面、部署和限定原型检查；包含图库待完成快照，不含最终图库通过结论"
+    },
+    {
+      "file": "alignment179-current-qualification-raw.tar.gz",
+      "bytes": 16870182,
+      "sha256": "1147a8cdb1fb7a75c81bf51d880d78d8834fdfeecf4304127e4724c70168b693",
+      "members_readback_verified": 628,
+      "scope": "Go163 原始资格及保留失败；归档中的 FE172 属于历史来源"
+    },
+    {
+      "file": "alignment186-frontend-raw.tar.gz",
+      "bytes": 3084249,
+      "sha256": "03619812ba8eab3ec8fdbd0a1300542388dcfb98c918c5b69e5b10896169c177",
+      "scope": "FE186 当前冻结来源的原始报告、计数和双端构建"
+    },
+    {
+      "file": "alignment196-gallery-evidence.tar.gz",
+      "bytes": 75626881,
+      "sha256": "7763a6f9c4265085c5fb0c882493512a661ec94dfdda4c236e9960871d22aadb",
+      "members_readback_verified": 1052,
+      "jpeg_images": 990,
+      "report_sha256": "c9f4c89d3aed3ebaf9d3161b2df92661dc7c8685a8f7cd16a5baf70cdb532047",
+      "member_inventory_sha256": "d3576edbf8b9acd148e51ae17fc5ef3262ca682130d117045d79d7035571ed3a",
+      "private_archive_mode_verified": "0600",
+      "scope": "最终 Chrome 合成图库的原生图片、配方、来源、严格门禁及保留的自动化失败；不含实际工程 UI 公开授权，不作为产品功能验收"
+    }
+  ],
+  "archive_visibility": "原始归档及真实 UI 图片含专属测试私有材料，仅保留于受限证据目录，不提交公共仓库；公开原型仅使用合成示例且不冒充实际 UI",
+  "publication": {
+    "summary_is_public": true,
+    "private_accounts_published": false,
+    "identity_uuids_published": false,
+    "credentials_published": false,
+    "private_endpoints_published": false,
+    "server_absolute_paths_published": false,
+    "actual_ui_images_published": false
+  },
+  "checks": {
+    "status": "passed",
+    "quality_python_tests": 100,
+    "environment_python_tests": 86,
+    "prototype_script_tests": 24,
+    "static_audit_steps": 9,
+    "static_assertions": 10,
+    "tracked_inputs_unchanged": true,
+    "formal_release_gates_preserved": true,
+    "qualification_report_sha256": "f41b24dd890e25454bb2b668329bca4fb297e22c0bf1edd50564fa60169eacfa",
+    "scope": "本机工程质量、契约及发布门禁静态核对；不代替 GitHub CI、正式验收输入或真实设备和生产资格"
+  }
+}

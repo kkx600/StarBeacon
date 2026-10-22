@@ -1,26 +1,29 @@
 <script setup lang="ts">
 import {computed,ref,watch,onMounted,onBeforeUnmount} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
-import {ApiOutlined,DashboardOutlined,DeploymentUnitOutlined,LinkOutlined,CloudSyncOutlined,SettingOutlined,MenuFoldOutlined,MenuUnfoldOutlined,AppstoreOutlined,SafetyCertificateOutlined} from '@ant-design/icons-vue'
+import {ApiOutlined,DashboardOutlined,ClusterOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,AppstoreOutlined,SafetyCertificateOutlined} from '@ant-design/icons-vue'
 import {collectorPages,collectorDevice} from '../data/collector'
+import {collectorPrototypeScreens,collectorWorkspaces,collectorPreviewScreen,collectorPreviewWorkspace,collectorPreviewDestination} from '../data/collectorNavigation'
 import {states} from '../data/catalog'
 import {usePreview} from '../composables/usePreview'
 import type {PreviewState} from '../models'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
 const media=window.matchMedia('(max-width:899px)');const collapsed=ref(media.matches)
-const current=computed(()=>collectorPages.find(page=>page.id===route.params.id))
-const icons=[DashboardOutlined,DeploymentUnitOutlined,LinkOutlined,CloudSyncOutlined,SettingOutlined]
+const screen=computed(()=>collectorPreviewScreen(route.path,String(route.params.id??''),route.query))
+const current=computed(()=>screen.value??collectorPages.find(page=>page.id===route.params.id))
+const workspace=computed(()=>collectorPreviewWorkspace(String(route.params.id??''),screen.value))
+const icons={DashboardOutlined,ClusterOutlined,ApiOutlined,FileProtectOutlined,SafetyCertificateOutlined}
 function viewport(event:MediaQueryListEvent){collapsed.value=event.matches}
 onMounted(()=>media.addEventListener('change',viewport));onBeforeUnmount(()=>media.removeEventListener('change',viewport))
 watch(current,page=>{document.title=`${page?.title??'采集器管理'} · 星烽 StarBeacon 采集器`},{immediate:true})
-function navigate(id:string){void router.push(`/collector/${id}`);if(window.innerWidth<900)collapsed.value=true}
+function navigate(id:string){const target=collectorPrototypeScreens.find(item=>item.workspace===id);if(target)void router.push(collectorPreviewDestination(target.path,route.query,route.hash));if(window.innerWidth<900)collapsed.value=true}
 </script>
 <template>
   <div class="console-shell collector-shell" :class="{'is-collapsed':collapsed}">
     <aside class="sidebar" aria-label="采集器导航">
       <button class="brand" aria-label="采集器运行状态" @click="navigate('overview')"><span class="brand-symbol"><SafetyCertificateOutlined/></span><span v-if="!collapsed" class="brand-copy"><b>星烽 <span>StarBeacon</span></b><small>采集器管理</small></span></button>
       <div v-if="!collapsed" class="collector-identity"><b>{{collectorDevice.name}}</b><small>{{collectorDevice.id}}</small><span>旁路镜像 · {{collectorDevice.site}}</span></div>
-      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="[String(route.params.id)]" class="main-menu"><a-menu-item v-for="(page,index) in collectorPages" :key="page.id" @click="navigate(page.id)"><template #icon><component :is="icons[index]"/></template>{{page.title}}</a-menu-item></a-menu>
+      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="[workspace]" class="main-menu"><a-menu-item v-for="page in collectorWorkspaces" :key="page.id" @click="navigate(page.id)"><template #icon><component :is="icons[page.icon]"/></template>{{page.title}}</a-menu-item></a-menu>
       <div class="sidebar-footer"><ApiOutlined/><span v-if="!collapsed">交互原型 · 合成数据</span></div>
     </aside>
     <div class="console-main">

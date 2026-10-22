@@ -855,6 +855,14 @@
       "module": "correlation",
       "view": "backtest",
       "admin": true
+    },
+    {
+      "id": "watchlists",
+      "workspace": "watchlists",
+      "path": "/detection/watchlists",
+      "title": "保护与观察名单",
+      "module": "watchlists",
+      "admin": true
     }
   ],
   "schema_version": 1,

@@ -54,8 +54,9 @@ jobs:
           version: '12.6.0'
           run_install: false
       - run: pnpm --dir web install --frozen-lockfile
+      - run: pnpm --dir prototype install --frozen-lockfile
       - name: 双端前端源码与执行证据
-        run: python3 scripts/qualify_frontend.py --output .local/acceptance/frontend
+        run: python3 scripts/qualify_frontend.py --output .local/acceptance/frontend --max-workers 2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
@@ -63,8 +64,7 @@ jobs:
           path: .local/acceptance/frontend
           if-no-files-found: warn
           retention-days: 14
-      - run: pnpm --dir prototype install --frozen-lockfile
-      - run: node --test prototype/scripts/preview-filter.test.mjs prototype/scripts/check-screenshots.test.mjs
+      - run: node --test prototype/scripts/*.test.mjs
       - run: pnpm --dir prototype check:coverage
       - run: pnpm --dir prototype check:workspaces
       - run: pnpm --dir prototype check:collector

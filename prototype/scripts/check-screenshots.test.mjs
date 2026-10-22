@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os'
 import {dirname, join} from 'node:path'
 import {fileURLToPath,pathToFileURL} from 'node:url'
 import {spawnSync} from 'node:child_process'
+import {createHash} from 'node:crypto'
 import {renderRoots,digestRenderTree} from './gallery-inputs.mjs'
 
 const project = fileURLToPath(new URL('../../', import.meta.url))
@@ -26,9 +27,17 @@ async function fixture(run) {
     await mkdir(dirname(join(gallery, entry.file)), {recursive: true})
     await copyFile(join(source, entry.file), join(gallery, entry.file))
     // 元数据逻辑使用隔离夹具，不能当作当前真实页面的视觉验收。
+    const digest=async paths=>{
+      const hash=createHash('sha256')
+      for(const file of paths){hash.update(file+'\0');hash.update(await readFile(join(root,file)));hash.update('\0')}
+      return hash.digest('hex')
+    }
+    entry.themeSha256=await digest(themeInputs)
+    entry.layoutSha256=await digest(layoutInputs)
+    for(const input of entry.renderInputs??[])input.sha256=createHash('sha256').update(await readFile(join(root,input.path))).digest('hex')
     entry.renderRoots=renderRoots
     entry.renderTreeSha256=(await digestRenderTree(pathToFileURL(root+'/'))).sha256
-    await writeFile(join(gallery, '../page-manifest.json'), JSON.stringify({pages: [{states: [{image: entry.file}]}], boundary: []}))
+    await writeFile(join(gallery, '../page-manifest.json'), JSON.stringify({pages: [{id:entry.viewport.page,states: [{state:entry.viewport.state,image: entry.file}]}], boundary: []}))
     await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
     await writeFile(join(gallery, 'provenance.json'), JSON.stringify({entries: [entry]}))
     const check = (...args) => spawnSync(process.execPath, [join(root, 'prototype/scripts/check-screenshots.mjs'), ...args], {encoding: 'utf8', timeout: 15000})
@@ -81,7 +90,7 @@ test('缺少浏览器核对来源时，刷新清单不能放宽原有检查', as
   assert.match(result.stderr, /缺少已核对的浏览器截图来源/)
 }))
 
-test('采集器组件来源仍须逐文件核对，刷新清单不能接受发生变化的组件', async () => fixture(async ({root, gallery, entry, check}) => {
+test('采集器界面源码变化后，即使刷新清单也不能接受原截图', async () => fixture(async ({root, gallery, entry, check}) => {
   const path = 'web/collector/src/features/network/ResponseConfiguration.vue'
   const target = join(root, path)
   await mkdir(dirname(target), {recursive: true})
@@ -93,7 +102,35 @@ test('采集器组件来源仍须逐文件核对，刷新清单不能接受发�
   await appendFile(target, '\n')
   const result = check('--refresh')
   assert.equal(result.status, 1)
-  assert.match(result.stderr, /截图组件与当前源码不同/)
+  assert.match(result.stderr, /截图界面源码与当前版本不同/)
+}))
+
+test('未单独列出的采集器组件同样属于截图来源',async()=>fixture(async({root,check})=>{
+ await writeFile(join(root,'web/collector/src/unrecorded-component.ts'),'export const label="采集状态"\n')
+ const result=check('--refresh')
+ assert.equal(result.status,1)
+ assert.match(result.stderr,/截图界面源码与当前版本不同/)
+}))
+
+test('页面已导航但观测仍属于上一页时不能登记为当前截图',async()=>fixture(async({gallery,entry,check})=>{
+ entry.viewport.page='another-page'
+ await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
+ const result=check('--refresh')
+ assert.equal(result.status,1)
+ assert.match(result.stderr,/截图可见页面或状态与页面目录不同/)
+}))
+
+test('边界截图不得沿用上一业务页面的观测',async()=>fixture(async({gallery,entry,check})=>{
+ const file='boundary/auth-login.jpg'
+ await mkdir(join(gallery,'boundary'),{recursive:true})
+ await copyFile(join(gallery,entry.file),join(gallery,file))
+ await rm(join(gallery,entry.file))
+ entry.file=file;entry.state='boundary';entry.url='http://127.0.0.1:4173/auth/login'
+ await writeFile(join(gallery,'../page-manifest.json'),JSON.stringify({pages:[],boundary:[{id:'auth-login',url:'/auth/login'}]}))
+ await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
+ const result=check('--refresh')
+ assert.equal(result.status,1)
+ assert.match(result.stderr,/边界截图仍停留在业务页面或错误路由/)
 }))
 
 test('组件来源不得通过父目录或工程目录外路径绕过核对', async () => fixture(async ({gallery, entry, check}) => {

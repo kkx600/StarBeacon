@@ -35,6 +35,26 @@ async function form(props:Record<string,unknown>={}){
 }
 async function field(label:string,value:string){const el=document.querySelector<HTMLInputElement|HTMLTextAreaElement>(`[aria-label="${label}"]`)!;expect(el).not.toBeNull();el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
 async function modal(parent:IncidentRecord=incidentRecord){const {state,wrapper}=host(shallowRef(parent));await flushPromises();const view=mount(IncidentTasksModal,{props:{parent,state,assignees:incidentOwners.items,ownerPending:false,ownerError:'',parentPending:false,parentError:''},global,attachTo:document.body});await flushPromises();return{state,wrapper,view}}
+async function unknownTaskWorkspace(){
+ let frozen:IncidentTaskInput|undefined,parent=clone(incidentRecord)
+ const task=clone(incidentTask)
+ request.mockImplementation((path:string,options?:{method?:string;body?:IncidentTaskInput})=>{
+  if(path.includes('/tasks')&&options?.method==='POST'){
+   if(!frozen){frozen=clone(options.body!);return Promise.reject(new Error('结果未知'))}
+   parent={...parent,revision:2};return Promise.resolve({...task,spec:clone(frozen.spec),assignee_name:frozen.spec.assignee_id?principal.username:''})
+  }
+  if(path==='/incidents/'+parent.id)return Promise.resolve(clone(parent))
+  return answer(path,options).then(clone)
+ })
+ const w=mount(IncidentsWorkspace,{global,attachTo:document.body})
+ await vi.waitFor(()=>{expect(w.findAll('table')).toHaveLength(1);expect(button('刷新').classList.contains('ant-btn-loading')).toBe(false)})
+ await click('查看');await vi.waitFor(()=>expect(button('协作任务').disabled).toBe(false));await click('协作任务')
+ const taskModal=w.getComponent(IncidentTasksModal)
+ await vi.waitFor(()=>{expect(taskModal.props('state').pending.value).toBe(false);expect(taskModal.props('ownerPending')).toBe(false)})
+ await click('建立任务');const taskForm=taskModal.getComponent(IncidentTaskForm);await field('任务标题',task.spec.title);await field('任务说明',task.spec.description);await click('保存任务')
+ await vi.waitFor(()=>expect(taskForm.props('unconfirmed')).toBe(true))
+ expect(frozen).toBeDefined();return{w,modal:taskModal,frozen:()=>clone(frozen!)}
+}
 
 describe('协作任务材料与回执契约',()=>{
  it('校验标题、负责人、截止和终态材料，并拒绝控制字符及未知枚举',()=>{
@@ -113,22 +133,44 @@ describe('协作任务表单与单层弹窗',()=>{
   const historical={...incidentTask,assignee_name:'历史管理员'};const w=await form({record:historical,editing:true,assignees:[],ownerError:'目录无法读取'});expect(w.findAllComponents(Select)[2]!.props('options')).toContainEqual({value:principal.id,label:'历史管理员（历史负责人）',disabled:true});await click('重新读取负责人');expect(w.emitted('reloadOwners')).toHaveLength(1);await w.setProps({unconfirmed:true,draft:incidentTaskChange});w.vm.submit();expect(w.emitted('save')).toBeUndefined();expect(w.find('input[aria-label="任务标题"]').attributes('disabled')).toBeDefined()
   w.unmount();const frozen=await form({record:null,editing:true,draft:incidentTaskChange});frozen.vm.submit();expect(frozen.emitted('save')?.[0]?.[0]).toEqual(incidentTaskChange)
  })
- it('列表、详情、历史与编辑在同一弹窗切换，提交成功返回列表',async()=>{
-  const {view}=await modal();expect(document.body.textContent).toContain(incidentTask.spec.title);await click('查看');expect(view.findComponent(Modal).exists()).toBe(true);await click('读取历史');expect(document.body.textContent).toContain('修订 2');await click('记录任务');await field('任务变更说明',incidentTaskChange.note);const status=view.findAllComponents(Select)[0]!;await status.setValue('completed','value');await field('完成依据',incidentTaskChange.spec.resolution);await click('保存任务');expect(request.mock.calls.some(([,options])=>options?.body?.expected_revision===1)).toBe(true);expect(document.querySelectorAll('.ant-modal-content')).toHaveLength(1);await click('建立任务');await field('任务标题',incidentTask.spec.title);await field('任务说明',incidentTask.spec.description);request.mockImplementationOnce((_path:string,options:any)=>({...incidentTask,spec:options.body.spec,assignee_name:options.body.spec.assignee_id?principal.username:''}));await click('保存任务');await click('关闭');expect(view.emitted('close')).toHaveLength(1)
+ it('列表、详情与历史在同一弹窗切换',async()=>{
+  const {view}=await modal()
+  expect(document.body.textContent).toContain(incidentTask.spec.title)
+  await click('查看');expect(view.findComponent(Modal).exists()).toBe(true)
+  await click('读取历史');expect(document.body.textContent).toContain('修订 2')
+ })
+ it('从详情记录任务，核对修订后在同一弹窗返回列表',async()=>{
+  const {view}=await modal()
+  await click('查看');await click('记录任务');await field('任务变更说明',incidentTaskChange.note)
+  const status=view.findAllComponents(Select)[0]!;await status.setValue('completed','value')
+  await field('完成依据',incidentTaskChange.spec.resolution);await click('保存任务')
+  expect(request.mock.calls.some(([,options])=>options?.body?.expected_revision===1)).toBe(true)
+  expect(document.querySelectorAll('.ant-modal-content')).toHaveLength(1)
+  expect(view.findComponent(IncidentTaskForm).exists()).toBe(false)
+  expect(button('建立任务').disabled).toBe(false)
+ })
+ it('从列表建立任务，提交后可以关闭弹窗',async()=>{
+  const {view}=await modal()
+  await click('建立任务');await field('任务标题',incidentTask.spec.title);await field('任务说明',incidentTask.spec.description)
+  request.mockImplementationOnce((_path:string,options:any)=>({...incidentTask,spec:options.body.spec,assignee_name:options.body.spec.assignee_id?principal.username:''}))
+  await click('保存任务');await click('关闭');expect(view.emitted('close')).toHaveLength(1)
  })
  it('空、失败、只读和未确认提交有明确入口，关闭弹窗后原键仍能确认',async()=>{
   request.mockImplementation((path:string,options:any)=>path.includes('/tasks?')?Promise.resolve({items:[],next_cursor:''}):answer(path,options));const {state,view}=await modal();expect(document.body.textContent).toContain('当前条件下没有');await click('刷新事件与任务');expect(view.emitted('reloadParent')).toHaveLength(1);await click('建立任务');await field('任务标题',incidentTask.spec.title);await field('任务说明',incidentTask.spec.description);request.mockRejectedValueOnce('network');await click('保存任务');expect(state.unconfirmed.value).toBe(true);expect(document.activeElement?.getAttribute('aria-label')).toBe('任务提交结果');await click('返回任务');await click('核对原提交');expect(view.findComponent(IncidentTaskForm).props('draft')).toBeDefined();const frozen=state.pendingInput()!;request.mockResolvedValueOnce({...incidentTask,spec:frozen.input.spec,assignee_name:frozen.input.spec.assignee_id?principal.username:''});await click('核对原提交',document.querySelector('.ant-modal-footer')!);expect(state.unconfirmed.value).toBe(false);view.unmount()
   const closed=await modal(incidentClosed);expect(button('建立任务').disabled).toBe(true);expect(document.body.textContent).toContain('事件已结案');closed.view.unmount()
  })
 
- it('未知任务提交关闭后可由工作区恢复，确认后重新读取事件修订',async()=>{
-  let frozen:any,failed=false,parent=incidentRecord
-  request.mockImplementation((path:string,options?:any)=>{
-   if(path.includes('/tasks')&&options?.method==='POST'){if(!failed){failed=true;frozen=clone(options.body);return Promise.reject(new Error('结果未知'))}parent={...incidentRecord,revision:2};return Promise.resolve({...incidentTask,spec:frozen.spec,assignee_name:frozen.spec.assignee_id?principal.username:''})}
-   if(path==='/incidents/'+incidentRecord.id)return Promise.resolve(parent)
-   return answer(path,options)
-  })
-  const w=mount(IncidentsWorkspace,{global,attachTo:document.body});await flushPromises();await click('查看');await click('协作任务');await click('建立任务');await field('任务标题',incidentTask.spec.title);await field('任务说明',incidentTask.spec.description);await click('保存任务');expect(w.findComponent(IncidentTaskForm).props('unconfirmed')).toBe(true);await click('关闭');await click('核对任务提交');expect(w.findComponent(IncidentTaskForm).props('draft')).toEqual(frozen);const key=request.mock.calls.find(([,options])=>options?.method==='POST')?.[1].headers['Idempotency-Key'];await click('核对原提交',document.querySelector('.ant-modal-footer')!);await flushPromises();expect(w.findComponent(IncidentTasksModal).props('parent').revision).toBe(2);expect(request.mock.calls.filter(([,options])=>options?.method==='POST').every(([,options])=>options.headers['Idempotency-Key']===key)).toBe(true)
+ it('未知任务提交关闭后由工作区恢复同一冻结输入',async()=>{
+  const {w,modal,frozen}=await unknownTaskWorkspace();expect(modal.getComponent(IncidentTaskForm).props('unconfirmed')).toBe(true)
+  await click('关闭');await vi.waitFor(()=>expect(w.findComponent(IncidentTasksModal).exists()).toBe(false));await click('核对任务提交')
+  const restored=w.getComponent(IncidentTasksModal),restoredForm=restored.getComponent(IncidentTaskForm)
+  await vi.waitFor(()=>expect(restoredForm.props('draft')).toEqual(frozen()));expect(restoredForm.props('unconfirmed')).toBe(true);expect(restored.props('parent').revision).toBe(incidentRecord.revision);expect(request.mock.calls.filter(([,options])=>options?.method==='POST')).toHaveLength(1)
+ })
+ it('未知任务提交按原键确认后重新读取事件修订',async()=>{
+  const {modal,frozen}=await unknownTaskWorkspace(),posts=()=>request.mock.calls.filter(([,options])=>options?.method==='POST'),key=posts()[0]?.[1].headers['Idempotency-Key']
+  expect(key).toEqual(expect.any(String));await click('核对原提交',document.querySelector('.ant-modal-footer')!)
+  await vi.waitFor(()=>{expect(modal.props('parent').revision).toBe(2);expect(modal.props('parentPending')).toBe(false);expect(modal.findComponent(IncidentTaskForm).exists()).toBe(false)})
+  expect(posts()).toHaveLength(2);expect(posts().every(([,options])=>options.headers['Idempotency-Key']===key)).toBe(true);expect(posts().map(([,options])=>options.body)).toEqual([frozen(),frozen()])
  })
  it('工作区从事件详情进入任务时关闭详情，不同时叠加两份表单',async()=>{
   const w=mount(IncidentsWorkspace,{global,attachTo:document.body});await flushPromises();await click('查看');await click('协作任务');expect(w.findComponent(IncidentTasksModal).exists()).toBe(true);expect(document.querySelectorAll('.ant-modal-content')).toHaveLength(1);await click('关闭');await click('建立事件');expect(document.querySelectorAll('.ant-modal-content')).toHaveLength(1)

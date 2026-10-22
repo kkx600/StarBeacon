@@ -1,5 +1,6 @@
 import {platformScreens,navigationWorkspaces,workspacePath} from '@starbeacon/shared/navigation.ts'
 import {pageById} from './data/catalog'
+import {collectorPrototypeScreens,collectorPreviewCanonical} from './data/collectorNavigation'
 import {legacyPages} from './data/navigation'
 import { createRouter, createWebHistory } from 'vue-router'
 import {migrateLegacyHash} from '../../web/packages/shared/src/utils/history'
@@ -13,7 +14,8 @@ export const router=createRouter({
     ...platformScreens.filter(screen=>pageById.has(screen.id)).map(screen=>({path:screen.path,component:()=>import('./views/PageView.vue'),meta:{previewPage:screen.id}})),
     ...navigationWorkspaces.filter(workspace=>!platformScreens.some(screen=>screen.workspace===workspace.id)).map(workspace=>({path:workspacePath(workspace),component:()=>import('./views/PageView.vue'),meta:{previewPage:workspace.pages[0]}})),
     {path:'/page/:id',component:()=>import('./views/PageView.vue')},
-    {path:'/collector',redirect:'/collector/overview'},
+    {path:'/collector',redirect:'/collector/overview/status'},
+    ...collectorPrototypeScreens.map(screen=>({path:screen.path,component:()=>import('./views/CollectorView.vue'),meta:{collectorView:screen.view,collectorPage:screen.page}})),
     {path:'/collector/auth/:mode',component:()=>import('./views/CollectorAuthView.vue')},
     {path:'/collector/:id',component:()=>import('./views/CollectorView.vue')},
     {path:'/catalog',component:()=>import('./views/CatalogView.vue')},
@@ -25,6 +27,8 @@ export const router=createRouter({
 })
 
 router.beforeEach(to=>{
+  const collectorDestination=collectorPreviewCanonical(to)
+  if(collectorDestination)return collectorDestination
   if(!to.path.startsWith('/page/'))return
   let id=String(to.params.id??'')
   const query={...to.query}

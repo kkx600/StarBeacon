@@ -17,7 +17,7 @@ type historyCategory struct {
 var historyCategories = []historyCategory{
 	{"operation_audits", "expires_at", "true"},
 	{"login_audits", "expires_at", "true"},
-	{"sensor_tasks", "retain_until", `(state IN ('succeeded','failed','expired','cancelled') OR (state='unknown' AND (kind<>'rules.apply' OR rule_resolution IS NOT NULL)) OR (state='queued' AND delivery_count=0 AND expires_at<=now())) AND (kind<>'applications.apply' OR state NOT IN ('succeeded','unknown') OR EXISTS(SELECT 1 FROM sensor_tasks n WHERE n.tenant_id=h.tenant_id AND n.sensor_id=h.sensor_id AND n.registration_id=h.registration_id AND n.kind='applications.apply' AND n.state='succeeded' AND n.created_at>h.created_at)) AND NOT EXISTS(SELECT 1 FROM rule_sync_runs r WHERE r.tenant_id=h.tenant_id AND r.tasks ? h.id AND (r.finished_at IS NULL OR r.expires_at>now()))`},
+	{"sensor_tasks", "retain_until", `(state IN ('succeeded','failed','expired','cancelled') OR (state='unknown' AND (kind<>'rules.apply' OR rule_resolution IS NOT NULL)) OR (state='queued' AND delivery_count=0 AND expires_at<=now())) AND (kind<>'applications.apply' OR state NOT IN ('succeeded','unknown') OR EXISTS(SELECT 1 FROM sensor_tasks n WHERE n.tenant_id=h.tenant_id AND n.sensor_id=h.sensor_id AND n.registration_id=h.registration_id AND n.kind='applications.apply' AND n.state='succeeded' AND n.created_at>h.created_at)) AND NOT EXISTS(SELECT 1 FROM rule_sync_runs r WHERE r.tenant_id=h.tenant_id AND r.tasks ? h.id AND (r.finished_at IS NULL OR r.expires_at>now())) AND NOT EXISTS(SELECT 1 FROM response_watchlist_checks c WHERE c.tenant_id=h.tenant_id AND c.task_id=h.id)`},
 	{"inventory_history", "expires_at", "true"},
 	{"retention_previews", "expires_at", "true"},
 	{"retention_changes", "expires_at", "true"},
@@ -37,7 +37,7 @@ var historyCategories = []historyCategory{
 	{"rule_generation_jobs", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded')) AND NOT EXISTS(SELECT 1 FROM rule_packages p WHERE p.tenant_id=h.tenant_id AND p.generation_id=h.id)`},
 	{"alert_triage_jobs", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded'))`},
 	{"incident_changes", "expires_at", `NOT EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state<>'closed')`},
-	{"incidents", "expires_at", `state='closed' AND NOT EXISTS(SELECT 1 FROM incident_changes c WHERE c.tenant_id=h.tenant_id AND c.incident_id=h.id) AND NOT EXISTS(SELECT 1 FROM incident_tasks t WHERE t.tenant_id=h.tenant_id AND t.incident_id=h.id)`},
+	{"incidents", "expires_at", `state='closed' AND NOT EXISTS(SELECT 1 FROM incident_changes c WHERE c.tenant_id=h.tenant_id AND c.incident_id=h.id) AND NOT EXISTS(SELECT 1 FROM incident_tasks t WHERE t.tenant_id=h.tenant_id AND t.incident_id=h.id) AND NOT EXISTS(SELECT 1 FROM incident_notes n WHERE n.tenant_id=h.tenant_id AND n.incident_id=h.id)`},
 	{"user_management_requests", "expires_at", "true"},
 	{"sensor_management_requests", "expires_at", "true"},
 	{"saved_search_changes", "expires_at", "true"},
@@ -57,6 +57,10 @@ var historyCategories = []historyCategory{
 	{"sensor_quality_cursors", "expires_at", `NOT EXISTS(SELECT 1 FROM sensors s WHERE s.tenant_id=h.tenant_id AND s.id=h.sensor_id AND s.registration_id=h.registration_id)`},
 	{"rule_rollouts", "expires_at", `finished_at IS NOT NULL`},
 	{"correlation_rule_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM correlation_rules c WHERE c.tenant_id=h.tenant_id AND c.id=h.rule_id AND c.revision=h.revision)`},
+	{"watchlist_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM watchlists w WHERE w.tenant_id=h.tenant_id AND w.id=h.list_id AND w.revision=h.revision)`},
+	{"incident_note_changes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed')`},
+	{"incident_notes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed') AND NOT EXISTS(SELECT 1 FROM incident_note_changes c WHERE c.tenant_id=h.tenant_id AND c.note_id=h.id)`},
+	{"response_watchlist_checks", "expires_at", `EXISTS(SELECT 1 FROM sensor_tasks t WHERE t.tenant_id=h.tenant_id AND t.id=h.task_id AND t.retain_until<=now() AND (t.state IN('succeeded','failed','expired','cancelled','unknown') OR (t.state='queued' AND t.delivery_count=0 AND t.expires_at<=now())))`},
 }
 
 type HistorySweep struct {
