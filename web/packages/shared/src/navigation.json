@@ -838,6 +838,23 @@
       "title": "日志检索",
       "module": "logs",
       "admin": true
+    },
+    {
+      "id": "correlation",
+      "workspace": "rules",
+      "path": "/detection/correlation/rules",
+      "title": "关联规则",
+      "module": "correlation",
+      "view": "rules"
+    },
+    {
+      "id": "correlation-backtest",
+      "workspace": "rules",
+      "path": "/detection/correlation/backtest",
+      "title": "窗口回测",
+      "module": "correlation",
+      "view": "backtest",
+      "admin": true
     }
   ],
   "schema_version": 1,

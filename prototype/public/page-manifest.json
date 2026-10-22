@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "20cc419b2950714a36825718fddd9a52f3c1ec13a66815a21d29fdd6a268ad92"
+    "renderTreeSha256": "3674c441321cd78663ba12a2b329415b07f1ac24355d50992c24b0e7f43f721b"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -3239,7 +3239,7 @@
       "title": "关联规则",
       "group": "detection",
       "kind": "table",
-      "description": "配置窗口、实体键、迟到策略和抑制，回测后发布。",
+      "description": "维护固定修订，按唯一告警和实体字段执行有界窗口回测。",
       "requirements": [
         "SB-DET-003"
       ],
@@ -3247,38 +3247,87 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/correlation?state=data",
+          "url": "/detection/correlation/rules?state=data",
           "image": "correlation/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/correlation?state=empty",
+          "url": "/detection/correlation/rules?state=empty",
           "image": "correlation/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/correlation?state=detail",
+          "url": "/detection/correlation/rules?state=detail",
           "image": "correlation/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/correlation?state=action",
+          "url": "/detection/correlation/rules?state=action",
           "image": "correlation/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/correlation?state=loading",
+          "url": "/detection/correlation/rules?state=loading",
           "image": "correlation/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/correlation?state=error",
+          "url": "/detection/correlation/rules?state=error",
           "image": "correlation/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "correlation-backtest",
+      "workspace": "检测规则",
+      "title": "窗口回测",
+      "group": "detection",
+      "kind": "table",
+      "description": "核对告警快照中的窗口计量、完整性边界与证据样本，不生成处置。",
+      "requirements": [
+        "SB-DET-003"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/detection/correlation/backtest?state=data",
+          "image": "correlation-backtest/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/detection/correlation/backtest?state=empty",
+          "image": "correlation-backtest/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/detection/correlation/backtest?state=detail",
+          "image": "correlation-backtest/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/detection/correlation/backtest?state=action",
+          "image": "correlation-backtest/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/detection/correlation/backtest?state=loading",
+          "image": "correlation-backtest/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/detection/correlation/backtest?state=error",
+          "image": "correlation-backtest/error.jpg"
         }
       ]
     },

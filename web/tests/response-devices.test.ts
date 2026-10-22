@@ -46,8 +46,8 @@ describe('联动设备目录和配置核对',()=>{
  })
  it('目录空状态、筛选、重置、无效标识与单表布局可用',async()=>{
   const {wrapper}=await view();await vi.waitFor(()=>expect(wrapper.text()).toContain('当前条件下没有联动设备'));expect(wrapper.get('h1').text()).toBe('联动设备');expect(request.mock.calls[0]?.[0]).toContain('/response-connectors?')
-  await wrapper.get('[aria-label="联动设备标识"]').setValue('device_hq');await click('查询');expect(qFrom(request.mock.lastCall![0]).device_id).toBe('device_hq');await vi.waitFor(()=>expect(wrapper.findAll('button').find(b=>b.text().replace(/\s/g,'')==='重置')?.attributes('disabled')).toBeUndefined());await click('重置');expect(qFrom(request.mock.lastCall![0]).device_id).toBe('');await flushPromises()
-  await wrapper.get('[aria-label="设备执行探针"]').setValue('UPPER');const count=request.mock.calls.length;await click('查询');expect(request).toHaveBeenCalledTimes(count);expect(wrapper.text()).toContain('1–64 位')
+  await wrapper.get('[aria-label="联动设备标识"]').setValue('device_hq');await click('查询');expect(qFrom(request.mock.lastCall![0]).device_id).toBe('device_hq');await vi.waitFor(()=>expect(wrapper.findAll('button').find(b=>b.text().replace(/\s/g,'')==='重置')?.attributes('disabled')).toBeUndefined());await click('重置');expect(qFrom(request.mock.lastCall![0]).device_id).toBe('');await vi.waitFor(()=>expect(wrapper.findAll('button').find(b=>b.text().replace(/\s/g,'')==='重置')?.attributes('disabled')).toBeUndefined())
+  await wrapper.get('[aria-label="设备执行探针"]').setValue('UPPER');const count=request.mock.calls.length;await click('查询');await vi.waitFor(()=>expect(wrapper.text()).toContain('1–64 位'));expect(request).toHaveBeenCalledTimes(count)
  })
  it('查看与动作关联使用同一探针设备；失败保留旧目录但停止续页',async()=>{
   request.mockImplementation(async(path:string)=>page(qFrom(path),[device()]));const {wrapper,router}=await view();await vi.waitFor(()=>expect(wrapper.text()).toContain('device_hq'));expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1)

@@ -18,7 +18,7 @@ function save(){if(props.busy||props.unconfirmed||!allowed.value)return;emit('sa
   <a-alert v-if="error" type="error" :message="error" show-icon class="section-gap"/>
   <a-alert v-if="unconfirmed" type="warning" message="保存结果尚未确认，请确认原请求后继续。" show-icon class="section-gap"/>
   <a-alert v-if="!available" type="info" message="计划执行服务暂不可用，可保存停用计划。" show-icon class="section-gap"/>
-  <a-form layout="vertical" :disabled="busy||unconfirmed" @finish="save">
+  <a-form :model="draft" layout="vertical" :disabled="busy||unconfirmed" @finish="save">
    <a-form-item label="计划名称"><a-input v-model:value="draft.name" aria-label="计划名称" :maxlength="80" placeholder="例如：集团安全日报"/></a-form-item>
    <div class="plan-fields"><a-form-item label="报告类型"><Select v-model:value="draft.kind" aria-label="计划报告类型" :options="[{value:'daily',label:'安全日报'},{value:'weekly',label:'安全周报'},{value:'monthly',label:'安全月报'}]"/></a-form-item><a-form-item label="执行时间"><input v-model="draft.at" type="time" aria-label="计划执行时间" class="plan-clock" :disabled="busy||unconfirmed" step="60"></a-form-item></div>
    <a-form-item label="报告时区"><a-input v-model:value="draft.timezone" aria-label="计划报告时区" :maxlength="128" placeholder="Asia/Shanghai"/></a-form-item>

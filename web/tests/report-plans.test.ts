@@ -1,5 +1,5 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest'
-import {flushPromises,mount} from '@vue/test-utils'
+import {DOMWrapper,flushPromises,mount} from '@vue/test-utils'
 import {defineComponent,h} from 'vue'
 import {Checkbox,Select,Switch,message} from 'ant-design-vue'
 import {createMemoryHistory,createRouter} from 'vue-router'
@@ -63,3 +63,5 @@ describe('报告计划工作台',()=>{
  it('空状态、执行服务故障和恢复入口不冒充正常数据',async()=>{request.mockImplementation((path:string)=>path==='/analysis/plans'?Promise.resolve({...page,items:[],execution_available:false,model_execution_available:false}):path==='/models/providers'?Promise.reject(new Error('模型服务不可用')):Promise.resolve({items:[],next_cursor:'',model_execution_available:false}));const wrapper=mount(ReportPlansWorkspace,{global,attachTo:document.body});await flushPromises();expect(wrapper.text()).toContain('暂无报告计划');expect(wrapper.text()).toContain('计划执行服务暂不可用');await click('创建计划');await click('取消');request.mockRejectedValueOnce(new Error('读取失败'));await click('刷新');expect(wrapper.text()).toContain('读取失败');await click('重试')})
  it('报告记录和计划页签保持 history 查询状态',async()=>{const router=createRouter({history:createMemoryHistory(),routes:[{path:'/reports',component:ReportsView}]});await router.push('/reports?view=plans');const wrapper=mount(defineComponent({template:'<router-view />'}),{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.text()).toContain('报告计划');await click('报告记录');expect(router.currentRoute.value.query.view).toBeUndefined();expect(wrapper.text()).toContain('报告记录');expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('报告计划');expect(router.currentRoute.value.query.view).toBe('plans')})
 })
+
+it('计划原生表单提交保留受限计划与期望修订',async()=>{const w=mount(ReportPlanForm,{props:formProps,global,attachTo:document.body});await flushPromises();await fill('计划名称','安全日度计划');await new DOMWrapper(document.querySelector('.ant-modal form')!).trigger('submit');await vi.waitFor(()=>expect(w.emitted('save')).toHaveLength(1));expect(w.emitted('save')?.[0]?.[0]).toMatchObject({expected_revision:0,spec:{name:'安全日度计划',kind:'daily',provider_id:'',allow_context:false}})})

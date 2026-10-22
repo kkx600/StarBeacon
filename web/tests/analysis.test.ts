@@ -1,5 +1,5 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest'
-import {flushPromises,mount} from '@vue/test-utils'
+import {DOMWrapper,flushPromises,mount} from '@vue/test-utils'
 import {defineComponent,h} from 'vue'
 import {Checkbox,Select,message} from 'ant-design-vue'
 import {createRouter,createMemoryHistory} from 'vue-router'
@@ -56,3 +56,5 @@ describe('报告中心交互',()=>{
  it('模型报告需本次许可，提交未知保留表单和原请求',async()=>{const wrapper=mount(ReportsWorkspace,{global:{plugins:[registerAnt]},attachTo:document.body});await flushPromises();await click('生成报告');await wrapper.findAllComponents(Select)[1]!.setValue(analysisProvider.id,'value');expect(button('开始生成').disabled).toBe(true);await wrapper.findComponent(Checkbox).setValue(true,'checked');request.mockRejectedValueOnce(new Error('结果未确认'));await click('开始生成');expect(document.body.textContent).toContain('提交结果尚未确认');expect(button('取消').disabled).toBe(true);request.mockResolvedValueOnce(analysisJob);await click('确认提交结果');expect(document.body.textContent).toContain('统计来源')})
  it('空报告、分页、模型故障和列表异常均可恢复',async()=>{request.mockImplementation((path:string)=>path==='/models/providers'?Promise.reject(new Error('模型配置服务不可用')):Promise.resolve({items:[],next_cursor:'',model_execution_available:false}));const wrapper=mount(ReportsWorkspace,{global:{plugins:[registerAnt]},attachTo:document.body});await flushPromises();expect(wrapper.text()).toContain('可生成统计报告');expect(wrapper.text()).toContain('暂无报告记录');request.mockResolvedValueOnce({...list,next_cursor:'cursor_owned'});await click('刷新');expect(wrapper.text()).toContain('查看更多报告');request.mockResolvedValueOnce({items:[{...analysisRow,id:'older_owned'}],next_cursor:'',model_execution_available:true});await click('查看更多报告');expect(wrapper.findAll('tbody tr.ant-table-row')).toHaveLength(2);request.mockRejectedValueOnce(new Error('报告服务不可用'));await click('刷新');expect(wrapper.text()).toContain('报告服务不可用');await click('重试');await click('生成报告');await click('取消');expect(wrapper.findComponent({name:'AModal'}).props('open')).toBe(false)})
 })
+
+it('报告原生表单提交读取当前周期与统计模式',async()=>{const w=mount(ReportsWorkspace,{global:{plugins:[registerAnt]},attachTo:document.body});await flushPromises();await click('生成报告');const form=document.querySelector('.ant-modal form');expect(form).not.toBeNull();await new DOMWrapper(form!).trigger('submit');await vi.waitFor(()=>expect(request.mock.calls.some(c=>c[0]==='/analysis/jobs'&&c[1]?.method==='POST')).toBe(true));expect(request.mock.calls.find(c=>c[0]==='/analysis/jobs')?.[1].body).toMatchObject({kind:'daily',provider_id:'',provider_revision:0})})

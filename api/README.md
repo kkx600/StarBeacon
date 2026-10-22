@@ -62,3 +62,5 @@ HTTP Raw 的两端二进制入口为 `POST /api/v1/replay/samples/http` 和 `POS
 入站日志使用独立 `logs` 数据流；`EventRecord.source_id` 与 `source_sequence` 绑定来源序列，文件偏移及记录序号为零，`event_time` 为采集器接收时刻，真实来源时间位于解析字段中。原文摘要与规范 `syslog.raw.v1` 载荷摘要分别校验。首次发送前持久绑定路由，跨日、未知确认和重启继续原路由，不把同一事件分配到其他日期索引。
 
 `GET /api/v1/syslog/sources` 和 `GET /api/local/v1/syslog/sources` 提供管理员只读来源观测；平台使用绑定筛选的游标续页，本地入口不接受额外参数。`POST /api/v1/logs/search` 按平台接收时间与固定字段检索，窗口最多 31 天；`GET /api/v1/logs/{id}?partition=YYYY-MM-DD` 在当前账号复核与原文审计成功后返回指定消息。来源身份不取自正文，日志不自动产生告警或处置。配置、分帧、时间、默认 180 天留存及检索边界见 [Syslog 接收与日志检索](../docs/Syslog接收与日志检索.md)。
+
+关联规则入口为 `/api/v1/correlation-rules`：当前目录、不可变修订、管理员维护及当前启用修订的有界窗口回测。回测复用告警 PIT 与共享读取额度，核对当前权限、规则修订与证据；不读取原始载荷，不创建实时关联告警或设备动作。范围、限额、来源未知值和历史留存见[关联规则与窗口回测](../docs/关联规则与窗口回测.md)。

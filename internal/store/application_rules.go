@@ -16,22 +16,7 @@ import (
 const applicationRuleColumns = `v.tenant_id,v.rule_id,v.revision,v.name,v.description,v.active,v.definition,v.definition_sha256,v.created_by,v.created_at,v.expires_at`
 
 func applicationRuleUser(ctx context.Context, tx pgx.Tx, u model.Principal, write bool) error {
-	if !contract.ValidID(u.TenantID) || !contract.ValidID(u.ID) || u.Role != "admin" && u.Role != "viewer" || write && u.Role != "admin" {
-		return application.ErrPermission
-	}
-	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock_shared(hashtextextended($1,0))`, u.TenantID+"/users"); err != nil {
-		return err
-	}
-	var active, tenantActive bool
-	var role string
-	var revision int64
-	if err := tx.QueryRow(ctx, `SELECT u.active,u.role,u.revision,t.active FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE u.tenant_id=$1 AND u.id=$2`, u.TenantID, u.ID).Scan(&active, &role, &revision, &tenantActive); err != nil {
-		return err
-	}
-	if !active || !tenantActive || role != u.Role || u.CredentialRevision > 0 && revision != u.CredentialRevision {
-		return application.ErrPermission
-	}
-	return nil
+	return configurationActor(ctx, tx, u, write, application.ErrPermission)
 }
 
 func readApplicationRule(row interface{ Scan(...any) error }) (application.Record, error) {

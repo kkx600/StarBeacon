@@ -20,6 +20,7 @@ import RuleGenerationWorkspace from './RuleGenerationWorkspace.vue'
 import ApplicationRulesWorkspace from '../applications/ApplicationRulesWorkspace.vue'
 import RuleSyncWorkspace from './RuleSyncWorkspace.vue'
 import RuleRolloutsWorkspace from './RuleRolloutsWorkspace.vue'
+import RuleWorkspaceNavigation from './RuleWorkspaceNavigation.vue'
 import {useRoute,useRouter} from 'vue-router'
 const message=useFeedback()
 const release=useRuleRelease()
@@ -99,7 +100,8 @@ onMounted(refresh);onScopeDispose(()=>{stopped=true;controller?.abort();actionCo
 </script>
 <template>
   <header class="page-header"><div><h1>{{pageTitle}}</h1><p class="page-description">管理不可变规则包修订，核对原生装载检查、样本回放和发布条件。</p></div><a-space v-if="view==='packages'"><a-button :loading="pending" @click="refresh">刷新</a-button><a-button v-if="session.current.value?.role==='admin'" type="primary" :disabled="saving" @click="edit()">创建规则包</a-button></a-space></header>
-  <WorkspaceTabs :active="view" :items="session.current.value?.role==='admin'?views:views.filter(v=>v.key==='packages'||v.key==='applications')" label="规则管理功能" @change="change" />
+  <RuleWorkspaceNavigation v-if="route.meta.navWorkspace==='rules'" :can-manage="canEdit"/>
+  <WorkspaceTabs v-else :active="view" :items="session.current.value?.role==='admin'?views:views.filter(v=>v.key==='packages'||v.key==='applications')" label="规则管理功能" @change="change" />
   <template v-if="view==='packages'">
   <a-alert type="info" show-icon message="旁路规则包支持 alert 检测规则。装载检查通过后，仍需完成样本回放与完整包验收。" class="section-gap" />
   <section class="panel"><div class="panel-header"><h2>规则包</h2><span>{{ items.length }} 个规则包</span></div>

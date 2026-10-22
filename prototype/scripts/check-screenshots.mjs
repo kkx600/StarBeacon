@@ -43,7 +43,7 @@ function dimensions(bytes){
 for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
   try{
     const source=log.entries.findLast(e=>e.file===file)
-    if(!source||!source.stateVerified||source.renderer!=='Codex in-app browser')throw new Error('缺少已核对的浏览器截图来源')
+    if(!source||!source.stateVerified||!(source.renderer==='Codex in-app browser'||source.renderer==='Chrome DevTools MCP'&&source.captureMethod==='chrome-devtools-mcp-native'))throw new Error('缺少已核对的浏览器截图来源')
     if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)throw new Error('截图主题与当前全局主题不同，需要从浏览器重新捕获')
     if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)throw new Error('截图导航或布局与当前源码不同，需要从浏览器重新捕获')
     if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)throw new Error('截图界面源码与当前版本不同，需要从浏览器重新捕获')
@@ -68,7 +68,7 @@ const allFiles=await readdir(root,{recursive:true})
 for(const file of allFiles.filter(file=>/\.(?:jpg|jpeg|png|webp)$/i.test(file)))if(!entries.some(entry=>entry.file===file))failures.push({file,error:'图片没有对应来源记录'})
 if(failures.length){console.error(JSON.stringify(failures,null,2));process.exit(1)}
 if(refresh){
-  await writeFile(new URL('provenance.json',root),JSON.stringify({product:'星烽 StarBeacon',synthetic:true,renderer:'Codex in-app browser',renderTreeSha256:renderTree.sha256,layoutSha256,themeSha256,baseStateCount:expected.length,supplementalCount:entries.length-expected.length,entries},null,2)+'\n')
+  await writeFile(new URL('provenance.json',root),JSON.stringify({product:'星烽 StarBeacon',synthetic:true,renderer:[...new Set(entries.map(entry=>entry.renderer))].join(' / '),renderTreeSha256:renderTree.sha256,layoutSha256,themeSha256,baseStateCount:expected.length,supplementalCount:entries.length-expected.length,entries},null,2)+'\n')
   await writeFile(new URL('provenance-manifest.js',root),`window.StarBeaconGalleryVersions = ${JSON.stringify({renderTreeSha256:renderTree.sha256,images:Object.fromEntries(entries.map(entry=>[entry.file,entry.sha256]))})};\n`)
   await writeFile(new URL('supplemental-manifest.js',root),`window.StarBeaconSupplemental = ${JSON.stringify(entries.filter(entry=>entry.state==='supplemental').map(({file,title})=>({file,title})))};\n`)
 }

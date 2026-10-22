@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-18",
+  "review_date": "2026-10-21",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
     {
@@ -1299,6 +1299,33 @@
         "web/tests/syslog.test.ts"
       ],
       "boundary": "固定采集器私有来源文件；TLS 1.3 双向认证与证书指纹、显式授权 TCP/UDP、RFC 5424/3164 严格解析、长度分帧、原文与时间质量分别保留、独立 logs WAL/队列/严格索引、管理员检索与原文审计。默认 180 天，未来索引固化期限。来源目录为当前心跳观测；无平台配置下发、任意设备事件语义映射或日志驱动自动处置；工程测试仍需按当前冻结来源核验。"
+    },
+    {
+      "id": "correlation",
+      "name": "关联规则与窗口回测",
+      "code": [
+        "internal/correlation/rules.go",
+        "internal/correlation/evaluate.go",
+        "internal/store/correlation_rules.go",
+        "internal/store/search_snapshot.go",
+        "internal/platform/correlation_rules.go",
+        "web/platform/src/views/CorrelationView.vue"
+      ],
+      "pages": [
+        "platform:/detection/correlation/rules",
+        "platform:/detection/correlation/backtest"
+      ],
+      "tests": [
+        "internal/correlation/evaluate_test.go",
+        "internal/correlation/rules_test.go",
+        "internal/store/search_snapshot_facts_test.go",
+        "internal/platform/correlation_rules_test.go",
+        "tests/integration/correlation_rules_test.go",
+        "tests/integration/correlation_process_test.go",
+        "web/tests/correlation.test.ts",
+        "web/tests/correlation-workspace.test.ts"
+      ],
+      "boundary": "仅当前启用固定修订的按需告警快照回测，支持 count/distinct、探针及注册代次隔离、PIT 来源核验、唯一事实去重、稳定窗口身份与证据摘要。单次最多一小时/5000 条/8 MiB/512 个窗口分组；边界不完整或缺测独立标记，最多展示 8 条样本。规则版本、目录分页、幂等提交与审计已实现；无实时关联、持续状态、序列、缺失事件推断、告警生成或设备处置。工程测试须按当前冻结来源核验，不构成整项正式验收。"
     }
   ],
   "requirements": [
@@ -1677,13 +1704,20 @@
     },
     {
       "id": "SB-DET-003",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "correlation"
+      ],
+      "implemented": [
+        "关联规则目录、不可变修订、幂等维护及历史读取",
+        "已有告警 PIT 的 count/distinct 固定窗口回测，隔离探针和注册代次",
+        "唯一事实核对、稳定窗口身份与证据集合摘要，分组/读取/内存限额与权限回读"
+      ],
       "remaining": [
-        "关联规则/状态窗口/重投去重/迟到修订",
-        "状态空间与租户活跃键配额"
+        "实时关联、事件时间水位、迟到证据修订与状态恢复",
+        "序列/负向匹配/多数据集关联及完整实时状态空间配额",
+        "关联告警生成、抑制、持续运行效果与生产规模验收"
       ]
     },
     {

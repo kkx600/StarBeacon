@@ -106,7 +106,10 @@
     "/traffic/capture/quality",
     "/traffic/events",
     "/traffic/pipeline-latency",
-    "/system/data-sources/syslog"
+    "/system/data-sources/syslog",
+    "/detection/correlation",
+    "/detection/correlation/rules",
+    "/detection/correlation/backtest"
   ],
   "collector": [
     "/login",

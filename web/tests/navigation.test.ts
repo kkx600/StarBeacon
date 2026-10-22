@@ -21,6 +21,16 @@ const global={plugins:[registerAnt]}
 async function routerFor(path:string){const router=createRouter({history:createMemoryHistory(),routes:platformRoutes()});await router.push(path);await router.isReady();return router}
 
 describe('业务导航与路由契约',()=>{
+ it('从检测规则入口可进入关联目录和回测，并能返回规则包，专属选择不泄漏到其他页面',async()=>{
+  const router=await routerFor('/detection/rules/packages?start=2026-10-19&view=legacy&mode=legacy#scope')
+  const wrapper=mount(RouterView,{global:{plugins:[registerAnt,router]}})
+  async function tab(label:string,path:string){let target;await vi.waitFor(()=>{target=wrapper.findAll('[role=tab]').find(item=>item.text()===label);expect(target,`工作区应提供 ${label} 入口`).toBeDefined()});await target!.trigger('click');await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe(path))}
+  try{
+   await tab('关联规则','/detection/correlation/rules');expect(router.currentRoute.value.fullPath).toBe('/detection/correlation/rules?start=2026-10-19#scope')
+   await tab('窗口回测','/detection/correlation/backtest');await router.replace({path:router.currentRoute.value.path,query:{...router.currentRoute.value.query,rule_id:'corr_test',revision:'1'},hash:'#scope'})
+   await tab('规则包','/detection/rules/packages');expect(router.currentRoute.value.fullPath).toBe('/detection/rules/packages?start=2026-10-19#scope')
+  }finally{wrapper.unmount()}
+ })
  it.each(['/inventory/list','/inventory/groups','/inventory/networks','/inventory/discovery','/ai/assistant','/response/policies','/response/evaluations','/ai/mcp','/reports/plans'])('实际路由 %s 的页面标题与导航名称一致',async path=>{
   const router=await routerFor(path),screen=platformScreens.find(item=>item.path===path)!
   const wrapper=mount(RouterView,{global:{plugins:[registerAnt,router]}})

@@ -1,6 +1,6 @@
 import {pages} from './catalog.ts'
 import {navigationWorkspaces,platformScreens} from '../../../web/packages/shared/src/navigation.ts'
-export const nestedPages:Record<string,string>={discovery:'assets','rule-rollouts':'rule-sync'}
+export const nestedPages:Record<string,string>={discovery:'assets','rule-rollouts':'rule-sync','correlation-backtest':'correlation'}
 export const workspaces=navigationWorkspaces.map(workspace=>({...workspace,pages:[...workspace.pages,...platformScreens.filter(screen=>screen.workspace===workspace.id&&!workspace.pages.includes(screen.id)&&!nestedPages[screen.id]&&pages.some(page=>page.id===screen.id)).map(screen=>screen.id)]}))
 export type {WorkspaceSpec} from '../../../web/packages/shared/src/navigation.ts'
 

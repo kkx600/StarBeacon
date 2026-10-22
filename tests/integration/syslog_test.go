@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -28,6 +29,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/syslogdata"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"github.com/kkx600/StarBeacon/internal/worker"
+	"github.com/nats-io/nats.go/jetstream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -44,15 +46,17 @@ func TestSyslogTLSWALMTLSIndexSearchAndRawAudit(t *testing.T) {
 	require(t, err)
 	queue, err := bus.OpenNamespace(ctx, os.Getenv("SB_NATS_URL"), store.RandomID("it_syslog_"))
 	require(t, err)
-	defer queue.Close()
-	require(t, queue.Ensure(ctx, 1, 8<<20))
+	t.Cleanup(queue.Close)
 	t.Cleanup(func() {
 		cleanup, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
 		for _, name := range []string{bus.Alerts, bus.Context, bus.Logs, bus.Quarantine, bus.Indexed} {
-			_ = queue.JS.DeleteStream(cleanup, queue.StreamName(name))
+			if err := queue.JS.DeleteStream(cleanup, queue.StreamName(name)); !errors.Is(err, jetstream.ErrStreamNotFound) {
+				require(t, err)
+			}
 		}
 	})
+	require(t, queue.Ensure(ctx, 1, 8<<20))
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), os.Getenv("SB_ES_API_KEY"))
 	require(t, err)
 	serverTLS, err := transport.TLS(filepath.Join(ca, "ca.crt"), filepath.Join(ca, "server.crt"), filepath.Join(ca, "server.key"), true)

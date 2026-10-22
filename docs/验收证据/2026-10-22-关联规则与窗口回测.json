@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "product": "StarBeacon",
+  "reviewed_at": "2026-10-22T04:19:01.457402+00:00",
+  "status": "passed",
+  "scope": "关联规则定义、固定窗口回测与当前工程回归；不代表全部产品需求验收",
+  "formal_release_qualified": false,
+  "features": [
+    "租户规则目录、不可变修订、幂等保存、停用与维护审计",
+    "固定 PIT、有界元数据白名单、完整分页及当前权限和修订复核",
+    "唯一告警与不同值固定窗口计量、缺失及部分窗口、稳定身份与完整证据摘要",
+    "独立目录和结果表格、修订和证据弹窗、工作区互通与原生表单提交"
+  ],
+  "provenance": {
+    "backend_source_sha256": "0869264dd443cd39cd264ca16e7d70d3c3951d0e432f7450fec1dfe434fdf838",
+    "backend_files": 633,
+    "frontend_source_sha256": "cdc460219ca2a19bb82c85e39d86d757811d995a951059d0b5febf63764ed8c1",
+    "frontend_files": 374,
+    "build_parent_commit": "90889ee4b2fe767e53ffb879dd27dffa56c67f3c",
+    "original_clean_commit": false,
+    "go": "1.26.8",
+    "remote_node": "24.19.0",
+    "pnpm": "12.6.0",
+    "note": "原执行保留父提交和非干净快照身份，后续提交字节绑定不追补干净发行资格"
+  },
+  "backend": {
+    "status": "passed",
+    "environment": "remote_docker",
+    "go_unit_top_level": 545,
+    "integration_top_level": 130,
+    "live_af_packet_top_level": 1,
+    "test_failures": 0,
+    "test_skips": 0,
+    "coverage": {
+      "covered": 21887,
+      "total": 24296,
+      "percentage": 90.08478761936121,
+      "minimum": 90
+    },
+    "completion_actual_exit_code": 0,
+    "fetch_actual_exit_code": 0,
+    "resume": {
+      "prior_driver_status": "failed",
+      "reason": "SSH 中断发生在基础阶段完成后；原基础报告摘要不变，沿同一冻结来源续跑真实网卡、合并和回传",
+      "baseline_original_sha256": "3c0d1b1a32d2446f9e138d148be4ab31bdb7ec3639a0a424e2116adf37623d55",
+      "baseline_rerun": false,
+      "original_failure_record_preserved": true
+    }
+  },
+  "frontend": {
+    "status": "passed",
+    "environment": "remote_docker",
+    "tests": 941,
+    "test_files": 62,
+    "tool_tests": 9,
+    "coverage": {
+      "statements": 94.96373056994818,
+      "branches": 92.68168151131786,
+      "functions": 91.04027568382512,
+      "lines": 98.79857330580064
+    },
+    "max_workers": 2,
+    "steps": [
+      {
+        "name": "tool-tests",
+        "exit_code": 0,
+        "duration_seconds": 3.327
+      },
+      {
+        "name": "coverage",
+        "exit_code": 0,
+        "duration_seconds": 396.936
+      },
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "duration_seconds": 65.458
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "duration_seconds": 36.301
+      }
+    ],
+    "test_deadline_seconds": 5,
+    "coverage_command_deadline_seconds": 600
+  },
+  "correlation_native_scenarios": {
+    "standard_four_role_live_capture_process": "真实网卡告警沿实际接入与索引链进入固定快照；窗口结果与原始事件和原文摘要一致，重复读取身份一致",
+    "browser_fixture_source": "实际 Suricata 离线 PCAP 样本，不冒充实时网卡捕获",
+    "browser_unique_events": 1,
+    "browser_threshold_windows": 0,
+    "browser_window_seconds": 60,
+    "browser_threshold": 2,
+    "browser_event_id": "1dd6c56489ee8061e7f261a3d728eb4ea0ae4d28910a060b908d3ae8f2417649",
+    "browser_raw_sha256": "f5fbd95bfdada2e0f1e837399ea051f137645bc32eb80043cff2f5488aa609c9",
+    "source_coverage": "not_attested",
+    "execution_authorized": false,
+    "performance_qualification": false
+  },
+  "navigation_and_ui": {
+    "platform_entrances": 59,
+    "platform_available_views": 44,
+    "platform_explicitly_unprovided_workspaces": 15,
+    "platform_geometry_checks": 413,
+    "collector_views": 7,
+    "collector_geometry_checks": 49,
+    "platform_routes": 110,
+    "collector_routes": 9,
+    "native_evidence_modal_geometry_checks": 8,
+    "selected_business_interactions": 2,
+    "pc_viewports": [
+      [
+        1024,
+        768
+      ],
+      [
+        1280,
+        720
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1440,
+        900
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2560,
+        1440
+      ],
+      [
+        3840,
+        2160
+      ]
+    ],
+    "modal_extra_viewport": [
+      1024,
+      600
+    ],
+    "image": {
+      "path": "images/correlation-window-evidence.jpg",
+      "bytes": 127927,
+      "sha256": "d3568ee71f945f4c615513dce0274b04f83baea101644baeb5d920007acab06a"
+    },
+    "scope": "当前来源的布局、路由及选定创建／回测／证据交互，不替代全部 CRUD、全部异常分支、完整无障碍或全产品验收"
+  },
+  "prototype": {
+    "base_images": 803,
+    "supplemental_images": 113,
+    "total_images": 916,
+    "render_tree_files": 345,
+    "render_tree_sha256": "3674c441321cd78663ba12a2b329415b07f1ac24355d50992c24b0e7f43f721b",
+    "theme_sha256": "996d22e1e018de9025ddbe83d641f9967c38f0d0de9812268982d08f05c7e25c",
+    "theme_changed": false,
+    "renderer": "Chrome DevTools MCP",
+    "capture_method": "chrome-devtools-mcp-native",
+    "viewport": [
+      1440,
+      900
+    ],
+    "strict_current_source_state_and_byte_checks": true,
+    "online_gallery_cards_verified": 2,
+    "synthetic": true
+  },
+  "deployment": {
+    "status": "passed",
+    "scope": "专属常驻开发环境",
+    "migration": 49,
+    "reference_programs": 5,
+    "running_roles": 4,
+    "static_files_verified": 103,
+    "gateway_history_paths": 64,
+    "missing_static_http_status": 404,
+    "identity_and_wal_inode_unchanged": true,
+    "after_cleanup_runtime_rechecked": true
+  },
+  "cleanup": {
+    "status": "passed",
+    "frontend_containers_removed": 9,
+    "qualification_directories_removed": 18,
+    "temporary_runtime_removed": true,
+    "logical_bytes_removed": 2978640117,
+    "measurement": "删除前普通文件逻辑大小，不等同瞬时文件系统可用空间",
+    "temporary_queue_streams_archived_and_removed": 5,
+    "temporary_queue_messages_archived": 2,
+    "queue_reserved_bytes_released": 83886080,
+    "historical_database_and_index_evidence_retained": true,
+    "persistent_identity_wal_ca_and_history_retained": true,
+    "global_prune": false,
+    "local_redundant_directories_removed": 12,
+    "local_redundant_logical_bytes_removed": 37701706
+  },
+  "superseded_attempts": [
+    {
+      "scope": "实际表单提交",
+      "status": "failed_then_fixed",
+      "reason": "窗口范围表单缺少模型，实际按钮未触发提交；两个报告表单原生提交亦补充模型和回归"
+    },
+    {
+      "scope": "实际导航可达性",
+      "status": "failed_then_fixed",
+      "reason": "关联模块可直接打开但检测规则缺少进入入口；统一工作区页签，保留角色与选择边界，原失败用例保留"
+    },
+    {
+      "scope": "旧来源后端与测试夹具",
+      "status": "failed_then_fixed",
+      "reason": "Syslog 测试删除流前关闭连接导致保留额度泄漏；原生日志验证增加索引就绪前提，仍严格核对接口成功与原文摘要"
+    },
+    {
+      "scope": "前端与采集脚本",
+      "status": "superseded",
+      "reason": "异步就绪断言、过长复合测试、只读页签断言、补充截图缺少操作索引、合成历史状态和冷导航期限分别保留原始失败；完整前端重跑，缺少操作的图片不计通过，未放宽门槛或源码绑定"
+    },
+    {
+      "scope": "传输与临时部署核对",
+      "status": "superseded",
+      "reason": "SSH 失败与历史常驻容器身份比较失败分别保留；前者按原记录复核，后者独立验证实际运行身份及全部静态字节"
+    }
+  ],
+  "requirement_status": {
+    "partial": 65,
+    "missing": 42
+  },
+  "requirements_total": 107,
+  "formal_requirement_acceptance_passed": 0,
+  "remaining_release_gaps": [
+    "实时关联状态、水位、迟到事件、序列及负向模式、多数据集关联和关联告警生命周期",
+    "规则来源与 TUF、生产规模效果门禁、自动故障回退",
+    "情报生命周期、风险治理、文件提取与沙箱",
+    "应用会话字节计量和真实产品样本效果",
+    "完整网络域、设备 HA、执行器接管、集中设备／日志来源配置和认证插件",
+    "真实外部模型、通知服务商、防火墙和 EDR 效果",
+    "完整安装和平台升级、生产 TLS、HA／灾备、容量与长稳及全产品交互验收",
+    "当前同源 Linux UPX ZIP 发行包及完整产品发布资格"
+  ],
+  "archives": [
+    {
+      "file": "correlation109-backend-raw.tar.gz",
+      "bytes": 16482557,
+      "sha256": "c74b89d6b56160dd7dd7dde81a9171f66badeeab4b1a026789bbeb28840e89c3",
+      "members_readback_verified": 249
+    },
+    {
+      "file": "correlation125-engineering-raw.tar.gz",
+      "bytes": 25510863,
+      "sha256": "d3d97bf3f9b9c1c17d65df2bc5b8a378efe6ec1081cd75de420c13f6c44f13d4",
+      "members_readback_verified": 7590
+    },
+    {
+      "file": "correlation126-gallery-raw.tar.gz",
+      "bytes": 70165794,
+      "sha256": "bd2ad274c184a5d748d9a4f78edd8afaa19d9e5ab22fa0119e570d517b32fa14",
+      "members_readback_verified": 926
+    },
+    {
+      "file": "correlation106-frontend-raw.tar.gz",
+      "bytes": 2864224,
+      "sha256": "39acbdba29290cbb38a16de68403d05275ad047ce5dd34417da188077584172d"
+    },
+    {
+      "file": "correlation123-temporary-runtime.tar.gz",
+      "bytes": 4602998,
+      "sha256": "7742f6e9748ce4d741391c1c08dcec3e2c5892714019b5dda055d552a673e114"
+    }
+  ],
+  "archive_visibility": "原始归档含专属测试私有材料，仅存于本机受限目录，不提交仓库",
+  "checks": {
+    "quality_tests": 70,
+    "acceptance_tool_tests": 86,
+    "prototype_tool_tests": 12,
+    "requirements": 107,
+    "platform_http_operations": 141,
+    "collector_http_operations": 20,
+    "go_mod_verify_vet_format_diff_and_alignment": "passed"
+  }
+}

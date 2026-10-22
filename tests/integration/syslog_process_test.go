@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -56,7 +57,7 @@ func prepareNativeSyslog(t *testing.T, directory string, c config.Config) *nativ
 }
 
 // 配置通过真实角色环境进入 Agent；验证后台接收、独立上传与索引，不能用库调用替代入口接线。
-func (p *nativeSyslogProbe) verify(t *testing.T, ctx context.Context, platform, collector *liveHTTP) {
+func (p *nativeSyslogProbe) verify(t *testing.T, ctx context.Context, platform, collector *liveHTTP, es *store.Elasticsearch, tenant string) {
 	t.Helper()
 	var health struct {
 		Items []syslogdata.Health `json:"items"`
@@ -83,6 +84,33 @@ func (p *nativeSyslogProbe) verify(t *testing.T, ctx context.Context, platform, 
 		require(t, err)
 	}
 	require(t, connection.Close())
+	// 监听就绪只证明可以接收；索引分片建立与首次刷新仍是异步阶段。
+	// 先观察真实入库数量，再以平台 API 核对内容，避免把初始化中的分片当作检索契约失败。
+	unavailable := 0
+	eventually(t, ctx, "原生 Syslog 索引实际可读", func() bool {
+		response, err := es.API.Count(es.API.Count.WithIndex("sb-logs-"+tenant+"-*"), es.API.Count.WithContext(ctx))
+		if err != nil {
+			unavailable++
+			return false
+		}
+		defer response.Body.Close()
+		if response.StatusCode == 404 || response.StatusCode == 503 {
+			unavailable++
+			return false
+		}
+		if response.IsError() {
+			t.Fatalf("原生日志索引计数失败：%d", response.StatusCode)
+		}
+		var count struct {
+			Count int `json:"count"`
+		}
+		require(t, json.NewDecoder(io.LimitReader(response.Body, 65536)).Decode(&count))
+		if count.Count > 3 {
+			t.Fatal("原生日志被重复索引", count.Count)
+		}
+		return count.Count == 3
+	})
+	t.Logf("原生 Syslog 分片与刷新就绪，3 条消息实际可读；启动阶段未就绪观测 %d 次", unavailable)
 	q := syslogdata.SearchQuery{Start: started.Add(-time.Minute), End: started.Add(time.Minute), SensorID: "sensor_live", SourceID: p.source.ID, Limit: 20}
 	var result struct {
 		Items []syslogdata.Document `json:"items"`

@@ -15866,6 +15866,526 @@
           }
         ]
       }
+    },
+    "/api/v1/correlation-rules": {
+      "get": {
+        "summary": "列出关联规则",
+        "description": "管理员与只读账号读取本租户当前配置，按规则 ID 升序分页；最多 128 条规则。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；核对固定修订、来源范围与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrelationPage"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "",
+                "true",
+                "false"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^$|^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "保存关联规则修订",
+        "description": "仅管理员；32 KiB 严格 JSON、CSRF、幂等键与期望修订。不可变修订、当前指针及操作审计在同一事务保存；最近 24 小时最多 2048 次变更。历史按操作策略保留，默认 180 天，当前配置受引用保护。启用仅允许按需回测，不启动实时检测。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；核对固定修订、来源范围与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrelationRule"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "description": "同一原请求复用，不能修改对象或输入。回执按操作类别策略留存，默认 180 天。"
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrelationChange"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/correlation-rules/{id}/revisions/{revision}": {
+      "get": {
+        "summary": "读取关联规则修订",
+        "description": "管理员与只读账号可核对本租户未过期的历史修订；当前配置受引用保护。读取历史不授予回测或实时执行权限。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；核对固定修订、来源范围与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrelationRule"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "revision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/correlation-rules/{id}/backtest": {
+      "post": {
+        "summary": "执行窗口回测",
+        "description": "仅管理员；复用导出 PIT 读取与共享配额（每进程共 2、每租户 1；配置 Redis 时增加分布式租约），最长 50 秒。每页读取前后与交付前回读当前会话、账号状态及启用修订，审计成功后交付。规则语法错误返回 invalid_correlation_filter 及行列位置；材料超额返回 413，忙碌返回 429 和 Retry-After:5。",
+        "responses": {
+          "400": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "请求未完成，具体原因见 code/message；失败不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "请求成功；核对固定修订、来源范围与摘要。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrelationResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "取自登录或 auth/me 返回的 csrf_token。",
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrelationRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -28699,6 +29219,425 @@
           "query",
           "next_cursor"
         ]
+      },
+      "CorrelationDefinition": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "correlation-rule.v1"
+          },
+          "dataset": {
+            "const": "alerts"
+          },
+          "filter": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "告警高级检索表达式，最多 4096 UTF-8 字节，单行；空值表示范围内全部告警。"
+          },
+          "group_by": {
+            "enum": [
+              "source.ip",
+              "destination.ip",
+              "rule.id"
+            ]
+          },
+          "metric": {
+            "enum": [
+              "count",
+              "distinct"
+            ]
+          },
+          "distinct_field": {
+            "enum": [
+              "",
+              "source.ip",
+              "destination.ip",
+              "source.port",
+              "destination.port",
+              "rule.id"
+            ]
+          },
+          "window_seconds": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 3600
+          },
+          "threshold": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 5000
+          }
+        },
+        "required": [
+          "schema_version",
+          "dataset",
+          "filter",
+          "group_by",
+          "metric",
+          "distinct_field",
+          "window_seconds",
+          "threshold"
+        ],
+        "additionalProperties": false,
+        "description": "分组始终包括接入探针及注册代次。count 要求 distinct_field 为空；distinct 要求该字段非空且不同于 group_by。计量端口 0 作为未知值。当前只提供正向计数，未提供序列、缺失事件推断或实时检测。"
+      },
+      "CorrelationChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999999
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/CorrelationDefinition"
+          }
+        },
+        "required": [
+          "id",
+          "expected_revision",
+          "name",
+          "description",
+          "active",
+          "definition"
+        ],
+        "additionalProperties": false
+      },
+      "CorrelationRule": {
+        "type": "object",
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/CorrelationDefinition"
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "created_by": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "id",
+          "revision",
+          "name",
+          "description",
+          "active",
+          "definition",
+          "definition_sha256",
+          "created_by",
+          "created_at",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "CorrelationPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrelationRule"
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "规范 base64url 游标，绑定租户、全部筛选、容量与上一页最后 ID；无下一页时为空。"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "CorrelationRequest": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false,
+        "description": "UTC 半开区间 [start,end)，精确到整秒；开始不得早于 2000 年，结束不得晚于服务端当前时刻，单次跨度最多一小时。只允许当前启用的固定修订。"
+      },
+      "CorrelationEvidence": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "event_id",
+          "raw_sha256",
+          "timestamp"
+        ],
+        "additionalProperties": false
+      },
+      "CorrelationWindow": {
+        "type": "object",
+        "properties": {
+          "detection_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "sensor_registration_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "group_value": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          },
+          "metric_value": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "missing_metric": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "status": {
+            "enum": [
+              "threshold_observed",
+              "threshold_not_observed",
+              "partial_window"
+            ]
+          },
+          "evidence_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrelationEvidence"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "evidence_truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "detection_id",
+          "sensor_id",
+          "sensor_registration_id",
+          "group_value",
+          "start",
+          "end",
+          "count",
+          "metric_value",
+          "missing_metric",
+          "status",
+          "evidence_sha256",
+          "evidence",
+          "evidence_truncated"
+        ],
+        "additionalProperties": false,
+        "description": "固定 UTC 对齐窗口；首尾不完整窗口标为 partial_window，不计入阈值窗口。证据按唯一事件标识排序，最多展示前 8 条，计量与摘要覆盖全部窗口事实。稳定 detection_id 与证据集合摘要分开计算。"
+      },
+      "CorrelationResult": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "correlation-backtest.v1"
+          },
+          "tenant_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "rule_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "rule_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "query": {
+            "$ref": "#/components/schemas/CorrelationRequest"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "snapshot_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "unique_events": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "duplicate_events": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "missing_group": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "threshold_windows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 512
+          },
+          "partial_windows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 512
+          },
+          "source_coverage": {
+            "const": "not_attested"
+          },
+          "execution_authorized": {
+            "const": false
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrelationWindow"
+            },
+            "maxItems": 512
+          }
+        },
+        "required": [
+          "schema_version",
+          "tenant_id",
+          "rule_id",
+          "rule_revision",
+          "definition_sha256",
+          "query",
+          "observed_at",
+          "snapshot_sha256",
+          "unique_events",
+          "duplicate_events",
+          "missing_group",
+          "threshold_windows",
+          "partial_windows",
+          "source_coverage",
+          "execution_authorized",
+          "windows"
+        ],
+        "additionalProperties": false,
+        "description": "结果来自告警元数据 PIT 快照，最多 5000 条、8 MiB 与 512 个分组窗口。快照、分页、分片、身份、权限、摘要、审计或资源限制任一失败不交付部分结果。没有结果不代表流量安全或覆盖完整；结果不创建告警、持续任务或处置授权。"
       }
     }
   }

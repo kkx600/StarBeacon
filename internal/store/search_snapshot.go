@@ -52,34 +52,66 @@ var snapshotFields = []string{"schema_version", "event_id", "tenant_id", "sensor
 
 // ExportEvents 在同一 PIT 内读取全部命中；任何失败均不返回部分文件。
 // authorize 在各批次前后回读当前会话，撤权后不继续读取或交付内容。
-func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string, q model.TrafficSearchRequest, authorize func(context.Context) error) (raw []byte, rows int, err error) {
-	if !contract.ValidID(tenant) || authorize == nil {
-		return nil, 0, errors.New("导出身份或授权核验未配置")
+func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string, q model.TrafficSearchRequest, authorize func(context.Context) error) ([]byte, int, error) {
+	csv := searchsnapshot.NewCSV()
+	count, err := s.scanSnapshot(ctx, tenant, dataset, q, searchsnapshot.MaxRows, authorize, csv.Append)
+	if err != nil {
+		return nil, 0, err
+	}
+	return csv.Bytes(), count, nil
+}
+
+// SnapshotEvents 与导出共用同一套 PIT、分片、身份、去重与授权核对，不包含原始载荷。
+// 达到上限、取消或释放失败均不交付部分事实集合。
+func (s *Elasticsearch) SnapshotEvents(ctx context.Context, tenant, dataset string, q model.TrafficSearchRequest, maximum int, authorize func(context.Context) error) ([]model.Alert, error) {
+	items := []model.Alert{}
+	encodedBytes := 0
+	_, err := s.scanSnapshot(ctx, tenant, dataset, q, maximum, authorize, func(item model.Alert) error {
+		encoded, err := json.Marshal(item)
+		if err != nil {
+			return err
+		}
+		if len(encoded) > searchsnapshot.MaxBytes-encodedBytes {
+			return searchsnapshot.ErrLimit
+		}
+		encodedBytes += len(encoded)
+		items = append(items, item)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (s *Elasticsearch) scanSnapshot(ctx context.Context, tenant, dataset string, q model.TrafficSearchRequest, maximum int, authorize func(context.Context) error, visit func(model.Alert) error) (count int, err error) {
+	if !contract.ValidID(tenant) || authorize == nil || visit == nil || maximum < 1 || maximum > searchsnapshot.MaxRows {
+		return 0, errors.New("导出身份或授权核验未配置")
 	}
 	kinds, extra := []string{"alert"}, []any(nil)
 	switch dataset {
 	case "alerts":
 		if q.EventKind != "" || q.SensorID != "" || q.RegistrationID != "" || q.GenerationID != "" || q.FlowID != "" {
-			return nil, 0, errors.New("告警导出不能混用协议来源条件")
+			return 0, errors.New("告警导出不能混用协议来源条件")
 		}
 		err = ValidateSearch(&q.SearchRequest)
 	case "context":
 		err = ValidateTrafficSearch(&q)
 		kinds, extra = trafficScope(q)
 	default:
-		return nil, 0, errors.New("导出数据集无效")
+		return 0, errors.New("导出数据集无效")
 	}
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 	if err = authorize(ctx); err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	query, err := eventQuery(tenant, q.SearchRequest, kinds, extra)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	index := "sb-" + dataset + "-" + tenant + "-"
 	filter, _ := json.Marshal(map[string]any{"index_filter": map[string]any{"bool": query}})
@@ -89,10 +121,10 @@ func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string
 	}
 	res, err := s.API.OpenPointInTime([]string{index + "*"}, time.Minute, s.API.OpenPointInTime.WithAllowPartialSearchResults(false), s.API.OpenPointInTime.WithIgnoreUnavailable(false), s.API.OpenPointInTime.WithExpandWildcards("open", "closed"), s.API.OpenPointInTime.WithMaxConcurrentShardRequests(2), s.API.OpenPointInTime.WithBody(bytes.NewReader(filter)), s.API.OpenPointInTime.WithContext(ctx))
 	if err = snapshotResponse(res, err, &opened); err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	if !validPIT(opened.ID) {
-		return nil, 0, errors.New("检索快照身份缺失或超限")
+		return 0, errors.New("检索快照身份缺失或超限")
 	}
 	pit := opened.ID
 	defer func() {
@@ -111,21 +143,20 @@ func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string
 		}
 		if closeErr != nil {
 			err = errors.Join(err, closeErr)
-			raw, rows = nil, 0
+			count = 0
 		}
 	}()
 	if !opened.Shards.complete() {
-		return nil, 0, errors.New("检索快照分片不完整")
+		return 0, errors.New("检索快照分片不完整")
 	}
 	// index_filter 排除的分片没有 PIT 上下文；后续搜索必须覆盖其余全部上下文。
 	activeShards := *opened.Shards.Total - *opened.Shards.Skipped
-	csv := searchsnapshot.NewCSV()
 	seen := make(map[string]bool)
 	var after json.Number
 	total := int64(-1)
 	for {
 		if err = authorize(ctx); err != nil {
-			return nil, 0, err
+			return 0, err
 		}
 		body := map[string]any{"size": snapshotPageSize, "track_total_hits": true, "timeout": "5s", "query": map[string]any{"bool": query}, "pit": map[string]string{"id": pit, "keep_alive": "1m"}, "sort": []any{map[string]string{"_shard_doc": "asc"}}, "_source": snapshotFields}
 		if after != "" {
@@ -135,25 +166,25 @@ func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string
 		var page snapshotPage
 		res, err := s.API.Search(s.API.Search.WithBody(bytes.NewReader(encoded)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
 		if err = snapshotResponse(res, err, &page); err != nil {
-			return nil, 0, err
+			return 0, err
 		}
 		// 每次搜索都可能替换 PIT 身份，后续读取和最终关闭均使用最新身份。
 		if validPIT(page.PITID) {
 			pit = page.PITID
 		} else {
-			return nil, 0, errors.New("检索快照续期身份无效")
+			return 0, errors.New("检索快照续期身份无效")
 		}
 		if page.TimedOut == nil || *page.TimedOut || !page.Shards.complete() || *page.Shards.Total != activeShards || page.Hits.Total.Value == nil || *page.Hits.Total.Value < 0 || page.Hits.Total.Relation != "eq" || page.Hits.Hits == nil {
-			return nil, 0, errors.New("快照结果不完整，导出未生成")
+			return 0, errors.New("快照结果不完整，导出未生成")
 		}
 		if total == -1 {
 			total = *page.Hits.Total.Value
 		}
-		if total > searchsnapshot.MaxRows {
-			return nil, 0, searchsnapshot.ErrLimit
+		if total > int64(maximum) {
+			return 0, searchsnapshot.ErrLimit
 		}
-		if total != *page.Hits.Total.Value || int64(len(page.Hits.Hits)) != min(int64(snapshotPageSize), total-int64(csv.Rows())) {
-			return nil, 0, errors.New("快照计数或分页完整性不一致")
+		if total != *page.Hits.Total.Value || int64(len(page.Hits.Hits)) != min(int64(snapshotPageSize), total-int64(count)) {
+			return 0, errors.New("快照计数或分页完整性不一致")
 		}
 		for _, hit := range page.Hits.Hits {
 			date, dateErr := time.Parse("2006.01.02", strings.TrimPrefix(hit.Index, index))
@@ -163,29 +194,30 @@ func (s *Elasticsearch) ExportEvents(ctx context.Context, tenant, dataset string
 				allowed = allowed || kind == hit.Source.Event.Kind
 			}
 			if dateErr != nil || indexErr != nil || hit.Index != expected || !contract.ValidID(hit.ID) || hit.ID != hit.Source.EventID || hit.Source.TenantID != tenant || !allowed || hit.Source.Timestamp.Before(q.Start) || !hit.Source.Timestamp.Before(q.End) || seen[hit.ID] || hit.Source.Event.Original != "" || len(hit.Sort) != 1 {
-				return nil, 0, errors.New("导出记录与身份、时间或来源约束不一致")
+				return 0, errors.New("导出记录与身份、时间或来源约束不一致")
 			}
 			number := string(hit.Sort[0])
 			ordinal, sortErr := strconv.ParseInt(number, 10, 64)
 			if sortErr != nil || ordinal < 0 || strconv.FormatInt(ordinal, 10) != number {
-				return nil, 0, errors.New("快照排序游标无效")
+				return 0, errors.New("快照排序游标无效")
 			}
 			if after != "" {
 				previous, _ := after.Int64()
 				if ordinal <= previous {
-					return nil, 0, errors.New("快照排序未向前推进")
+					return 0, errors.New("快照排序未向前推进")
 				}
 			}
 			seen[hit.ID], after = true, json.Number(number)
-			if err = csv.Append(hit.Source); err != nil {
-				return nil, 0, err
+			if err = visit(hit.Source); err != nil {
+				return 0, err
 			}
+			count++
 		}
 		if err = authorize(ctx); err != nil {
-			return nil, 0, err
+			return 0, err
 		}
-		if int64(csv.Rows()) == total {
-			return csv.Bytes(), csv.Rows(), nil
+		if int64(count) == total {
+			return count, nil
 		}
 	}
 }

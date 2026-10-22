@@ -103,3 +103,13 @@ test('组件来源不得通过父目录或工程目录外路径绕过核对', as
   assert.equal(result.status, 1)
   assert.match(result.stderr, /截图组件来源路径无效/)
 }))
+
+
+test('备用浏览器的原生截图保留同等来源与当前源码核验',async()=>fixture(async({gallery,entry,check})=>{
+ entry.renderer='Chrome DevTools MCP';entry.captureMethod='chrome-devtools-mcp-native'
+ await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
+ assert.equal(check().status,0)
+ delete entry.captureMethod
+ await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
+ assert.equal(check('--refresh').status,1)
+}))
