@@ -316,7 +316,7 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 		return err
 	}))
 	query(v6, 409)
-	// 仅存在同前缀的其他租户时，也不能把它识别为当前租户的分区。
+	// 仅存在同前缀的其他租户时，也不能读到其他租户的旧版索引；共享索引存在与否不代表当前租户有数据。
 	ownedIndex, _ := contract.IndexName(tenants[0], "context", start.Add(24*time.Hour).Format("2006-01-02"))
 	deleted, err := es.API.Indices.Delete([]string{ownedIndex}, es.API.Indices.Delete.WithContext(ctx))
 	require(t, err)
@@ -326,8 +326,8 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 	}
 	absent, err := es.DiscoverAddresses(ctx, tenants[0], q)
 	require(t, err)
-	if absent.PartitionStatus != "absent" || len(absent.Addresses) != 0 {
-		t.Fatal("同前缀租户影响了分区存在性", absent)
+	if len(absent.Addresses) != 0 || absent.SourceExcluded != "0" || absent.DestinationExcluded != "0" || absent.PartitionStatus != "absent" && absent.PartitionStatus != "available" {
+		t.Fatal("同前缀租户的观测进入了当前租户", absent)
 	}
 	t.Log("真实 ES 双向流记录聚合、纳秒证据、IPv6、当前探针注册、网段修订、RLS、组播排除、512 地址拒绝截断、Redis 配额与 180 天审计通过；没有自动登记资产")
 }

@@ -31,7 +31,6 @@ import (
 	"github.com/kkx600/StarBeacon/internal/agent"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/config"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/hosthealth"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -265,7 +264,7 @@ func roleEnvironment(c config.Config) []string {
 	if c.AllowRuleApply {
 		environment = append(environment, "SB_ALLOW_RULE_APPLY=true")
 	}
-	for key, value := range map[string]int64{"NATS_REPLICAS": int64(c.Replicas), "STREAM_BYTES": c.StreamBytes, "WAL_BYTES": int64(c.WALBytes), "REPLAY_BYTES": c.ReplayBytes, "REPLAY_RETENTION_DAYS": int64(c.ReplayRetentionDays), "CAPTURE_SPOOL_BYTES": c.CaptureSpoolBytes, "CAPTURE_ROTATE_BYTES": c.CaptureRotateBytes, "PACKET_ROTATE_SECONDS": int64(c.PacketRotateInterval / time.Second), "PACKET_SPOOL_BYTES": c.PacketSpoolBytes, "PACKET_SEGMENT_BYTES": c.PacketSegmentBytes, "PACKET_STORAGE_BYTES": c.PacketStorageBytes} {
+	for key, value := range map[string]int64{"NATS_REPLICAS": int64(c.Replicas), "STREAM_BYTES": c.StreamBytes, "WAL_BYTES": int64(c.WALBytes), "REPLAY_BYTES": c.ReplayBytes, "REPLAY_RETENTION_DAYS": int64(c.ReplayRetentionDays), "CAPTURE_SPOOL_BYTES": c.CaptureSpoolBytes, "CAPTURE_ROTATE_BYTES": c.CaptureRotateBytes, "PACKET_ROTATE_SECONDS": int64(c.PacketRotateInterval / time.Second), "PACKET_SPOOL_BYTES": c.PacketSpoolBytes, "PACKET_SEGMENT_BYTES": c.PacketSegmentBytes, "PACKET_POOL_BYTES": c.PacketPoolBytes} {
 		if value > 0 {
 			environment = append(environment, fmt.Sprintf("SB_%s=%d", key, value))
 		}
@@ -304,7 +303,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 				return err
 			}
 			// 隔离测试租户按外键依赖先清理任务授权证明，再清理任务本身。
-			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "packet_archive_capacity", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "response_watchlist_checks", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "response_watchlist_checks", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}
@@ -337,6 +336,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		if err == nil {
 			res.Body.Close()
 		}
+		deleteTenantEvents(t, es, tenant)
 	}()
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
@@ -714,8 +714,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	if !bytes.Contains(stored.Data, []byte("notification_batch_invalid")) || bytes.Contains(stored.Data, []byte("must-not-enter-quarantine")) {
 		t.Fatal("永久坏批次未隔离或隔离日志保留了未知正文")
 	}
-	index, err := contract.IndexName(tenant, "alerts", time.Now().UTC().Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", time.Now().UTC().Format("2006-01-02"))
 	res, err := es.API.Indices.Refresh(es.API.Indices.Refresh.WithIndex(index), es.API.Indices.Refresh.WithContext(ctx))
 	require(t, err)
 	res.Body.Close()
@@ -733,8 +732,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		t.Fatal("原生告警检索、MAC 或 HTTP 解析不一致", alerts)
 	}
 	verifyNativeApplicationAttribution(t, alerts.Items[0], applicationDeployment)
-	contextIndex, err := contract.IndexName(tenant, "context", time.Now().UTC().Format("2006-01-02"))
-	require(t, err)
+	contextIndex := sharedEventIndex(t, "context", time.Now().UTC().Format("2006-01-02"))
 	defer func() {
 		if !t.Failed() {
 			return
@@ -891,15 +889,14 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			rotations, err := strconv.ParseUint(capture.Rotations, 10, 64)
 			return err == nil && rotations > 0 && !capture.RotationPending && capture.Status == "running"
 		})
-		contextIndex, err := contract.IndexName(tenant, "context", time.Now().UTC().Format("2006-01-02"))
-		require(t, err)
+		contextIndex := sharedEventIndex(t, "context", time.Now().UTC().Format("2006-01-02"))
 		eventually(t, ctx, "轮转前后 HTTP 事件全部实际索引且没有重复", func() bool {
 			response, err := es.API.Indices.Refresh(es.API.Indices.Refresh.WithIndex(contextIndex), es.API.Indices.Refresh.WithContext(ctx))
 			if err != nil {
 				return false
 			}
 			_ = response.Body.Close()
-			response, err = es.API.Count(es.API.Count.WithIndex(contextIndex), es.API.Count.WithContext(ctx), es.API.Count.WithBody(strings.NewReader(`{"query":{"term":{"event.kind":"http"}}}`)))
+			response, err = es.API.Count(es.API.Count.WithIndex(contextIndex), es.API.Count.WithContext(ctx), es.API.Count.WithBody(strings.NewReader(`{"query":{"bool":{"filter":[{"term":{"event.kind":"http"}},{"term":{"tenant_id":"`+tenant+`"}}]}}}`)))
 			if err != nil {
 				return false
 			}
@@ -918,7 +915,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			return count.Count == sent+2
 		})
 		// 总量一致仍可能掩盖一条丢失与一条重复；逐路径核对实际发送的事务。
-		response, err := es.API.Search(es.API.Search.WithContext(ctx), es.API.Search.WithIndex(contextIndex), es.API.Search.WithBody(strings.NewReader(`{"size":4200,"_source":["http.path"],"query":{"term":{"event.kind":"http"}}}`)))
+		response, err := es.API.Search(es.API.Search.WithContext(ctx), es.API.Search.WithIndex(contextIndex), es.API.Search.WithBody(strings.NewReader(`{"size":4200,"_source":["http.path"],"query":{"bool":{"filter":[{"term":{"event.kind":"http"}},{"term":{"tenant_id":"`+tenant+`"}}]}}}`)))
 		require(t, err)
 		var indexed struct {
 			Hits struct {

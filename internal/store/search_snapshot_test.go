@@ -49,7 +49,7 @@ func TestSnapshotUsesStableCursorNewestPITAndMetadataProjection(t *testing.T) {
 					}
 					_, _ = w.Write([]byte(`{"succeeded":true,"num_freed":1}`))
 				case strings.HasSuffix(r.URL.Path, "/_pit"):
-					if r.URL.Path != "/sb-"+dataset+"-tenant_owned-*/_pit" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("expand_wildcards") != "open,closed" || body["index_filter"] == nil {
+					if r.URL.Path != "/sb-v2-"+dataset+"-*,sb-"+dataset+"-tenant_owned-*,-sb-"+dataset+"-tenant_owned-*-*/_pit" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("expand_wildcards") != "open,closed" || body["index_filter"] == nil {
 						t.Error("快照范围或部分分片保护缺失")
 					}
 					_, _ = w.Write([]byte(`{"id":"pit_first","_shards":{"total":1,"successful":1,"skipped":0,"failed":0}}`))

@@ -35,7 +35,7 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 	require(t, err)
 	version, err := objects.Put(ctx, packetarchive.ObjectKey(m), bytes.NewReader(stored), int64(len(stored)), packetarchive.Digest(stored))
 	require(t, err)
-	row, _, err := f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20)
+	row, _, err := f.Runtime.BeginPacketArchive(ctx, id, m)
 	require(t, err)
 	require(t, f.Runtime.RegisterPacketObject(ctx, id, row, version))
 	row, err = f.Runtime.CompletePacketArchive(ctx, id, row)
@@ -45,7 +45,7 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 	snapshot := func() string {
 		state := map[string]json.RawMessage{}
 		require(t, f.Owner.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-			for _, table := range []string{"packet_archives", "packet_archive_capacity", "operation_audits"} {
+			for _, table := range []string{"packet_archives", "operation_audits"} {
 				var raw []byte
 				if e := tx.QueryRow(ctx, "SELECT COALESCE(jsonb_agg(to_jsonb(v) ORDER BY to_jsonb(v)::text),'[]'::jsonb) FROM (SELECT * FROM "+pgx.Identifier{table}.Sanitize()+" WHERE tenant_id=$1) v", tenant).Scan(&raw); e != nil {
 					return e
@@ -64,8 +64,8 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 		run      func(*store.Postgres) error
 	}
 	ops := []op{
-		{"create", []string{"SELECT public.lock_packet_sensor", "INSERT INTO packet_archive_capacity", "SELECT reserved_bytes", "SELECT id,state,manifest", "INSERT INTO packet_archives(", "UPDATE packet_archive_capacity SET reserved_bytes=reserved_bytes+$2"}, func(db *store.Postgres) error {
-			_, _, e := db.BeginPacketArchive(ctx, id, newManifest, 100<<20)
+		{"create", []string{"SELECT public.lock_packet_sensor", "SELECT id,state,manifest", "INSERT INTO packet_archives("}, func(db *store.Postgres) error {
+			_, _, e := db.BeginPacketArchive(ctx, id, newManifest)
 			return e
 		}},
 		{"read", []string{"SELECT id,state,manifest"}, func(db *store.Postgres) error { _, e := db.PacketArchive(ctx, u, row.ID); return e }},
@@ -92,9 +92,6 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 			})
 		}
 	}
-	if _, _, e := f.Runtime.BeginPacketArchive(ctx, id, newManifest, 1); !errors.Is(e, packetarchive.ErrQuota) {
-		t.Fatal("目录容量不足仍接受传输", e)
-	}
 	if _, e := f.Runtime.PacketArchive(ctx, u, "bad/id"); !errors.Is(e, pgx.ErrNoRows) {
 		t.Fatal("非法原包身份可读", e)
 	}
@@ -107,7 +104,7 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 	if e := f.Runtime.AuditPacketSessionExport(ctx, u, []string{row.ID}, "unknown", "fault"); !errors.Is(e, packetarchive.ErrIntegrity) {
 		t.Fatal("未知导出模式写入审计", e)
 	}
-	if e := f.Runtime.SweepPacketArchives(ctx, nil); !errors.Is(e, packetarchive.ErrIntegrity) {
+	if _, e := f.Runtime.SweepPacketArchives(ctx, nil, packetarchive.Pool{}); !errors.Is(e, packetarchive.ErrIntegrity) {
 		t.Fatal("无存储回收资格返回成功", e)
 	}
 	_, err = f.Owner.Pool.Exec(ctx, `UPDATE packet_archives SET manifest='{}' WHERE tenant_id=$1 AND id=$2`, tenant, row.ID)

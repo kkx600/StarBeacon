@@ -3,15 +3,18 @@ on:
   push:
     branches: [main, 'codex/**']
   pull_request:
+  # 版本发布工作流在打包前复用同一组检查。
+  workflow_call:
 permissions:
   contents: read
+# 被调用时 github.workflow 取调用方名称；加 ci- 前缀避免与调用方的并发组相同而互相取消。
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   go:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       GOTOOLCHAIN: local
     steps:
@@ -30,6 +33,8 @@ jobs:
       - name: 功能、接口与页面契约对齐
         run: python3 scripts/check_alignment.py --check
       - run: make build test vet
+      - name: 集成测试编译与静态检查
+        run: go vet -tags=integration,captureintegration ./tests/integration
       - name: 检查格式
         run: test -z "$(gofmt -l cmd internal migrations tests api/sensor)"
       - name: Linux 编译
@@ -70,4 +75,5 @@ jobs:
       - run: pnpm --dir prototype check:collector
       - run: pnpm --dir prototype check:theme
       - run: pnpm --dir prototype build
-      - run: node prototype/scripts/check-screenshots.mjs
+      - name: 原型截图完整性（源码变化只提示过期，不阻断）
+        run: node prototype/scripts/check-screenshots.mjs

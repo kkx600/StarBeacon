@@ -15,7 +15,7 @@ import zipfile
 
 import remote_acceptance as acceptance
 import remote_review as review_tools
-from check_package_acceptance import verify_archive
+from check_release import verify_archive
 from package_linux import ROLES
 
 SCOPES = {

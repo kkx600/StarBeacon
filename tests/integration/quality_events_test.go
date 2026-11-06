@@ -22,7 +22,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/bus"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/detectionquality"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -88,8 +87,7 @@ func verifyNativeQualityEvent(t *testing.T, ctx context.Context, api *liveHTTP, 
 	if response.StatusCode != 200 {
 		t.Fatal("质量观测流量未成功响应")
 	}
-	index, err := contract.IndexName(id.TenantID, "context", started.Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "context", started.UTC().Format("2006-01-02"))
 	params := url.Values{"start": {started.Add(-time.Minute).Format(time.RFC3339Nano)}, "end": {started.Add(time.Minute).Format(time.RFC3339Nano)}, "sensor_id": {id.SensorID}, "registration_id": {id.RegistrationID}}
 	var found qualityevent.Event
 	eventually(t, ctx, "真实 noalert 原生统计到持久质量历史", func() bool {
@@ -295,15 +293,11 @@ func TestQualityEventsDurableHeartbeatIndexingNotificationsAndIsolation(t *testi
 	if !errors.Is(db.FinishQuality(ctx, lease, true), store.ErrConflict) {
 		t.Fatal("重复完成已领取事件")
 	}
-	index, err := contract.IndexName(tenant, "context", event.CreatedAt.UTC().Format("2006-01-02"))
-	require(t, err)
-	defer func() {
-		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		response.Body.Close()
-	}()
+	index := sharedEventIndex(t, "context", event.CreatedAt.UTC().Format("2006-01-02"))
+	if lease.Index != index {
+		t.Fatal("质量待办未冻结共享索引", lease.Index)
+	}
+	defer deleteTenantEvents(t, es, tenant)
 	response, err := es.API.Indices.Refresh(es.API.Indices.Refresh.WithContext(ctx), es.API.Indices.Refresh.WithIndex(index))
 	require(t, err)
 	response.Body.Close()

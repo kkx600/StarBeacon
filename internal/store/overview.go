@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/analytics"
+	"github.com/kkx600/StarBeacon/internal/contract"
 )
 
 func (p *Postgres) OverviewInventory(ctx context.Context, tenant string) (analytics.Inventory, error) {
@@ -31,7 +32,7 @@ func (s *Elasticsearch) OverviewEvents(ctx context.Context, tenant string, w ana
 	if err != nil {
 		return analytics.Events{}, err
 	}
-	res, err := s.API.Search(s.API.Search.WithIndex("sb-alerts-"+tenant+"-*"), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(true), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("alerts", tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(true), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
 	var raw json.RawMessage
 	if err = response(res, err, &raw); err != nil {
 		return analytics.Events{}, err

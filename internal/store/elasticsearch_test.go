@@ -64,8 +64,8 @@ func TestSearchBoundsPreventUnboundedRequests(t *testing.T) {
 }
 func TestSearchPinsTenantAndSearchesTransport(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/sb-alerts-tenant_a-*/_search" {
-			t.Errorf("索引范围未固定租户：%s", r.URL.Path)
+		if r.URL.Path != "/sb-v2-alerts-*,sb-alerts-tenant_a-*,-sb-alerts-tenant_a-*-*/_search" {
+			t.Errorf("索引范围未限定共享索引与本租户旧版索引：%s", r.URL.Path)
 		}
 		var body map[string]any
 		if e := json.NewDecoder(r.Body).Decode(&body); e != nil {

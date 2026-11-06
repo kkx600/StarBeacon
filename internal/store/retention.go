@@ -113,18 +113,26 @@ func (p *Postgres) SaveRetention(ctx context.Context, user model.Principal, inpu
 	return result, duplicate, err
 }
 
-// 新索引固化策略后不随配置变更漂移；既有对象的期限由首次创建时的事实决定。
+func eventCategory(stream string) (string, error) {
+	switch stream {
+	case "alerts":
+		return "alerts", nil
+	case "logs":
+		return "security_logs", nil
+	case "context":
+		return "network", nil
+	}
+	return "", errors.New("事件流无效")
+}
+
+// EventRetention 只服务升级前的租户日索引：新索引固化策略后不随配置变更漂移。
 func (p *Postgres) EventRetention(ctx context.Context, tenant, stream string) (int, error) {
-	category := "network"
-	if stream == "alerts" {
-		category = "alerts"
-	} else if stream == "logs" {
-		category = "security_logs"
-	} else if stream != "context" {
-		return 0, errors.New("事件流无效")
+	category, err := eventCategory(stream)
+	if err != nil {
+		return 0, err
 	}
 	days := retention.DefaultDays
-	err := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
+	err = p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, "SELECT days FROM retention_policies WHERE tenant_id=$1 AND category=$2", tenant, category).Scan(&days)
 	})
 	return days, err

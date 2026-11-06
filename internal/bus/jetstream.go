@@ -19,9 +19,11 @@ const Logs = "SB_LOGS"
 const Quarantine = "SB_QUARANTINE"
 const Indexed = "SB_INDEXED"
 
+// Envelope 的 Index 为路由冻结的共享索引；升级前已入队的消息没有该字段，继续写入租户日索引。
 type Envelope struct {
 	TenantID   string    `json:"tenant_id"`
 	Partition  string    `json:"partition"`
+	Index      string    `json:"index,omitempty"`
 	ReceivedAt time.Time `json:"received_at"`
 	Batch      []byte    `json:"batch"`
 }

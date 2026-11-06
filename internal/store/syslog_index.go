@@ -116,7 +116,8 @@ func (s *Elasticsearch) BulkLogs(ctx context.Context, index string, items []sysl
 }
 
 // 同名既有索引必须具有固定映射和有效生命周期，禁止在未知索引上继续写入。
-func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string) error {
+// origin 为分区起点；expected 为 0 时接受旧版索引首次创建时固化的任意有效期限。
+func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string, origin time.Time, expected int) error {
 	var body map[string]struct {
 		Mappings json.RawMessage `json:"mappings"`
 		Settings struct {
@@ -133,8 +134,8 @@ func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string) error 
 		return err
 	}
 	v, ok := body[index]
-	var actual, expected any
-	if !ok || len(body) != 1 || json.Unmarshal(v.Mappings, &actual) != nil || json.Unmarshal([]byte(logMapping), &expected) != nil || !reflect.DeepEqual(actual, expected) {
+	var actual, want any
+	if !ok || len(body) != 1 || json.Unmarshal(v.Mappings, &actual) != nil || json.Unmarshal([]byte(logMapping), &want) != nil || !reflect.DeepEqual(actual, want) {
 		return fmt.Errorf("日志索引映射无法核对")
 	}
 	name := v.Settings.Index.Lifecycle.Name
@@ -146,9 +147,8 @@ func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string) error 
 			return fmt.Errorf("日志生命周期无法核对")
 		}
 	}
-	origin, originErr := v.Settings.Index.Lifecycle.OriginationDate.Int64()
-	day, dateErr := time.Parse("2006.01.02", index[len(index)-10:])
-	if days < 1 || days > 3650 || originErr != nil || dateErr != nil || origin != day.UnixMilli() {
+	actualOrigin, originErr := v.Settings.Index.Lifecycle.OriginationDate.Int64()
+	if days < 1 || days > maxPolicyDays || expected != 0 && days != expected || originErr != nil || actualOrigin != origin.UnixMilli() {
 		return fmt.Errorf("日志生命周期无法核对")
 	}
 	ready, err := s.retentionPolicyExists(ctx, days)

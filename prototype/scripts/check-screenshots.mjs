@@ -1,7 +1,6 @@
 import {readFile,writeFile,readdir} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
 import {renderRoots,digestRenderTree} from './gallery-inputs.mjs'
-
 const root=new URL('../public/screenshots/',import.meta.url)
 const themeInputs=['prototype/src/theme.ts','prototype/src/styles.css','web/packages/shared/src/theme.ts','web/packages/shared/src/controls.css']
 const layoutInputs=['web/packages/shared/src/navigation.json','web/packages/shared/src/navigation.ts','web/platform/src/navigation.ts','web/platform/src/App.vue','web/packages/shared/src/components/AppShell.vue','web/packages/shared/src/components/NavigationMenu.vue','prototype/src/data/navigation.ts','prototype/src/layouts/ConsoleLayout.vue','prototype/src/router.ts','prototype/src/views/PageView.vue','web/platform/src/features/settings/SettingsWorkspace.vue']
@@ -17,11 +16,15 @@ const log=JSON.parse(await readFile(new URL('capture-log.json',root),'utf8'))
 const expected=[...manifest.pages.flatMap(p=>p.states.map(s=>s.image)),...(manifest.collector?.pages??[]).flatMap(p=>p.states.map(s=>s.image)),...[...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>`boundary/${p.id}.jpg`)]
 const expectedPages=new Map([...manifest.pages,...(manifest.collector?.pages??[])].flatMap(p=>p.states.map(s=>[s.image,{page:p.id,state:s.state}])))
 const expectedBoundaries=new Map([...manifest.boundary,...(manifest.collector?.boundary??[])].map(p=>[`boundary/${p.id}.jpg`,p.url]))
+// 默认只核对图库完整性：截图是设计参考，界面源码变化后图片会过期，但不阻断工程检查。
+// --strict 要求每张截图与当前主题、导航布局和界面源码一致；--refresh 重写来源清单，同样必须严格一致，
+// 不允许只刷新摘要就把旧图登记为当前截图。
 const refresh=process.argv.includes('--refresh')
+const strict=refresh||process.argv.includes('--strict')
 const prior=refresh?null:JSON.parse(await readFile(new URL('provenance.json',root),'utf8'))
 const entries=[]
 const failures=[]
-
+const stale={files:0,theme:0,layout:0,render:0}
 // 只读取 JPEG 头与文件校验值，不改写或处理图片像素。
 function dimensions(bytes){
   if(bytes[0]!==0xff||bytes[1]!==0xd8)throw new Error('文件不是 JPEG')
@@ -41,7 +44,21 @@ function dimensions(bytes){
   }
   throw new Error('JPEG 缺少图像尺寸')
 }
-
+async function fileSha256(path){
+  try{return createHash('sha256').update(await readFile(new URL('../../'+path,import.meta.url))).digest('hex')}catch(error){if(error.code==='ENOENT')return '';throw error}
+}
+// 返回截图来源与当前源码的差异；路径不安全属于来源记录损坏，在任何模式下都拒绝。
+async function sourceDrift(source){
+  const drift=[]
+  if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)drift.push(['theme','截图主题与当前全局主题不同，需要从浏览器重新捕获'])
+  if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)drift.push(['layout','截图导航或布局与当前源码不同，需要从浏览器重新捕获'])
+  if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)drift.push(['render','截图界面源码与当前版本不同，需要从浏览器重新捕获'])
+  for(const input of source.renderInputs??[]){
+    if(typeof input.path!=='string'||input.path.split('/').includes('..')||! /^(prototype\/src|web\/(platform|collector|packages\/shared)\/src)\/[A-Za-z0-9_./-]+$/.test(input.path))throw new Error('截图组件来源路径无效')
+    if(await fileSha256(input.path)!==input.sha256)drift.push(['render','截图组件与当前源码不同，需要从浏览器重新捕获'])
+  }
+  return drift
+}
 for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
   try{
     const source=log.entries.findLast(e=>e.file===file)
@@ -50,13 +67,8 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
     if(target&&(source.viewport?.page!==target.page||source.viewport?.state!==target.state))throw new Error('截图可见页面或状态与页面目录不同')
     const boundary=expectedBoundaries.get(file)
     if(boundary&&(source.viewport?.page!=null||new URL(source.url).pathname!==new URL(boundary,'http://localhost').pathname))throw new Error('边界截图仍停留在业务页面或错误路由')
-    if(JSON.stringify(source.themeInputs)!==JSON.stringify(themeInputs)||source.themeDigestAlgorithm!=='sha256-path-nul-content-nul'||source.themeSha256!==themeSha256)throw new Error('截图主题与当前全局主题不同，需要从浏览器重新捕获')
-    if(JSON.stringify(source.layoutInputs)!==JSON.stringify(layoutInputs)||source.layoutDigestAlgorithm!=='sha256-path-nul-content-nul'||source.layoutSha256!==layoutSha256)throw new Error('截图导航或布局与当前源码不同，需要从浏览器重新捕获')
-    if(JSON.stringify(source.renderRoots)!==JSON.stringify(renderRoots)||source.renderTreeSha256!==renderTree.sha256)throw new Error('截图界面源码与当前版本不同，需要从浏览器重新捕获')
-    for(const input of source.renderInputs??[]){
-      if(typeof input.path!=='string'||input.path.split('/').includes('..')||! /^(prototype\/src|web\/(platform|collector|packages\/shared)\/src)\/[A-Za-z0-9_./-]+$/.test(input.path))throw new Error('截图组件来源路径无效')
-      if(createHash('sha256').update(await readFile(new URL('../../'+input.path,import.meta.url))).digest('hex')!==input.sha256)throw new Error('截图组件与当前源码不同，需要从浏览器重新捕获')
-    }
+    const drift=await sourceDrift(source)
+    if(strict&&drift.length)throw new Error(drift[0][1])
     const bytes=await readFile(new URL(file,root))
     const size=dimensions(bytes)
     if(!size.width||!size.height||bytes.length<1000)throw new Error('图像为空或尺寸无效')
@@ -66,9 +78,12 @@ for(const file of [...new Set([...expected,...log.entries.map(e=>e.file)])]){
     const sha256=createHash('sha256').update(bytes).digest('hex')
     if(!refresh&&prior?.entries.find(e=>e.file===file)?.sha256!==sha256)throw new Error('文件校验值与来源清单不一致')
     entries.push({...source,bytes:bytes.length,image:size,sha256})
+    if(drift.length){
+      stale.files++
+      for(const kind of new Set(drift.map(([kind])=>kind)))stale[kind]++
+    }
   }catch(error){failures.push({file,error:error.message})}
 }
-
 if(log.errors.length)failures.push(...log.errors)
 const allFiles=await readdir(root,{recursive:true})
 for(const file of allFiles.filter(file=>/\.(?:jpg|jpeg|png|webp)$/i.test(file)))if(!entries.some(entry=>entry.file===file))failures.push({file,error:'图片没有对应来源记录'})
@@ -78,4 +93,8 @@ if(refresh){
   await writeFile(new URL('provenance-manifest.js',root),`window.StarBeaconGalleryVersions = ${JSON.stringify({renderTreeSha256:renderTree.sha256,images:Object.fromEntries(entries.map(entry=>[entry.file,entry.sha256]))})};\n`)
   await writeFile(new URL('supplemental-manifest.js',root),`window.StarBeaconSupplemental = ${JSON.stringify(entries.filter(entry=>entry.state==='supplemental').map(({file,title})=>({file,title})))};\n`)
 }
-console.log(`图片核对通过：${expected.length} 张基础状态图，${entries.length-expected.length} 张补充图；JPEG 尺寸、页面横向边界、浏览器来源及 SHA-256 均已核对。`)
+console.log(`图片核对通过：${expected.length} 张基础状态图，${entries.length-expected.length} 张补充图；JPEG 尺寸、页面横向边界、浏览器来源及 SHA-256 均已核对${strict?'，且全部与当前主题、导航布局和界面源码一致':''}。`)
+if(stale.files){
+  const notice=`${stale.files} 张截图早于当前源码（主题 ${stale.theme}、导航布局 ${stale.layout}、界面源码 ${stale.render}），只作设计参考，不代表当前界面；需要证明一致时使用 --strict，从浏览器重新捕获后使用 --refresh。`
+  console.warn(process.env.GITHUB_ACTIONS==='true'?`::warning title=原型截图早于当前源码::${notice}`:notice)
+}

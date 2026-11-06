@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
@@ -167,13 +166,4 @@ func ValidateAck(b *sensorv1.EventBatch, a *sensorv1.IngestAck) error {
 		}
 	}
 	return nil
-}
-func IndexName(tenant, stream, partition string) (string, error) {
-	if !ValidID(tenant) || !ValidStream(stream) {
-		return "", fmt.Errorf("索引身份不合法")
-	}
-	if _, err := time.Parse("2006-01-02", partition); err != nil {
-		return "", err
-	}
-	return "sb-" + stream + "-" + tenant + "-" + strings.ReplaceAll(partition, "-", "."), nil
 }

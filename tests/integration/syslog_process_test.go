@@ -14,10 +14,12 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/config"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/syslogdata"
 	"github.com/kkx600/StarBeacon/internal/transport"
@@ -88,7 +90,9 @@ func (p *nativeSyslogProbe) verify(t *testing.T, ctx context.Context, platform, 
 	// 先观察真实入库数量，再以平台 API 核对内容，避免把初始化中的分片当作检索契约失败。
 	unavailable := 0
 	eventually(t, ctx, "原生 Syslog 索引实际可读", func() bool {
-		response, err := es.API.Count(es.API.Count.WithIndex("sb-logs-"+tenant+"-*"), es.API.Count.WithContext(ctx))
+		// 新日志写入全部租户共用的日志索引，按租户条件计数，同时覆盖升级前的租户日索引。
+		query := strings.NewReader(`{"query":{"term":{"tenant_id":"` + tenant + `"}}}`)
+		response, err := es.API.Count(es.API.Count.WithIndex(contract.SearchIndices("logs", tenant)...), es.API.Count.WithBody(query), es.API.Count.WithContext(ctx))
 		if err != nil {
 			unavailable++
 			return false

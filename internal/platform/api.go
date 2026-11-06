@@ -37,6 +37,8 @@ type API struct {
 	Samples        replay.Storage
 	Packets        packetarchive.ObjectStorage
 	PacketStaging  string
+	PacketBackend  string
+	PacketPool     packetarchive.Pool
 	SampleQuota    int64
 	Vault          *secrets.Vault
 	Outbound       outbound.Policy
@@ -202,5 +204,14 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 			states[name] = "unavailable"
 		}
 	}
-	httpapi.JSON(w, 200, map[string]any{"services": states, "observed_at": time.Now().UTC(), "runtime": runtime})
+	body := map[string]any{"services": states, "observed_at": time.Now().UTC(), "runtime": runtime}
+	// 原包存储由全部租户共享：容量为部署存储，原包数量与最早时间只统计当前租户。
+	if a.Packets != nil && a.DB != nil {
+		if storage, err := a.DB.PacketStorageStatus(ctx, httpapi.Principal(r), a.PacketBackend, a.Packets, a.PacketPool); err == nil {
+			body["packet_storage"] = storage
+		} else {
+			states["packet_storage"] = "unavailable"
+		}
+	}
+	httpapi.JSON(w, 200, body)
 }

@@ -51,6 +51,28 @@ test('当前主题的真实浏览器来源与 JPEG 可以通过严格检查', as
   const result = check()
   assert.equal(result.status, 0, result.stderr)
   assert.match(result.stdout, /1 张基础状态图，0 张补充图/)
+  assert.doesNotMatch(result.stderr, /早于当前源码/)
+  const strict = check('--strict')
+  assert.equal(strict.status, 0, strict.stderr)
+  assert.match(strict.stdout, /全部与当前主题、导航布局和界面源码一致/)
+}))
+test('默认检查只核对图库完整性，源码变化后提示截图过期但不阻断', async () => fixture(async ({root, check}) => {
+  const theme = join(root, 'web/packages/shared/src/theme.ts')
+  await writeFile(theme, (await readFile(theme, 'utf8')).replace('#5d87ff', '#5d87fe'))
+  await writeFile(join(root, 'web/platform/src/unrecorded-component.ts'), 'export const label="当前界面"\n')
+  const result = check()
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /图片核对通过/)
+  assert.match(result.stderr, /1 张截图早于当前源码（主题 1、导航布局 0、界面源码 1）/)
+  const strict = check('--strict')
+  assert.equal(strict.status, 1)
+  assert.match(strict.stderr, /截图主题与当前全局主题不同/)
+}))
+test('在 GitHub Actions 中以警告注解提示过期截图', async () => fixture(async ({root, check}) => {
+  await appendFile(join(root, 'web/packages/shared/src/navigation.json'), '\n')
+  const result = spawnSync(process.execPath, [join(root, 'prototype/scripts/check-screenshots.mjs')], {encoding: 'utf8', timeout: 15000, env: {...process.env, GITHUB_ACTIONS: 'true'}})
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stderr, /^::warning title=原型截图早于当前源码::1 张截图早于当前源码（主题 0、导航布局 1、界面源码 1）/m)
 }))
 
 test('主题改变后，即使刷新清单也不能把旧图标记为当前截图', async () => fixture(async ({root, check}) => {

@@ -15,7 +15,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
-func recordQuality(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity, r *detectionquality.Report) error {
+func recordQuality(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity, r *detectionquality.Report, period contract.IndexPeriod) error {
 	if r == nil {
 		return nil
 	}
@@ -78,7 +78,12 @@ func recordQuality(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity, 
 		if err != nil {
 			return err
 		}
-		if _, err = tx.Exec(ctx, `INSERT INTO sensor_quality_outbox(tenant_id,id,sensor_id,registration_id,partition_day,document,state,created_at,expires_at) VALUES($1,$2,$3,$4,($5::timestamptz AT TIME ZONE 'UTC')::date,$6,'pending',$5,$5::timestamptz+make_interval(days=>$7)) ON CONFLICT DO NOTHING`, id.TenantID, e.ID, id.SensorID, id.RegistrationID, now, encoded, days); err != nil {
+		// 待办创建时冻结共享索引，领取重试不随后续保留期或分区配置漂移。
+		index, err := contract.EventIndexName("context", days, period, now.UTC().Format("2006-01-02"))
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, `INSERT INTO sensor_quality_outbox(tenant_id,id,sensor_id,registration_id,partition_day,document,state,created_at,expires_at,index_name) VALUES($1,$2,$3,$4,($5::timestamptz AT TIME ZONE 'UTC')::date,$6,'pending',$5,$5::timestamptz+make_interval(days=>$7),$8) ON CONFLICT DO NOTHING`, id.TenantID, e.ID, id.SensorID, id.RegistrationID, now, encoded, days, index); err != nil {
 			return err
 		}
 		raw, _ = json.Marshal(signal)
@@ -92,10 +97,11 @@ func recordQuality(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity, 
 	return err
 }
 
+// QualityLease 的 Index 为待办创建时冻结的共享索引；空值表示升级前写入的待办，沿用租户日索引。
 type QualityLease struct {
-	TenantID, ID, Token, Partition string
-	Document                       model.Alert
-	ExpiresAt                      time.Time
+	TenantID, ID, Token, Partition, Index string
+	Document                              model.Alert
+	ExpiresAt                             time.Time
 }
 
 func (p *Postgres) LeaseQuality(ctx context.Context, tenant string) (QualityLease, error) {
@@ -105,7 +111,7 @@ func (p *Postgres) LeaseQuality(ctx context.Context, tenant string) (QualityLeas
 		if _, err := tx.Exec(ctx, `WITH picked AS MATERIALIZED(SELECT id FROM sensor_quality_outbox WHERE tenant_id=$1 AND expires_at<=now() AND state IN('pending','leased') AND (lease_until IS NULL OR lease_until<=now()) ORDER BY expires_at,id LIMIT 20 FOR UPDATE SKIP LOCKED) UPDATE sensor_quality_outbox q SET state='expired',document=NULL,lease_token='',lease_until=NULL FROM picked WHERE q.tenant_id=$1 AND q.id=picked.id`, tenant); err != nil {
 			return err
 		}
-		err := tx.QueryRow(ctx, `WITH picked AS MATERIALIZED(SELECT id FROM sensor_quality_outbox WHERE tenant_id=$1 AND expires_at>now() AND next_at<=now() AND (state='pending' OR (state='leased' AND lease_until<=now())) ORDER BY next_at,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED) UPDATE sensor_quality_outbox q SET state='leased',lease_token=$2,lease_until=now()+interval '30 seconds',attempts=attempts+1 FROM picked WHERE q.tenant_id=$1 AND q.id=picked.id RETURNING q.id,q.partition_day::text,q.document,q.expires_at`, tenant, l.Token).Scan(&l.ID, &l.Partition, &raw, &l.ExpiresAt)
+		err := tx.QueryRow(ctx, `WITH picked AS MATERIALIZED(SELECT id FROM sensor_quality_outbox WHERE tenant_id=$1 AND expires_at>now() AND next_at<=now() AND (state='pending' OR (state='leased' AND lease_until<=now())) ORDER BY next_at,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED) UPDATE sensor_quality_outbox q SET state='leased',lease_token=$2,lease_until=now()+interval '30 seconds',attempts=attempts+1 FROM picked WHERE q.tenant_id=$1 AND q.id=picked.id RETURNING q.id,q.partition_day::text,q.document,q.expires_at,q.index_name`, tenant, l.Token).Scan(&l.ID, &l.Partition, &raw, &l.ExpiresAt, &l.Index)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}

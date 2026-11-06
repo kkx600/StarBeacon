@@ -146,16 +146,12 @@ func TestMTLSDurableIngestIndexReplayAndTenantIsolation(t *testing.T) {
 		defer cancel()
 		_ = alertStream.DeleteMsg(cleanup, message.Sequence)
 	}()
-	index, e := contract.IndexName(tenants[0], "alerts", route.Partition)
-	require(t, e)
-	defer func() {
-		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		res, e := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(cleanup))
-		if e == nil {
-			res.Body.Close()
-		}
-	}()
+	// 路由冻结共享索引，信封携带的索引必须与默认布局下的路由日一致。
+	index := sharedEventIndex(t, "alerts", route.Partition)
+	if envelope.Index != index {
+		t.Fatal("持久流未携带路由冻结的共享索引", envelope.Index)
+	}
+	defer deleteTenantEvents(t, es, tenants[0])
 	indexer := &worker.Indexer{Bus: queue, ES: es}
 	require(t, indexer.Process(ctx, message.Data))
 	require(t, indexer.Process(ctx, message.Data))

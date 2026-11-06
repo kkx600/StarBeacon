@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -61,7 +60,7 @@ func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, di
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	res, err := s.API.Search(s.API.Search.WithIndex("sb-alerts-"+tenant+"-*"), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("alerts", tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
 	if err := response(res, err, &result); err != nil {
 		return empty, err
 	}
@@ -75,11 +74,7 @@ func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, di
 		return empty, ErrAlertIdentity
 	}
 	hit := result.Hits.Items[0]
-	prefix := "sb-alerts-" + tenant + "-"
-	date := strings.TrimPrefix(hit.Index, prefix)
-	parsed, parseErr := time.Parse("2006.01.02", date)
-	index, indexErr := contract.IndexName(tenant, "alerts", parsed.Format("2006-01-02"))
-	if parseErr != nil || indexErr != nil || index != hit.Index || hit.ID != id || hit.Source.EventID != id || hit.Source.TenantID != tenant || hit.Source.RawSHA256 != digest || hit.Source.Event.Kind != "alert" || hit.Source.Event.Original != "" {
+	if !contract.IndexServes(hit.Index, "alerts", tenant) || hit.ID != id || hit.Source.EventID != id || hit.Source.TenantID != tenant || hit.Source.RawSHA256 != digest || hit.Source.Event.Kind != "alert" || hit.Source.Event.Original != "" {
 		return empty, ErrAlertIdentity
 	}
 	// 分区由平台路由分配，历史重放和延迟上报的事件时间可能早于索引日期。

@@ -12,6 +12,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/telemetry"
 	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
@@ -60,20 +61,14 @@ func packetSensor(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity) e
 	return err
 }
 
-func (p *Postgres) BeginPacketArchive(ctx context.Context, id transport.SensorIdentity, m packetarchive.Manifest, quota int64) (v PacketArchive, acquired bool, err error) {
+// BeginPacketArchive 登记原包上传。存储容量由全部租户共享，不按租户预占额度；空间由准入检查与全局回收维持。
+func (p *Postgres) BeginPacketArchive(ctx context.Context, id transport.SensorIdentity, m packetarchive.Manifest) (v PacketArchive, acquired bool, err error) {
 	raw, digest, err := m.JSON()
-	if err != nil || m.Capture.TenantID != id.TenantID || m.Capture.SensorID != id.SensorID || m.Capture.RegistrationID != id.RegistrationID || quota < 1 || m.Capture.EndedAt.After(time.Now().Add(5*time.Minute)) {
+	if err != nil || m.Capture.TenantID != id.TenantID || m.Capture.SensorID != id.SensorID || m.Capture.RegistrationID != id.RegistrationID || m.Capture.EndedAt.After(time.Now().Add(5*time.Minute)) {
 		return v, false, packetarchive.ErrIntegrity
 	}
 	err = p.TenantTx(ctx, id.TenantID, func(tx pgx.Tx) error {
 		if e := packetSensor(ctx, tx, id); e != nil {
-			return e
-		}
-		if _, e := tx.Exec(ctx, `INSERT INTO packet_archive_capacity(tenant_id) VALUES($1) ON CONFLICT DO NOTHING`, id.TenantID); e != nil {
-			return e
-		}
-		var used int64
-		if e := tx.QueryRow(ctx, `SELECT reserved_bytes FROM packet_archive_capacity WHERE tenant_id=$1 FOR UPDATE`, id.TenantID).Scan(&used); e != nil {
 			return e
 		}
 		existing, e := scanPacketArchive(tx.QueryRow(ctx, `SELECT `+packetArchiveColumns+` FROM packet_archives WHERE tenant_id=$1 AND id=$2 FOR UPDATE`, id.TenantID, m.Capture.ID))
@@ -100,14 +95,13 @@ func (p *Postgres) BeginPacketArchive(ctx context.Context, id transport.SensorId
 			if !errors.Is(e, pgx.ErrNoRows) {
 				return e
 			}
-			if used > quota || m.Encoding.StoredBytes > quota-used {
-				return packetarchive.ErrQuota
-			}
-			if _, e = tx.Exec(ctx, `INSERT INTO packet_archives(tenant_id,id,sensor_id,registration_id,manifest,manifest_sha256,object_key,stored_bytes,state,lease_token,lease_until,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'uploading',$9,now()+interval '3 minutes',now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='pcap'),180)))`, id.TenantID, m.Capture.ID, id.SensorID, id.RegistrationID, raw, digest, packetarchive.ObjectKey(m), m.Encoding.StoredBytes, lease); e != nil {
+			// 同一原包的并发首次登记只有一方成功，另一方按传输进行中返回并稍后重试。
+			tag, e := tx.Exec(ctx, `INSERT INTO packet_archives(tenant_id,id,sensor_id,registration_id,manifest,manifest_sha256,object_key,stored_bytes,state,lease_token,lease_until,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'uploading',$9,now()+interval '3 minutes',now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='pcap'),180))) ON CONFLICT(tenant_id,id) DO NOTHING`, id.TenantID, m.Capture.ID, id.SensorID, id.RegistrationID, raw, digest, packetarchive.ObjectKey(m), m.Encoding.StoredBytes, lease)
+			if e != nil {
 				return e
 			}
-			if _, e = tx.Exec(ctx, `UPDATE packet_archive_capacity SET reserved_bytes=reserved_bytes+$2 WHERE tenant_id=$1`, id.TenantID, m.Encoding.StoredBytes); e != nil {
-				return e
+			if tag.RowsAffected() != 1 {
+				return ErrPacketBusy
 			}
 		}
 		v, e = scanPacketArchive(tx.QueryRow(ctx, `SELECT `+packetArchiveColumns+` FROM packet_archives WHERE tenant_id=$1 AND id=$2`, id.TenantID, m.Capture.ID))
@@ -309,30 +303,42 @@ func (p *Postgres) AuditPacketSessionExport(ctx context.Context, u model.Princip
 	})
 }
 
-// 到期清理先持久标记，再删除指定版本，最终提交目录和额度释放；失败保持占用并可重试。
-func (p *Postgres) SweepPacketArchives(ctx context.Context, objects packetarchive.ObjectStorage) error {
+// SweepPacketArchives 先按共享存储容量把全局最早的原包提前到期，再删除全部到期原包。
+// 删除先持久标记，再删除指定版本，最终提交目录；失败保留目录并在后续轮次重试。
+func (p *Postgres) SweepPacketArchives(ctx context.Context, objects packetarchive.ObjectStorage, pool packetarchive.Pool) (PacketSweep, error) {
+	var result PacketSweep
 	if objects == nil {
-		return packetarchive.ErrIntegrity
+		return result, packetarchive.ErrIntegrity
 	}
 	if !p.packetSweepMu.TryLock() {
-		return ErrPacketBusy
+		return result, ErrPacketBusy
 	}
 	defer p.packetSweepMu.Unlock()
-	tenants, err := p.sampleCleanupTenants(ctx, p.packetSweepAfter)
+	tenants, err := p.packetTenants(ctx)
 	if err != nil {
-		return err
-	}
-	if len(tenants) == 0 && p.packetSweepAfter != "" {
-		p.packetSweepAfter = ""
-		tenants, err = p.sampleCleanupTenants(ctx, "")
-		if err != nil {
-			return err
-		}
+		return result, err
 	}
 	var all error
-	for _, tenant := range tenants {
+	result.Evicted, result.EvictedBytes, result.More, err = p.reclaimPacketStorage(ctx, tenants, objects, pool)
+	if err != nil {
+		all = errors.Join(all, err)
+	}
+	// 从上轮结束的租户之后继续，期限截止时各租户轮流获得删除机会。
+	start := 0
+	for i, tenant := range tenants {
+		if tenant > p.packetSweepAfter {
+			start = i
+			break
+		}
+	}
+	for _, tenant := range slices.Concat(tenants[start:], tenants[:start]) {
+		if ctx.Err() != nil {
+			result.More = true
+			break
+		}
 		var after packetCursor
-		for i := 0; i < 4 && ctx.Err() == nil; i++ {
+		attempts := 0
+		for ; attempts < packetSweepBatch && ctx.Err() == nil; attempts++ {
 			var row PacketArchive
 			err = p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
 				var e error
@@ -395,24 +401,23 @@ func (p *Postgres) SweepPacketArchives(ctx context.Context, objects packetarchiv
 				if tag.RowsAffected() != 1 {
 					return ErrConflict
 				}
-				tag, e = tx.Exec(ctx, `UPDATE packet_archive_capacity SET reserved_bytes=reserved_bytes-$2 WHERE tenant_id=$1 AND reserved_bytes>=$2`, tenant, row.Manifest.Encoding.StoredBytes)
-				if e != nil {
-					return e
-				}
-				if tag.RowsAffected() != 1 {
-					return packetarchive.ErrIntegrity
-				}
 				return nil
 			})
 			if err != nil {
 				all = errors.Join(all, err)
 				break
 			}
+			result.Deleted++
+			result.DeletedBytes += row.Manifest.Encoding.StoredBytes
+			telemetry.PacketDeleted.Inc()
+		}
+		if attempts == packetSweepBatch {
+			result.More = true
 		}
 		p.packetSweepAfter = tenant
 	}
 	if ctx.Err() != nil {
-		return errors.Join(all, ctx.Err())
+		return result, errors.Join(all, ctx.Err())
 	}
-	return all
+	return result, all
 }

@@ -96,6 +96,14 @@ func TestRoleDefaultsAndConfigurationFailureBoundaries(t *testing.T) {
 		{"missing_es_key", "platform", "ES_API_KEY", "", "API Key", true},
 		{"worker_certificate", "worker", "TLS_KEY", "", "证书和私钥", true},
 		{"partial_mcp", "platform", "MCP_ISSUER", "https://idp.example", "MCP", false},
+		{"index_period_invalid", "worker", "ES_INDEX_PERIOD", "year", "索引布局", false},
+		{"index_period_unknown_stream", "ingest", "ES_INDEX_PERIOD", "files=day", "索引布局", false},
+		{"index_shards_invalid", "ingest", "ES_INDEX_SHARDS", "0", "索引布局", false},
+		{"index_replicas_invalid", "platform", "ES_REPLICAS", "x", "SB_ES_REPLICAS", false},
+		{"index_replicas_large", "platform", "ES_REPLICAS", "6", "索引布局", false},
+		{"packet_free_percent", "platform", "PACKET_FREE_SPACE", "60%", "SB_PACKET_FREE_SPACE", false},
+		{"packet_free_invalid", "platform", "PACKET_FREE_SPACE", "lots", "SB_PACKET_FREE_SPACE", false},
+		{"packet_pool_small", "platform", "PACKET_POOL_BYTES", "1MiB", "SB_PACKET_POOL_BYTES", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -125,4 +133,39 @@ func TestRoleDefaultsAndConfigurationFailureBoundaries(t *testing.T) {
 			t.Fatal("生产 S3 未启用 TLS 仍启动")
 		}
 	})
+}
+
+func TestSharedStorageDefaultsAndOverrides(t *testing.T) {
+	completeDevelopment(t)
+	c, err := Load("worker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.ESIndex.Replicas != 0 || c.ESIndex.For("alerts").Period != "week" || c.ESIndex.For("context").Period != "day" || c.PacketFreePercent != 5 || c.PacketFreeBytes != 0 || c.PacketPoolBytes != 0 {
+		t.Fatalf("开发默认布局或原包回收阈值错误：%+v %d %d %d", c.ESIndex, c.PacketFreePercent, c.PacketFreeBytes, c.PacketPoolBytes)
+	}
+	t.Setenv("SB_ES_INDEX_PERIOD", "alerts=day")
+	t.Setenv("SB_ES_INDEX_SHARDS", "context=6")
+	t.Setenv("SB_PACKET_FREE_SPACE", "200GiB")
+	t.Setenv("SB_PACKET_POOL_BYTES", "2TiB")
+	if c, err = Load("platform"); err != nil {
+		t.Fatal(err)
+	}
+	if c.ESIndex.For("alerts").Period != "day" || c.ESIndex.For("context").Shards != 6 || c.PacketFreeBytes != 200<<30 || c.PacketFreePercent != 0 || c.PacketPoolBytes != 2<<40 {
+		t.Fatalf("显式配置未生效：%+v %d %d", c.ESIndex, c.PacketFreeBytes, c.PacketPoolBytes)
+	}
+	t.Setenv("SB_PACKET_FREE_SPACE", "0")
+	if c, err = Load("platform"); err != nil || c.PacketFreeBytes != 0 || c.PacketFreePercent != 0 {
+		t.Fatal("0 未关闭空间回收", err)
+	}
+	completeProduction(t)
+	for k, v := range map[string]string{"REPLAY_BACKEND": "s3", "REPLAY_S3_ENDPOINT": "objects.example", "REPLAY_S3_BUCKET": "samples", "REPLAY_S3_ACCESS_KEY": "access-only", "REPLAY_S3_SECRET_KEY": "secret-only", "PACKET_BACKEND": "filesystem", "PACKET_DIR": "/var/lib/starbeacon/packets"} {
+		t.Setenv("SB_"+k, v)
+	}
+	if c, err = Load("platform"); err != nil {
+		t.Fatal("私有化生产部署应允许使用本机或挂载磁盘保存原包", err)
+	}
+	if c.ESIndex.Replicas != 1 || c.PacketBackend != "filesystem" {
+		t.Fatalf("生产默认副本或原包后端错误：%+v %s", c.ESIndex, c.PacketBackend)
+	}
 }

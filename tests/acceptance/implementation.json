@@ -116,7 +116,9 @@
         "internal/normalize/eve.go",
         "internal/store/elasticsearch.go",
         "internal/worker/indexer.go",
-        "internal/agent/capture_rotation.go"
+        "internal/agent/capture_rotation.go",
+        "internal/contract/index.go",
+        "migrations/00053_shared_event_indices.sql"
       ],
       "pages": [],
       "tests": [
@@ -134,9 +136,12 @@
         "internal/agent/capture_rotation_test.go",
         "tests/integration/capture_live_test.go",
         "internal/worker/indexer_test.go",
-        "tests/integration/indexer_startup_test.go"
+        "tests/integration/indexer_startup_test.go",
+        "internal/contract/index_test.go",
+        "internal/store/shared_index_test.go",
+        "tests/integration/event_index_test.go"
       ],
-      "boundary": "实际捕获或已有 EVE 文件进入 WAL、mTLS、持久队列、幂等 ES 与隔离记录。托管模式使用私有 EVE 和持久轮转记录，核对实际写端关闭、旧来源全部进入持久队列及后继断点提交后才回收；异常和暂存超额时停止检测，不清空待传队列。连续 PCAP 原包归档通过独立传输链路实现，详见原包捕获与归档；尚无多源接入或检测覆盖推断。 两个消费者都准备完成后才开始取数，第二条流启动失败不遗留第一条流的后台消费。"
+      "boundary": "实际捕获或已有 EVE 文件进入 WAL、mTLS、持久队列、幂等 ES 与隔离记录。ES 按「数据流×保留期×UTC 周期」写入多租户共享索引，索引名在路由创建时固化，重试与重投沿用同一索引保证文档去重；查询强制租户条件，升级前的租户日索引继续可读。托管模式使用私有 EVE 和持久轮转记录，核对实际写端关闭、旧来源全部进入持久队列及后继断点提交后才回收；异常和暂存超额时停止检测，不清空待传队列。连续 PCAP 原包归档通过独立传输链路实现，详见原包捕获与归档；尚无多源接入或检测覆盖推断。 两个消费者都准备完成后才开始取数，第二条流启动失败不遗留第一条流的后台消费。"
     },
     {
       "id": "search",
@@ -506,7 +511,7 @@
         "tests/integration/incident_notes_test.go",
         "tests/integration/response_protection_test.go"
       ],
-      "boundary": "十一类策略默认 180 天，管理员预览、CAS／幂等发布与审计；仅影响未来对象，既有分区不调整。PG 历史与运行对象按固化期限有界回收，分类进度与删除同事务提交；当前版本、活动任务、未决规则安装与引用版本受保护。匿名登录审计使用独立维护作用域。文件流水线、规则历史清理、全域保全、存量重算、物理分区和备份销毁仍缺失。测试入口不代表新回收路径已验收，实际远程结果见工程实现与开发。 名单当前修订、未关闭事件的笔记及历史、未结束封禁任务的名单核对记录受独立保护；回收先删除符合期限的子记录，后续轮次再回收无引用父记录。"
+      "boundary": "十一类策略默认 180 天，管理员预览、CAS／幂等发布与审计；仅影响未来对象，既有索引不调整。PG 历史与运行对象按固化期限有界回收，分类进度与删除同事务提交；当前版本、活动任务、未决规则安装与引用版本受保护。匿名登录审计使用独立维护作用域。文件流水线、规则历史清理、全域保全、存量重算、物理分区和备份销毁仍缺失。测试入口不代表新回收路径已验收，实际远程结果见工程实现与开发。 名单当前修订、未关闭事件的笔记及历史、未结束封禁任务的名单核对记录受独立保护；回收先删除符合期限的子记录，后续轮次再回收无引用父记录。"
     },
     {
       "id": "delivery",
@@ -516,9 +521,8 @@
         "go.sum",
         "web/pnpm-lock.yaml",
         "Makefile",
-        "scripts/check_acceptance.py",
+        "scripts/check_release.py",
         "scripts/check_go_coverage.py",
-        "scripts/check_package_acceptance.py",
         "scripts/package_linux.py",
         "scripts/remote_acceptance.py",
         ".github/workflows/ci.yml",
@@ -531,8 +535,6 @@
         "licenses/go/report.tpl",
         "scripts/source_snapshot.py",
         "scripts/qualify_frontend.py",
-        "scripts/check_evidence_source.py",
-        ".github/workflows/acceptance.yml",
         "internal/collectorupdate/bundle.go",
         "internal/collectorupdate/manager.go",
         "internal/collectorupdate/runtime.go",
@@ -557,7 +559,6 @@
         "tests/quality/test_go_dependencies.py",
         "scripts/tests/test_source_snapshot.py",
         "scripts/tests/test_qualify_frontend.py",
-        "scripts/tests/test_evidence_source.py",
         "internal/collectorupdate/update_test.go",
         "internal/collectorupdate/runtime_test.go",
         "internal/collectorupdate/failure_test.go",
@@ -571,7 +572,7 @@
         "scripts/tests/test_remote_persistent_storage.py",
         "internal/collectorupdate/cleanup_linux_test.go"
       ],
-      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、完整产品验收工作流、当前发行包的完整远程端到端与正式发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核；正式验收入口仅接收本仓库 main 同一提交的成功工程运行制品，仍逐项核对 107 项真实断言，不自动补造完整业务验收。 现场部署管理员可通过独立 Go CLI 验签离线 Agent ZIP、按修订切换、失败恢复、显式历史回退与中断恢复；systemd 服务模板与 Docker 运行后端独立。仅检查兼容数据格式，保留 WAL 和身份，不修改管理网络、不升级系统镜像或检测引擎，不提供平台灰度或无损切换资格。 管理员维护回收提供默认预览和显式执行，按冻结期限分批回收历史记录与制品，保护当前／回退版本和未决责任，独立凭据支持删除中断后继续；没有来源的旧目录不删除。远程工程项目使用专有持久目录，拒绝链接、共享权限与同名接管；历史临时目录丢失不初始化替代身份。当前来源的远程资格须单独核验。"
+      "boundary": "精确版本、五个 Go 角色、两端构建、独立远程 Docker 测试与失败关闭门禁。后端基础及实际网卡测试核对同一源码摘要，要求原始日志无用例失败或跳过，全量 Go 语句及前端四项覆盖率达到 90%；该子门禁不替代 107 项产品需求验收。源码 a7544236 的实际 Linux UPX ZIP 已通过离线与真实网卡链路；两个独立构建的实际 ZIP 字节一致。项目、实际前端及 Go 依赖许可原文、MPL 编译源码和 Go 运行时许可入包；逐程序 CycloneDX 1.6 SBOM 与实际编译模块、Go 校验和及压缩程序摘要绑定，未知许可失败关闭。工程预览 v0.1.0-rc.3 已绑定干净提交 a665e6f，通过同提交工程检查、Linux UPX 打包、许可与 SBOM 核验以及发行附件下载后的 SHA-256 回验；该预览不是完整生产验收。生产同源 TLS、当前发行包的完整远程端到端与正式版本发布仍待完成。 前端工程证据包含固定算法、逐文件清单、真实命令、覆盖率与阶段后源码复核。推送 v* 标签后，release.yml 在同一运行内复用工程检查，构建两个 Linux amd64 UPX ZIP 并核对结构、许可与 SBOM，再发布 GitHub Release；标签须指向已合入 main 的提交，带后缀的标签为预发布。该流水线只证明工程检查与发行包结构，不代表 107 项产品需求或生产环境验收。 现场部署管理员可通过独立 Go CLI 验签离线 Agent ZIP、按修订切换、失败恢复、显式历史回退与中断恢复；systemd 服务模板与 Docker 运行后端独立。仅检查兼容数据格式，保留 WAL 和身份，不修改管理网络、不升级系统镜像或检测引擎，不提供平台灰度或无损切换资格。 管理员维护回收提供默认预览和显式执行，按冻结期限分批回收历史记录与制品，保护当前／回退版本和未决责任，独立凭据支持删除中断后继续；没有来源的旧目录不删除。远程工程项目使用专有持久目录，拒绝链接、共享权限与同名接管；历史临时目录丢失不初始化替代身份。当前来源的远程资格须单独核验。"
     },
     {
       "id": "overview",
@@ -787,7 +788,10 @@
         "internal/packetarchive/inspect.go",
         "internal/platform/packet_inspection.go",
         "web/packages/shared/src/packetInspection.ts",
-        "web/packages/shared/src/components/PacketInspector.vue"
+        "web/packages/shared/src/components/PacketInspector.vue",
+        "internal/packetarchive/pool.go",
+        "internal/store/packet_storage.go",
+        "migrations/00054_shared_packet_storage.sql"
       ],
       "pages": [
         "platform:/traffic?view=archives",
@@ -810,9 +814,11 @@
         "internal/packetarchive/session_boundaries_test.go",
         "internal/packetarchive/inspect_test.go",
         "internal/platform/packet_archives_test.go",
-        "web/tests/packet-inspection.test.ts"
+        "web/tests/packet-inspection.test.ts",
+        "internal/packetarchive/pool_test.go",
+        "tests/integration/packet_storage_test.go"
       ],
-      "boundary": "独立 AF_PACKET 原包捕获、无损 Zstandard 独立帧、精确摘要与 mTLS、不可变对象版本、私有暂存及租户容量、默认 180 天或自定义期限、确认后回收。本机与平台原包目录、详情、核验下载和访问审计。两端按实际捕获序号查看单个 Ethernet 帧：每次先完整核验归档，再由维护中的 gopacket 有界解码最多 16 层；显示实际 MAC/IP/端口/TCP 标志与序号、VLAN/ARP/ICMP/IPv6 分片字段、纳秒捕获时间、原始 HEX／UTF-8 与截断／卸载边界。发送前复核会话与管理员资格，审计失败不返回原字节。平台有界多切片会话导出：固定双方 IP/端口/MAC/VLAN，同注册/进程/配置，原始帧、纳秒时间和逐包来源映射；普通 TCP 握手、双向序号/冲突重传/FIN 核对，严格不足返回原因，快照须明确选择。不含完整协议索引、随机包索引、应用流重组、TLS 解密、校验和确认、分卷、TFO/同时打开/RST 接受资格、保全、生产对象存储、HA 和海量吞吐资格。官方 S3 SDK 的受控协议测试不代替真实存储验收，不授予发布资格。"
+      "boundary": "独立 AF_PACKET 原包捕获、无损 Zstandard 独立帧、精确摘要与 mTLS、不可变对象版本、私有暂存、全部租户共享的平台原包存储（不设租户额度，剩余空间低于阈值或总量超过可选上限时按全局最早归档回收，传输或导出中的原包跳过）、默认 180 天或自定义最长期限、确认后回收。本机与平台原包目录、详情、核验下载和访问审计。两端按实际捕获序号查看单个 Ethernet 帧：每次先完整核验归档，再由维护中的 gopacket 有界解码最多 16 层；显示实际 MAC/IP/端口/TCP 标志与序号、VLAN/ARP/ICMP/IPv6 分片字段、纳秒捕获时间、原始 HEX／UTF-8 与截断／卸载边界。发送前复核会话与管理员资格，审计失败不返回原字节。平台有界多切片会话导出：固定双方 IP/端口/MAC/VLAN，同注册/进程/配置，原始帧、纳秒时间和逐包来源映射；普通 TCP 握手、双向序号/冲突重传/FIN 核对，严格不足返回原因，快照须明确选择。不含完整协议索引、随机包索引、应用流重组、TLS 解密、校验和确认、分卷、TFO/同时打开/RST 接受资格、保全、生产对象存储、HA 和海量吞吐资格。官方 S3 SDK 的受控协议测试不代替真实存储验收，不授予发布资格。"
     },
     {
       "id": "incidents",
@@ -2805,7 +2811,7 @@
       "implemented": [
         "十一类策略默认 180 天；事件调查当前状态及未关闭历史受保护",
         "管理员分类策略页／影响预览／CAS／幂等发布与审计",
-        "按租户新建日期分区固定 ES ILM／既有分区不变",
+        "按数据流、保留期和 UTC 周期写入共享索引并固定 ES ILM／既有索引不变",
         "已接入类别新记录的到期字段／重放样本回收",
         "已固化期限的 PG 历史回收、持久分类进度、RLS 删除期限与当前／活动／引用保护",
         "名单当前修订、活动事件笔记与未结束封禁任务核对记录受保护，分类回收保留持久游标和父子引用。"
@@ -3150,6 +3156,6 @@
     "置信度校准、具体防火墙／EDR 的实际封禁效果及插件式认证未验收；通用 HTTP 限时租约链路单独核验。",
     "统计对话、周期报告、告警模型研判、AI 规则生成、九个 MCP 只读工具及受限元数据资源、调查笔记和保护名单已有工程子流程；本批次定向测试不能代替同源码远程、原生与浏览器验收。真实模型领域效果、自动研判规模与恢复、多级审批和剧本编排、自然语言检索、知识库、业务证据资源与下载、应用识别、事件调查完整协作／情报／风险及文件沙箱仍有缺口。",
     "生产 TLS/R3 队列/HA/备份恢复、真实办公渠道/模型/对象存储/设备/沙箱验收、1–200+ 探针容量和七档 PC 全路由交互验收未完成。",
-    "正式验收证据工作流 .github/workflows/acceptance.yml 已提供来源与完整报告核验；完整远程业务断言执行器和生产验收输入制品尚未交付。两个实际 Linux UPX ZIP 的历史子流程按原来源核验；工程预览 v0.1.0-rc.3 已发布，当前全部改动仍需干净提交、同源制品与完整生产验收，不能正式发布。"
+    "标签发布流水线 .github/workflows/release.yml 只核对工程检查与发行包结构，不再以 107 项全量通过作为自动门禁；正式版本前仍需按核心功能清单完成同源远程端到端与生产部署验收（TLS、最小权限、原生隔离、独立网络）。工程预览 v0.1.0-rc.3 之后的改动尚未发布。"
   ]
 }

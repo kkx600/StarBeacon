@@ -22,6 +22,20 @@ describe('运行状态',()=>{
     expect(wrapper.text()).toContain('部分平台依赖不可用');expect(wrapper.text()).toContain('内存指标不可用');expect(wrapper.text()).toContain('未获取');expect(wrapper.text()).toContain('1.23 MB');expect(wrapper.text()).toContain('test-commit');expect(wrapper.find('.ant-table').exists()).toBe(false)
     request.mockResolvedValue({...health,services:{custom:'ready'},runtime:{...health.runtime,errors:[]}});await wrapper.get('button').trigger('click');await flushPromises();expect(wrapper.text()).toContain('custom');expect(wrapper.text()).not.toContain('部分平台依赖不可用')
   })
+  it('原包存储按部署容量共享，只展示本租户的可回溯范围',async()=>{
+    const storage={backend:'filesystem',measured:true,free_bytes:'42949672960',total_bytes:'1099511627776',floor_bytes:'54975581385',limit_bytes:'0',archives:'1234',stored_bytes:'536870912000',oldest_created_at:'2026-09-29T14:24:00Z',retention_days:180}
+    request.mockResolvedValue({...health,services:{...health.services,packet_storage:'ready'},packet_storage:storage});const wrapper=mount(PlatformHealth,{global});await flushPromises()
+    const panel=wrapper.get('.packet-storage').text()
+    for(const text of ['本地或挂载文件系统，全部租户共享','40 GiB','总容量 1 TiB','51.2 GiB','1,234','占用 500 GiB','2.4 天','保留期上限 180 天','共享存储剩余空间低于回收阈值','不设租户额度'])expect(panel).toContain(text)
+    expect(wrapper.text()).toContain('原包存储')
+    request.mockResolvedValue({...health,packet_storage:{...storage,backend:'s3',measured:false,free_bytes:'0',total_bytes:'0',floor_bytes:'0',archives:'0',stored_bytes:'0',oldest_created_at:null}});await wrapper.get('button').trigger('click');await flushPromises()
+    const object=wrapper.get('.packet-storage').text()
+    for(const text of ['S3 兼容对象存储','无法测量','目录上限','不限','只按保留期删除','暂无原包'])expect(object).toContain(text)
+    expect(object).not.toContain('共享存储剩余空间低于回收阈值')
+    request.mockResolvedValue({...health,packet_storage:{...storage,backend:'s3',measured:false,limit_bytes:'2199023255552'}});await wrapper.get('button').trigger('click');await flushPromises()
+    expect(wrapper.get('.packet-storage').text()).toContain('2 TiB')
+    request.mockResolvedValue(health);await wrapper.get('button').trigger('click');await flushPromises();expect(wrapper.find('.packet-storage').exists()).toBe(false)
+  })
   it('读取失败可重试，离开后迟到响应不写入页面',async()=>{
     request.mockRejectedValueOnce(new Error('连接超时')).mockRejectedValueOnce('offline').mockResolvedValue(health);const wrapper=mount(PlatformHealth,{global});await flushPromises();expect(wrapper.get('[role=alert]').text()).toContain('连接超时')
     await wrapper.findAll('button').find(button=>button.text().replace(/\s/g,'')==='重试')!.trigger('click');await flushPromises();expect(wrapper.text()).toContain('运行状态读取失败')

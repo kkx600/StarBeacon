@@ -21,7 +21,9 @@ import (
 )
 
 type Postgres struct {
-	Pool              *pgxpool.Pool
+	Pool *pgxpool.Pool
+	// IndexLayout 决定新路由冻结的共享索引时间分区；既有路由沿用创建时的索引。
+	IndexLayout       contract.IndexLayout
 	sampleSweepMu     sync.Mutex
 	sampleSweepAfter  string
 	historySweepMu    sync.Mutex
@@ -206,13 +208,14 @@ func (p *Postgres) Heartbeat(ctx context.Context, id transport.SensorIdentity, h
 		if e != nil {
 			return e
 		}
-		return recordQuality(ctx, tx, id, quality)
+		return recordQuality(ctx, tx, id, quality, p.IndexLayout.For("context").Period)
 	})
 }
 
+// Route 绑定采集器数据流与路由日。Index 为创建时冻结的共享索引；空值表示升级前的租户日索引。
 type Route struct {
-	Token, TenantID, SensorID, RegistrationID, StreamID, Partition string
-	ExpiresAt                                                      time.Time
+	Token, TenantID, SensorID, RegistrationID, StreamID, Partition, Index string
+	ExpiresAt                                                             time.Time
 }
 
 func (p *Postgres) Route(ctx context.Context, id transport.SensorIdentity, stream string) (Route, error) {
@@ -221,15 +224,30 @@ func (p *Postgres) Route(ctx context.Context, id transport.SensorIdentity, strea
 	r.SensorID = id.SensorID
 	r.RegistrationID = id.RegistrationID
 	r.StreamID = stream
+	category, err := eventCategory(stream)
+	if err != nil {
+		return r, err
+	}
+	period := p.IndexLayout.For(stream).Period
 	e := p.TenantTx(ctx, id.TenantID, func(tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `INSERT INTO routes(token,tenant_id,sensor_id,registration_id,stream_id,partition_day,expires_at) VALUES($1,$2,$3,$4,$5,(now() AT TIME ZONE 'UTC')::date,now()+interval '180 days') ON CONFLICT(tenant_id,sensor_id,registration_id,stream_id,partition_day) DO UPDATE SET token=routes.token RETURNING token,partition_day::text,expires_at`, Token(), id.TenantID, id.SensorID, id.RegistrationID, stream).Scan(&r.Token, &r.Partition, &r.ExpiresAt)
+		// 路由日与保留期在同一事务读取；重试和重投沿用同一路由，因而写入同一共享索引。
+		var day string
+		var days int
+		if err := tx.QueryRow(ctx, `SELECT (now() AT TIME ZONE 'UTC')::date::text,COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category=$2),180)`, id.TenantID, category).Scan(&day, &days); err != nil {
+			return err
+		}
+		index, err := contract.EventIndexName(stream, days, period, day)
+		if err != nil {
+			return err
+		}
+		return tx.QueryRow(ctx, `INSERT INTO routes(token,tenant_id,sensor_id,registration_id,stream_id,partition_day,expires_at,index_name) VALUES($1,$2,$3,$4,$5,$6::date,now()+interval '180 days',$7) ON CONFLICT(tenant_id,sensor_id,registration_id,stream_id,partition_day) DO UPDATE SET token=routes.token RETURNING token,partition_day::text,expires_at,index_name`, Token(), id.TenantID, id.SensorID, id.RegistrationID, stream, day, index).Scan(&r.Token, &r.Partition, &r.ExpiresAt, &r.Index)
 	})
 	return r, e
 }
 func (p *Postgres) ResolveRoute(ctx context.Context, id transport.SensorIdentity, token, stream string) (Route, error) {
 	var r Route
 	e := p.TenantTx(ctx, id.TenantID, func(tx pgx.Tx) error {
-		return tx.QueryRow(ctx, "SELECT token,tenant_id,sensor_id,registration_id,stream_id,partition_day::text,expires_at FROM routes WHERE tenant_id=$1 AND sensor_id=$2 AND registration_id=$3 AND token=$4 AND stream_id=$5 AND expires_at>now()", id.TenantID, id.SensorID, id.RegistrationID, token, stream).Scan(&r.Token, &r.TenantID, &r.SensorID, &r.RegistrationID, &r.StreamID, &r.Partition, &r.ExpiresAt)
+		return tx.QueryRow(ctx, "SELECT token,tenant_id,sensor_id,registration_id,stream_id,partition_day::text,expires_at,index_name FROM routes WHERE tenant_id=$1 AND sensor_id=$2 AND registration_id=$3 AND token=$4 AND stream_id=$5 AND expires_at>now()", id.TenantID, id.SensorID, id.RegistrationID, token, stream).Scan(&r.Token, &r.TenantID, &r.SensorID, &r.RegistrationID, &r.StreamID, &r.Partition, &r.ExpiresAt, &r.Index)
 	})
 	return r, e
 }

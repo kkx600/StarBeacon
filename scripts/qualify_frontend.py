@@ -11,10 +11,42 @@ import subprocess
 import sys
 import time
 
-from check_acceptance import web_coverage
 from source_snapshot import snapshot, verify
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+# 前端覆盖率只统计本工程三个前端源码目录；源码缺失、覆盖块跳过或路径越界都不能计入。
+def web_coverage(actual: dict, source_root: str, root: pathlib.Path) -> dict:
+    origin = pathlib.PurePosixPath(source_root)
+    if not origin.is_absolute() or ".." in origin.parts:
+        raise ValueError("前端覆盖率必须记录执行环境的绝对源码根目录")
+    included = {}
+    for path, row in actual.items():
+        if path == "total":
+            continue
+        source = pathlib.PurePosixPath(path)
+        if not source.is_absolute() or ".." in source.parts or not source.is_relative_to(origin):
+            raise ValueError("前端覆盖率包含源码根目录之外的路径")
+        name = source.relative_to(origin).as_posix()
+        if name in included or not name.startswith(("web/platform/src/", "web/collector/src/", "web/packages/shared/src/")):
+            raise ValueError("前端覆盖率源码重复或不属于自有工程")
+        included[name] = row
+    for directory in ("web/platform/src", "web/collector/src", "web/packages/shared/src"):
+        for source in (root / directory).rglob("*"):
+            if source.suffix in (".vue", ".ts", ".mjs") and not source.name.endswith(".d.ts") and source.relative_to(root).as_posix() not in included:
+                raise ValueError(f"前端覆盖率缺少源码：{source.relative_to(root)}")
+    percentages = {}
+    for metric in ("statements", "branches", "functions", "lines"):
+        for row in [actual["total"], *included.values()]:
+            values = row[metric]
+            if any(type(values[name]) is not int for name in ("total", "covered", "skipped")) or not 0 <= values["covered"] <= values["total"] or values["skipped"] != 0:
+                raise ValueError("前端覆盖率计数无效或存在跳过的覆盖块")
+        total = actual["total"][metric]
+        if total["total"] <= 0 or any(total[name] != sum(row[metric][name] for row in included.values()) for name in ("total", "covered")):
+            raise ValueError("前端总覆盖率与各源码统计不一致")
+        percentages[metric] = total["covered"] * 100 / total["total"]
+    return percentages
 
 
 def save(path: pathlib.Path, value: dict) -> None:

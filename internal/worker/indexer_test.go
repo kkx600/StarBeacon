@@ -34,6 +34,10 @@ func TestIndexerRejectsMalformedAndUnroutableBatchesBeforeDependencies(t *testin
 		{TenantID: "tenant_owned", Batch: []byte{0xff}, Partition: "2026-10-01"},
 		{TenantID: "foreign_tenant", Batch: encoded, Partition: "2026-10-01"},
 		{TenantID: "tenant_owned", Batch: encoded, Partition: "unroutable"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-context-r180-d2026.10.01"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-alerts-r180-d2026.10.02"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-alerts-tenant_owned-2026.10.01"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-alerts-r180-x2026.10.01"},
 	} {
 		raw, err := json.Marshal(envelope)
 		if err != nil {

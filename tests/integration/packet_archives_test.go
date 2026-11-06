@@ -149,7 +149,7 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require(t, err)
 	server := grpc.NewServer(grpc.Creds(credentials.NewTLS(tls)))
-	ingester := &ingest.Server{DB: f.Runtime, ControlOnly: true, Packets: objects, PacketStaging: staging, PacketQuota: 100 << 20}
+	ingester := &ingest.Server{DB: f.Runtime, ControlOnly: true, Packets: objects, PacketStaging: staging}
 	sensorv1.RegisterSensorServiceServer(server, ingester)
 	go server.Serve(listener)
 	defer server.Stop()
@@ -176,7 +176,7 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 	require(t, err)
 	viewer, _, err := f.Owner.Password(ctx, "packet_viewer")
 	require(t, err)
-	row, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20)
+	row, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m)
 	require(t, err)
 	if acquired || row.State != "ready" {
 		t.Fatal("已持久目录被重复取得传输租约")
@@ -376,53 +376,50 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 	if _, err = sendPacket(t, ctx, a, driftJSON, driftStored, 0); status.Code(err) != codes.DataLoss {
 		t.Fatal("格式目录漂移未拒绝", err)
 	}
-	// 未被确认的中断传输仍占用额度；默认留存到期前不清理业务原件。
-	var used int64
-	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT reserved_bytes FROM packet_archive_capacity WHERE tenant_id=$1`, id.TenantID).Scan(&used))
-	if used != m.Encoding.StoredBytes+bad.Encoding.StoredBytes+drift.Encoding.StoredBytes {
-		t.Fatal("传输失败提前释放了额度", used)
-	}
-	quota, _, _ := packetMaterial(t, id, "packet_quota")
-	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, quota, used); !errors.Is(err, packetarchive.ErrQuota) {
-		t.Fatal("额度不足仍接受了目录", err)
+	// 未被确认的中断传输保留目录；默认留存到期前不清理业务原件。
+	var uploading int
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM packet_archives WHERE tenant_id=$1 AND state='uploading' AND id IN($2,$3)`, id.TenantID, bad.Capture.ID, drift.Capture.ID).Scan(&uploading))
+	if uploading != 2 {
+		t.Fatal("传输失败提前删除了目录", uploading)
 	}
 	orphan, _, orphanStored := packetMaterial(t, id, "packet_orphan")
-	orphanRow, _, err := f.Runtime.BeginPacketArchive(ctx, id, orphan, 100<<20)
+	orphanRow, _, err := f.Runtime.BeginPacketArchive(ctx, id, orphan)
 	require(t, err)
 	_, err = objects.Put(ctx, orphanRow.ObjectKey, bytes.NewReader(orphanStored), int64(len(orphanStored)), orphan.Encoding.StoredSHA256)
 	require(t, err)
 	require(t, f.Runtime.ReleasePacketLease(ctx, id, orphanRow))
-	require(t, f.Runtime.SweepPacketArchives(ctx, objects))
+	_, err = f.Runtime.SweepPacketArchives(ctx, objects, packetarchive.Pool{})
+	require(t, err)
 	if _, err = f.Runtime.PacketArchive(ctx, adminA, row.ID); err != nil {
 		t.Fatal("未到期原包被清理", err)
 	}
 	_, err = f.Owner.Pool.Exec(ctx, `UPDATE packet_archives SET expires_at=now()-interval '1 minute',lease_until=now()-interval '1 minute' WHERE tenant_id=$1`, id.TenantID)
 	require(t, err)
 	storageErr := errors.New("对象存储中断")
-	if err = f.Runtime.SweepPacketArchives(ctx, packetRemovalFailure{ObjectStorage: objects, err: storageErr}); !errors.Is(err, storageErr) {
+	if _, err = f.Runtime.SweepPacketArchives(ctx, packetRemovalFailure{ObjectStorage: objects, err: storageErr}, packetarchive.Pool{}); !errors.Is(err, storageErr) {
 		t.Fatal("对象删除中断被当作成功", err)
 	}
-	var stillUsed int64
-	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT reserved_bytes FROM packet_archive_capacity WHERE tenant_id=$1`, id.TenantID).Scan(&stillUsed))
-	if stillUsed < row.Manifest.Encoding.StoredBytes+orphan.Encoding.StoredBytes {
-		t.Fatal("对象删除失败提前释放额度")
+	var kept int
+	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM packet_archives WHERE tenant_id=$1 AND state='deleting' AND id IN($2,$3)`, id.TenantID, row.ID, orphan.Capture.ID).Scan(&kept))
+	if kept != 2 {
+		t.Fatal("对象删除失败提前删除了目录", kept)
 	}
-	require(t, f.Runtime.SweepPacketArchives(ctx, objects))
+	sweep, err := f.Runtime.SweepPacketArchives(ctx, objects, packetarchive.Pool{})
+	require(t, err)
 	var remaining int
 	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM packet_archives WHERE tenant_id=$1`, id.TenantID).Scan(&remaining))
-	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT reserved_bytes FROM packet_archive_capacity WHERE tenant_id=$1`, id.TenantID).Scan(&stillUsed))
-	if remaining != 0 || stillUsed != 0 {
-		t.Fatal("到期传输或未知对象版本未恢复回收", remaining, stillUsed)
+	if remaining != 0 || sweep.Deleted != 2 || sweep.Evicted != 0 {
+		t.Fatal("到期传输或未知对象版本未恢复回收", remaining, sweep)
 	}
 	files, err := os.ReadDir(objects.Dir)
 	require(t, err)
 	if len(files) != 0 {
 		t.Fatal("对象回收后仍有冻结制品")
 	}
-	if _, _, err = f.Runtime.BeginPacketArchive(ctx, transport.SensorIdentity{TenantID: id.TenantID, SensorID: id.SensorID, RegistrationID: "revoked"}, m, 100<<20); err == nil {
+	if _, _, err = f.Runtime.BeginPacketArchive(ctx, transport.SensorIdentity{TenantID: id.TenantID, SensorID: id.SensorID, RegistrationID: "revoked"}, m); err == nil {
 		t.Fatal("注销注册身份可上传")
 	}
-	if err = f.Runtime.SweepPacketArchives(ctx, nil); err == nil {
+	if _, err = f.Runtime.SweepPacketArchives(ctx, nil, packetarchive.Pool{}); err == nil {
 		t.Fatal("没有对象存储仍清理成功")
 	}
 	staged, err := os.ReadDir(staging)
@@ -450,17 +447,17 @@ func TestPacketArchiveDirectoryLeaseQuotaCASAndCustomRetention(t *testing.T) {
 	_, err = f.Owner.Pool.Exec(ctx, `INSERT INTO retention_policies(tenant_id,category,days,revision) VALUES($1,'pcap',30,1) ON CONFLICT(tenant_id,category) DO UPDATE SET days=30`, id.TenantID)
 	require(t, err)
 	m, _, _ := packetMaterial(t, id, "packet_lease_one")
-	row, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20)
+	row, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m)
 	require(t, err)
 	if !acquired || row.ExpiresAt.Sub(row.CreatedAt) < 29*24*time.Hour || row.ExpiresAt.Sub(row.CreatedAt) > 31*24*time.Hour {
 		t.Fatal("自定义留存或租约未生效")
 	}
-	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20); !errors.Is(err, store.ErrPacketBusy) {
+	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, m); !errors.Is(err, store.ErrPacketBusy) {
 		t.Fatal("并发传输未互斥", err)
 	}
 	drift := m
 	drift.Capture.Interface = "eth1"
-	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, drift, 100<<20); !errors.Is(err, store.ErrConflict) {
+	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, drift); !errors.Is(err, store.ErrConflict) {
 		t.Fatal("同 ID 的目录漂移未拒绝", err)
 	}
 	if _, err = f.Runtime.CompletePacketArchive(ctx, id, row); !errors.Is(err, store.ErrConflict) {
@@ -475,7 +472,7 @@ func TestPacketArchiveDirectoryLeaseQuotaCASAndCustomRetention(t *testing.T) {
 		t.Fatal("过期租约可提交版本", err)
 	}
 	require(t, f.Runtime.ReleasePacketLease(ctx, id, row))
-	retry, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20)
+	retry, acquired, err := f.Runtime.BeginPacketArchive(ctx, id, m)
 	require(t, err)
 	if !acquired || retry.LeaseToken == row.LeaseToken || !retry.ExpiresAt.Equal(row.ExpiresAt) {
 		t.Fatal("恢复租约未冻结留存或替换旧令牌")
@@ -491,7 +488,7 @@ func TestPacketArchiveDirectoryLeaseQuotaCASAndCustomRetention(t *testing.T) {
 	if _, err = f.Runtime.CompletePacketArchive(ctx, id, retry); !errors.Is(err, store.ErrSensorInactive) {
 		t.Fatal("停用探针仍可完成持久确认", err)
 	}
-	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, m, 100<<20); !errors.Is(err, store.ErrSensorInactive) {
+	if _, _, err = f.Runtime.BeginPacketArchive(ctx, id, m); !errors.Is(err, store.ErrSensorInactive) {
 		t.Fatal(err)
 	}
 	u, _, err := f.Owner.Password(ctx, "packet_owner")

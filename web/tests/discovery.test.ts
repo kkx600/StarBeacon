@@ -35,7 +35,7 @@ describe('被动发现列表和证据',()=>{
   await wrapper.findAll('button').find(button=>button.text()==='证据')!.trigger('click');await flushPromises();expect(document.body.textContent).toContain('02:00:00:00:00:01');expect(document.body.textContent).toContain('采集器读取时间');expect(document.body.textContent).toContain('不能据此认定资产身份');expect(document.body.textContent).toContain('18446744073709551615')
   const buttons=Array.from(document.body.querySelectorAll<HTMLButtonElement>('.ant-modal button'));buttons.find(button=>button.textContent==='登记资产')!.click();await flushPromises();expect(wrapper.emitted('register')![0]![0]).toEqual(result.addresses[0]);expect(document.body.querySelector('.ant-modal')).toBeNull()
   await wrapper.setProps({result:null,attempted:false});expect(wrapper.text()).toContain('选择探针');await wrapper.setProps({error:'分片失败',attempted:true});expect(wrapper.text()).toContain('分片失败');await wrapper.get('button').trigger('click');expect(wrapper.emitted('retry')).toHaveLength(1)
-  await wrapper.setProps({error:'',result:{...result,addresses:[],partition_status:'absent'}});expect(wrapper.text()).toContain('尚无可查询的流量分区');await wrapper.setProps({pending:true});expect(wrapper.text()).toContain('正在读取')
+  await wrapper.setProps({error:'',result:{...result,addresses:[],partition_status:'absent'}});expect(wrapper.text()).toContain('尚无可查询的流量索引');await wrapper.setProps({pending:true});expect(wrapper.text()).toContain('正在读取')
  })
 })
 

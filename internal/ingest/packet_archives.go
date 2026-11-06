@@ -56,10 +56,23 @@ func (s *Server) receivePacketArchive(ctx context.Context, stream grpc.ClientStr
 	if err != nil {
 		return status.Error(codes.InvalidArgument, "原包目录格式无效")
 	}
-	row, acquired, err := s.DB.BeginPacketArchive(ctx, id, manifest, s.PacketQuota)
+	// 共享存储低于准入保留空间时先拒绝新数据并触发回收，避免在回收前写满磁盘。
+	if measurer, ok := s.Packets.(packetarchive.Measurer); ok {
+		usage, err := measurer.Usage()
+		if err != nil {
+			return status.Error(codes.Unavailable, "原包存储容量暂不可读，请保留本地原包")
+		}
+		if !s.PacketPool.Admit(usage, manifest.Encoding.StoredBytes) {
+			if s.PacketPressure != nil {
+				s.PacketPressure()
+			}
+			return status.Error(codes.ResourceExhausted, "平台原包存储空间不足，正在回收最早的原包，请保留本地原包稍后重试")
+		}
+	}
+	row, acquired, err := s.DB.BeginPacketArchive(ctx, id, manifest)
 	if err != nil {
-		if errors.Is(err, packetarchive.ErrQuota) || errors.Is(err, store.ErrPacketBusy) {
-			return status.Error(codes.ResourceExhausted, "原包归档额度不足或已有传输，请保留原包")
+		if errors.Is(err, store.ErrPacketBusy) {
+			return status.Error(codes.ResourceExhausted, "原包已有传输在进行，请保留原包稍后重试")
 		}
 		return status.Error(codes.FailedPrecondition, "原包身份、目录或持久状态未能核对")
 	}

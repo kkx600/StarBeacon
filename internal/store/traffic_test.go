@@ -66,7 +66,7 @@ func TestTrafficSearchUsesOwnedContextAndExactSourceFilters(t *testing.T) {
 	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
-		if r.URL.Path != "/sb-context-tenant_1-*/_search" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("ignore_unavailable") == "true" {
+		if r.URL.Path != "/sb-v2-context-*,sb-context-tenant_1-*,-sb-context-tenant_1-*-*/_search" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("ignore_unavailable") == "true" {
 			t.Error("流量查询未限定完整租户上下文索引", r.URL)
 		}
 		var body map[string]any

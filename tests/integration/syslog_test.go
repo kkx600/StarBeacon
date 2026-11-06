@@ -230,14 +230,8 @@ func TestSyslogTLSWALMTLSIndexSearchAndRawAudit(t *testing.T) {
 	retryEnvelope.ReceivedAt = retryEnvelope.ReceivedAt.Add(time.Second)
 	retryRaw, _ := json.Marshal(retryEnvelope)
 	require(t, restartedIndexer.Process(ctx, retryRaw))
-	index, err := contract.IndexName(u.TenantID, "logs", route.Partition)
-	require(t, err)
-	t.Cleanup(func() {
-		res, e := es.API.Indices.Delete([]string{index})
-		if e == nil {
-			res.Body.Close()
-		}
-	})
+	index := sharedEventIndex(t, "logs", route.Partition)
+	t.Cleanup(func() { deleteTenantEvents(t, es, u.TenantID) })
 	res, err := es.API.Indices.Refresh(es.API.Indices.Refresh.WithIndex(index))
 	require(t, err)
 	res.Body.Close()

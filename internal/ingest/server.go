@@ -37,8 +37,10 @@ type Server struct {
 	Samples       replay.Storage
 	Packets       packetarchive.ObjectStorage
 	PacketStaging string
-	PacketQuota   int64
-	Authority     probepki.Authority
+	// PacketPool 是全部租户共享的原包存储回收阈值；PacketPressure 在准入拒绝时唤醒回收。
+	PacketPool     packetarchive.Pool
+	PacketPressure func()
+	Authority      probepki.Authority
 }
 
 // 单进程最多四个样本传输，避免大文件读取挤占控制信号和事件接入。
@@ -192,7 +194,7 @@ func (s *Server) UploadEvents(stream grpc.BidiStreamingServer[sensorv1.EventBatc
 			cancel()
 			return status.Error(codes.InvalidArgument, "批次编码失败")
 		}
-		e = s.Bus.Publish(ctx, "sb.events."+b.StreamId, b.BatchId, bus.Envelope{TenantID: id.TenantID, Partition: r.Partition, ReceivedAt: time.Now().UTC(), Batch: raw})
+		e = s.Bus.Publish(ctx, "sb.events."+b.StreamId, b.BatchId, bus.Envelope{TenantID: id.TenantID, Partition: r.Partition, Index: r.Index, ReceivedAt: time.Now().UTC(), Batch: raw})
 		cancel()
 		if e != nil {
 			return status.Error(codes.Unavailable, "持久队列暂时不可用，请保留本地数据重试")

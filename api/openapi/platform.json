@@ -4525,7 +4525,7 @@
             }
           }
         },
-        "description": "策略、不可变提交记录和操作审计在同一事务提交。需要匹配类别、原修订和创建人的有效预览。告警与网络事件按租户 UTC 日期分区首次创建时固定 ES ILM 保留期；同日既有分区不调整。其余已接入类别按新记录创建时固定期限；文件流水线未接入。未知结果复用精确原始输入与幂等键确认。"
+        "description": "策略、不可变提交记录和操作审计在同一事务提交。需要匹配类别、原修订和创建人的有效预览。告警、网络事件与安全日志按数据流、保留期和 UTC 周期写入多租户共享索引，索引首次创建时固定 ES ILM 保留期；既有索引不调整，每条记录至少保留所设天数。其余已接入类别按新记录创建时固定期限；文件流水线未接入。未知结果复用精确原始输入与幂等键确认。"
       }
     },
     "/api/v1/mcp": {
@@ -19218,6 +19218,77 @@
           "observed_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "packet_storage": {
+            "type": "object",
+            "description": "全部租户共享的原包存储，不设租户额度。backend、measured、free_bytes、total_bytes、floor_bytes 与 limit_bytes 描述部署存储；archives、stored_bytes 与 oldest_created_at 只统计当前租户。剩余空间低于 floor_bytes 或登记总量超过非零 limit_bytes 时，平台按全部租户最早归档的顺序回收。原包存储不可读取时省略本字段，services.packet_storage 为 unavailable。",
+            "properties": {
+              "backend": {
+                "enum": [
+                  "filesystem",
+                  "s3"
+                ]
+              },
+              "measured": {
+                "type": "boolean",
+                "description": "文件系统可读取剩余空间时为 true；对象存储为 false，容量字段为 0。"
+              },
+              "free_bytes": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$"
+              },
+              "total_bytes": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$"
+              },
+              "floor_bytes": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$",
+                "description": "需要保持的剩余空间，由 SB_PACKET_FREE_SPACE 决定。"
+              },
+              "limit_bytes": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$",
+                "description": "登记原包总量上限，0 表示不限，由 SB_PACKET_POOL_BYTES 决定。"
+              },
+              "archives": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$",
+                "description": "当前租户未到期的已归档原包数。"
+              },
+              "stored_bytes": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$",
+                "description": "当前租户未到期原包的存储字节数。"
+              },
+              "oldest_created_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time",
+                "description": "当前租户最早的未到期原包归档时间，即实际可回溯起点。"
+              },
+              "retention_days": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3650,
+                "description": "当前租户 pcap 保留期，是每个原包的最长期限。"
+              }
+            },
+            "required": [
+              "backend",
+              "measured",
+              "free_bytes",
+              "total_bytes",
+              "floor_bytes",
+              "limit_bytes",
+              "archives",
+              "stored_bytes",
+              "oldest_created_at",
+              "retention_days"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [

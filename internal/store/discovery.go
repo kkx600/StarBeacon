@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/discovery"
 	"github.com/kkx600/StarBeacon/internal/inventory"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -58,18 +59,15 @@ func (p *Postgres) DiscoveryScope(ctx context.Context, u model.Principal, q disc
 	return scope, err
 }
 
-// DiscoverAddresses 按租户索引族查询实际事件时间，兼容跨日积压和离线事件。
+// DiscoverAddresses 按租户可读的协议索引查询实际事件时间，兼容跨日积压和离线事件。
 // 每次请求同时完成两个方向的有界聚合；超限、分片失败和超时不交付截断目录。
 func (s *Elasticsearch) DiscoverAddresses(ctx context.Context, tenant string, q discovery.Query) (discovery.Result, error) {
 	body, err := discovery.DSL(tenant, q)
 	if err != nil {
 		return discovery.Result{}, err
 	}
-	// 日期后缀不含连字符；排除后缀含连字符的匹配，避免纳入同前缀的其他租户。
-	// 分区日期来自上传路由，不能用事件时间推算应读取的分区。
-	prefix := "sb-context-" + tenant + "-"
-	indices := []string{prefix + "*", "-" + prefix + "*-*"}
-	res, err := s.API.Search(s.API.Search.WithIndex(indices...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithMaxConcurrentShardRequests(2), s.API.Search.WithPreFilterShardSize(1), s.API.Search.WithExpandWildcards("open", "closed"), s.API.Search.WithContext(ctx))
+	// 分区日期来自上传路由，不能用事件时间推算应读取的分区；共享索引由查询中的 tenant_id 隔离。
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("context", tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithMaxConcurrentShardRequests(2), s.API.Search.WithPreFilterShardSize(1), s.API.Search.WithExpandWildcards("open", "closed"), s.API.Search.WithContext(ctx))
 	if err != nil {
 		if res != nil && res.Body != nil {
 			res.Body.Close()

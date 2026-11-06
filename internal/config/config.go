@@ -13,7 +13,42 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/clientip"
+	"github.com/kkx600/StarBeacon/internal/contract"
 )
+
+// parseSize 接受字节数或带 KiB、MiB、GiB、TiB 后缀的容量。
+func parseSize(text string) (int64, error) {
+	value := strings.TrimSpace(text)
+	multiplier := int64(1)
+	for suffix, unit := range map[string]int64{"KIB": 1 << 10, "MIB": 1 << 20, "GIB": 1 << 30, "TIB": 1 << 40} {
+		if strings.HasSuffix(strings.ToUpper(value), suffix) {
+			value, multiplier = strings.TrimSpace(value[:len(value)-len(suffix)]), unit
+			break
+		}
+	}
+	n, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || n < 0 || n > (1<<62)/multiplier {
+		return 0, fmt.Errorf("容量格式无效")
+	}
+	return n * multiplier, nil
+}
+
+// parseFreeSpace 读取原包存储的剩余空间回收阈值：百分比、绝对容量，或 0 表示只按保留期删除。
+func parseFreeSpace(text string) (int64, int, error) {
+	value := strings.TrimSpace(text)
+	if percent, ok := strings.CutSuffix(value, "%"); ok {
+		n, err := strconv.Atoi(strings.TrimSpace(percent))
+		if err != nil || n < 1 || n > 50 {
+			return 0, 0, fmt.Errorf("SB_PACKET_FREE_SPACE 百分比须为 1%%–50%%")
+		}
+		return 0, n, nil
+	}
+	n, err := parseSize(value)
+	if err != nil {
+		return 0, 0, fmt.Errorf("SB_PACKET_FREE_SPACE 须为百分比、容量或 0")
+	}
+	return n, 0, nil
+}
 
 type Config struct {
 	HTTPClientIPs                                                             clientip.Policy
@@ -35,7 +70,9 @@ type Config struct {
 	CaptureRotateBytes                                                        int64
 	PacketCapture                                                             bool
 	PacketDir, PacketBackend, PacketCodec                                     string
-	PacketSpoolBytes, PacketSegmentBytes, PacketStorageBytes                  int64
+	PacketSpoolBytes, PacketSegmentBytes, PacketPoolBytes, PacketFreeBytes    int64
+	PacketFreePercent                                                         int
+	ESIndex                                                                   contract.IndexLayout
 	PacketRotateInterval                                                      time.Duration
 	ReplayDir, ReplayBackend, ReplayS3Endpoint, ReplayS3Bucket                string
 	ReplayS3AccessKey, ReplayS3SecretKey                                      string
@@ -213,9 +250,14 @@ func Load(role string) (Config, error) {
 	if err != nil || c.PacketSegmentBytes < 1024*1024 || c.PacketSegmentBytes > 64*1024*1024 || c.PacketSegmentBytes*3+512*1024 > c.PacketSpoolBytes {
 		return c, fmt.Errorf("原包切片需为 1–64 MiB，且暂存区须容纳原件和校验制品")
 	}
-	c.PacketStorageBytes, err = strconv.ParseInt(env("PACKET_STORAGE_BYTES", "1099511627776"), 10, 64)
-	if err != nil || c.PacketStorageBytes < 100*1024*1024 {
-		return c, fmt.Errorf("租户原包持久存储额度至少为 100 MiB")
+	// 原包存储由全部租户共享：文件系统按剩余空间阈值回收最早的原包，对象存储可另设目录总量上限。
+	c.PacketFreeBytes, c.PacketFreePercent, err = parseFreeSpace(env("PACKET_FREE_SPACE", "5%"))
+	if err != nil {
+		return c, err
+	}
+	c.PacketPoolBytes, err = parseSize(env("PACKET_POOL_BYTES", "0"))
+	if err != nil || c.PacketPoolBytes != 0 && c.PacketPoolBytes < 100*1024*1024 {
+		return c, fmt.Errorf("SB_PACKET_POOL_BYTES 为 0（不限）或至少 100 MiB")
 	}
 	seconds, e := strconv.Atoi(env("PACKET_ROTATE_SECONDS", "30"))
 	if e != nil || seconds < 1 || seconds > 3600 {
@@ -238,9 +280,6 @@ func Load(role string) (Config, error) {
 		c.PacketBackend = env("PACKET_BACKEND", c.ReplayBackend)
 		if c.PacketBackend != "" && c.PacketBackend != "filesystem" && c.PacketBackend != "s3" {
 			return c, fmt.Errorf("原包对象存储类型无效")
-		}
-		if c.Mode == "production" && c.PacketBackend == "filesystem" {
-			return c, fmt.Errorf("生产原包归档要求带版本的 S3 对象存储")
 		}
 		if c.PacketBackend == "s3" && (c.ReplayS3Endpoint == "" || c.ReplayS3Bucket == "" || c.ReplayS3AccessKey == "" || c.ReplayS3SecretKey == "" || c.Mode == "production" && !c.ReplayS3Secure) {
 			return c, fmt.Errorf("原包对象存储配置不完整或未启用 TLS")
@@ -275,6 +314,18 @@ func Load(role string) (Config, error) {
 		if c.ESURL == "" {
 			return c, fmt.Errorf("缺少 SB_ES_URL")
 		}
+	}
+	// 接入在路由创建时冻结索引名称，平台写入质量事件，Worker 按名称建立索引；三者共用同一布局配置。
+	replicas := "1"
+	if c.Mode == "development" {
+		replicas = "0"
+	}
+	esReplicas, err := strconv.Atoi(env("ES_REPLICAS", replicas))
+	if err != nil {
+		return c, fmt.Errorf("SB_ES_REPLICAS 必须为 0–5")
+	}
+	if c.ESIndex, err = contract.ParseIndexLayout(env("ES_INDEX_PERIOD", ""), env("ES_INDEX_SHARDS", ""), esReplicas); err != nil {
+		return c, fmt.Errorf("Elasticsearch 索引布局无效：%w", err)
 	}
 	if role == "platform" {
 		if c.RedisURL == "" || c.AllowedOrigin == "" {

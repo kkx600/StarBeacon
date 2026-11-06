@@ -180,6 +180,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			return e
 		}
 		defer db.Close()
+		db.IndexLayout = c.ESIndex
 		if e = db.VerifyRuntimeRole(startup); e != nil {
 			return e
 		}
@@ -199,6 +200,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		if e != nil {
 			return e
 		}
+		es.Layout = c.ESIndex
 		if e = es.Ping(startup); e != nil {
 			return e
 		}
@@ -215,7 +217,9 @@ func Run(ctx context.Context, role string, c config.Config) error {
 		}
 		auth := httpapi.NewAuth(db, redisClient, c.AllowedOrigin, c.CookieName, c.Mode == "production")
 		wakeup := &control.Wakeup{}
-		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes, Vault: vault, Outbound: policy, Packets: packets, PacketStaging: packetStaging}
+		packetPool := packetarchive.Pool{FreeBytes: c.PacketFreeBytes, FreePercent: c.PacketFreePercent, LimitBytes: c.PacketPoolBytes}
+		packetPressure := make(chan struct{}, 1)
+		api := &platform.API{Wakeup: wakeup, DB: db, ES: es, Redis: redisClient, Auth: auth, Signer: signer, Samples: samples, SampleQuota: c.ReplayBytes, Vault: vault, Outbound: policy, Packets: packets, PacketStaging: packetStaging, PacketBackend: c.PacketBackend, PacketPool: packetPool}
 		if c.ProbeCAURL != "" {
 			api.Authority, e = probepki.NewStep(probepki.StepConfig{URL: c.ProbeCAURL, RootFile: c.ProbeCARoot, Provisioner: c.ProbeCAProvisioner, JWKFile: c.ProbeCAJWK, Lifetime: c.ProbeCertificateLifetime})
 			if e != nil {
@@ -232,11 +236,25 @@ func Run(ctx context.Context, role string, c config.Config) error {
 					case <-run.Done():
 						return nil
 					case <-ticker.C:
+					case <-packetPressure:
+					}
+					// 积压或空间不足时连续回收，轮次之间短暂让出，期间仍响应退出。
+					for run.Err() == nil {
 						call, cancel := context.WithTimeout(run, 20*time.Second)
-						err := db.SweepPacketArchives(call, packets)
+						result, err := db.SweepPacketArchives(call, packets, packetPool)
 						cancel()
 						if err != nil && run.Err() == nil {
-							slog.Warn("原包到期回收未完成")
+							slog.Warn("原包到期或容量回收未完成", "deleted", result.Deleted, "evicted", result.Evicted, "error", err)
+						} else if result.Evicted > 0 {
+							slog.Info("共享原包存储按最早优先回收", "evicted", result.Evicted, "bytes", result.EvictedBytes)
+						}
+						if !result.More {
+							break
+						}
+						select {
+						case <-run.Done():
+							return nil
+						case <-time.After(time.Second):
 						}
 					}
 				}
@@ -370,7 +388,13 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			handler = m
 		}
 		group.Go(func() error {
-			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketQuota: c.PacketStorageBytes, Authority: api.Authority})
+			pressure := func() {
+				select {
+				case packetPressure <- struct{}{}:
+				default:
+				}
+			}
+			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketPool: packetPool, PacketPressure: pressure, Authority: api.Authority})
 		})
 	case "ingest":
 		httpapi.Health(m, func(ctx context.Context) error {
