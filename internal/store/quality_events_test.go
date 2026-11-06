@@ -32,8 +32,8 @@ func TestQualityEventSearchPinsDatasetTenantRegistrationAndCompleteness(t *testi
 	for _, mode := range []string{"valid", "empty", "tamper", "scope", "kind", "incomplete", "transport"} {
 		t.Run(mode, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if !strings.Contains(r.URL.Path, "sb-context-tenant_owned-*,-sb-context-tenant_owned-*-*") || r.URL.Query().Get("allow_partial_search_results") != "false" {
-					t.Error("索引未排除同前缀其他租户", r.URL.Path)
+				if r.URL.Path != "/sb-v2-context-*/_search" || r.URL.Query().Get("allow_partial_search_results") != "false" {
+					t.Error("检索未限定共享上下文索引", r.URL.Path)
 				}
 				var body map[string]any
 				_ = json.NewDecoder(r.Body).Decode(&body)
@@ -57,7 +57,7 @@ func TestQualityEventSearchPinsDatasetTenantRegistrationAndCompleteness(t *testi
 				if mode == "kind" {
 					d.Rule.ID = "policy"
 				}
-				hits := []any{map[string]any{"_id": d.EventID, "_index": "sb-context-tenant_owned-" + now.Format("2006.01.02"), "_source": d}}
+				hits := []any{map[string]any{"_id": d.EventID, "_index": "sb-v2-context-r180-d" + now.Format("2006.01.02"), "_source": d}}
 				if mode == "empty" {
 					hits = []any{}
 				}

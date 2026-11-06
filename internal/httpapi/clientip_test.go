@@ -16,7 +16,7 @@ func TestProxyClientAddressSharedByAuditAndLoginLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	auth := NewAuth(sessionStub{}, nil, "https://console.example", "session", true)
-	handler := MiddlewareWithClientIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if model.RequestMetadataFrom(r.Context()).SourceIP != r.Header.Get("X-Real-IP") {
 			t.Fatal("审计与可信客户端不一致")
 		}
@@ -53,7 +53,7 @@ func TestProxyClientAddressSharedByAuditAndLoginLimit(t *testing.T) {
 		r.Header.Set("X-Real-IP", "198.51.100.22")
 		r.Header.Set("X-Forwarded-For", "198.51.100.23")
 		w := httptest.NewRecorder()
-		MiddlewareWithClientIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if model.RequestMetadataFrom(r.Context()).SourceIP != "203.0.113.20" {
 				t.Fatal("伪造头写入审计来源")
 			}

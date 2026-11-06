@@ -14,7 +14,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/accounts"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/decision"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -295,19 +294,10 @@ func TestDecisionResponseAuthenticatedHTTPUsesActualAlertAndOriginalConfirmation
 	f, u, signer, evaluation, input, evidence, password := decisionResponseFixture(t, ctx)
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), os.Getenv("SB_ES_API_KEY"))
 	require(t, err)
-	index, err := contract.IndexName(u.TenantID, "alerts", time.Now().UTC().Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", time.Now().UTC().Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, index, time.Now().UTC().Format("2006-01-02")))
-	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		r, e := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, e)
-		r.Body.Close()
-		if r.IsError() {
-			t.Error("专属处置索引未回收")
-		}
-	})
+	// 共享索引同时承载其他租户，只回收本租户文档。
+	t.Cleanup(func() { deleteTenantEvents(t, es, u.TenantID) })
 	var eventTime time.Time
 	for _, fact := range evidence.Facts {
 		if fact.ID == "event.time" {

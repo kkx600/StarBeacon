@@ -33,7 +33,7 @@ async function submit(){
  if([...form.note].length>2000){formError.value='研判说明最多 2000 字符';return}
  if(await state.submit({event_id:props.eventId,raw_sha256:props.digest,provider_id:provider.value.id,provider_revision:provider.value.revision,note:form.note,allow_context:form.allow_context}))message.success('模型研判作业已提交')
 }
-function openPolicies(){const job=selected.value;if(job?.state==='succeeded'&&session.current.value?.role==='admin')void router.push({path:'/models',query:{view:'policies',triage_id:job.id}})}
+function openPolicies(){const job=selected.value;if(job?.state==='succeeded'&&session.current.value?.role==='admin')void router.push({path:'/response/policies',query:{triage_id:job.id}})}
 async function confirm(){if(await state.confirm())message.success('研判提交结果已确认')}
 async function selectRecord(value:unknown){if(typeof value==='string'){recordID.value=value;await state.load(value)}}
 onMounted(()=>void loadProviders())

@@ -141,7 +141,6 @@ def platform_navigation_routes(root):
     for workspace in workspaces:
         if not any(screen["workspace"] == workspace["id"] for screen in screens):
             paths.append("/" + manifest.get("group_paths", {}).get(workspace["group"], workspace["group"]) + "/" + workspace["id"])
-    paths += ["/" + key for key in manifest["legacy_modules"]]
     if any(not re.fullmatch(r"/[a-z0-9/-]+", path) or "//" in path for path in paths):
         raise ValueError("导航路径格式无效")
     # 目录父级同样可直接访问并重定向；不得仅检查叶子而遗漏刷新入口。

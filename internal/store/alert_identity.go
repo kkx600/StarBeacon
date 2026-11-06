@@ -60,7 +60,7 @@ func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, di
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("alerts", tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndex("alerts")), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
 	if err := response(res, err, &result); err != nil {
 		return empty, err
 	}
@@ -74,7 +74,7 @@ func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, di
 		return empty, ErrAlertIdentity
 	}
 	hit := result.Hits.Items[0]
-	if !contract.IndexServes(hit.Index, "alerts", tenant) || hit.ID != id || hit.Source.EventID != id || hit.Source.TenantID != tenant || hit.Source.RawSHA256 != digest || hit.Source.Event.Kind != "alert" || hit.Source.Event.Original != "" {
+	if !contract.IndexServes(hit.Index, "alerts") || hit.ID != id || hit.Source.EventID != id || hit.Source.TenantID != tenant || hit.Source.RawSHA256 != digest || hit.Source.Event.Kind != "alert" || hit.Source.Event.Original != "" {
 		return empty, ErrAlertIdentity
 	}
 	// 分区由平台路由分配，历史重放和延迟上报的事件时间可能早于索引日期。

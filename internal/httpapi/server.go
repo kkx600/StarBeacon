@@ -93,10 +93,7 @@ func Decode(w http.ResponseWriter, r *http.Request, target any) error {
 	}
 	return nil
 }
-func Middleware(next http.Handler) http.Handler {
-	return MiddlewareWithClientIP(next, clientip.Policy{})
-}
-func MiddlewareWithClientIP(next http.Handler, policy clientip.Policy) http.Handler {
+func Middleware(next http.Handler, policy clientip.Policy) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := store.RandomID("req_")
 		w.Header().Set("X-Request-ID", id)
@@ -279,11 +276,8 @@ func Health(mux *http.ServeMux, ready func(context.Context) error) {
 	})
 	mux.Handle("GET /metrics", promhttp.HandlerFor(telemetry.Registry, promhttp.HandlerOpts{}))
 }
-func Serve(ctx context.Context, addr string, handler http.Handler, tlsCert, tlsKey string) error {
-	return ServeWithClientIP(ctx, addr, handler, tlsCert, tlsKey, clientip.Policy{})
-}
-func ServeWithClientIP(ctx context.Context, addr string, handler http.Handler, tlsCert, tlsKey string, policy clientip.Policy) error {
-	s := &http.Server{Addr: addr, Handler: MiddlewareWithClientIP(handler, policy), TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13}, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
+func Serve(ctx context.Context, addr string, handler http.Handler, tlsCert, tlsKey string, policy clientip.Policy) error {
+	s := &http.Server{Addr: addr, Handler: Middleware(handler, policy), TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13}, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
 	done := make(chan struct{})
 	go func() {
 		select {

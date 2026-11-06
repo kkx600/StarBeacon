@@ -17,7 +17,7 @@ const breadcrumbs=computed(()=>{
   const workspace=collectorWorkspaces.find(item=>item.id===route.meta.navWorkspace)
   return [...(workspace?[{label:workspace.title}]:[]),...(route.meta.title&&route.meta.title!==workspace?.title?[{label:String(route.meta.title)}]:[])]
 })
-function navigate(key:string){const item=sections.value.find(item=>'workspace:'+item.id===key);const {view:ignoredView,task:ignoredTask,...query}=route.query;void router.push({path:item?.path??key,query,hash:route.hash})}
+function navigate(key:string){const item=sections.value.find(item=>'workspace:'+item.id===key);const {task:ignoredTask,...query}=route.query;void router.push({path:item?.path??key,query,hash:route.hash})}
 watch(()=>route.meta.title,title=>{document.title=(title?String(title)+' · ':'')+'星烽 StarBeacon 采集器'},{immediate:true})
 watch(session.current, user => {
   if(!user&&route.path!=='/login')void router.replace({path:'/login',query:{redirect:route.fullPath}})

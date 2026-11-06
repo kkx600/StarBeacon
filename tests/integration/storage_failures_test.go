@@ -224,7 +224,7 @@ func TestPostgresDisconnectRollsBackConfigurationTasksAndAudit(t *testing.T) {
 			return e
 		}},
 		{"analysis_model_create", []string{"SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE model_capability_checks", "SELECT count(*) FILTER", "INSERT INTO analysis_threads", "UPDATE analysis_jobs SET river_job_id"}, func(db *store.Postgres) error {
-			queue, e := jobs.NewAnalysis(db, vault, policy)
+			queue, e := jobs.NewAnalysis(db, vault, policy, nil)
 			if e != nil {
 				return e
 			}

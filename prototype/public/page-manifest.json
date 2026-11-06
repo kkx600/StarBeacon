@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "c687942029f80409652581b506e6f24860b61dda95eb3f743c21ed5ab7332ee1"
+    "renderTreeSha256": "00f3ca90a1b3aa24f00b9434a645c3ae07bcf626cf81eb0be40ccb1c9b9b760a"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -431,11 +431,6 @@
       ]
     }
   ],
-  "legacyPages": {
-    "sensor-health": "sensors",
-    "pcap-downloads": "pcap-tasks",
-    "operation-logs": "audit"
-  },
   "groups": [
     {
       "id": "overview",

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// SharedIndexPrefix 标识全部租户共享的事件索引。旧版索引以 sb-{数据流}- 开头，前缀不会重叠。
+// SharedIndexPrefix 标识全部租户共享的事件索引。
 const SharedIndexPrefix = "sb-v2-"
 
 // IndexPeriod 是共享索引的时间粒度。索引名称在路由创建时冻结，修改粒度只影响新路由。
@@ -167,24 +167,12 @@ func EventIndexName(stream string, days int, period IndexPeriod, day string) (st
 	return SharedIndexPrefix + stream + "-r" + strconv.Itoa(days) + "-" + code + periodStart(period, parsed).Format("2006.01.02"), nil
 }
 
-// IndexName 返回升级前按租户、数据流和 UTC 日建立的旧版索引，仅用于既有数据的读取与在途写入。
-func IndexName(tenant, stream, partition string) (string, error) {
-	if !ValidID(tenant) || !ValidStream(stream) {
-		return "", fmt.Errorf("索引身份不合法")
-	}
-	if _, err := time.Parse("2006-01-02", partition); err != nil {
-		return "", err
-	}
-	return "sb-" + stream + "-" + tenant + "-" + strings.ReplaceAll(partition, "-", "."), nil
-}
-
-// EventIndex 是解析后的物理索引身份。共享索引不属于单个租户；旧版索引只承载 Tenant 一个租户。
+// EventIndex 是解析后的共享索引身份；索引同时承载多个租户，隔离依赖文档 tenant_id。
 type EventIndex struct {
-	Name, Stream, Tenant string
-	Days                 int
-	Period               IndexPeriod
-	Start, End           time.Time
-	Legacy               bool
+	Name, Stream string
+	Days         int
+	Period       IndexPeriod
+	Start, End   time.Time
 }
 
 // Covers 判断路由日是否位于索引的时间分区内。
@@ -210,33 +198,16 @@ func ParseEventIndex(name string) (EventIndex, error) {
 		}
 		return EventIndex{Name: name, Stream: match[1], Days: days, Period: period, Start: start, End: periodEnd(period, start)}, nil
 	}
-	for _, stream := range []string{"alerts", "context", "logs"} {
-		prefix := "sb-" + stream + "-"
-		if !strings.HasPrefix(name, prefix) || len(name) < len(prefix)+12 || name[len(name)-11] != '-' {
-			continue
-		}
-		tenant := name[len(prefix) : len(name)-11]
-		day, err := time.Parse("2006.01.02", name[len(name)-10:])
-		if err != nil || !ValidID(tenant) {
-			continue
-		}
-		if expected, err := IndexName(tenant, stream, day.Format("2006-01-02")); err != nil || expected != name {
-			continue
-		}
-		return EventIndex{Name: name, Stream: stream, Tenant: tenant, Period: PeriodDay, Start: day, End: day.AddDate(0, 0, 1), Legacy: true}, nil
-	}
 	return EventIndex{}, fmt.Errorf("索引名称不属于事件数据流")
 }
 
-// IndexServes 判断检索命中的物理索引能否承载该租户与数据流：共享索引依赖文档 tenant_id 过滤，旧版索引必须属于同一租户。
-func IndexServes(name, stream, tenant string) bool {
+// IndexServes 判断检索命中的物理索引是否属于该数据流的共享索引；租户隔离由文档 tenant_id 过滤与回读核对。
+func IndexServes(name, stream string) bool {
 	v, err := ParseEventIndex(name)
-	return err == nil && v.Stream == stream && (!v.Legacy || v.Tenant == tenant)
+	return err == nil && v.Stream == stream
 }
 
-// SearchIndices 返回检索表达式：共享索引和该租户的旧版索引，并排除同前缀其他租户的旧版索引。
-// 表达式本身不构成隔离，调用方必须同时在查询中强制过滤 tenant_id。
-func SearchIndices(stream, tenant string) []string {
-	legacy := "sb-" + stream + "-" + tenant + "-"
-	return []string{SharedIndexPrefix + stream + "-*", legacy + "*", "-" + legacy + "*-*"}
+// SearchIndex 返回数据流的检索表达式。表达式本身不构成隔离，调用方必须同时在查询中强制过滤 tenant_id。
+func SearchIndex(stream string) string {
+	return SharedIndexPrefix + stream + "-*"
 }

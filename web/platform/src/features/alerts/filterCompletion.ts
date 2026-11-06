@@ -1,5 +1,5 @@
 export interface SearchField { name: string; label: string; type: string; aliases: string[]; operators: string[] }
-export interface CompletionRange { start: number; end: number; prefix: string }
+interface CompletionRange { start: number; end: number; prefix: string }
 const tokenCharacter = /[A-Za-z0-9_@.]/
 const types = new Set(['protocol', 'ip', 'mac', 'port', 'identifier', 'time', 'string', 'keyword', 'text'])
 const operators = new Set(['exists', '==', '!=', 'in', '>', '>=', '<', '<=', 'contains'])

@@ -63,26 +63,8 @@ describe('采集器实际层级路由',()=>{
     const router=await at(path+'?source=pcap&mode=inspect#trace')
     expect(router.currentRoute.value.fullPath).toBe(expected+'?source=pcap&mode=inspect#trace')
   })
-  it.each([
-    ['interfaces','/network/interfaces'],['capture','/network/capture'],['archives','/network/archives'],
-    ['samples','/rules/samples'],['tasks','/rules/tasks'],['responses','/response/devices'],['syslog','/network/syslog'],
-  ])('旧 view=%s 迁移至 %s，原任务和检索条件不丢失',async(view,path)=>{
-    const router=await at('/network?view='+view+'&task=localtask_original&source=pcap&mode=inspect#trace')
-    expect(router.currentRoute.value.fullPath).toBe(path+'?task=localtask_original&source=pcap&mode=inspect#trace')
-    expect(router.currentRoute.value.query.view).toBeUndefined()
-  })
-  it.each(['view=invalid','view=tasks&view=capture','view'])('非法旧选择 %s 仅移除选择参数',async(query)=>{
-    const router=await at('/network?'+query+'&source=pcap#trace')
-    expect(router.currentRoute.value.fullPath).toBe('/network/interfaces?source=pcap#trace')
-  })
-  it('规范路径消费旧选择且不丢业务模式和任务链接',async()=>{
-    const router=await at('/rules/samples?view=tasks&task=localtask_original&mode=inspect#trace')
-    expect(router.currentRoute.value.fullPath).toBe('/rules/tasks?task=localtask_original&mode=inspect#trace')
-    await router.push('/network/capture?view=invalid&source=mirror&mode=inspect#capture')
-    expect(router.currentRoute.value.fullPath).toBe('/network/capture?source=mirror&mode=inspect#capture')
-  })
   it('未登录和认证恢复失败保留规范回跳，非管理员转入访问边界',async()=>{
-    user.value=null;const router=await at('/network?view=capture&source=mirror#capture')
+    user.value=null;const router=await at('/network/capture?source=mirror#capture')
     expect(router.currentRoute.value.path).toBe('/login')
     expect(router.currentRoute.value.query.redirect).toBe('/network/capture?source=mirror#capture')
     restore.mockRejectedValueOnce(new Error('认证暂不可用'));await router.push('/rules/tasks?task=localtask_original')

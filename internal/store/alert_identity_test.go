@@ -32,7 +32,7 @@ func TestAlertEvidenceAllowsHistoricalEventAndRejectsMissingTimesOrPayload(t *te
 			t.Error("研判来源没有按白名单读取必要字段")
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": "historical_event", "_index": "sb-alerts-tenant_owned-2026.10.03", "_source": source}}}})
+		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": "historical_event", "_index": "sb-v2-alerts-r180-d2026.10.03", "_source": source}}}})
 	}))
 	defer server.Close()
 	es, err := OpenES(server.URL, "")
@@ -63,7 +63,7 @@ func TestAlertEvidenceAllowsHistoricalEventAndRejectsMissingTimesOrPayload(t *te
 
 func TestAssessmentSourceRejectsAmbiguousPartialOrChangedFacts(t *testing.T) {
 	digest := strings.Repeat("a", 64)
-	hit := map[string]any{"_id": "event_owned", "_index": "sb-alerts-tenant_owned-2026.10.03", "_source": map[string]any{"tenant_id": "tenant_owned", "event_id": "event_owned", "raw_sha256": digest, "event": map[string]string{"kind": "alert"}}}
+	hit := map[string]any{"_id": "event_owned", "_index": "sb-v2-alerts-r180-d2026.10.03", "_source": map[string]any{"tenant_id": "tenant_owned", "event_id": "event_owned", "raw_sha256": digest, "event": map[string]string{"kind": "alert"}}}
 	var body any
 	status := 200
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -133,6 +133,16 @@ func TestAssessmentSourceRejectsAmbiguousPartialOrChangedFacts(t *testing.T) {
 		body = responseBody([]any{changed}, 1)
 		if err := es.VerifyAlertIdentity(context.Background(), "tenant_owned", "event_owned", digest); !errors.Is(err, ErrAlertIdentity) {
 			t.Fatal("被修改的来源被接受", field, err)
+		}
+	}
+	for _, index := range []string{"sb-v2-context-r180-d2026.10.03", "sb-v2-alerts-r180-w2026.10.03", "sb-alerts-tenant_owned-2026.10.03"} {
+		encoded, _ := json.Marshal(hit)
+		var changed map[string]any
+		_ = json.Unmarshal(encoded, &changed)
+		changed["_index"] = index
+		body = responseBody([]any{changed}, 1)
+		if err := es.VerifyAlertIdentity(context.Background(), "tenant_owned", "event_owned", digest); !errors.Is(err, ErrAlertIdentity) {
+			t.Fatal("其他数据流、非分区起点或旧版索引中的来源被接受", index, err)
 		}
 	}
 	body = responseBody([]any{hit, hit}, 2)

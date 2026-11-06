@@ -30,7 +30,7 @@ function inspect(ordinal:number){target.value=props.rollout.targets?.find(t=>t.o
  </template></a-table></div>
  <a-modal v-if="target" open title="目标验证证据" :width="760" :footer="null" @cancel="target=undefined">
   <a-descriptions bordered :column="1"><a-descriptions-item label="目标探针">{{target.spec.sensor_id}}</a-descriptions-item><a-descriptions-item label="注册代次"><span class="technical">{{target.spec.registration_id}}</span></a-descriptions-item><a-descriptions-item label="批准计划">{{target.plan_id}} · 修订 {{target.authorized_revision}}</a-descriptions-item><a-descriptions-item label="执行授权修订">{{target.execution_revision||'尚未启用'}}</a-descriptions-item><a-descriptions-item label="规则修订">{{target.spec.package_id}} · {{target.spec.package_revision}}</a-descriptions-item><a-descriptions-item label="正反样本"><span>{{target.spec.positive_sample_id}}</span><br>{{target.spec.negative_sample_id}}</a-descriptions-item></a-descriptions>
-  <ol class="rollout-proof"><li v-for="(title,index) in stages" :key="title"><span>{{title}}</span><RouterLink v-if="target.run?.tasks[index]" :to="{path:taskPath??'/sensors',query:{view:'tasks',task:target.run.tasks[index]}}">查看独立任务</RouterLink><span v-else class="field-hint">尚未提交</span></li></ol>
+  <ol class="rollout-proof"><li v-for="(title,index) in stages" :key="title"><span>{{title}}</span><RouterLink v-if="target.run?.tasks[index]" :to="{path:taskPath??'/sensors/tasks',query:{task:target.run.tasks[index]}}">查看独立任务</RouterLink><span v-else class="field-hint">尚未提交</span></li></ol>
   <p class="field-hint">验证记录绑定该设备和检测配置。发布回执及心跳核对不代表检测准确率、加密可见性或持续大流量性能通过。</p>
  </a-modal>
 </template>

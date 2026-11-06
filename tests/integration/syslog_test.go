@@ -40,7 +40,7 @@ func TestSyslogTLSWALMTLSIndexSearchAndRawAudit(t *testing.T) {
 	f, u, other, password := accountFixture(t, ctx)
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	sensorDir := filepath.Join(dir, "sensor")
 	identity, err := admin.Provision(ctx, f.Owner, u.TenantID, "sensor_syslog", "日志接入探针", ca, sensorDir)
 	require(t, err)

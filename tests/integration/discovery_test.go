@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/discovery"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
@@ -110,7 +110,7 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 	sessions := &discoverySessions{SessionStore: db}
 	auth.Store = sessions
 	api := &platform.API{DB: db, ES: es, Redis: cache, Auth: auth}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	login := func(name string) *liveHTTP {
@@ -139,24 +139,18 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 		a.request("POST", "/inventory/discovery", "", q, &result, status)
 		return &result
 	}
+	// 三个租户（含同前缀租户）把相同探针、注册代次与地址的流记录写入同一共享索引，隔离只依赖文档 tenant_id。
 	for n, tenant := range append(append([]string{}, tenants...), tenants[0]+"-shadow") {
-		index, err := contract.IndexName(tenant, "context", start.Add(24*time.Hour).Format("2006-01-02"))
-		require(t, err)
+		index := sharedEventIndex(t, "context", start.Add(24*time.Hour).Format("2006-01-02"))
 		require(t, es.EnsurePolicy(ctx))
-		require(t, es.EnsureIndexRetention(ctx, index, start.Add(24*time.Hour).Format("2006-01-02"), 180))
-		defer func() {
-			clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			defer stop()
-			res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			defer res.Body.Close()
-			if res.IsError() && res.StatusCode != 404 {
-				t.Error("自身索引清理失败", res.StatusCode)
-			}
-		}()
+		require(t, es.EnsureIndex(ctx, index, start.Add(24*time.Hour).Format("2006-01-02")))
+		// 共享索引同时承载其他租户，只回收本测试租户的文档。
+		defer deleteTenantEvents(t, es, tenant)
+		// 事件标识即共享索引文档 _id，按租户附加随机后缀。
+		suffix := store.RandomID("_")
 		items := []model.Alert{}
 		add := func(id, src, dst, reg, kind string, ns int) {
-			v := model.Alert{SchemaVersion: "1.0", EventID: id, TenantID: tenant, SensorID: q.SensorID, RegistrationID: reg, SourceGenerationID: "generation_owned", Sequence: fmt.Sprint(ns), RawSHA256: control.Digest([]byte(tenant + id)), Timestamp: start.Add(time.Duration(ns)), ObservedAt: start.Add(time.Second), ReceivedAt: start.Add(time.Second), Source: model.Endpoint{IP: src, MAC: "02:00:00:00:00:01"}, Destination: model.Endpoint{IP: dst, MAC: "02:00:00:00:00:02"}}
+			v := model.Alert{SchemaVersion: "1.0", EventID: id + suffix, TenantID: tenant, SensorID: q.SensorID, RegistrationID: reg, SourceGenerationID: "generation_owned", Sequence: fmt.Sprint(ns), RawSHA256: control.Digest([]byte(tenant + id)), Timestamp: start.Add(time.Duration(ns)), ObservedAt: start.Add(time.Second), ReceivedAt: start.Add(time.Second), Source: model.Endpoint{IP: src, MAC: "02:00:00:00:00:01"}, Destination: model.Endpoint{IP: dst, MAC: "02:00:00:00:00:02"}}
 			v.Event.Kind = kind
 			v.Event.Dataset = "suricata." + kind
 			v.Suricata.FlowID = "18446744073709551615"
@@ -182,7 +176,7 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 		require(t, err)
 		require(t, res.Body.Close())
 		if n == 0 && len(query(q, 200).Addresses) != 2 {
-			t.Fatal("没有同前缀租户时，排除模式不应把已有分区误判为空")
+			t.Fatal("当前租户写入后，共享分区不应被误判为空")
 		}
 	}
 	result := query(q, 200)
@@ -245,7 +239,7 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 	wrong.Start = wrong.Start.Add(-72 * time.Hour)
 	wrong.End = wrong.Start.Add(time.Hour)
 	if result := query(wrong, 200); result.PartitionStatus != "available" || len(result.Addresses) != 0 {
-		t.Fatal("没有匹配事件不等于没有租户分区")
+		t.Fatal("没有匹配事件不等于没有共享分区")
 	}
 	for _, entry := range []struct {
 		id, prefix string
@@ -316,18 +310,12 @@ func TestPassiveDiscoveryRealESScopesEvidenceQuotaAndNoAutomaticIdentity(t *test
 		return err
 	}))
 	query(v6, 409)
-	// 仅存在同前缀的其他租户时，也不能读到其他租户的旧版索引；共享索引存在与否不代表当前租户有数据。
-	ownedIndex, _ := contract.IndexName(tenants[0], "context", start.Add(24*time.Hour).Format("2006-01-02"))
-	deleted, err := es.API.Indices.Delete([]string{ownedIndex}, es.API.Indices.Delete.WithContext(ctx))
-	require(t, err)
-	require(t, deleted.Body.Close())
-	if deleted.IsError() {
-		t.Fatal("自身分区删除未完成", deleted.StatusCode)
-	}
+	// 删除当前租户文档后，同一共享索引仍保存其他租户与同前缀租户的相同流记录，查询不能读到它们；共享索引存在不代表当前租户有数据。
+	deleteTenantEvents(t, es, tenants[0])
 	absent, err := es.DiscoverAddresses(ctx, tenants[0], q)
 	require(t, err)
 	if len(absent.Addresses) != 0 || absent.SourceExcluded != "0" || absent.DestinationExcluded != "0" || absent.PartitionStatus != "absent" && absent.PartitionStatus != "available" {
-		t.Fatal("同前缀租户的观测进入了当前租户", absent)
+		t.Fatal("其他租户或同前缀租户的观测进入了当前租户", absent)
 	}
 	t.Log("真实 ES 双向流记录聚合、纳秒证据、IPv6、当前探针注册、网段修订、RLS、组播排除、512 地址拒绝截断、Redis 配额与 180 天审计通过；没有自动登记资产")
 }

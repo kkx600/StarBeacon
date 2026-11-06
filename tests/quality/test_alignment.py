@@ -52,7 +52,7 @@ class AlignmentTests(unittest.TestCase):
 
     def test_model_page_cannot_be_omitted_from_acceptance(self):
         routes = alignment.load(ROOT, "tests/acceptance/routes.json")
-        routes["platform"].remove("/models")
+        routes["platform"].remove("/ai/models")
         with self.assertRaises(ValueError):
             alignment.validate_routes(ROOT, routes, self.inventory)
 

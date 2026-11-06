@@ -30,10 +30,12 @@ func TestIndexerRejectsMalformedAndUnroutableBatchesBeforeDependencies(t *testin
 		name string
 		data []byte
 	}{{"信封 JSON 损坏", []byte(`{`)}, {"信封字段类型错误", []byte(`{"batch":3}`)}}
+	// 前三项携带合法共享索引，确保分别由批次编码、租户身份与路由日拒绝；第四项缺少路由冻结的索引。
 	for _, envelope := range []bus.Envelope{
-		{TenantID: "tenant_owned", Batch: []byte{0xff}, Partition: "2026-10-01"},
-		{TenantID: "foreign_tenant", Batch: encoded, Partition: "2026-10-01"},
-		{TenantID: "tenant_owned", Batch: encoded, Partition: "unroutable"},
+		{TenantID: "tenant_owned", Batch: []byte{0xff}, Partition: "2026-10-01", Index: "sb-v2-alerts-r180-d2026.10.01"},
+		{TenantID: "foreign_tenant", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-alerts-r180-d2026.10.01"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "unroutable", Index: "sb-v2-alerts-r180-d2026.10.01"},
+		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01"},
 		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-context-r180-d2026.10.01"},
 		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-v2-alerts-r180-d2026.10.02"},
 		{TenantID: "tenant_owned", Batch: encoded, Partition: "2026-10-01", Index: "sb-alerts-tenant_owned-2026.10.01"},
@@ -56,5 +58,19 @@ func TestIndexerRejectsMalformedAndUnroutableBatchesBeforeDependencies(t *testin
 				t.Fatal("损坏或不可路由批次被接受")
 			}
 		})
+	}
+}
+
+func TestEventIndexRequiresFrozenSharedIndexCoveringPartition(t *testing.T) {
+	for _, tc := range [][2]string{{"alerts", "sb-v2-alerts-r180-w2026.09.28"}, {"context", "sb-v2-context-r180-d2026.10.01"}} {
+		if index, err := eventIndex(tc[0], "2026-10-01", tc[1]); err != nil || index != tc[1] {
+			t.Fatal("路由冻结的共享索引被拒绝", tc, err)
+		}
+	}
+	// 质量事件与批次共用该核对：缺失、旧版、其他数据流、未覆盖路由日或非分区起点的索引均拒绝。
+	for _, tc := range [][2]string{{"alerts", ""}, {"context", ""}, {"alerts", "sb-alerts-tenant_owned-2026.10.01"}, {"context", "sb-context-tenant_owned-2026.10.01"}, {"alerts", "sb-v2-context-r180-d2026.10.01"}, {"alerts", "sb-v2-alerts-r180-d2026.10.02"}, {"alerts", "sb-v2-alerts-r180-w2026.10.01"}} {
+		if index, err := eventIndex(tc[0], "2026-10-01", tc[1]); err == nil || index != "" {
+			t.Fatal("不可用的路由索引被接受", tc)
+		}
 	}
 }

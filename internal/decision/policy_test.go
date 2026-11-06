@@ -243,12 +243,4 @@ func TestPolicyDefinitionsVersionsAndDirectoryBounds(t *testing.T) {
 	if (ListQuery{Limit: 100, Cursor: p.ID, Keyword: "影子", Active: "false"}).Validate() != nil {
 		t.Fatal("有效目录被拒绝")
 	}
-	if (EvaluateRequest{ExpectedRevision: 1, TriageID: "triage_owned"}).Validate() != nil {
-		t.Fatal("有效材料引用被拒绝")
-	}
-	for _, r := range []EvaluateRequest{{ExpectedRevision: 0, TriageID: "triage_owned"}, {ExpectedRevision: MaxRevision + 1, TriageID: "triage_owned"}, {ExpectedRevision: 1, TriageID: "/"}} {
-		if r.Validate() == nil {
-			t.Fatal("无效材料引用被接受")
-		}
-	}
 }

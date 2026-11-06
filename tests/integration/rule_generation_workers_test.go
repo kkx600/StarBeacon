@@ -43,7 +43,7 @@ func TestRuleGenerationWorkersVerifySourcesRejectOutputAndRetainUnknownCalls(t *
 	config := llm.Config{Name: "队列输出模型", Kind: "openai_responses", BaseURL: provider.URL + "/v1", Model: "owned-rule-model", Enabled: true, APIKey: "owned-rule-generation-key", MaxOutputTokens: 1024, TimeoutSeconds: 10, DailyRequests: 1000}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", ReplaceKey: true, Config: config}, vault, policy, "provider_seed")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy, nil)
 	require(t, err)
 	objects, err := replay.NewLocal(filepath.Join(t.TempDir(), "samples"), 128<<20)
 	require(t, err)

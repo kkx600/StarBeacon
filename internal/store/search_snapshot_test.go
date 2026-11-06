@@ -20,7 +20,7 @@ import (
 var snapshotStart = time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
 
 func snapshotHit(id int) map[string]any {
-	return map[string]any{"_id": fmt.Sprintf("event_%04d", id), "_index": "sb-alerts-tenant_owned-2026.10.09", "sort": []int{id}, "_source": map[string]any{"event_id": fmt.Sprintf("event_%04d", id), "tenant_id": "tenant_owned", "@timestamp": snapshotStart, "event": map[string]string{"kind": "alert"}}}
+	return map[string]any{"_id": fmt.Sprintf("event_%04d", id), "_index": "sb-v2-alerts-r180-d2026.10.09", "sort": []int{id}, "_source": map[string]any{"event_id": fmt.Sprintf("event_%04d", id), "tenant_id": "tenant_owned", "@timestamp": snapshotStart, "event": map[string]string{"kind": "alert"}}}
 }
 
 func snapshotBody(total int, hits ...any) map[string]any {
@@ -49,7 +49,7 @@ func TestSnapshotUsesStableCursorNewestPITAndMetadataProjection(t *testing.T) {
 					}
 					_, _ = w.Write([]byte(`{"succeeded":true,"num_freed":1}`))
 				case strings.HasSuffix(r.URL.Path, "/_pit"):
-					if r.URL.Path != "/sb-v2-"+dataset+"-*,sb-"+dataset+"-tenant_owned-*,-sb-"+dataset+"-tenant_owned-*-*/_pit" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("expand_wildcards") != "open,closed" || body["index_filter"] == nil {
+					if r.URL.Path != "/sb-v2-"+dataset+"-*/_pit" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("expand_wildcards") != "open,closed" || body["index_filter"] == nil {
 						t.Error("快照范围或部分分片保护缺失")
 					}
 					_, _ = w.Write([]byte(`{"id":"pit_first","_shards":{"total":1,"successful":1,"skipped":0,"failed":0}}`))
@@ -75,7 +75,7 @@ func TestSnapshotUsesStableCursorNewestPITAndMetadataProjection(t *testing.T) {
 					for id := searches * 500; id < min(searches*500+500, 501); id++ {
 						hit := snapshotHit(id)
 						if dataset == "context" {
-							hit["_index"] = "sb-context-tenant_owned-2026.10.09"
+							hit["_index"] = "sb-v2-context-r180-d2026.10.09"
 							hit["_source"].(map[string]any)["event"] = map[string]string{"kind": "flow"}
 						}
 						hits = append(hits, hit)
@@ -113,11 +113,13 @@ func TestSnapshotRejectsIncompleteOrUntrustedResultsWithoutFile(t *testing.T) {
 		"too_many":          func(v map[string]any) { v["hits"].(map[string]any)["total"].(map[string]any)["value"] = 10001 },
 	}
 	for name, alter := range map[string]func(map[string]any){
-		"foreign_index":  func(h map[string]any) { h["_index"] = "sb-alerts-other-2026.10.09" },
-		"invalid_index":  func(h map[string]any) { h["_index"] = "not_a_partition" },
-		"mismatched_id":  func(h map[string]any) { h["_id"] = "other" },
-		"invalid_id":     func(h map[string]any) { h["_id"] = "../id" },
-		"foreign_source": func(h map[string]any) { h["_source"].(map[string]any)["tenant_id"] = "other" },
+		"foreign_index":   func(h map[string]any) { h["_index"] = "sb-v2-context-r180-d2026.10.09" },
+		"unaligned_index": func(h map[string]any) { h["_index"] = "sb-v2-alerts-r180-w2026.10.09" },
+		"legacy_index":    func(h map[string]any) { h["_index"] = "sb-alerts-tenant_owned-2026.10.09" },
+		"invalid_index":   func(h map[string]any) { h["_index"] = "not_a_partition" },
+		"mismatched_id":   func(h map[string]any) { h["_id"] = "other" },
+		"invalid_id":      func(h map[string]any) { h["_id"] = "../id" },
+		"foreign_source":  func(h map[string]any) { h["_source"].(map[string]any)["tenant_id"] = "other" },
 		"before_time": func(h map[string]any) {
 			h["_source"].(map[string]any)["@timestamp"] = snapshotQuery().Start.Add(-time.Nanosecond)
 		},

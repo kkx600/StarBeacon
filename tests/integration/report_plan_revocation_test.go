@@ -25,7 +25,7 @@ func TestReportPlanOwnerRevocationStopsInitialAndRecoveredRuns(t *testing.T) {
 	defer cancel()
 	f := newIsolatedDatabase(t, ctx)
 	var snapshots atomic.Int32
-	queue, err := jobs.NewAnalysis(f.Runtime, nil, outbound.Policy{}, func(context.Context, model.Principal, analytics.Window) (analytics.Snapshot, error) {
+	queue, err := jobs.NewAnalysis(f.Runtime, nil, outbound.Policy{}, nil, func(context.Context, model.Principal, analytics.Window) (analytics.Snapshot, error) {
 		snapshots.Add(1)
 		return analytics.Snapshot{}, assistant.ErrInput
 	})

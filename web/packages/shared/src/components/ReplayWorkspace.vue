@@ -20,9 +20,10 @@ const emit=defineEmits<{tasks:[id?:string]}>()
 const props=withDefaults(defineProps<{api:ApiClient;principal?:Principal|null;local?:boolean;view?:'samples'|'tasks'}>(),{view:'samples'})
 const route=inject(routeLocationKey,undefined),router=inject(routerKey,undefined)
 const {detail,refresh:refreshDetail}=useTaskDetail(computed(()=>route?.query.task),{api:()=>props.api,principal:()=>props.principal,local:()=>!!props.local,enabled:()=>props.view==='tasks'})
-function viewTask(task:SensorTask){if(route&&router)void router.push({path:route.path,query:{...route.query,view:'tasks',task:task.id},hash:route.hash})}
+function viewTask(task:SensorTask){if(route&&router)void router.push({path:route.path,query:{...route.query,task:task.id},hash:route.hash})}
 function closeDetail(){if(route&&router)void router.replace({path:route.path,query:{...route.query,task:undefined},hash:route.hash})}
-function openAccepted(){const id=accepted.value;if(!id)return;selected.value=null;if(route&&router)void router.push({path:route.path,query:{...route.query,view:'tasks',task:id},hash:route.hash});else emit('tasks',id)}
+// 受理后进入任务视图的规范路径并打开原任务；没有路由元数据时交由上级切换。
+function openAccepted(){const id=accepted.value;if(!id)return;selected.value=null;const path=(route?.meta.viewPaths as Record<string,string>|undefined)?.tasks;if(route&&router&&path)void router.push({path,query:{...route.query,task:id},hash:route.hash});else emit('tasks',id)}
 const items=shallowRef<ReplaySample[]>([]),tasks=shallowRef<SensorTask[]>([]),sensors=shallowRef<Sensor[]>([]),packages=shallowRef<RulePackage[]>([])
 const pending=shallowRef(true),error=shallowRef(''),taskError=shallowRef(''),available=shallowRef(false),registered=shallowRef(true)
 const importing=shallowRef(false),uploading=shallowRef(false),file=shallowRef<File>(),uploadError=shallowRef('')

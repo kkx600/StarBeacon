@@ -135,7 +135,7 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 	}
 	root := t.TempDir()
 	pki := filepath.Join(root, "pki")
-	require(t, admin.DevPKI(pki))
+	require(t, admin.DevPKI(pki, nil))
 	id, err := admin.Provision(ctx, f.Owner, "packet_a", "sensor_owned", "原包验收探针", pki, filepath.Join(root, "agent-a"))
 	require(t, err)
 	_, err = admin.Provision(ctx, f.Owner, "packet_b", "sensor_owned", "隔离原包探针", pki, filepath.Join(root, "agent-b"))
@@ -510,7 +510,7 @@ func TestPacketSensorQualificationLocksWithoutTenantWritePrivilege(t *testing.T)
 	require(t, admin.Bootstrap(ctx, f.Owner, "packet_lock", "原包资格验收", "packet_locker", store.Token(), "admin"))
 	require(t, admin.Bootstrap(ctx, f.Owner, "packet_other", "隔离租户", "packet_other_user", store.Token(), "admin"))
 	root := t.TempDir()
-	require(t, admin.DevPKI(filepath.Join(root, "pki")))
+	require(t, admin.DevPKI(filepath.Join(root, "pki"), nil))
 	id, err := admin.Provision(ctx, f.Owner, "packet_lock", "packet_sensor", "资格验收探针", filepath.Join(root, "pki"), filepath.Join(root, "agent"))
 	require(t, err)
 	var count int

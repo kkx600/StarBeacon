@@ -212,7 +212,7 @@ func (p *Postgres) Heartbeat(ctx context.Context, id transport.SensorIdentity, h
 	})
 }
 
-// Route 绑定采集器数据流与路由日。Index 为创建时冻结的共享索引；空值表示升级前的租户日索引。
+// Route 绑定采集器数据流与路由日。Index 为创建时冻结的共享索引，重试与重投沿用同一索引。
 type Route struct {
 	Token, TenantID, SensorID, RegistrationID, StreamID, Partition, Index string
 	ExpiresAt                                                             time.Time

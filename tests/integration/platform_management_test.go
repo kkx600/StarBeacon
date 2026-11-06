@@ -50,7 +50,7 @@ func TestNativePlatformManagementIsolationCASAuditSampleRecoveryAndLogout(t *tes
 	}
 	directory := t.TempDir()
 	pki := filepath.Join(directory, "pki")
-	require(t, admin.DevPKI(pki))
+	require(t, admin.DevPKI(pki, nil))
 	identity, err := admin.Provision(ctx, fixture.Owner, "http_a", "sensor_http", "管理链路探针", pki, filepath.Join(directory, "agent"))
 	require(t, err)
 	private, public := filepath.Join(directory, "command.key"), filepath.Join(directory, "command.pub")

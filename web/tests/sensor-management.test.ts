@@ -10,6 +10,7 @@ import {useSensorGroups} from '../platform/src/features/sensors/useSensorGroups'
 import {useSensorMutation} from '../platform/src/features/sensors/useSensorMutation'
 import ManagementForm from '../platform/src/features/sensors/ManagementForm.vue'
 import {click,deferred,principal,sensor} from './fixtures'
+import {platformScreenRoutes} from './routeFixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 const user=shallowRef(principal)
 vi.mock('../platform/src/session',()=>({session:{api:{request},get current(){return user}}}))
@@ -125,7 +126,7 @@ describe('探针分页与管理工作区',()=>{
    if(path.startsWith('/sensor-groups'))return Promise.resolve({items:[savedGroup],next_cursor:''})
    return Promise.resolve({items:[{...sensor,metadata_revision:1}],next_cursor:''})
   })
-  const router=createRouter({history:createMemoryHistory(),routes:[{path:'/sensors',component:Workspace}]});await router.push('/sensors?view=groups');await router.isReady()
+  const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(Workspace)});await router.push('/sensors/groups');await router.isReady()
   const wrapper=mount(Workspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.findAll('.ant-table')).toHaveLength(1)
   await click('创建分组');const name=document.querySelector<HTMLInputElement>('#sensor-management-name')!;name.value='分支园区';name.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises();await click('保存');await vi.waitFor(()=>expect(document.body.textContent).toContain('结果尚未确认'))
   const original=request.mock.calls.find(c=>c[1]?.method==='POST')!;await click('关闭');await click('核对原提交');expect(document.querySelector<HTMLInputElement>('#sensor-management-name')?.value).toBe('分支园区')
@@ -140,9 +141,9 @@ describe('探针分页与管理工作区',()=>{
    if(path.startsWith('/sensor-groups'))return Promise.resolve({items:[savedGroup],next_cursor:''})
    return Promise.resolve({items:[{...sensor,metadata_revision:1}],next_cursor:''})
   })
-  const router=createRouter({history:createMemoryHistory(),routes:[{path:'/sensors',component:Workspace}]});await router.push('/sensors?view=groups');await router.isReady()
+  const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(Workspace)});await router.push('/sensors/groups');await router.isReady()
   const wrapper=mount(Workspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.findAll('.ant-table')).toHaveLength(1)
-  await click('查看探针');expect(router.currentRoute.value.query.view).toBeUndefined();expect(request.mock.calls.some(c=>c[0].startsWith('/sensors?')&&new URLSearchParams(c[0].split('?')[1]).get('group_id')===savedGroup.id)).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  await click('查看探针');expect(router.currentRoute.value.path).toBe('/sensors/list');expect(request.mock.calls.some(c=>c[0].startsWith('/sensors?')&&new URLSearchParams(c[0].split('?')[1]).get('group_id')===savedGroup.id)).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1)
   await click('重置');expect(request.mock.lastCall?.[0]).toContain('group_id=');await click('编辑');expect(document.body.textContent).toContain('探针名称');await click('关闭')
   await click('探针分组');await click('刷新');expect(wrapper.text()).toContain('分支园区');await click('重置');expect(request.mock.calls.some(c=>c[0].startsWith('/sensor-groups?')&&c[0].includes('keyword=&active='))).toBe(true)
   user.value={...principal,tenant_id:'other'};await flushPromises();expect(document.querySelector('.ant-modal')).toBeNull();wrapper.unmount()

@@ -81,4 +81,3 @@ func safeCell(value string) string {
 }
 
 func (c *CSV) Bytes() []byte { return c.buffer.Bytes() }
-func (c *CSV) Rows() int     { return c.rows }

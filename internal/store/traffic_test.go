@@ -66,8 +66,8 @@ func TestTrafficSearchUsesOwnedContextAndExactSourceFilters(t *testing.T) {
 	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
-		if r.URL.Path != "/sb-v2-context-*,sb-context-tenant_1-*,-sb-context-tenant_1-*-*/_search" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("ignore_unavailable") == "true" {
-			t.Error("流量查询未限定完整租户上下文索引", r.URL)
+		if r.URL.Path != "/sb-v2-context-*/_search" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("ignore_unavailable") == "true" {
+			t.Error("流量查询未限定完整共享上下文索引", r.URL)
 		}
 		var body map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -97,7 +97,7 @@ func TestTrafficSearchUsesOwnedContextAndExactSourceFilters(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		row := model.Alert{TenantID: "tenant_1", EventID: "event_1", Timestamp: now}
 		row.Event.Kind = sourceKind
-		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": row.EventID, "_index": "sb-context-tenant_1-" + now.Format("2006.01.02"), "_source": row}}}})
+		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": row.EventID, "_index": "sb-v2-context-r180-d" + now.Format("2006.01.02"), "_source": row}}}})
 	}))
 	defer server.Close()
 	es, err := OpenES(server.URL, "")

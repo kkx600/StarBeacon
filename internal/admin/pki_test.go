@@ -27,7 +27,7 @@ func certificate(t *testing.T, path string) *x509.Certificate {
 }
 func TestDevelopmentServiceSANAndSensorIdentity(t *testing.T) {
 	dir := t.TempDir()
-	if err := DevPKIWithHosts(dir, []string{"platform", "ingest", "collector", "192.0.2.10", "PLATFORM"}); err != nil {
+	if err := DevPKI(dir, []string{"platform", "ingest", "collector", "192.0.2.10", "PLATFORM"}); err != nil {
 		t.Fatal(err)
 	}
 	cert := certificate(t, filepath.Join(dir, "server.crt"))
@@ -43,7 +43,7 @@ func TestDevelopmentServiceSANAndSensorIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	before, _ := os.ReadFile(filepath.Join(dir, "ca.crt"))
-	if DevPKI(dir) == nil {
+	if DevPKI(dir, nil) == nil {
 		t.Fatal("覆盖已有 CA")
 	}
 	after, _ := os.ReadFile(filepath.Join(dir, "ca.crt"))
@@ -51,7 +51,7 @@ func TestDevelopmentServiceSANAndSensorIdentity(t *testing.T) {
 		t.Fatal("已有 CA 被修改")
 	}
 	identity := transport.SensorIdentity{TenantID: "tenant_test", SensorID: "sensor_test", RegistrationID: "sr_test"}
-	if _, err := Issue(dir, filepath.Join(dir, "agent"), &identity, false); err != nil {
+	if _, err := Issue(dir, filepath.Join(dir, "agent"), &identity, false, nil); err != nil {
 		t.Fatal(err)
 	}
 	agent := certificate(t, filepath.Join(dir, "agent.crt"))
@@ -69,7 +69,7 @@ func TestDevelopmentServiceSANAndSensorIdentity(t *testing.T) {
 			t.Fatal("私钥权限无效", name)
 		}
 	}
-	if _, err := Issue(dir, filepath.Join(dir, "agent"), &identity, false); err == nil {
+	if _, err := Issue(dir, filepath.Join(dir, "agent"), &identity, false, nil); err == nil {
 		t.Fatal("重签覆盖已有身份")
 	}
 }
@@ -77,7 +77,7 @@ func TestServerHostsRejectBeforeWriting(t *testing.T) {
 	for _, host := range []string{"", " *.example.com", "*.example.com", "http://platform", "platform:29091", "foo/bar", "a..b", "-platform", "platform-", "fe80::1%eth0", "underscore_name", strings.Repeat("a", 64) + ".com", strings.Repeat("x", 254)} {
 		t.Run(host, func(t *testing.T) {
 			dir := filepath.Join(t.TempDir(), "pki")
-			if DevPKIWithHosts(dir, []string{host}) == nil {
+			if DevPKI(dir, []string{host}) == nil {
 				t.Fatal("接受非法 SAN")
 			}
 			if _, err := os.Stat(dir); !os.IsNotExist(err) {
@@ -89,29 +89,29 @@ func TestServerHostsRejectBeforeWriting(t *testing.T) {
 		t.Fatal("超出 SAN 数量")
 	}
 	dir := t.TempDir()
-	if err := DevPKI(dir); err != nil {
+	if err := DevPKI(dir, nil); err != nil {
 		t.Fatal(err)
 	}
 	for _, identity := range []*transport.SensorIdentity{nil, {TenantID: "../other", SensorID: "sensor_x", RegistrationID: "sr_x"}} {
-		if _, err := Issue(dir, filepath.Join(dir, "invalid"), identity, false); err == nil {
+		if _, err := Issue(dir, filepath.Join(dir, "invalid"), identity, false, nil); err == nil {
 			t.Fatal("接受非法身份")
 		}
 	}
-	if _, err := IssueWithHosts(dir, filepath.Join(dir, "bad-san"), nil, true, []string{"*"}); err == nil {
+	if _, err := Issue(dir, filepath.Join(dir, "bad-san"), nil, true, []string{"*"}); err == nil {
 		t.Fatal("接受通配 SAN")
 	}
 }
 
 func TestCertificatePairFailurePreservesExistingFiles(t *testing.T) {
 	dir := t.TempDir()
-	if err := DevPKI(dir); err != nil {
+	if err := DevPKI(dir, nil); err != nil {
 		t.Fatal(err)
 	}
 	prefix := filepath.Join(dir, "collision")
 	if err := os.WriteFile(prefix+".crt", []byte("已有证书"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Issue(dir, prefix, nil, true); err == nil {
+	if _, err := Issue(dir, prefix, nil, true, nil); err == nil {
 		t.Fatal("覆盖已有证书")
 	}
 	if _, err := os.Stat(prefix + ".key"); !os.IsNotExist(err) {
@@ -121,7 +121,7 @@ func TestCertificatePairFailurePreservesExistingFiles(t *testing.T) {
 	if err != nil || string(content) != "已有证书" {
 		t.Fatal("已有证书被删除或覆盖")
 	}
-	if _, err := Issue(dir, filepath.Join(dir, "missing", "cert"), nil, true); err == nil {
+	if _, err := Issue(dir, filepath.Join(dir, "missing", "cert"), nil, true, nil); err == nil {
 		t.Fatal("接受不存在的输出目录")
 	}
 }
@@ -134,7 +134,7 @@ func TestDevelopmentCAFailureIsRetryable(t *testing.T) {
 			if err := os.WriteFile(path, []byte("保留的身份"), 0600); err != nil {
 				t.Fatal(err)
 			}
-			if DevPKI(dir) == nil {
+			if DevPKI(dir, nil) == nil {
 				t.Fatal("覆盖已有身份")
 			}
 			entries, err := os.ReadDir(dir)
@@ -144,7 +144,7 @@ func TestDevelopmentCAFailureIsRetryable(t *testing.T) {
 			if err := os.Remove(path); err != nil {
 				t.Fatal(err)
 			}
-			if err := DevPKI(dir); err != nil {
+			if err := DevPKI(dir, nil); err != nil {
 				t.Fatal("失败之后无法重试", err)
 			}
 		})

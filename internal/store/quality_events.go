@@ -97,7 +97,7 @@ func recordQuality(ctx context.Context, tx pgx.Tx, id transport.SensorIdentity, 
 	return err
 }
 
-// QualityLease 的 Index 为待办创建时冻结的共享索引；空值表示升级前写入的待办，沿用租户日索引。
+// QualityLease 的 Index 为待办创建时冻结的共享索引，重试沿用同一索引。
 type QualityLease struct {
 	TenantID, ID, Token, Partition, Index string
 	Document                              model.Alert

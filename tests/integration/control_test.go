@@ -57,7 +57,7 @@ func TestPersistentControlTaskReceiptReplayAndRLS(t *testing.T) {
 	require(t, db.VerifyRuntimeRole(ctx))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	tenants := []string{store.RandomID("it_ctrl_a_"), store.RandomID("it_ctrl_b_")}
 	identities := make([]transport.SensorIdentity, 2)
 	for i, tenant := range tenants {

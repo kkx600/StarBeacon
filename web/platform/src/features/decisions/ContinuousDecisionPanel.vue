@@ -29,7 +29,7 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
   <StatePanel :loading="pending" :error="error" @retry="load">
    <template v-if="item"><a-alert :type="item.state==='queued'?'success':item.state==='skipped'?'warning':'info'" show-icon :message="continuousStates[item.state]+' · '+continuousCodes[item.code]" class="section-gap"/>
     <dl class="continuous-detail"><dt>记录标识</dt><dd class="technical">{{item.id}}</dd><dt>策略维护者</dt><dd>{{item.created_by}}</dd><dt>模型 / 修订</dt><dd>{{item.config.provider_id}} / {{item.config.provider_revision}}</dd><dt>记录 / 保留截止</dt><dd>{{formatTime(item.created_at)}} / {{formatTime(item.expires_at)}}</dd><template v-if="item.config.automatic"><dt>执行探针 / 设备</dt><dd>{{item.config.automatic.sensor_id}} / {{item.config.automatic.connector_id}}</dd><dt>探针注册代次</dt><dd class="technical">{{item.config.automatic.registration_id}}</dd><dt>设备配置 SHA-256</dt><dd class="technical">{{item.config.automatic.config_sha256}}</dd><dt>期限 / 冷却时间</dt><dd>{{item.config.automatic.ttl_seconds}} / {{item.config.automatic.cooldown_seconds}} 秒</dd><dt>每小时授权上限</dt><dd>{{item.config.automatic.max_hourly_actions}} 次</dd><dt>未校准分数授权</dt><dd>策略维护者已明确确认；仍须满足固定事实条件</dd></template><dt>授权档案 SHA-256</dt><dd class="technical">{{item.sha256}}</dd></dl>
-    <a-button v-if="item.task_id" type="primary" @click="router.push({path:'/sensors',query:{view:'tasks',task:item.task_id}})">查看任务记录</a-button>
+    <a-button v-if="item.task_id" type="primary" @click="router.push({path:'/sensors/tasks',query:{task:item.task_id}})">查看任务记录</a-button>
     <p class="page-description">签名任务受理、设备配置回读和实际流量效果需分别核对。该档案不把模型分数认定为已校准概率。</p>
    </template>
    <p v-else class="page-description">该评估没有持续决策授权记录。按需评估不触发自动执行；持续模式仅处理启用后创建并完成的本人指定模型研判。</p>

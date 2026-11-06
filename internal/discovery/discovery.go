@@ -159,7 +159,7 @@ func witness(sample rawHits, tenant string, q Query, side, ip string) (Witness, 
 	}
 	hit := sample.Hits.Hits[0]
 	v := hit.Source
-	if !contract.IndexServes(hit.Index, "context", tenant) || hit.ID != v.EventID || !contract.ValidID(v.EventID) || v.SchemaVersion != "1.0" || v.TenantID != tenant || v.SensorID != q.SensorID || v.RegistrationID != q.RegistrationID || !contract.ValidID(v.SourceGenerationID) || v.Event.Kind != "flow" || v.Event.Original != "" || v.Timestamp.Before(q.Start) || !v.Timestamp.Before(q.End) || v.ObservedAt.IsZero() || !hexDigest(v.RawSHA256) {
+	if !contract.IndexServes(hit.Index, "context") || hit.ID != v.EventID || !contract.ValidID(v.EventID) || v.SchemaVersion != "1.0" || v.TenantID != tenant || v.SensorID != q.SensorID || v.RegistrationID != q.RegistrationID || !contract.ValidID(v.SourceGenerationID) || v.Event.Kind != "flow" || v.Event.Original != "" || v.Timestamp.Before(q.Start) || !v.Timestamp.Before(q.End) || v.ObservedAt.IsZero() || !hexDigest(v.RawSHA256) {
 		return Witness{}, ErrIncomplete
 	}
 	for _, value := range []string{v.Sequence, v.Suricata.FlowID} {

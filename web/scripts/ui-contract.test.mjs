@@ -21,8 +21,8 @@ test('容量与速率自动换算，缺测与零区分，64 位计数保留精�
  assert.equal(compareQuantity('1000 Mbit/s','1 Gbit/s'),0)
 })
 test('登录回跳只接受同源应用路径，并保留查询和锚点',()=>{
- assert.equal(safeReturnPath('/rules?view=tasks#receipt','/sensors'),'/rules?view=tasks#receipt')
- for(const value of ['https://evil.test','//evil.test','/%2fevil.test','/\\evil.test','/%5cevil.test','/login','/login/again','/bad%','/\npath',[]])assert.equal(safeReturnPath(value,'/sensors'),'/sensors')
+ assert.equal(safeReturnPath('/detection/rules/tasks?task=task_1#receipt','/sensors/list'),'/detection/rules/tasks?task=task_1#receipt')
+ for(const value of ['https://evil.test','//evil.test','/%2fevil.test','/\\evil.test','/%5cevil.test','/login','/login/again','/bad%','/\npath',[]])assert.equal(safeReturnPath(value,'/sensors/list'),'/sensors/list')
 })
 test('基础规则检查定位重复 SID、缺分号、引号、头部、动作和空包',()=>{
  assert.deepEqual(inspectRules(rule),[])
@@ -36,7 +36,7 @@ test('两端与原型采用 History，API 与资源不会被 SPA 回退覆盖',a
  for(const path of ['../platform/src/router.ts','../collector/src/router.ts','../../prototype/src/router.ts']){
   const source=await readFile(new URL(path,import.meta.url),'utf8');assert.ok(source.includes('createWebHistory'));assert.ok(!source.includes('createWebHashHistory'))
  }
- for(const name of ['platform','collector']){const config=await readFile(new URL(`../../deploy/nginx/${name}.conf`,import.meta.url),'utf8');assert.ok(config.includes('location ^~ /api/'));assert.ok(config.includes('location ^~ /assets/'));assert.ok(config.includes('try_files $uri =404'));assert.ok(config.includes('try_files $uri /index.html'));assert.ok(!config.includes('$uri/'));if(name==='platform')for(const path of ['/assets','/assets/'])assert.ok(config.includes(`location = ${path} {`))}
+ for(const name of ['platform','collector']){const config=await readFile(new URL(`../../deploy/nginx/${name}.conf`,import.meta.url),'utf8');assert.ok(config.includes('location ^~ /api/'));assert.ok(config.includes('location ^~ /assets/'));assert.ok(config.includes('try_files $uri =404'));assert.ok(config.includes('try_files $uri /index.html'));assert.ok(!config.includes('$uri/'));assert.ok(!config.includes('location = /assets'),'静态资源目录不能回退为业务页面')}
 })
 
 test('工程与原型语义色一致，语法文本在白灰底上可读',()=>{

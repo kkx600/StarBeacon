@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/syslogdata"
@@ -17,70 +16,7 @@ const logMapping = `{"dynamic":"strict","properties":{
 "binding":{"properties":{"source_id":{"type":"keyword"},"source_name":{"type":"keyword","ignore_above":512},"network_domain":{"type":"keyword"},"config_sha256":{"type":"keyword"},"transport":{"type":"keyword"},"format":{"type":"keyword"},"timezone":{"type":"keyword"},"year_policy":{"type":"keyword"}}},
 "peer":{"properties":{"ip":{"type":"ip"},"port":{"type":"integer"},"certificate_sha256":{"type":"keyword"}}}}},
 "parsed":{"properties":{"parser_version":{"type":"keyword"},"state":{"type":"keyword"},"reason":{"type":"keyword"},"time_quality":{"type":"keyword"},"source_time":{"type":"date"},"priority":{"type":"short"},"facility":{"type":"short"},"severity":{"type":"short"},"hostname":{"type":"keyword","ignore_above":512},"application":{"type":"keyword","ignore_above":512},"process_id":{"type":"keyword","ignore_above":512},"message_id":{"type":"keyword","ignore_above":512},"message":{"type":"text","analyzer":"cjk","fields":{"standard":{"type":"text","analyzer":"standard"}}},"message_utf8":{"type":"boolean"},"structured_data":{"type":"object","enabled":false}}}}}`
-const logTemplateName = "sb-logs-v1"
 
-func logTemplateBody() string {
-	return `{"index_patterns":["sb-logs-*"],"allow_auto_create":false,"priority":152,"version":1,"_meta":{"owner":"starbeacon","schema":1},"template":{"mappings":` + logMapping + `}}`
-}
-func (s *Elasticsearch) logTemplateExists(ctx context.Context) (bool, error) {
-	res, err := s.API.Indices.GetIndexTemplate(s.API.Indices.GetIndexTemplate.WithName(logTemplateName), s.API.Indices.GetIndexTemplate.WithContext(ctx))
-	if err != nil {
-		return false, err
-	}
-	if res.StatusCode == 404 {
-		res.Body.Close()
-		return false, nil
-	}
-	var out struct {
-		Templates []struct {
-			Name   string        `json:"name"`
-			Config eventTemplate `json:"index_template"`
-		} `json:"index_templates"`
-	}
-	if err = response(res, nil, &out); err != nil {
-		return false, err
-	}
-	if len(out.Templates) != 1 || out.Templates[0].Name != logTemplateName {
-		return false, fmt.Errorf("日志索引模板身份无效")
-	}
-	t := out.Templates[0].Config
-	var actual, expected any
-	if json.Unmarshal(t.Template.Mappings, &actual) != nil || json.Unmarshal([]byte(logMapping), &expected) != nil || t.Version != 1 || t.Meta.Schema != 1 || t.Meta.Owner != "starbeacon" || t.Priority != 152 || t.AllowAutoCreate == nil || *t.AllowAutoCreate || !reflect.DeepEqual(t.Patterns, []string{"sb-logs-*"}) || !reflect.DeepEqual(actual, expected) {
-		return false, fmt.Errorf("日志索引模板契约不一致")
-	}
-	return true, nil
-}
-func (s *Elasticsearch) EnsureLogTemplate(ctx context.Context) error {
-	_, err, _ := s.indexFlight.Do("log-template", func() (any, error) {
-		s.mu.Lock()
-		ready := s.logTemplateReady
-		s.mu.Unlock()
-		if ready {
-			return nil, nil
-		}
-		exists, err := s.logTemplateExists(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			res, e := s.API.Indices.PutIndexTemplate(logTemplateName, strings.NewReader(logTemplateBody()), s.API.Indices.PutIndexTemplate.WithCreate(true), s.API.Indices.PutIndexTemplate.WithContext(ctx))
-			write := response(res, e, nil)
-			if ready, check := s.logTemplateExists(ctx); check != nil {
-				return nil, check
-			} else if !ready {
-				if write != nil {
-					return nil, write
-				}
-				return nil, fmt.Errorf("日志索引模板尚未确认")
-			}
-		}
-		s.mu.Lock()
-		s.logTemplateReady = true
-		s.mu.Unlock()
-		return nil, nil
-	})
-	return err
-}
 func (s *Elasticsearch) BulkLogs(ctx context.Context, index string, items []syslogdata.Document) []error {
 	ids := make([]string, len(items))
 	docs := make([]json.RawMessage, len(items))
@@ -115,9 +51,8 @@ func (s *Elasticsearch) BulkLogs(ctx context.Context, index string, items []sysl
 	})
 }
 
-// 同名既有索引必须具有固定映射和有效生命周期，禁止在未知索引上继续写入。
-// origin 为分区起点；expected 为 0 时接受旧版索引首次创建时固化的任意有效期限。
-func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string, origin time.Time, expected int) error {
+// verifyIndex 核对同名既有索引具有固定映射、分区起点和生命周期，禁止在未知索引上继续写入。
+func (s *Elasticsearch) verifyIndex(ctx context.Context, index, mapping string, origin time.Time, days int) error {
 	var body map[string]struct {
 		Mappings json.RawMessage `json:"mappings"`
 		Settings struct {
@@ -135,28 +70,19 @@ func (s *Elasticsearch) verifyLogIndex(ctx context.Context, index string, origin
 	}
 	v, ok := body[index]
 	var actual, want any
-	if !ok || len(body) != 1 || json.Unmarshal(v.Mappings, &actual) != nil || json.Unmarshal([]byte(logMapping), &want) != nil || !reflect.DeepEqual(actual, want) {
-		return fmt.Errorf("日志索引映射无法核对")
-	}
-	name := v.Settings.Index.Lifecycle.Name
-	days := 0
-	if name == retentionPolicyName(180) {
-		days = 180
-	} else {
-		if _, err := fmt.Sscanf(name, "sb-retention-%dd", &days); err != nil || name != retentionPolicyName(days) {
-			return fmt.Errorf("日志生命周期无法核对")
-		}
+	if !ok || len(body) != 1 || json.Unmarshal(v.Mappings, &actual) != nil || json.Unmarshal([]byte(mapping), &want) != nil || !reflect.DeepEqual(actual, want) {
+		return fmt.Errorf("既有索引映射无法核对")
 	}
 	actualOrigin, originErr := v.Settings.Index.Lifecycle.OriginationDate.Int64()
-	if days < 1 || days > maxPolicyDays || expected != 0 && days != expected || originErr != nil || actualOrigin != origin.UnixMilli() {
-		return fmt.Errorf("日志生命周期无法核对")
+	if v.Settings.Index.Lifecycle.Name != retentionPolicyName(days) || originErr != nil || actualOrigin != origin.UnixMilli() {
+		return fmt.Errorf("既有索引生命周期无法核对")
 	}
 	ready, err := s.retentionPolicyExists(ctx, days)
 	if err != nil {
 		return err
 	}
 	if !ready {
-		return fmt.Errorf("日志生命周期尚未确认")
+		return fmt.Errorf("既有索引生命周期尚未确认")
 	}
 	return nil
 }

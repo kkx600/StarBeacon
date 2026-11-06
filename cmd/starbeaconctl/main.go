@@ -55,7 +55,7 @@ func run() error {
 		if *hosts != "" {
 			names = strings.Split(*hosts, ",")
 		}
-		return admin.DevPKIWithHosts(*dir, names)
+		return admin.DevPKI(*dir, names)
 	}
 	if command == "command-keys" {
 		if e := os.MkdirAll(*dir, 0700); e != nil {

@@ -12,9 +12,10 @@ const action:ResponseAction={schema_version:'response.action.v1',connector_id:'c
 const proof=():ResponseProtection=>({schema_version:'response.protection.v1',command_sha256:'c'.repeat(64),check_sha256:'d'.repeat(64),check:{schema_version:'watchlist-response-check.v1',checked_at:new Date(now+10).toISOString(),state_sha256:'e'.repeat(64),matches:[]}})
 
 describe('封禁授权名单核对记录',()=>{
- it('区分原任务授权与锁后核对时刻，并接受明确的历史缺失',()=>{
+ it('区分原任务授权与锁后核对时刻，封禁必须带有记录而回读和解除不携带',()=>{
   expect(validResponseProtection(proof(),'response.block',action.requested_at,action.expires_at)).toBe(true)
-  expect(validResponseProtection(undefined,'response.block',action.requested_at,action.expires_at)).toBe(true)
+  expect(validResponseProtection(undefined,'response.block',action.requested_at,action.expires_at)).toBe(false)
+  for(const kind of ['response.read','response.revoke'])expect(validResponseProtection(undefined,kind,action.requested_at,action.expires_at)).toBe(true)
   for(const delta of [-30000,30000]){const value=proof();value.check.checked_at=new Date(now+delta).toISOString();expect(validResponseProtection(value,'response.block',action.requested_at,action.expires_at)).toBe(true)}
  })
  it('拒绝其他动作、损坏结构、错误摘要、命中项和越过授权时间的材料',()=>{
@@ -33,10 +34,10 @@ describe('封禁授权名单核对记录',()=>{
   expect(w.text()).toContain(value.command_sha256)
   expect(w.findAll('table')).toHaveLength(1)
  })
- it('旧任务和错误材料给出各自说明，不展示成功结论',()=>{
-  const old=mount(ResponseProtectionSummary,{props:{action},global:{plugins:[registerAnt]}})
-  expect(old.text()).toContain('没有名单核对记录')
-  expect(old.text()).not.toContain('平台授权时未命中')
+ it('缺失和错误材料给出各自说明，不展示成功结论',()=>{
+  const missing=mount(ResponseProtectionSummary,{props:{action},global:{plugins:[registerAnt]}})
+  expect(missing.text()).toContain('缺少名单核对记录')
+  expect(missing.text()).not.toContain('平台授权时未命中')
   const bad=mount(ResponseProtectionSummary,{props:{action,proof:{...proof(),check_sha256:'bad'}},global:{plugins:[registerAnt]}})
   expect(bad.text()).toContain('名单核对记录不完整')
   expect(bad.text()).not.toContain('平台授权时未命中')
@@ -44,6 +45,8 @@ describe('封禁授权名单核对记录',()=>{
  it('任务读取拒绝将名单记录嫁接到其他类型或接受未完整返回的核对',()=>{
   const task={id:'task_owned',sensor_id:sensor.id,created_by:principal.id,kind:'response.block',state:'queued',created_at:action.requested_at,updated_at:action.requested_at,expires_at:action.expires_at,retain_until:new Date(now+180*86400000).toISOString(),delivery_count:0,receipt:{},response_action:action,response_protection:proof()}
   expect(validTask(task,task.id)).toBe(true)
+  expect(validTask({...task,response_protection:undefined},task.id)).toBe(false)
+  expect(validTask({...task,kind:'response.read',response_protection:undefined},task.id)).toBe(true)
   expect(validTask({...task,response_protection:{...proof(),schema_version:'other'}},task.id)).toBe(false)
   expect(validTask({...task,kind:'diagnostics'},task.id)).toBe(false)
   expect(validTask({...task,kind:'response.read'},task.id)).toBe(false)

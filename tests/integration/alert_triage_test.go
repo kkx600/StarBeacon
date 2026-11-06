@@ -19,7 +19,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/assessment"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/jobs"
 	"github.com/kkx600/StarBeacon/internal/llm"
@@ -154,20 +153,11 @@ func TestAlertTriageRealQueueEvidenceOwnershipCancellationAndRecovery(t *testing
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
 	now := time.Now().UTC()
-	index, err := contract.IndexName(tenant, "alerts", now.Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-	t.Cleanup(func() {
-		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		defer res.Body.Close()
-		if res.IsError() {
-			t.Error("研判验收索引清理失败", res.StatusCode)
-		}
-	})
-	alert := model.Alert{EventID: "event_owned", TenantID: tenant, RawSHA256: control.Digest([]byte("owned original")), SensorID: "sensor_owned", RegistrationID: "registration_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, Source: model.Endpoint{IP: "192.0.2.1"}, Destination: model.Endpoint{IP: "198.51.100.2"}}
+	// 共享索引同时承载其他租户，只回收本租户文档；事件标识即文档 _id，不复用其他用例的固定标识。
+	t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
+	alert := model.Alert{EventID: store.RandomID("event_owned_"), TenantID: tenant, RawSHA256: control.Digest([]byte("owned original")), SensorID: "sensor_owned", RegistrationID: "registration_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, Source: model.Endpoint{IP: "192.0.2.1"}, Destination: model.Endpoint{IP: "198.51.100.2"}}
 	alert.Event.Kind, alert.Event.Original = "alert", `{"private":"must-not-send"}`
 	alert.Rule.ID, alert.Rule.Name, alert.HTTP.Path = "1000001", "路径检测", "/.git/config"
 	for _, err := range es.Bulk(ctx, index, []model.Alert{alert}) {
@@ -181,7 +171,7 @@ func TestAlertTriageRealQueueEvidenceOwnershipCancellationAndRecovery(t *testing
 	refresh.Body.Close()
 	evidence, err := triage.Freeze(alert)
 	require(t, err)
-	queue, err := jobs.NewAnalysisWithTriage(f.Runtime, vault, policy, es)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy, es)
 	require(t, err)
 	a := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es, Vault: vault, Jobs: queue}, tenant, password)
 	b := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es, Vault: vault, Jobs: queue}, tenant+"_other", password)

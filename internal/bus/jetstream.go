@@ -19,11 +19,11 @@ const Logs = "SB_LOGS"
 const Quarantine = "SB_QUARANTINE"
 const Indexed = "SB_INDEXED"
 
-// Envelope 的 Index 为路由冻结的共享索引；升级前已入队的消息没有该字段，继续写入租户日索引。
+// Envelope 的 Index 为路由冻结的共享索引；缺失或不属于该数据流时拒绝写入。
 type Envelope struct {
 	TenantID   string    `json:"tenant_id"`
 	Partition  string    `json:"partition"`
-	Index      string    `json:"index,omitempty"`
+	Index      string    `json:"index"`
 	ReceivedAt time.Time `json:"received_at"`
 	Batch      []byte    `json:"batch"`
 }
@@ -33,9 +33,6 @@ type Bus struct {
 	JS        jetstream.JetStream
 }
 
-func Open(ctx context.Context, url string) (*Bus, error) {
-	return OpenNamespace(ctx, url, "sb")
-}
 func OpenNamespace(ctx context.Context, url, namespace string) (*Bus, error) {
 	if !contract.ValidID(namespace) {
 		return nil, fmt.Errorf("队列命名空间不合法")

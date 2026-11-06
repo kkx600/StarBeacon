@@ -16,7 +16,7 @@ func TestSearchRejectsPartialCountsAndForeignEvidence(t *testing.T) {
 	start := time.Date(2026, 10, 3, 0, 0, 0, 0, time.UTC)
 	query := model.SearchRequest{Start: start, End: start.Add(time.Hour), Page: 1, PageSize: 20}
 	hit := func() map[string]any {
-		return map[string]any{"_id": "event_owned", "_index": "sb-alerts-tenant_owned-2026.10.03", "_source": map[string]any{"event_id": "event_owned", "tenant_id": "tenant_owned", "@timestamp": start.Add(time.Minute), "event": map[string]string{"kind": "alert"}}}
+		return map[string]any{"_id": "event_owned", "_index": "sb-v2-alerts-r180-d2026.10.03", "_source": map[string]any{"event_id": "event_owned", "tenant_id": "tenant_owned", "@timestamp": start.Add(time.Minute), "event": map[string]string{"kind": "alert"}}}
 	}
 	valid := func() map[string]any {
 		return map[string]any{"timed_out": false, "_shards": map[string]any{"total": 2, "successful": 2, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{hit()}}}
@@ -41,10 +41,16 @@ func TestSearchRejectsPartialCountsAndForeignEvidence(t *testing.T) {
 		{"rows_absent", func(v map[string]any) { delete(v["hits"].(map[string]any), "hits") }},
 		{"rows_incomplete", func(v map[string]any) { v["hits"].(map[string]any)["hits"] = []any{} }},
 		{"foreign_index", func(v map[string]any) {
-			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-alerts-tenant_foreign-2026.10.03"
+			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-v2-context-r180-d2026.10.03"
 		}},
 		{"noncanonical_index", func(v map[string]any) {
-			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-alerts-tenant_owned-2026.10.03-alias"
+			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-v2-alerts-r180-d2026.10.03-alias"
+		}},
+		{"unaligned_index", func(v map[string]any) {
+			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-v2-alerts-r180-w2026.10.03"
+		}},
+		{"legacy_index", func(v map[string]any) {
+			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_index"] = "sb-alerts-tenant_owned-2026.10.03"
 		}},
 		{"mismatched_id", func(v map[string]any) {
 			v["hits"].(map[string]any)["hits"].([]any)[0].(map[string]any)["_id"] = "event_foreign"

@@ -37,7 +37,7 @@ func TestLocalManagementAuthenticationNetworkConfigurationAndStorageFailure(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer(httpapi.MiddlewareWithClientIP(mux, policy))
+	server := httptest.NewServer(httpapi.Middleware(mux, policy))
 	defer server.Close()
 	auth := httpapi.NewAuth(identity, nil, server.URL, "local_test_session", false)
 	mux.Handle("/", LocalHandler(wal, auth, path))

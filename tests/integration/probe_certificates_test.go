@@ -43,7 +43,7 @@ type probeTestAuthority struct {
 func newProbeTestAuthority(t *testing.T) *probeTestAuthority {
 	t.Helper()
 	dir := t.TempDir()
-	require(t, admin.DevPKI(dir))
+	require(t, admin.DevPKI(dir, nil))
 	raw, err := os.ReadFile(filepath.Join(dir, "ca.crt"))
 	require(t, err)
 	block, _ := pem.Decode(raw)

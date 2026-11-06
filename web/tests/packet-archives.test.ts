@@ -14,6 +14,7 @@ import SessionExportDialog from '../packages/shared/src/components/SessionExport
 import TrafficWorkspace from '../platform/src/features/traffic/TrafficWorkspace.vue'
 import CollectorWorkspace from '../collector/src/features/network/CollectorWorkspace.vue'
 import {click,button,deferred,principal} from './fixtures'
+import {collectorScreenRoutes,platformScreenRoutes} from './routeFixtures'
 
 const {platformRequest,collectorRequest}=vi.hoisted(()=>({platformRequest:vi.fn(),collectorRequest:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request:platformRequest},current:(await import('vue')).shallowRef(null)}}))
@@ -144,11 +145,11 @@ describe('原包请求生命周期',()=>{
 })
 
 describe('流量与采集器页签',()=>{
- it('原包页签使用 history 查询参数，只加载一个业务列表',async()=>{
-  platformRequest.mockImplementation(()=>Promise.resolve(page()));const router=createRouter({history:createMemoryHistory(),routes:[{path:'/traffic',component:TrafficWorkspace}]});await router.push('/traffic?view=archives');await router.isReady();const wrapper=mount(TrafficWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();await vi.waitFor(()=>expect(wrapper.findAll('.ant-table')).toHaveLength(1));expect(platformRequest.mock.calls.some(c=>c[0]==='/traffic/search')).toBe(false);expect(wrapper.text()).toContain('原包归档')
+ it('原包归档使用规范路径，只加载一个业务列表',async()=>{
+  platformRequest.mockImplementation(()=>Promise.resolve(page()));const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(TrafficWorkspace)});await router.push('/traffic/archives');await router.isReady();const wrapper=mount(TrafficWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();await vi.waitFor(()=>expect(wrapper.findAll('.ant-table')).toHaveLength(1));expect(platformRequest.mock.calls.some(c=>c[0]==='/traffic/search')).toBe(false);expect(wrapper.text()).toContain('原包归档')
  })
  it('本机归档入口与重放分开，切换不叠加表格',async()=>{
-  collectorRequest.mockImplementation((path:string)=>Promise.resolve(path==='/packet-archives'?{...page(),items:[{...record,reserved_bytes:3<<20}]}:path==='/network/interfaces'?{items:[]}:{}));const router=createRouter({history:createMemoryHistory(),routes:[{path:'/network',component:CollectorWorkspace}]});await router.push('/network?view=archives');await router.isReady();const wrapper=mount(CollectorWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();await vi.waitFor(()=>expect(wrapper.findAll('.ant-table')).toHaveLength(1));expect(wrapper.text()).toContain('最近 200 条');expect(collectorRequest.mock.calls.some(c=>c[0]==='/replay/samples')).toBe(false)
+  collectorRequest.mockImplementation((path:string)=>Promise.resolve(path==='/packet-archives'?{...page(),items:[{...record,reserved_bytes:3<<20}]}:path==='/network/interfaces'?{items:[]}:{}));const router=createRouter({history:createMemoryHistory(),routes:collectorScreenRoutes(CollectorWorkspace)});await router.push('/network/archives');await router.isReady();const wrapper=mount(CollectorWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();await vi.waitFor(()=>expect(wrapper.findAll('.ant-table')).toHaveLength(1));expect(wrapper.text()).toContain('最近 200 条');expect(collectorRequest.mock.calls.some(c=>c[0]==='/replay/samples')).toBe(false)
  })
 })
 

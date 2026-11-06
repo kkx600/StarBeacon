@@ -10,7 +10,7 @@ const active=computed(()=>screens.value.find(screen=>screen.path===route.path)?.
 function change(key:string){
  const target=screens.value.find(screen=>screen.view===key)
  if(!target)return
- const {view:ignoredView,mode:ignoredMode,rule_id:ruleID,revision,...query}=route.query
+ const {rule_id:ruleID,revision,...query}=route.query
  void router.push({path:target.path,query:{...query,...(key==='backtest'?{rule_id:ruleID,revision}:{})},hash:route.hash})
 }
 </script>

@@ -55,11 +55,7 @@ func (w *AnalysisWorker) Work(ctx context.Context, job *river.Job[assistant.Args
 	return nil
 }
 
-func NewAnalysis(db *store.Postgres, vault *secrets.Vault, policy outbound.Policy, snapshots ...ReportSnapshot) (*river.Client[pgx.Tx], error) {
-	return NewAnalysisWithTriage(db, vault, policy, nil, snapshots...)
-}
-
-func NewAnalysisWithTriage(db *store.Postgres, vault *secrets.Vault, policy outbound.Policy, source TriageSource, snapshots ...ReportSnapshot) (*river.Client[pgx.Tx], error) {
+func NewAnalysis(db *store.Postgres, vault *secrets.Vault, policy outbound.Policy, source TriageSource, snapshots ...ReportSnapshot) (*river.Client[pgx.Tx], error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &AnalysisWorker{DB: db, Vault: vault, Client: llm.Client{Policy: policy}})
 	var snapshot ReportSnapshot

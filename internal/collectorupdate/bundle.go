@@ -114,10 +114,7 @@ func (r Release) validate() error {
 	return nil
 }
 
-// Stage 先核对整个 ZIP 的签名摘要，再在独立目录中有界解包；既有版本不覆盖。
-func Stage(ctx context.Context, root, archive string, envelope Envelope, key ed25519.PublicKey, now time.Time) (Release, error) {
-	return stage(ctx, root, archive, envelope, key, now, 180)
-}
+// stage 先核对整个 ZIP 的签名摘要，再在独立目录中有界解包；既有版本不覆盖。
 
 func stage(ctx context.Context, root, archive string, envelope Envelope, key ed25519.PublicKey, now time.Time, retentionDays int) (Release, error) {
 	var result Release

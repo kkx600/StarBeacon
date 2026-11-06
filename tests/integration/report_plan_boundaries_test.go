@@ -66,7 +66,7 @@ func TestReportPlanLeaseQualificationAtomicSubmissionAndQuotas(t *testing.T) {
 		_, err := tx.Exec(ctx, `DROP TABLE pg_temp.users,pg_temp.tenants`)
 		return err
 	}))
-	queue, err := jobs.NewAnalysis(f.Runtime, nil, outbound.Policy{})
+	queue, err := jobs.NewAnalysis(f.Runtime, nil, outbound.Policy{}, nil)
 	require(t, err)
 	spec := assistant.PlanSpec{Name: "事务统计计划", Kind: "daily", Timezone: "Asia/Shanghai", At: "00:00", Enabled: true}
 	change := assistant.PlanChange{ID: "plan_guard", Spec: spec}

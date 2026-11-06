@@ -68,7 +68,7 @@ onScopeDispose(()=>{stopped=true;clearInterval(timer);controller?.abort()})
    <template v-if="existing">
     <a-alert type="info" show-icon message="本评估已确认处置，不会创建第二个任务。原授权和原期限保持不变；任务受理不等于设备已阻断实际流量。" class="section-gap"/>
     <dl class="decision-response-context"><dt>签名任务</dt><dd class="technical">{{existing.task_id}}</dd><dt>探针 / 注册代次</dt><dd>{{existing.request.sensor_id}} / {{existing.request.registration_id}}</dd><dt>联动连接器</dt><dd>{{existing.request.connector_id}}</dd><dt>封禁期限</dt><dd>{{existing.request.ttl_seconds}} 秒，从任务签发时起计</dd><dt>确认 / 保留截止</dt><dd>{{formatTime(existing.created_at)}} / {{formatTime(existing.expires_at)}}</dd><dt>操作依据</dt><dd>{{existing.request.reason}}</dd><dt>授权 SHA-256</dt><dd class="technical">{{existing.sha256}}</dd></dl>
-    <div class="filter-actions"><a-button type="primary" @click="router.push({path:'/sensors',query:{view:'tasks',task:existing.task_id}})">查看任务记录</a-button><a-button @click="emit('close')">返回</a-button></div>
+    <div class="filter-actions"><a-button type="primary" @click="router.push({path:'/sensors/tasks',query:{task:existing.task_id}})">查看任务记录</a-button><a-button @click="emit('close')">返回</a-button></div>
    </template>
    <a-form v-else-if="sensors.length" :model="form" layout="vertical" @finish="submit">
     <a-alert v-if="error" type="error" show-icon :message="error" class="section-gap"/>

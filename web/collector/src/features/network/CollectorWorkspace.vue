@@ -25,21 +25,22 @@ const message=useFeedback()
 const ReplayWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/ReplayWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const PacketArchiveWorkspace=defineAsyncComponent({loader:()=>import('@starbeacon/shared/components/PacketArchiveWorkspace.vue'),loadingComponent:AsyncWorkspaceState,errorComponent:AsyncWorkspaceState,delay:150,timeout:30000})
 const route=useRoute(),router=useRouter()
-const mountedPath=route.path,canonicalAtMount=typeof route.meta.workspaceView==='string'
-const {view,change:legacyChange}=useWorkspaceView(collectorScreens.map(screen=>screen.view),'interfaces')
+const mountedPath=route.path
+const {view}=useWorkspaceView(collectorScreens.map(screen=>screen.view),'interfaces')
 const views=collectorScreens.map(screen=>({key:screen.view,label:screen.title}))
 const screen=computed(()=>collectorScreen(view.value)!)
 const workspaceTitle=computed(()=>collectorWorkspaces.find(workspace=>workspace.id===route.meta.navWorkspace)?.title??'采集器管理')
+// 页签进入目标视图的规范路径；专属任务选择不带入其他页面。
 function change(key:string){
   if(saving.value)return
   const target=collectorScreen(key)
   if(!target)return
-  if(typeof route.meta.workspaceView!=='string')return legacyChange(key)
-  const {view:ignoredView,task:ignoredTask,...query}=route.query
+  const {task:ignoredTask,...query}=route.query
   return router.push({path:target.path,query,hash:route.hash})
 }
 const administrator=computed(()=>session.current?.value?.role==='admin')
-const currentPath=computed(()=>!canonicalAtMount||route.path===mountedPath)
+// 规范路径切换由新实例接管；离开挂载路径后本实例不再发起读取。
+const currentPath=computed(()=>route.path===mountedPath)
 const protocolsOpen=shallowRef(false)
 const qualityOpen=shallowRef(false)
 const observed=computed(()=>['overview','interfaces','capture','responses','syslog'].includes(view.value))

@@ -88,12 +88,12 @@ func TestSharedIndexUsesFrozenNameLayoutAndAtLeastRetentionLifecycle(t *testing.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	for _, day := range []string{"2026-11-05", "2026-11-02", "2026-11-08"} {
-		if err := es.EnsureIndexRetention(ctx, index, day, 180); err != nil {
+		if err := es.EnsureIndex(ctx, index, day); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for _, day := range []string{"2026-11-01", "2026-11-09", "bad"} {
-		if es.EnsureIndexRetention(ctx, index, day, 180) == nil {
+		if es.EnsureIndex(ctx, index, day) == nil {
 			t.Fatal("分区以外的路由日写入了共享索引", day)
 		}
 	}
@@ -122,14 +122,19 @@ func TestSharedIndexUsesFrozenNameLayoutAndAtLeastRetentionLifecycle(t *testing.
 func TestSharedIndexSearchRejectsOtherTenantDocuments(t *testing.T) {
 	now := time.Now().UTC()
 	index, _ := contract.EventIndexName("alerts", 180, contract.PeriodWeek, now.Format("2006-01-02"))
+	week, err := contract.ParseEventIndex(index)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, tc := range []struct {
 		name, tenant, index string
 		ok                  bool
 	}{
 		{"共享索引本租户", "tenant_owned", index, true},
 		{"共享索引其他租户", "tenant_other", index, false},
-		{"其他租户旧版索引", "tenant_owned", "sb-alerts-tenant_other-" + now.Format("2006.01.02"), false},
+		{"旧版租户索引", "tenant_owned", "sb-alerts-tenant_owned-" + now.Format("2006.01.02"), false},
 		{"其他数据流共享索引", "tenant_owned", strings.Replace(index, "alerts", "context", 1), false},
+		{"非分区起点共享索引", "tenant_owned", "sb-v2-alerts-r180-w" + week.Start.AddDate(0, 0, 1).Format("2006.01.02"), false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

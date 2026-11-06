@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -119,7 +120,7 @@ func TestMCPResourcesRealScopesSharedBudgetsRevocationAndAudit(t *testing.T) {
 		server, err := mcpserver.New(mcpserver.Config{Origin: endpoint.URL, Issuer: issuer.URL, IntrospectionURL: issuer.URL + "/introspect", ClientID: "resource-reader", ClientSecret: "private-introspection-secret"}, backend, outbound.Policy{Roots: roots, PrivateNetworks: networks})
 		require(t, err)
 		defer server.Close()
-		handlers[index] = httpapi.Middleware(server.Handler)
+		handlers[index] = httpapi.Middleware(server.Handler, clientip.Policy{})
 	}
 	changes := []mcpaccess.Change{
 		{ID: "mcp_resources_a", Name: "协议调查资源", Subject: "resource-a", OAuthClientID: "metadata-agent", Scopes: []string{"alerts:read", "traffic:read"}, Enabled: true, ExpiresAt: time.Now().Add(time.Hour), RequestsPerMinute: 120},

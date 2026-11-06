@@ -479,9 +479,9 @@ components:
 
 **The 工作任务连续 Rule.** 同一对象的列表、运行状态、依据与操作在所属工作区和对象详情中衔接；避免为重复数据集或同一任务的下载步骤建立平行入口。
 
-平台工程在探针管理中分别呈现“探针列表”和“任务记录”（`/sensors`，`view=devices`／`tasks`），规则管理分别呈现“规则包”“重放样本”和“重放任务”（`/rules`，`view=packages`／`samples`／`tasks`）。采集器工程将“网卡与状态”“采集配置”“重放样本”和“任务记录”分开（`/network`，`view=interfaces`／`capture`／`samples`／`tasks`）；保存采集目标表示待应用，不表示已修改操作系统网络。
+平台工程在探针管理中分别呈现“探针列表”和“任务记录”（`/sensors/list`、`/sensors/tasks`），检测规则分别呈现“规则包”“重放样本”和“重放任务”（`/detection/rules/packages`、`/detection/rules/samples`、`/detection/rules/tasks`）。采集器工程将“网卡列表”“采集配置”“重放样本”和“任务记录”分开（`/network/interfaces`、`/network/capture`、`/rules/samples`、`/rules/tasks`）；保存采集目标表示待应用，不表示已修改操作系统网络。
 
-原型检测规则的“重放样本”和“重放任务”分别使用 `/page/rule-samples`、`/page/rule-tests`。采集器原型网络视图为 `interfaces/capture/replay-samples/replay-tasks`，升级与维护分别使用 `view=system`、`view=audits`；它们不是工程采集器路径。三端均使用 History 路由，迁移旧 hash 链接并保留安全的同源登录返回路径；有效 view 支持刷新及浏览器前进／后退，缺省或非法值回到默认视图。未知页面进入 404；部署入口的 SPA 回退见[工程前端说明](web/README.md)。
+原型检测规则的“重放样本”和“重放任务”与工程使用相同规范路径，页面目录中的 `/page/rule-samples`、`/page/rule-tests` 跳转至这些路径。采集器原型的升级与维护目标页签分别使用 `view=system`、`view=audits`；它们不是工程采集器路径。三端均使用 History 路由，保留安全的同源登录返回路径；规范路径支持刷新及浏览器前进／后退，原型目标页签的缺省或非法 view 回到默认视图。未知页面进入 404；部署入口的 SPA 回退见[工程前端说明](web/README.md)。
 
 ### 详情、证据与业务状态
 

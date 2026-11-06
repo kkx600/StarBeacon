@@ -14,7 +14,7 @@ function onViewportChange(event:MediaQueryListEvent){collapsed.value=event.match
 onMounted(()=>compact.addEventListener('change',onViewportChange));onBeforeUnmount(()=>compact.removeEventListener('change',onViewportChange))
 const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SettingOutlined,ThunderboltOutlined} as Record<string,typeof AlertOutlined>
 const current=computed(()=>pageById.get(pageIdForRoute(route)))
-const title=computed(()=>current.value?.id==='sensors'&&route.query.view==='quality'?'质量事件':current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
+const title=computed(()=>current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
 const groupTitle=computed(()=>groups.find(g=>g.id===current.value?.group)?.title??'星烽 StarBeacon')
 const currentWorkspace=computed(()=>workspaceForPage.get(pageIdForRoute(route)))
 const lastViews=ref<Record<string,string>>({})

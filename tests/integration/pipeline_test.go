@@ -66,7 +66,7 @@ func TestMTLSDurableIngestIndexReplayAndTenantIsolation(t *testing.T) {
 	require(t, es.EnsurePolicy(ctx))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	tenants := []string{store.RandomID("it_a_"), store.RandomID("it_b_")}
 	for _, tenant := range tenants {
 		require(t, admin.Bootstrap(ctx, owner, tenant, "工程集成验收", tenant, store.Token(), "admin"))

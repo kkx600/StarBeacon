@@ -61,7 +61,7 @@ func (s *Elasticsearch) SearchLogs(ctx context.Context, tenant string, q syslogd
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("logs", tenant)...), s.API.Search.WithBody(strings.NewReader(string(raw))), s.API.Search.WithIgnoreUnavailable(true), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndex("logs")), s.API.Search.WithBody(strings.NewReader(string(raw))), s.API.Search.WithIgnoreUnavailable(true), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
 	if err = response(res, err, &page); err != nil {
 		return out, err
 	}
@@ -80,7 +80,7 @@ func (s *Elasticsearch) SearchLogs(ctx context.Context, tenant string, q syslogd
 			return out, fmt.Errorf("日志排序结果无效")
 		}
 		t, timeErr := time.Parse(time.RFC3339Nano, sortTime)
-		if !logIndexServes(hit.Index, tenant, v.Partition) || timeErr != nil || !t.Equal(v.ReceivedAt) || sortID != hit.ID || hit.ID != v.EventID || v.TenantID != tenant || v.SchemaVersion != "syslog.index.v1" || !v.Record.Binding.Valid() || v.Record.RawBase64 != "" || v.ReceivedAt.Before(q.Start) || !v.ReceivedAt.Before(q.End) || v.ReceivedAt.After(previousTime) || v.ReceivedAt.Equal(previousTime) && (previousID == "" || v.EventID >= previousID) {
+		if !logIndexServes(hit.Index, v.Partition) || timeErr != nil || !t.Equal(v.ReceivedAt) || sortID != hit.ID || hit.ID != v.EventID || v.TenantID != tenant || v.SchemaVersion != "syslog.index.v1" || !v.Record.Binding.Valid() || v.Record.RawBase64 != "" || v.ReceivedAt.Before(q.Start) || !v.ReceivedAt.Before(q.End) || v.ReceivedAt.After(previousTime) || v.ReceivedAt.Equal(previousTime) && (previousID == "" || v.EventID >= previousID) {
 			return out, fmt.Errorf("日志来源或排序无法核对")
 		}
 		// 查询级隔离之外，再核对不可变身份，避免跨租户或损坏来源混入结果。
@@ -104,13 +104,13 @@ func (s *Elasticsearch) SearchLogs(ctx context.Context, tenant string, q syslogd
 	return out, nil
 }
 
-// logIndexServes 核对日志所在索引：共享索引须覆盖记录的路由日，旧版索引须属于同一租户与同一日期。
-func logIndexServes(index, tenant, partition string) bool {
+// logIndexServes 核对日志所在的共享索引覆盖记录的路由日；租户由查询条件与文档回读核对。
+func logIndexServes(index, partition string) bool {
 	target, err := contract.ParseEventIndex(index)
-	return err == nil && target.Stream == "logs" && (!target.Legacy || target.Tenant == tenant) && target.Covers(partition)
+	return err == nil && target.Stream == "logs" && target.Covers(partition)
 }
 
-// LogDetail 在租户可读的日志索引中按事件身份与路由日精确读取；共享索引同时保存多个租户，依赖查询中的租户过滤与回读核对。
+// LogDetail 在共享日志索引中按租户、事件身份与路由日精确读取；共享索引同时保存多个租户，依赖查询中的租户过滤与回读核对。
 func (s *Elasticsearch) LogDetail(ctx context.Context, tenant, partition, id string) (syslogdata.Document, error) {
 	ctx, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
@@ -138,7 +138,7 @@ func (s *Elasticsearch) LogDetail(ctx context.Context, tenant, partition, id str
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("logs", tenant)...), s.API.Search.WithBody(strings.NewReader(string(body))), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndex("logs")), s.API.Search.WithBody(strings.NewReader(string(body))), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithContext(ctx))
 	if err = response(res, err, &page); err != nil {
 		return empty, err
 	}
@@ -153,7 +153,7 @@ func (s *Elasticsearch) LogDetail(ctx context.Context, tenant, partition, id str
 	raw, err := json.Marshal(v.Record)
 	record, original, decodeErr := syslogdata.DecodeRecord(raw)
 	seq, seqErr := parsePositiveSequence(record.SourceSequence)
-	if err != nil || decodeErr != nil || seqErr != nil || !logIndexServes(hit.Index, tenant, partition) || v.MessageTruncated || hit.ID != id || v.EventID != id || v.TenantID != tenant || v.SchemaVersion != "syslog.index.v1" || v.Partition != partition || v.EventID != contract.SyslogEventID(tenant, v.RegistrationID, record.Binding.SourceID, record.SourceEpoch, seq) || syslogdata.Hash(raw) != v.PayloadSHA256 {
+	if err != nil || decodeErr != nil || seqErr != nil || !logIndexServes(hit.Index, partition) || v.MessageTruncated || hit.ID != id || v.EventID != id || v.TenantID != tenant || v.SchemaVersion != "syslog.index.v1" || v.Partition != partition || v.EventID != contract.SyslogEventID(tenant, v.RegistrationID, record.Binding.SourceID, record.SourceEpoch, seq) || syslogdata.Hash(raw) != v.PayloadSHA256 {
 		return empty, fmt.Errorf("日志原始事实无法核对")
 	}
 	expected := syslogdata.Parse(record, original)

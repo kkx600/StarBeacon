@@ -1,6 +1,6 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest'
 import {flushPromises,mount} from '@vue/test-utils'
-import {type Component,type ShallowRef} from 'vue'
+import {defineComponent,type Component,type ShallowRef} from 'vue'
 import {createMemoryHistory,createRouter} from 'vue-router'
 import {message,Select} from 'ant-design-vue'
 import {registerAnt} from '../packages/shared/src/ant'
@@ -23,6 +23,7 @@ import HealthSummary from '../collector/src/features/network/HealthSummary.vue'
 import DetectionQualityDialog from '../packages/shared/src/components/DetectionQualityDialog.vue'
 import {session} from '../platform/src/session'
 import {closedMessage,principal,sensor,task,click,button,deferred} from './fixtures'
+import {collectorScreenRoutes,platformScreenRoutes} from './routeFixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request},current:(await import('vue')).shallowRef(null)}}))
 vi.mock('../collector/src/session',()=>({session:{api:{request},get current(){return user}}}))
@@ -33,21 +34,23 @@ const health:HostHealth={version:'test',hostname:'lab',observed_at:'2026-10-02T0
 const group={id:'group_1',kind:'groups',revision:1,data:{name:'办公区',owner:'网络团队',description:'',active:true},created_at:'2026-10-01T00:00:00Z',updated_at:'2026-10-01T00:00:00Z'}
 const audit={id:'100',username:'operator',action:'sensor.active=false',source_ip:'192.0.2.1',user_agent:'Browser',request_id:'request_1',created_at:'2026-10-01T00:00:00Z'}
 beforeEach(()=>{user.value=principal;request.mockReset();request.mockImplementation((path:string)=>Promise.resolve(path.startsWith('/sensors')?{items:[sensor]}:path.startsWith('/tasks')?{items:[{...task,state:'succeeded'}]}:path==='/health'?health:path==='/network/interfaces'?{items:[iface]}:path==='/capture-config'?{interfaces:['eth0'],status:'not_applied'}:path==='/alerts/search'?{items:[alert],total:1,page:1,page_size:20}:path.includes('/history')?{items:[group]}:path.startsWith('/inventory')?{items:[group],next_cursor:''}:path.startsWith('/audits')?{items:[audit],next_cursor:'100'}:path==='/platform/health'?{services:{postgresql:'ready'},runtime:{...health,commit:'test',heap_bytes:'1024',goroutines:10}}:{items:[],available:true,fields:[]}));vi.spyOn(message,'success').mockImplementation(closedMessage);vi.spyOn(message,'error').mockImplementation(closedMessage)})
-async function workspace(component:Component,path:string){const url=new URL('https://test'+path),router=createRouter({history:createMemoryHistory(),routes:[{path:url.pathname,component}]});await router.push(path);await router.isReady();const wrapper=mount(component,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return {wrapper,router}}
+async function workspace(component:Component,path:string){const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(component)});await router.push(path);await router.isReady();const wrapper=mount(component,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return {wrapper,router}}
+// 采集器与正式应用一致，切换规范路径时由路由重新挂载页面。
+async function collector(path:string){const router=createRouter({history:createMemoryHistory(),routes:collectorScreenRoutes(CollectorWorkspace)});await router.push(path);await router.isReady();const wrapper=mount(defineComponent({template:'<router-view :key="$route.path" />'}),{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return {wrapper,router}}
 
  describe('探针列表和诊断',()=>{
  it('列表状态操作保持原探针绑定，保存失败明确反馈',async()=>{
-  const{wrapper}=await workspace(SensorsWorkspace,'/sensors');expect(wrapper.text()).toContain('10.0%');expect(wrapper.text()).toContain('未获取');await click('停用');await click('确定');expect(request.mock.calls.find(call=>call[1]?.method==='PATCH')?.[1].body).toEqual({active:false});expect(message.success).toHaveBeenCalledWith('探针状态保存成功')
+  const{wrapper}=await workspace(SensorsWorkspace,'/sensors/list');expect(wrapper.text()).toContain('10.0%');expect(wrapper.text()).toContain('未获取');await click('停用');await click('确定');expect(request.mock.calls.find(call=>call[1]?.method==='PATCH')?.[1].body).toEqual({active:false});expect(message.success).toHaveBeenCalledWith('探针状态保存成功')
   request.mockRejectedValueOnce(new Error('保存受阻'));await click('停用');await click('确定');expect(message.error).toHaveBeenCalledWith('保存受阻')
  })
  it('详情使用原探针，诊断受理后跳转单一任务列表',async()=>{
-  const{wrapper,router}=await workspace(SensorsWorkspace,'/sensors');await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('18.45 EB'));await click('运行诊断');await flushPromises();expect(router.currentRoute.value.query.view).toBe('tasks');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  const{wrapper,router}=await workspace(SensorsWorkspace,'/sensors/list');await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('18.45 EB'));await click('运行诊断');await flushPromises();expect(router.currentRoute.value.path).toBe('/sensors/tasks');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
  })
  it('任务页签返回列表后可查看并关闭探针详情',async()=>{
-  const{router}=await workspace(SensorsWorkspace,'/sensors?view=tasks');await click('探针列表');expect(router.currentRoute.value.query.view).toBeUndefined();await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('注册身份'));(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();expect(document.body.textContent).not.toContain('注册身份')
+  const{router}=await workspace(SensorsWorkspace,'/sensors/tasks');await click('探针列表');expect(router.currentRoute.value.path).toBe('/sensors/list');await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('注册身份'));(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();expect(document.body.textContent).not.toContain('注册身份')
  })
  it('空列表和只读角色保留查看能力，缺测不显示伪造零值',async()=>{
-  user.value={...principal,role:'viewer'};request.mockResolvedValue({items:[],next_cursor:''});const{wrapper}=await workspace(SensorsWorkspace,'/sensors?view=tasks');expect(wrapper.text()).toContain('当前条件下没有探针');expect(wrapper.findAll('[role=tab]')).toHaveLength(3);expect(wrapper.text()).toContain('质量事件');request.mockResolvedValueOnce({items:[{...sensor,status:'disabled',active:false,last_seen:null,health:{}}],next_cursor:''});await click('刷新');expect(wrapper.text()).toContain('停用');await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('尚未上报'));expect(document.body.textContent).not.toContain('运行诊断');expect(document.body.textContent).toContain('未获取')
+  user.value={...principal,role:'viewer'};request.mockResolvedValue({items:[],next_cursor:''});const{wrapper}=await workspace(SensorsWorkspace,'/sensors/tasks');expect(wrapper.text()).toContain('当前条件下没有探针');expect(wrapper.findAll('[role=tab]').map(tab=>tab.text())).toEqual(['探针列表','探针分组']);request.mockResolvedValueOnce({items:[{...sensor,status:'disabled',active:false,last_seen:null,health:{}}],next_cursor:''});await click('刷新');expect(wrapper.text()).toContain('停用');await click('查看');await vi.waitFor(()=>expect(document.body.textContent).toContain('尚未上报'));expect(document.body.textContent).not.toContain('运行诊断');expect(document.body.textContent).toContain('未获取')
  })
  it('诊断失败保留幂等键，切换对象取消旧响应，离开页面不显示迟到回执',async()=>{
   const wrapper=mount(SensorDetail,{props:{sensor},global,attachTo:document.body});request.mockRejectedValueOnce('offline');await click('运行诊断');expect(message.error).toHaveBeenCalledWith('任务提交失败');const key=request.mock.lastCall?.[1].headers['Idempotency-Key'];const pending=deferred<unknown>();request.mockImplementationOnce(()=>pending.promise);const action=button('运行诊断');action.click();action.click();await flushPromises();expect(request.mock.lastCall?.[1].headers['Idempotency-Key']).toBe(key);expect(request.mock.calls).toHaveLength(2);const signal=request.mock.lastCall?.[1].signal as AbortSignal
@@ -75,16 +78,16 @@ async function workspace(component:Component,path:string){const url=new URL('htt
 
  describe('资产工作区',()=>{
  it('切换账号清除资产编辑和旧列表，查看身份不能进入发现查询',async()=>{
-  const{wrapper,router}=await workspace(InventoryWorkspace,'/assets?view=groups');await click('创建资产组');expect(document.body.textContent).toContain('创建资产组');user.value={...principal,id:'another_admin'};await flushPromises();expect(document.body.querySelector('.ant-modal')).toBeNull()
-  user.value={...principal,role:'viewer'};await router.push('/assets?view=discovery');await flushPromises();expect(wrapper.text()).toContain('需要管理员权限');expect(wrapper.text()).not.toContain('执行发现');wrapper.unmount()
+  const{wrapper,router}=await workspace(InventoryWorkspace,'/inventory/groups');await click('创建资产组');expect(document.body.textContent).toContain('创建资产组');user.value={...principal,id:'another_admin'};await flushPromises();expect(document.body.querySelector('.ant-modal')).toBeNull()
+  user.value={...principal,role:'viewer'};await router.push('/inventory/discovery');await flushPromises();expect(wrapper.text()).toContain('需要管理员权限');expect(wrapper.text()).not.toContain('执行发现');wrapper.unmount()
  })
  it('名称筛选、游标翻页和页签切换保持单一列表，编辑失败保留草稿',async()=>{
-  request.mockImplementation((path:string,options?:{method?:string})=>options?.method==='POST'?Promise.reject(new Error('修订冲突')):Promise.resolve(path.includes('/history')?{items:[group]}:{items:[group],next_cursor:'group_1'}));const{wrapper,router}=await workspace(InventoryWorkspace,'/assets?view=groups');await click('下一页');expect(request.mock.lastCall?.[0]).toContain('cursor=group_1');await click('上一页');await wrapper.get('.inventory-search input').setValue('办公区');await wrapper.get('form').trigger('submit');await flushPromises();await vi.waitFor(()=>expect(request.mock.lastCall?.[0]).toContain('keyword=%E5%8A%9E%E5%85%AC%E5%8C%BA'));await click('重置')
-  await click('编辑');await click('保存');await vi.waitFor(()=>expect(document.body.textContent).toContain('修订冲突'));await click('取消');await click('办公区');expect(document.body.textContent).toContain('历史修订');(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();await click('网段定义');expect(router.currentRoute.value.query.view).toBe('networks');expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(wrapper.get('input').element.value).toBe('')
+  request.mockImplementation((path:string,options?:{method?:string})=>options?.method==='POST'?Promise.reject(new Error('修订冲突')):Promise.resolve(path.includes('/history')?{items:[group]}:{items:[group],next_cursor:'group_1'}));const{wrapper,router}=await workspace(InventoryWorkspace,'/inventory/groups');await click('下一页');expect(request.mock.lastCall?.[0]).toContain('cursor=group_1');await click('上一页');await wrapper.get('.inventory-search input').setValue('办公区');await wrapper.get('form').trigger('submit');await flushPromises();await vi.waitFor(()=>expect(request.mock.lastCall?.[0]).toContain('keyword=%E5%8A%9E%E5%85%AC%E5%8C%BA'));await click('重置')
+  await click('编辑');await click('保存');await vi.waitFor(()=>expect(document.body.textContent).toContain('修订冲突'));await click('取消');await click('办公区');expect(document.body.textContent).toContain('历史修订');(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();await click('网段定义');expect(router.currentRoute.value.path).toBe('/inventory/networks');expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(wrapper.get('input').element.value).toBe('')
  })
  it('创建和编辑成功关闭弹窗，切换对象取消未完成保存',async()=>{
-  const{wrapper}=await workspace(InventoryWorkspace,'/assets?view=groups');await click('创建资产组');const input=document.body.querySelector<HTMLInputElement>('.ant-modal input[id$="_name"]')!;input.value='分支办公区';input.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises();request.mockResolvedValueOnce(group);await click('保存');await vi.waitFor(()=>expect(document.body.textContent).not.toContain('创建资产组保存'))
-  await click('编辑');await click('保存');await vi.waitFor(()=>expect(request.mock.calls.some(call=>call[1]?.method==='POST')).toBe(true));await click('资产目录');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  const{wrapper}=await workspace(InventoryWorkspace,'/inventory/groups');await click('创建资产组');const input=document.body.querySelector<HTMLInputElement>('.ant-modal input[id$="_name"]')!;input.value='分支办公区';input.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises();request.mockResolvedValueOnce(group);await click('保存');await vi.waitFor(()=>expect(document.body.textContent).not.toContain('创建资产组保存'))
+  await click('编辑');await click('保存');await vi.waitFor(()=>expect(request.mock.calls.some(call=>call[1]?.method==='POST')).toBe(true));await click('网段定义');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
  })
  })
 
@@ -93,18 +96,18 @@ async function workspace(component:Component,path:string){const url=new URL('htt
   const wrapper=mount(AuditWorkspace,{props:{category:'operations'},global,attachTo:document.body});await flushPromises();await wrapper.get('form input').setValue('operator');await wrapper.get('form').trigger('submit');await flushPromises();await vi.waitFor(()=>expect(request.mock.lastCall?.[0]).toContain('username=operator'));await click('下一页');await click('上一页');await click('查看');expect(document.body.textContent).toContain('Browser')
   await wrapper.setProps({category:'logins'});await flushPromises();expect(wrapper.text()).toContain('凭据验证结果');expect(wrapper.get('input').element.value).toBe('');expect(document.body.textContent).not.toContain('Browser');await click('重置');await click('刷新');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
  })
- it('运行状态、操作日志和登录日志按页签切换且失败可重试',async()=>{
-  const{wrapper,router}=await workspace(OperationsWorkspace,'/operations');expect(wrapper.text()).toContain('运行状态');await click('操作日志');expect(router.currentRoute.value.query.view).toBe('operations');request.mockRejectedValueOnce(new Error('日志读取受阻'));await click('刷新');expect(wrapper.text()).toContain('日志读取受阻');await click('重试');await click('登录日志');expect(router.currentRoute.value.query.view).toBe('logins');expect(wrapper.text()).toContain('凭据验证结果')
+ it('运行状态、操作日志和登录日志按规范路径切换且失败可重试',async()=>{
+  const{wrapper,router}=await workspace(OperationsWorkspace,'/system/operations/health');expect(wrapper.text()).toContain('运行状态');expect(wrapper.findAll('[role=tab]')).toHaveLength(0);await router.push('/system/audit/operations');await flushPromises();expect(wrapper.text()).toContain('操作日志');request.mockRejectedValueOnce(new Error('日志读取受阻'));await click('刷新');expect(wrapper.text()).toContain('日志读取受阻');await click('重试');await click('登录日志');expect(router.currentRoute.value.path).toBe('/system/audit/logins');expect(wrapper.text()).toContain('凭据验证结果')
  })
  })
 
  describe('采集器管理',()=>{
  it('独立运行概况保留资源、缺测与引擎观测',async()=>{
-  const {wrapper}=await workspace(CollectorWorkspace,'/overview?view=overview');expect(wrapper.get('h1').text()).toBe('运行状态');expect(wrapper.text()).toContain('CPU 使用率');expect(wrapper.text()).toContain('10.0%');expect(wrapper.text()).toContain('未获取');expect(wrapper.findAll('.ant-table')).toHaveLength(0)
+  const {wrapper}=await collector('/overview/status');expect(wrapper.get('h1').text()).toBe('运行状态');expect(wrapper.text()).toContain('CPU 使用率');expect(wrapper.text()).toContain('10.0%');expect(wrapper.text()).toContain('未获取');expect(wrapper.findAll('.ant-table')).toHaveLength(0)
  })
  it('网卡只展示一张表，保存明确显示待应用，失败保留配置',async()=>{
-  const{wrapper,router}=await workspace(CollectorWorkspace,'/network');expect(wrapper.text()).toContain('2001:db8::1/64');expect(wrapper.text()).not.toContain('CPU 使用率');expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('采集配置');expect(router.currentRoute.value.query.view).toBe('capture');expect(wrapper.findAll('.ant-table')).toHaveLength(0);request.mockRejectedValueOnce(new Error('保存受阻'));await click('保存采集目标');expect(message.error).toHaveBeenCalledWith('保存受阻');request.mockResolvedValueOnce({interfaces:['eth0'],status:'not_applied'});await click('保存采集目标');expect(message.success).toHaveBeenCalledWith('采集目标保存成功，等待应用');await click('网卡列表');request.mockRejectedValueOnce('offline');await click('刷新');expect(wrapper.text()).toContain('读取失败');await click('重试')
-  await click('重放样本');await vi.waitFor(()=>expect(wrapper.text()).toContain('PCAP 重放'));await click('任务记录');expect(router.currentRoute.value.query.view).toBe('tasks')
+  const{wrapper,router}=await collector('/network/interfaces');expect(wrapper.text()).toContain('2001:db8::1/64');expect(wrapper.text()).not.toContain('CPU 使用率');expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('采集配置');expect(router.currentRoute.value.path).toBe('/network/capture');expect(wrapper.findAll('.ant-table')).toHaveLength(0);request.mockRejectedValueOnce(new Error('保存受阻'));await click('保存采集目标');expect(message.error).toHaveBeenCalledWith('保存受阻');request.mockResolvedValueOnce({interfaces:['eth0'],status:'not_applied'});await click('保存采集目标');expect(message.success).toHaveBeenCalledWith('采集目标保存成功，等待应用');await click('网卡列表');request.mockRejectedValueOnce('offline');await click('刷新');expect(wrapper.text()).toContain('读取失败');await click('重试')
+  await router.push('/rules/samples');await vi.waitFor(()=>expect(wrapper.text()).toContain('PCAP 重放'));await click('任务记录');expect(router.currentRoute.value.path).toBe('/rules/tasks')
   await click('检测质量');const quality=wrapper.getComponent(DetectionQualityDialog);expect(quality.props('open')).toBe(true);request.mockRejectedValueOnce(new Error('质量观测读取超时'));quality.vm.$emit('refresh');await flushPromises();expect(document.body.textContent).toContain('质量观测读取超时');expect(document.body.textContent).toContain('刷新失败，保留上次观测');quality.vm.$emit('refresh');await flushPromises();expect(quality.props('error')).toBe('');quality.vm.$emit('close');await flushPromises();expect(quality.props('open')).toBe(false)
  })
  it('接口能力和已保存配置保持独立，回环与关闭接口无法选择',async()=>{
@@ -126,7 +129,7 @@ async function workspace(component:Component,path:string){const url=new URL('htt
   await click('重置');expect(wrapper.get<HTMLInputElement>('#alert-filters_source_ip').element.value).toBe('');expect(wrapper.emitted('search')).toHaveLength(2)
  })
  it('告警列表按范围检索，详情展示 MAC、64 位流标识和载荷权限',async()=>{
-  const{wrapper}=await workspace(AlertsWorkspace,'/alerts');await click('查看');expect(document.body.textContent).toContain('18446744073709551614');expect(document.body.textContent).toContain('02:00:00:00:00:01');expect(document.body.textContent).toContain('00000000');(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();await click('刷新');expect(request.mock.lastCall?.[1].body.page).toBe(1)
+  const{wrapper}=await workspace(AlertsWorkspace,'/alerts/list');await click('查看');expect(document.body.textContent).toContain('18446744073709551614');expect(document.body.textContent).toContain('02:00:00:00:00:01');expect(document.body.textContent).toContain('00000000');(document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();await flushPromises();await click('刷新');expect(request.mock.lastCall?.[1].body.page).toBe(1)
   request.mockResolvedValueOnce({items:[alert],total:11000,page:1,page_size:20});await click('刷新');expect(wrapper.text()).toContain('10,000');const table=wrapper.getComponent(AlertTable);table.vm.$emit('page',2,50);await flushPromises();expect(request.mock.lastCall?.[1].body).toMatchObject({page:2,page_size:50});const detail=mount(AlertDetail,{props:{alert:{...alert,source:{},destination:{},http:{},network:{},suricata:{},event:{kind:'alert',original:''}}},global,attachTo:document.body});expect(document.body.textContent).toContain('当前账号未获原始载荷读取权限');expect(document.body.textContent).toContain('未观测到');detail.unmount()
  })
  it('高级表达式先校验，失败保留输入，等待校验阻止重复查询',async()=>{

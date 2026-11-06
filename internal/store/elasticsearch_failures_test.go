@@ -101,7 +101,7 @@ func TestSearchAllFiltersAndDependencyFailure(t *testing.T) {
 				t.Error("组合筛选遗漏条件", value)
 			}
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": "event_owned", "_index": "sb-alerts-tenant_owned-2026.10.03", "_source": map[string]any{"event_id": "event_owned", "tenant_id": "tenant_owned", "@timestamp": stamp, "event": map[string]string{"kind": "alert"}}}}}})
+		_ = json.NewEncoder(w).Encode(map[string]any{"timed_out": false, "_shards": map[string]int{"total": 1, "successful": 1, "failed": 0}, "hits": map[string]any{"total": map[string]any{"value": 1, "relation": "eq"}, "hits": []any{map[string]any{"_id": "event_owned", "_index": "sb-v2-alerts-r180-d2026.10.03", "_source": map[string]any{"event_id": "event_owned", "tenant_id": "tenant_owned", "@timestamp": stamp, "event": map[string]string{"kind": "alert"}}}}}})
 	}))
 	defer server.Close()
 	es, err := OpenES(server.URL, "")
@@ -136,7 +136,7 @@ func TestLifecycleFailuresNeverCacheUnconfirmedCreation(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case strings.HasPrefix(r.URL.Path, "/_index_template/"):
-					fmt.Fprintf(w, `{"index_templates":[{"name":"%s","index_template":%s}]}`, eventTemplateName, eventTemplateBody())
+					fmt.Fprintf(w, `{"index_templates":[{"name":"%s","index_template":%s}]}`, sharedEventTemplate.name, sharedEventTemplate.body())
 				case strings.HasPrefix(r.URL.Path, "/_ilm/policy/"):
 					if r.Method == http.MethodGet {
 						lookups++
@@ -148,7 +148,7 @@ func TestLifecycleFailuresNeverCacheUnconfirmedCreation(t *testing.T) {
 							w.WriteHeader(404)
 							return
 						}
-						io.WriteString(w, `{"sb-default-180d":{"policy":{"phases":{"delete":{"min_age":"180d","actions":{"delete":{}}}}}}}`)
+						io.WriteString(w, `{"sb-retention-181d":{"policy":{"phases":{"delete":{"min_age":"181d","actions":{"delete":{}}}}}}}`)
 						return
 					}
 					if mode == "put_denied" {
@@ -175,10 +175,10 @@ func TestLifecycleFailuresNeverCacheUnconfirmedCreation(t *testing.T) {
 			}
 			ctx, stop := context.WithTimeout(context.Background(), 3*time.Second)
 			defer stop()
-			if err = es.EnsureIndex(ctx, "sb-alerts-tenant_owned-2026.10.03", "2026-10-03"); err == nil {
+			if err = es.EnsureIndex(ctx, "sb-v2-alerts-r180-d2026.10.03", "2026-10-03"); err == nil {
 				t.Fatal("未确认生命周期或索引仍被采用")
 			}
-			if es.IndexKnown("sb-alerts-tenant_owned-2026.10.03") {
+			if es.IndexKnown("sb-v2-alerts-r180-d2026.10.03") {
 				t.Fatal("失败的索引被写入成功缓存")
 			}
 		})
@@ -209,10 +209,11 @@ func TestIndexShardLimitHasActionableErrorWithoutLeakingDependencyText(t *testin
 			if err != nil {
 				t.Fatal(err)
 			}
-			es.templateReady, es.policies[180] = true, true
-			err = es.EnsureIndex(context.Background(), "sb-alerts-tenant_owned-2026.10.12", "2026-10-12")
+			// 日分区 180 天保留对应 181 天生命周期；模板与策略已就绪时只验证建索引失败的分类。
+			es.templates[sharedEventTemplate.name], es.policies[181] = true, true
+			err = es.EnsureIndex(context.Background(), "sb-v2-alerts-r180-d2026.10.12", "2026-10-12")
 			var failure *IndexCreateError
-			if !errors.As(err, &failure) || failure.CapacityLimited != tc.limited || es.IndexKnown("sb-alerts-tenant_owned-2026.10.12") || strings.Contains(err.Error(), "private-dependent-data") {
+			if !errors.As(err, &failure) || failure.CapacityLimited != tc.limited || es.IndexKnown("sb-v2-alerts-r180-d2026.10.12") || strings.Contains(err.Error(), "private-dependent-data") {
 				t.Fatal("失败原因、缓存或依赖原文边界不正确", err)
 			}
 		})

@@ -32,7 +32,7 @@ func TestRuleGenerationBoundedHistorySIDExhaustionAndDisabledProvider(t *testing
 	config := llm.Config{Name: "容量资格模型", Kind: "openai_responses", BaseURL: "https://models.example.com/v1", Model: "owned", Enabled: true, APIKey: "owned-key", MaxOutputTokens: 256, TimeoutSeconds: 5, DailyRequests: 10000}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", ReplaceKey: true, Config: config}, vault, outbound.Policy{}, "seed")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{})
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{}, nil)
 	require(t, err)
 	evidence, err := rulegen.Seal(rulegen.Evidence{Packets: []replay.PacketSnippet{}})
 	require(t, err)

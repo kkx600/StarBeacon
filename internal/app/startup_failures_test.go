@@ -76,7 +76,7 @@ func TestGRPCStartupRejectsCertificateAndOccupiedPort(t *testing.T) {
 		t.Fatal("没有服务证书仍启动了控制端口")
 	}
 	ca := filepath.Join(t.TempDir(), "pki")
-	if err := admin.DevPKI(ca); err != nil {
+	if err := admin.DevPKI(ca, nil); err != nil {
 		t.Fatal(err)
 	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")

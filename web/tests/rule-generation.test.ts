@@ -16,6 +16,7 @@ import {useRuleGeneration} from '../platform/src/features/rules/useRuleGeneratio
 import {session} from '../platform/src/session'
 import {analysisProvider} from './analysisFixtures'
 import {principal,sample,rulePackage,click,button,deferred,closedMessage} from './fixtures'
+import {platformScreenRoutes} from './routeFixtures'
 
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request},current:(await import('vue')).shallowRef(null)}}))
@@ -31,8 +32,8 @@ const adopted={...rulePackage,id:packageID,revision:1,sha256:completed.candidate
 function clone<T>(value:T):T{return structuredClone(value)}
 beforeEach(()=>{(session.current as ShallowRef<Principal|null>).value=principal;request.mockReset();request.mockImplementation((path:string)=>Promise.resolve(path==='/rule-generation/jobs'?page:path==='/models/providers'?{items:[analysisProvider],available:true}:path==='/replay/samples'?{items:[sample,httpSample],available:true}:path==='/rule-packages'?{items:[rulePackage]}:completed));vi.spyOn(message,'success').mockImplementation(closedMessage)})
 function host(){let state!:ReturnType<typeof useRuleGeneration>;const wrapper=mount(defineComponent({setup(){state=useRuleGeneration();return()=>h('div')}}));return{state,wrapper}}
-async function workspace(component:Component=RuleGenerationWorkspace,path='/rules?view=generation'){
-  const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component}]});await router.push(path);await router.isReady()
+async function workspace(component:Component=RuleGenerationWorkspace,path='/ai/rule-generation'){
+  const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(component)});await router.push(path);await router.isReady()
   const wrapper=mount(component,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return{wrapper,router}
 }
 async function describeDetection(value:string){const element=document.body.querySelector<HTMLTextAreaElement>('#rule-generation_description')!;element.value=value;element.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
@@ -116,8 +117,8 @@ describe('生成请求与持久结果',()=>{
 })
 
 describe('规则生成页面操作',()=>{
-  it('规则工作台按页签提供单一业务表格，查看账号不能进入生成',async()=>{
-    const{wrapper,router}=await workspace(RulesWorkspace);expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(wrapper.text()).toContain('AI 规则生成');await click('规则包');expect(router.currentRoute.value.query.view).toBeUndefined();expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  it('规则工作台按规范路径提供单一业务表格，查看账号不能进入生成',async()=>{
+    const{wrapper,router}=await workspace(RulesWorkspace);expect(wrapper.findAll('.ant-table')).toHaveLength(1);expect(wrapper.text()).toContain('AI 规则生成');await router.push('/detection/rules/packages');await flushPromises();expect(wrapper.text()).not.toContain('AI 规则生成');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
     wrapper.unmount();(session.current as ShallowRef<Principal|null>).value={...principal,role:'viewer'};const viewer=await workspace(RulesWorkspace);expect(viewer.wrapper.text()).not.toContain('AI 规则生成');expect(request.mock.calls.filter(call=>call[0]==='/rule-generation/jobs')).toHaveLength(1)
   })
   it('无数据、不可用与历史错误都有明确恢复入口',async()=>{

@@ -89,7 +89,7 @@ func TestCollectorServiceRuntimeFixedCommandsAndOwnership(t *testing.T) {
 	pub, key := testKeys(t)
 	c := testConfig(t)
 	archive, proof := writeZIP(t, key, 1, items(1))
-	release, err := Stage(ctx, c.Root, archive, proof, pub, fixedTime)
+	release, err := stage(ctx, c.Root, archive, proof, pub, fixedTime, 180)
 	if err != nil {
 		t.Fatal(err)
 	}

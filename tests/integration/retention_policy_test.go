@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -24,6 +25,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/retention"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/testpcap"
+	"github.com/kkx600/StarBeacon/internal/transport"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -52,14 +54,12 @@ func TestRetentionPoliciesPreviewIsolationFutureExpiryAndESPartition(t *testing.
 	for _, tenant := range tenants {
 		require(t, admin.Bootstrap(ctx, owner, tenant, "留存策略验收", tenant, password, "admin"))
 		defer func() {
+			// 共享索引同时承载其他租户，不整体删除；只回收本租户可能写入的文档。
+			deleteTenantEvents(t, es, tenant)
 			clean, stop := context.WithTimeout(context.Background(), 10*time.Second)
 			defer stop()
-			response, err := es.API.Indices.Delete([]string{"sb-alerts-" + tenant + "-*", "sb-context-" + tenant + "-*"}, es.API.Indices.Delete.WithContext(clean))
-			if err == nil {
-				response.Body.Close()
-			}
 			require(t, owner.TenantTx(clean, tenant, func(tx pgx.Tx) error {
-				for _, table := range []string{"retention_changes", "retention_previews", "replay_samples", "operation_audits", "login_audits", "retention_policies"} {
+				for _, table := range []string{"retention_changes", "retention_previews", "replay_samples", "routes", "sensors", "operation_audits", "login_audits", "retention_policies"} {
 					if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 						return err
 					}
@@ -79,7 +79,7 @@ func TestRetentionPoliciesPreviewIsolationFutureExpiryAndESPartition(t *testing.
 	require(t, err)
 	auth := httpapi.NewAuth(db, cache, "http://127.0.0.1", "it_retention", false)
 	api := &platform.API{DB: db, Auth: auth, Redis: cache, Samples: storage, SampleQuota: 100 * 1024 * 1024}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	client := func(username string) *liveHTTP {
@@ -171,28 +171,48 @@ func TestRetentionPoliciesPreviewIsolationFutureExpiryAndESPartition(t *testing.
 	candidate.Days = 365
 	candidate.ApplyMode = "recompute"
 	a.request("POST", "/retention-policies/preview", "", candidate, nil, 400)
-	if _, err := db.EventRetention(ctx, tenants[0], "other"); err == nil {
+	// 路由创建时按租户当前保留期冻结共享索引；策略变更只影响此后新建的路由，既有路由与索引保持原期限。
+	probes := []transport.SensorIdentity{{TenantID: tenants[0], SensorID: "probe_before", RegistrationID: store.RandomID("reg_")}, {TenantID: tenants[0], SensorID: "probe_after", RegistrationID: store.RandomID("reg_")}}
+	require(t, owner.TenantTx(ctx, tenants[0], func(tx pgx.Tx) error {
+		for _, probe := range probes {
+			if _, err := tx.Exec(ctx, `INSERT INTO sensors(tenant_id,id,name,registration_id,active,last_seen) VALUES($1,$2,'留存路由探针',$3,true,now())`, probe.TenantID, probe.SensorID, probe.RegistrationID); err != nil {
+				return err
+			}
+		}
+		return nil
+	}))
+	if _, err := db.Route(ctx, probes[0], "other"); err == nil {
 		t.Fatal("未知事件流读取了默认策略")
 	}
-	firstDay, secondDay := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02"), time.Now().UTC().Format("2006-01-02")
-	firstIndex, err := contract.IndexName(tenants[0], "alerts", firstDay)
+	before, err := db.Route(ctx, probes[0], "alerts")
 	require(t, err)
-	require(t, es.EnsureIndex(ctx, firstIndex, firstDay))
+	firstIndex := before.Index
+	if firstIndex != sharedEventIndex(t, "alerts", before.Partition) {
+		t.Fatal("路由未按默认保留期冻结共享索引", firstIndex)
+	}
+	require(t, es.EnsureIndex(ctx, firstIndex, before.Partition))
 	candidate = retention.Candidate{Category: "alerts", Days: 365, ExpectedRevision: 1, ApplyMode: "future"}
 	a.request("POST", "/retention-policies/preview", "", candidate, &preview, 200)
 	a.request("PUT", "/retention-policies/alerts", store.RandomID("key_"), retention.Change{PreviewID: preview.ID, Candidate: candidate}, nil, 200)
-	days, err := db.EventRetention(ctx, tenants[0], "alerts")
+	again, err := db.Route(ctx, probes[0], "alerts")
 	require(t, err)
-	if days != 365 {
-		t.Fatal("索引保留期未读取租户策略")
+	if again.Token != before.Token || again.Index != firstIndex {
+		t.Fatal("既有路由改用了新保留期索引", again.Index)
 	}
+	renewed, err := db.Route(ctx, probes[1], "alerts")
+	require(t, err)
+	secondIndex, err := contract.EventIndexName("alerts", 365, contract.DefaultIndexLayout().For("alerts").Period, renewed.Partition)
+	require(t, err)
+	if renewed.Index != secondIndex {
+		t.Fatal("索引保留期未读取租户策略", renewed.Index)
+	}
+	// 新客户端没有本地缓存，必须回读既有索引；先建索引沿用名称冻结的期限，新路由索引按新期限建立。
 	fresh, err := store.OpenES(os.Getenv("SB_ES_URL"), os.Getenv("SB_ES_API_KEY"))
 	require(t, err)
-	require(t, fresh.EnsureIndexRetention(ctx, firstIndex, firstDay, days))
-	secondIndex, err := contract.IndexName(tenants[0], "alerts", secondDay)
-	require(t, err)
-	require(t, fresh.EnsureIndexRetention(ctx, secondIndex, secondDay, days))
-	for index, expected := range map[string]string{firstIndex: "sb-default-180d", secondIndex: "sb-retention-365d"} {
+	require(t, fresh.EnsureIndex(ctx, firstIndex, before.Partition))
+	require(t, fresh.EnsureIndex(ctx, secondIndex, renewed.Partition))
+	// 告警默认按周分区，生命周期为保留天数加七天分区跨度。
+	for index, expected := range map[string]string{firstIndex: "sb-retention-187d", secondIndex: "sb-retention-372d"} {
 		response, err := es.API.Indices.GetSettings(es.API.Indices.GetSettings.WithIndex(index), es.API.Indices.GetSettings.WithFlatSettings(true), es.API.Indices.GetSettings.WithContext(ctx))
 		require(t, err)
 		var settings map[string]struct {
@@ -209,8 +229,8 @@ func TestRetentionPoliciesPreviewIsolationFutureExpiryAndESPartition(t *testing.
 			t.Fatal("索引首次策略被覆盖或未来分区未固化策略")
 		}
 	}
-	// 索引不存在时写入必须明确失败，不能自动建立无策略的动态映射。
-	missing, err := contract.IndexName(tenants[0], "context", secondDay)
+	// 索引不存在时写入必须明确失败，不能自动建立无策略的动态映射；以最长保留期的协议日分区作为尚未建立的共享索引。
+	missing, err := contract.EventIndexName("context", 3650, contract.PeriodDay, renewed.Partition)
 	require(t, err)
 	errs := es.Bulk(ctx, missing, []model.Alert{{EventID: "missing_owned", TenantID: tenants[0]}})
 	if len(errs) != 1 || errs[0] == nil {

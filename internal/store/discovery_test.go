@@ -28,8 +28,8 @@ func TestDiscoveryOwnedIndexFamilyAndStorageFailures(t *testing.T) {
 			searches := 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				searches++
-				if r.Method == "HEAD" || r.URL.Path != "/sb-v2-context-*,sb-context-tenant_owned-*,-sb-context-tenant_owned-*-*/_search" || r.URL.Query().Get("pre_filter_shard_size") != "1" || r.URL.Query().Get("expand_wildcards") != "open,closed" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_no_indices") != "true" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("max_concurrent_shard_requests") != "2" {
-					t.Error("缺少租户隔离、预过滤或完整性约束")
+				if r.Method == "HEAD" || r.URL.Path != "/sb-v2-context-*/_search" || r.URL.Query().Get("pre_filter_shard_size") != "1" || r.URL.Query().Get("expand_wildcards") != "open,closed" || r.URL.Query().Get("ignore_unavailable") != "false" || r.URL.Query().Get("allow_no_indices") != "true" || r.URL.Query().Get("allow_partial_search_results") != "false" || r.URL.Query().Get("max_concurrent_shard_requests") != "2" {
+					t.Error("缺少共享索引范围、预过滤或完整性约束")
 				}
 				switch mode {
 				case "forbidden":

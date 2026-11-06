@@ -85,10 +85,7 @@ func keyBytes(k ed25519.PrivateKey) ([]byte, error) {
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: b}), nil
 }
-func DevPKI(dir string) error {
-	return DevPKIWithHosts(dir, nil)
-}
-func DevPKIWithHosts(dir string, hosts []string) error {
+func DevPKI(dir string, hosts []string) error {
 	if _, _, e := serverHosts(hosts); e != nil {
 		return e
 	}
@@ -123,15 +120,12 @@ func DevPKIWithHosts(dir string, hosts []string) error {
 	if e != nil {
 		return e
 	}
-	if _, e = IssueWithHosts(dir, filepath.Join(dir, "server"), nil, true, hosts); e != nil {
+	if _, e = Issue(dir, filepath.Join(dir, "server"), nil, true, hosts); e != nil {
 		return errors.Join(e, removePrivateFiles(created))
 	}
 	return nil
 }
-func Issue(caDir, prefix string, identity *transport.SensorIdentity, server bool) ([]byte, error) {
-	return IssueWithHosts(caDir, prefix, identity, server, nil)
-}
-func IssueWithHosts(caDir, prefix string, identity *transport.SensorIdentity, server bool, hosts []string) ([]byte, error) {
+func Issue(caDir, prefix string, identity *transport.SensorIdentity, server bool, hosts []string) ([]byte, error) {
 	der, key, e := certificateMaterial(caDir, identity, server, hosts)
 	if e != nil {
 		return nil, e

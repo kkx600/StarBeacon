@@ -36,7 +36,7 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
    <template v-else-if="column.key==='state'"><a-tag :color="row.state==='submitted'?'green':row.state==='skipped'?'orange':'blue'">{{triggerStates[row.state as keyof typeof triggerStates]}}</a-tag></template>
    <template v-else-if="column.key==='code'">{{triggerCodes[row.code as keyof typeof triggerCodes]}}</template>
    <template v-else-if="column.key==='created'">{{formatTime(row.created_at)}}</template>
-   <template v-else-if="column.key==='actions'"><a-button v-if="row.triage_id" type="link" size="small" @click="router.push({path:'/models',query:{view:'evaluations',triage_id:row.triage_id}})">查看决策记录</a-button><span v-else>尚无研判作业</span></template>
+   <template v-else-if="column.key==='actions'"><a-button v-if="row.triage_id" type="link" size="small" @click="router.push({path:'/response/evaluations',query:{triage_id:row.triage_id}})">查看决策记录</a-button><span v-else>尚无研判作业</span></template>
   </template></a-table>
  </StatePanel>
  <div class="trigger-pagination"><span>当前页 {{page.items.length}} 条</span><div><a-button :disabled="pending||!history.length" @click="previous">上一页</a-button><a-button :disabled="pending||!page.next_cursor" @click="next">下一页</a-button></div></div>

@@ -1,6 +1,6 @@
 import {syncPlanValid,type RuleSyncPlan,type RuleSyncRun,type RuleSyncSpec} from './sync'
 
-export interface RolloutSelection {plan_id:string;revision:number}
+interface RolloutSelection {plan_id:string;revision:number}
 export interface RolloutSpec {name:string;plans:RolloutSelection[];canary_count:number;batch_size:number;observation_seconds:number;timeout_seconds:number}
 export interface RolloutCreate {id:string;spec:RolloutSpec}
 export interface RolloutTarget {ordinal:number;batch:number;plan_id:string;authorized_revision:number;execution_revision:number;spec:RuleSyncSpec;state:string;code:string;run?:RuleSyncRun}

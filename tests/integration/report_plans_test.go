@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -84,10 +85,10 @@ func TestReportPlansDurableCalendarRecoveryOwnershipAndModelBudget(t *testing.T)
 		}
 		return api.Overview(ctx, user, window)
 	}
-	queue, err := jobs.NewAnalysis(db, vault, policy, snapshot)
+	queue, err := jobs.NewAnalysis(db, vault, policy, nil, snapshot)
 	require(t, err)
 	api.Jobs = queue
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	login := func(name string) (*liveHTTP, model.Principal) {
@@ -108,20 +109,12 @@ func TestReportPlansDurableCalendarRecoveryOwnershipAndModelBudget(t *testing.T)
 	require(t, err)
 	request, err := blank.RequestAt(latest)
 	require(t, err)
-	index := "sb-alerts-" + tenant + "-" + request.Window.Start.Format("2006.01.02")
+	index := sharedEventIndex(t, "alerts", request.Window.Start.Format("2006-01-02"))
 	require(t, es.EnsurePolicy(ctx))
 	require(t, es.EnsureIndex(ctx, index, request.Window.Start.Format("2006-01-02")))
-	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		defer response.Body.Close()
-		if response.IsError() {
-			t.Errorf("自身统计索引清理失败：%d", response.StatusCode)
-		}
-	})
-	alert := model.Alert{SchemaVersion: "alert.v1", EventID: "owned_plan_event", TenantID: tenant, SensorID: "probe_owned", Timestamp: request.Window.Start.Add(time.Hour), ObservedAt: request.Window.Start.Add(time.Hour), ReceivedAt: request.Window.Start.Add(time.Hour), RawSHA256: control.Digest([]byte("report-plan")), Severity: "high"}
+	// 共享索引同时承载其他租户，只回收本租户文档；事件标识即文档 _id，按用例生成。
+	t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
+	alert := model.Alert{SchemaVersion: "alert.v1", EventID: store.RandomID("owned_plan_event_"), TenantID: tenant, SensorID: "probe_owned", Timestamp: request.Window.Start.Add(time.Hour), ObservedAt: request.Window.Start.Add(time.Hour), ReceivedAt: request.Window.Start.Add(time.Hour), RawSHA256: control.Digest([]byte("report-plan")), Severity: "high"}
 	alert.Event.Kind, alert.Event.Dataset, alert.Network.Protocol, alert.Rule.ID = "alert", "suricata.alert", "http", "1000001"
 	for _, err := range es.Bulk(ctx, index, []model.Alert{alert}) {
 		require(t, err)
@@ -195,7 +188,7 @@ func TestReportPlansDurableCalendarRecoveryOwnershipAndModelBudget(t *testing.T)
 		t.Fatal("尚未运行却出现虚构报告")
 	}
 	// 丢弃仅负责入队的客户端，用新执行器恢复同一数据库中的计划。
-	restarted, err := jobs.NewAnalysis(db, vault, policy, snapshot)
+	restarted, err := jobs.NewAnalysis(db, vault, policy, nil, snapshot)
 	require(t, err)
 	api.Jobs = restarted
 	require(t, restarted.Start(ctx))

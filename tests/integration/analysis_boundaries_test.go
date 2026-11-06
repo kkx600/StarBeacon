@@ -35,7 +35,7 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 	config := llm.Config{Name: "分析协议配置", Kind: "openai_responses", BaseURL: "https://models.example.com/v1", Model: "owned", APIKey: "owned-analysis-key", Enabled: true, MaxOutputTokens: 256, TimeoutSeconds: 5, DailyRequests: 1000}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", Config: config, ReplaceKey: true}, vault, outbound.Policy{}, "seed_provider")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{})
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{}, nil)
 	require(t, err)
 	input := assistant.Request{Kind: "chat", ProviderID: "provider_owned", ProviderRevision: 1, Question: strings.Repeat("核对捕获质量", 16), AllowContext: true, Window: analytics.Window{Start: time.Now().UTC().Add(-time.Hour), End: time.Now().UTC().Truncate(time.Minute)}}
 	seed, err := f.Runtime.CreateAnalysis(ctx, u, input, "seed_analysis", assistant.Evidence{}, "限定证据范围", queue, vault, "seed_analysis")

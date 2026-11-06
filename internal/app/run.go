@@ -288,7 +288,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 			}
 		})
 		{
-			analysisQueue, err := jobs.NewAnalysisWithTriage(db, vault, policy, es, api.Overview)
+			analysisQueue, err := jobs.NewAnalysis(db, vault, policy, es, api.Overview)
 			if err != nil {
 				return err
 			}
@@ -431,7 +431,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 				cert, key = c.HTTPTLSCert, c.HTTPTLSKey
 			}
 		}
-		return httpapi.ServeWithClientIP(run, c.HTTPAddr, handler, cert, key, c.HTTPClientIPs)
+		return httpapi.Serve(run, c.HTTPAddr, handler, cert, key, c.HTTPClientIPs)
 	})
 	slog.Info("服务启动", "role", role, "http", c.HTTPAddr, "version", buildinfo.Version)
 	return group.Wait()

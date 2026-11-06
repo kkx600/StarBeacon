@@ -40,18 +40,13 @@ func verifyApplicationIndexingSupplementIsolation(t *testing.T, ctx context.Cont
 	}()
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
-	index, err := contract.IndexName(identity.TenantID, "alerts", time.Now().UTC().Format("2006-01-02"))
-	require(t, err)
-	defer func() {
-		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(cleanup))
-		require(t, err)
-		response.Body.Close()
-	}()
+	// 共享索引同时承载其他租户，只回收本租户文档。
+	defer deleteTenantEvents(t, es, identity.TenantID)
 	indexer := &worker.Indexer{DB: db, ES: es, Bus: queue}
 	for i, mode := range []string{"valid", "changed_product", "missing_deployment", "invalid_schema"} {
 		observed := time.Now().UTC()
+		// 信封携带路由冻结的共享索引，须属于告警数据流并覆盖路由日。
+		index := sharedEventIndex(t, "alerts", observed.Format("2006-01-02"))
 		raw := []byte(fmt.Sprintf(`{"timestamp":%q,"event_type":"alert","app_proto":"http","proto":"TCP","src_ip":"192.0.2.10","dest_ip":"198.51.100.20","http":{"hostname":"files.example","http_method":"GET","url":"/documents"},"alert":{"signature_id":1000123,"severity":1}}`, observed.Format(time.RFC3339Nano)))
 		attribution, supported, err := matcher.Attribute(raw, deployment, observed)
 		require(t, err)
@@ -76,7 +71,7 @@ func verifyApplicationIndexingSupplementIsolation(t *testing.T, ctx context.Cont
 		contract.Seal(batch)
 		encoded, err := proto.Marshal(batch)
 		require(t, err)
-		envelope, err := json.Marshal(bus.Envelope{TenantID: identity.TenantID, Batch: encoded, Partition: observed.Format("2006-01-02"), ReceivedAt: observed})
+		envelope, err := json.Marshal(bus.Envelope{TenantID: identity.TenantID, Batch: encoded, Partition: observed.Format("2006-01-02"), Index: index, ReceivedAt: observed})
 		require(t, err)
 		for range 2 {
 			require(t, indexer.Process(ctx, envelope))

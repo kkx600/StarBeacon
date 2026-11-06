@@ -57,16 +57,10 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
 	now := time.Now().UTC()
-	index, err := contract.IndexName(u.TenantID, "alerts", now.Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-	t.Cleanup(func() {
-		c, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(c))
-		require(t, err)
-		res.Body.Close()
-	})
+	// 共享索引同时承载其他租户，只回收本租户文档。
+	t.Cleanup(func() { deleteTenantEvents(t, es, u.TenantID) })
 	alert := model.Alert{EventID: "event_auto", TenantID: u.TenantID, RawSHA256: store.Hash("automatic-evidence"), SensorID: "sensor_response", RegistrationID: "registration_response", Timestamp: now, ObservedAt: now, ReceivedAt: now, Severity: "high", Source: model.Endpoint{IP: "192.0.2.10"}, Destination: model.Endpoint{IP: "198.51.100.20"}}
 	alert.Event.Kind, alert.Event.Original, alert.Rule.ID = "alert", `{"private":"must-not-send"}`, "1000001"
 	data := []byte(fmt.Sprintf(`{"timestamp":%q,"event_type":"alert","src_ip":"192.0.2.10","dest_ip":"198.51.100.20","proto":"TCP","alert":{"signature_id":1000001,"severity":1},"private":"must-not-send"}`, now.Format(time.RFC3339Nano)))
@@ -89,7 +83,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	contract.Seal(batch)
 	encoded, err := proto.Marshal(batch)
 	require(t, err)
-	envelope, err := json.Marshal(bus.Envelope{TenantID: u.TenantID, Batch: encoded, Partition: now.Format("2006-01-02"), ReceivedAt: now})
+	envelope, err := json.Marshal(bus.Envelope{TenantID: u.TenantID, Batch: encoded, Partition: now.Format("2006-01-02"), Index: index, ReceivedAt: now})
 	require(t, err)
 	indexer := &worker.Indexer{Bus: nats, ES: es, DB: f.Runtime}
 	indexAlert := func(v model.Alert) {
@@ -132,7 +126,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	if len(candidates) != 1 {
 		t.Fatal("并发索引重投未形成唯一触发", len(candidates))
 	}
-	queue, err := jobs.NewAnalysisWithTriage(f.Runtime, vault, outboundPolicy, es)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, outboundPolicy, es)
 	require(t, err)
 	evidence, err := triage.Freeze(alert)
 	require(t, err)
@@ -251,7 +245,7 @@ func TestAutomaticTriageRevocationBeforeChargingAndNoHistoricalReactivation(t *t
 	change.Definition.Continuous = &decision.ContinuousConfig{ProviderID: "provider_revocation", ProviderRevision: 1, Automatic: &decision.AutomaticConfig{SensorID: "sensor_response", RegistrationID: "registration_response", ConnectorID: response.ConnectorID, ConfigSHA256: response.ConfigSHA256, TTLSeconds: 60, CooldownSeconds: 3600, MaxHourlyActions: 1, AcceptUncalibratedScore: true}, Trigger: &decision.TriageTrigger{Severities: []string{"high"}, MaxDailyJobs: 10, AllowModelContext: true}}
 	policy, err := f.Runtime.SaveDecisionPolicy(ctx, u, "revocation_enable", change)
 	require(t, err)
-	queue, err := jobs.NewAnalysisWithTriage(f.Runtime, vault, outbound.Policy{}, nil)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{}, nil)
 	require(t, err)
 	admit := func(event string) (store.AutomaticTriageCandidate, triage.Evidence) {
 		now := time.Now().UTC()

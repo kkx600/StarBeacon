@@ -71,9 +71,9 @@ func TestDecisionPolicyHTTPIsolationRevisionsSyntaxAndNoUnsupportedExecution(t *
 		t.Fatal("策略筛选未生效")
 	}
 	a.request("POST", "/decision-policies", "policy_no_change", decisionPolicyEdit(page.Items[0]), nil, 400)
-	a.request("POST", "/decision-policies/policy_owned/evaluate", "", decision.EvaluateRequest{ExpectedRevision: 1, TriageID: "triage_missing"}, nil, 404)
-	a.request("POST", "/decision-policies/policy_owned/evaluate", "", decision.EvaluateRequest{ExpectedRevision: 2, TriageID: "triage_missing"}, nil, 409)
-	v.request("POST", "/decision-policies/policy_owned/evaluate", "", decision.EvaluateRequest{ExpectedRevision: 1, TriageID: "triage_missing"}, nil, 403)
+	a.request("POST", "/decision-evaluations", "evaluation_missing_triage", decision.EvaluationRequest{PolicyID: "policy_owned", ExpectedRevision: 1, TriageID: "triage_missing"}, nil, 404)
+	a.request("POST", "/decision-evaluations", "evaluation_stale_revision", decision.EvaluationRequest{PolicyID: "policy_owned", ExpectedRevision: 2, TriageID: "triage_missing"}, nil, 409)
+	v.request("POST", "/decision-evaluations", "evaluation_viewer", decision.EvaluationRequest{PolicyID: "policy_owned", ExpectedRevision: 1, TriageID: "triage_missing"}, nil, 403)
 	a.request("POST", "/decision-policies", "policy_create", decisionPolicyInput("policy_owned"), &repeated, 200)
 	for _, mode := range []string{"approval", "automatic"} {
 		unsupported := decisionPolicyInput("policy_unsupported")
@@ -90,15 +90,15 @@ func verifyNativeDecisionPolicy(t *testing.T, client *liveHTTP, job triage.Job) 
 	c.Definition.MaxAgeSeconds = 86400
 	var record decision.Record
 	client.request("POST", "/decision-policies", "native_policy_create", c, &record, 200)
-	input := decision.EvaluateRequest{ExpectedRevision: record.Revision, TriageID: job.ID}
-	var result decision.Result
-	client.request("POST", "/decision-policies/"+record.ID+"/evaluate", "", input, &result, 200)
+	input := decision.EvaluationRequest{PolicyID: record.ID, ExpectedRevision: record.Revision, TriageID: job.ID}
+	var shadow decision.Evaluation
+	client.request("POST", "/decision-evaluations", "native_evaluation_shadow", input, &shadow, 200)
+	result := shadow.Result
 	if result.Status != "matched" || result.ExecutionAuthorized || result.ConfidenceKind != "self_reported" || result.Confidence == nil || *result.Confidence != job.Answer.Confidence || result.EvidenceSHA256 != job.Evidence.SHA256 || result.RawSHA256 != job.Request.RawSHA256 || result.ProviderRevision != job.Request.ProviderRevision || result.PolicyRevision != record.Revision || result.Cost == nil {
 		t.Fatal("原生影子策略未绑定实际研判与执行边界", result)
 	}
 	var archived, confirmed decision.Evaluation
-	archiveInput := decision.EvaluationRequest{PolicyID: record.ID, ExpectedRevision: record.Revision, TriageID: job.ID}
-	client.request("POST", "/decision-evaluations", "native_evaluation_archive", archiveInput, &archived, 200)
+	client.request("POST", "/decision-evaluations", "native_evaluation_archive", input, &archived, 200)
 	client.request("GET", "/decision-evaluations/"+archived.ID, "", nil, &confirmed, 200)
 	sealed, err := confirmed.Seal()
 	require(t, err)
@@ -114,14 +114,15 @@ func verifyNativeDecisionPolicy(t *testing.T, client *liveHTTP, job triage.Job) 
 	off := false
 	edit.Active = &off
 	client.request("POST", "/decision-policies", "native_policy_disable", edit, &record, 200)
-	client.request("POST", "/decision-evaluations", "native_evaluation_archive", archiveInput, &confirmed, 200)
+	client.request("POST", "/decision-evaluations", "native_evaluation_archive", input, &confirmed, 200)
 	if confirmed.SHA256 != archived.SHA256 || !confirmed.Policy.Active {
 		t.Fatal("停用策略改变了原生历史判断")
 	}
-	client.request("POST", "/decision-policies/"+record.ID+"/evaluate", "", input, nil, 409)
+	client.request("POST", "/decision-evaluations", "native_evaluation_stale", input, nil, 409)
 	input.ExpectedRevision = record.Revision
-	client.request("POST", "/decision-policies/"+record.ID+"/evaluate", "", input, &result, 200)
-	if result.Status != "abstained" || result.ExecutionAuthorized || len(result.Reasons) != 1 || result.Reasons[0] != "policy_inactive" {
-		t.Fatal("停用策略仍产生候选", result)
+	var inactive decision.Evaluation
+	client.request("POST", "/decision-evaluations", "native_evaluation_inactive", input, &inactive, 200)
+	if inactive.Result.Status != "abstained" || inactive.Result.ExecutionAuthorized || len(inactive.Result.Reasons) != 1 || inactive.Result.Reasons[0] != "policy_inactive" {
+		t.Fatal("停用策略仍产生候选", inactive.Result)
 	}
 }

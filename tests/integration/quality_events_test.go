@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -333,7 +334,7 @@ func TestQualityEventsDurableHeartbeatIndexingNotificationsAndIsolation(t *testi
 	policy := outbound.Policy{PrivateNetworks: networks, Roots: roots}
 	auth := httpapi.NewAuth(db, cache, "", "it_quality", false)
 	api := &platform.API{DB: db, ES: es, Redis: cache, Auth: auth, Vault: vault, Outbound: policy}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	login := func(name string) *liveHTTP {

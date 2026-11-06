@@ -28,7 +28,7 @@ func TestPlatformRunAnalysisReadinessAndCancellation(t *testing.T) {
 	require(t, admin.Bootstrap(ctx, f.Owner, tenant, "平台生命周期验收", tenant, password, "admin"))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	privatePath, publicPath := filepath.Join(dir, "command.key"), filepath.Join(dir, "command.pub")
 	require(t, control.GenerateKeys(privatePath, publicPath))
 	addresses := availableAddresses(t, 2)

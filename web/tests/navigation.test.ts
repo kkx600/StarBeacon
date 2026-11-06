@@ -9,7 +9,7 @@ import WorkspaceTabs from '../packages/shared/src/components/WorkspaceTabs.vue'
 import SettingsWorkspace from '../platform/src/features/settings/SettingsWorkspace.vue'
 import UnavailableView from '../platform/src/views/UnavailableView.vue'
 import {navigationGroups,navigationWorkspaces,platformScreens,workspacePath} from '../packages/shared/src/navigation'
-import {legacyDestination,navigationForRole,platformRoutes} from '../platform/src/navigation'
+import {navigationForRole,platformRoutes} from '../platform/src/navigation'
 import {useWorkspaceView} from '../packages/shared/src/utils/useWorkspaceView'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',async()=>{
@@ -22,7 +22,7 @@ async function routerFor(path:string){const router=createRouter({history:createM
 
 describe('业务导航与路由契约',()=>{
  it('从检测规则入口可进入关联目录和回测，并能返回规则包，专属选择不泄漏到其他页面',async()=>{
-  const router=await routerFor('/detection/rules/packages?start=2026-10-19&view=legacy&mode=legacy#scope')
+  const router=await routerFor('/detection/rules/packages?start=2026-10-19#scope')
   const wrapper=mount(RouterView,{global:{plugins:[registerAnt,router]}})
   async function tab(label:string,path:string){let target;await vi.waitFor(()=>{target=wrapper.findAll('[role=tab]').find(item=>item.text()===label);expect(target,`工作区应提供 ${label} 入口`).toBeDefined()});await target!.trigger('click');await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe(path))}
   try{
@@ -46,14 +46,14 @@ describe('业务导航与路由契约',()=>{
   for(const path of ['/system','/system/accounts','/detection','/detection/rules']){await router.push(path);expect(router.currentRoute.value.matched.at(-1)?.components?.default).toBeTruthy()}
  })
  it.each([
-  ['/sensors','/sensors/list'],['/models','/ai/models'],['/rules','/detection/rules/packages'],['/operations','/system/operations/health'],
-  ['/sensors?view=quality','/traffic/capture/quality'],['/models?view=policies','/response/policies'],['/models?view=mcp','/ai/mcp'],
-  ['/rules?view=sync&mode=rollouts','/detection/rules/rollouts'],['/rules?view=sync','/detection/rules/sync'],
-  ['/models?view=invalid','/ai/models'],['/unknown','/sensors/list'],
- ])('旧链接 %s 进入相同业务，并保留检索窗口及定位标记',async(input,expected)=>{
-  const url=new URL('https://example.test'+input);const query=Object.fromEntries(url.searchParams)
-  const result=legacyDestination({path:url.pathname,query:{...query,start:'2026-10-19T00:00:00Z',end:'2026-10-20T00:00:00Z'},hash:'#evidence'})
-  expect(result).toEqual({path:expected,query:{start:'2026-10-19T00:00:00Z',end:'2026-10-20T00:00:00Z'},hash:'#evidence'})
+  ['/overview','/overview/dashboard'],['/alerts','/alerts/list'],['/incidents','/incidents/investigation'],['/inventory','/inventory/list'],
+  ['/traffic','/traffic/events'],['/traffic/capture','/traffic/capture/quality'],['/detection','/detection/rules/packages'],['/detection/rules','/detection/rules/packages'],
+  ['/detection/correlation','/detection/correlation/rules'],['/response','/response/policies'],['/notifications','/notifications/channels'],['/ai','/ai/models'],
+  ['/reports','/reports/records'],['/sensors','/sensors/list'],['/system','/system/settings'],['/system/operations','/system/operations/health'],
+  ['/system/accounts','/system/accounts/users'],['/system/governance','/system/governance/retention'],['/system/audit','/system/audit/operations'],['/system/data-sources','/system/data-sources/syslog'],
+ ])('目录父级 %s 进入默认页面 %s，并保留检索窗口及定位标记',async(input,expected)=>{
+  const router=await routerFor(input+'?start=2026-10-19T00:00:00Z&end=2026-10-20T00:00:00Z#evidence')
+  expect(router.currentRoute.value.fullPath).toBe(expected+'?start=2026-10-19T00:00:00Z&end=2026-10-20T00:00:00Z#evidence')
  })
  it('只读角色不显示管理员及未提供的工作区，管理员可定位全部设计目录',()=>{
   const viewer=navigationForRole(false),admin=navigationForRole(true)
@@ -62,11 +62,12 @@ describe('业务导航与路由契约',()=>{
   expect(viewer.flatMap(group=>group.children).every(item=>item.available)).toBe(true)
   expect(admin.find(group=>group.key==='system')?.children.map(item=>item.label)).toContain('平台运维')
  })
- it('页签沿规范路径切换、移除旧路由选择参数，保留业务条件并支持返回',async()=>{
-  const router=await routerFor('/system/audit/operations?start=2026-10-19&view=legacy&mode=legacy#detail')
-  const Probe=defineComponent({setup(){const {view,change}=useWorkspaceView(['health','operations','logins']);return {view,change}},template:'<button @click="change(\'logins\')">{{view}}</button>'})
+ it('页签沿规范路径切换，保留业务条件并支持返回；没有规范路径的视图不改变地址',async()=>{
+  const router=await routerFor('/system/audit/operations?start=2026-10-19#detail')
+  const Probe=defineComponent({setup(){const {view,change}=useWorkspaceView(['health','operations','logins','missing']);return {view,change}},template:'<button id="missing" @click="change(\'missing\')">{{view}}</button><button id="logins" @click="change(\'logins\')">登录日志</button>'})
   const wrapper=mount(Probe,{global:{plugins:[router]}})
-  expect(wrapper.text()).toBe('operations');await wrapper.get('button').trigger('click');await flushPromises();expect(router.currentRoute.value.fullPath).toBe('/system/audit/logins?start=2026-10-19#detail')
+  expect(wrapper.get('#missing').text()).toBe('operations');await wrapper.get('#missing').trigger('click');await flushPromises();expect(router.currentRoute.value.fullPath).toBe('/system/audit/operations?start=2026-10-19#detail')
+  await wrapper.get('#logins').trigger('click');await flushPromises();expect(router.currentRoute.value.fullPath).toBe('/system/audit/logins?start=2026-10-19#detail')
   router.back();await vi.waitFor(()=>expect(router.currentRoute.value.path).toBe('/system/audit/operations'));wrapper.unmount()
  })
  it('模型页不再混入决策与 MCP，原生发布模式页签保持可操作',async()=>{

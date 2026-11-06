@@ -5,7 +5,7 @@ import {Menu} from 'ant-design-vue'
 import {registerAnt} from '../packages/shared/src/ant'
 import {palette,appTheme,applyPalette} from '../packages/shared/src/theme'
 import {formatBytes,formatBitRate,formatQuantity,compareQuantity} from '../packages/shared/src/utils/format'
-import {safeReturnPath,migrateLegacyHash} from '../packages/shared/src/utils/history'
+import {safeReturnPath} from '../packages/shared/src/utils/history'
 import {formatTime,formatPercent,formatHealthErrors,type Principal} from '../packages/shared/src/types'
 import AppShell from '../packages/shared/src/components/AppShell.vue'
 import {principal,click} from './fixtures'
@@ -23,10 +23,9 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
   expect(formatTime(null)).toBe('未获取');expect(formatPercent(null)).toBe('未获取');expect(formatPercent(10)).toBe('10.0%');expect(formatHealthErrors([])).toBe('无已报告异常');expect(formatHealthErrors(['cpu_unavailable','future'])).toContain('未识别的观测异常')
   expect(formatHealthErrors(['task_history_cleanup_unavailable'])).toBe('任务历史清理未完成，请核对本地存储；原记录继续保留')
  })
- it('回跳拒绝外部、控制字符、编码绕过和登录循环，兼容旧地址',()=>{
-  for(const value of [null,[],42,'https://example.test','//evil.test','/\\evil','/%5cevil','/%00bad','/%2f%2fevil','/%GG','/login','/login/other'])expect(safeReturnPath(value,'/sensors')).toBe('/sensors')
-  expect(safeReturnPath('/alerts?view=data#detail','/sensors')).toBe('/alerts?view=data#detail');expect(safeReturnPath('/login','/',true)).toBe('/login')
-  window.history.replaceState({},'','/old#/alerts?severity=high');migrateLegacyHash('/console/');expect(window.location.pathname).toBe('/console/alerts');expect(window.location.search).toBe('?severity=high');window.history.replaceState({},'','/login#section');migrateLegacyHash();expect(window.location.hash).toBe('#section')
+ it('回跳拒绝外部、控制字符、编码绕过和登录循环，保留站内查询与定位',()=>{
+  for(const value of [null,[],42,'https://example.test','//evil.test','/\\evil','/%5cevil','/%00bad','/%2f%2fevil','/%GG','/login','/login/other'])expect(safeReturnPath(value,'/sensors/list')).toBe('/sensors/list')
+  expect(safeReturnPath('/alerts/list?severity=high#detail','/sensors/list')).toBe('/alerts/list?severity=high#detail')
  })
  it('浅色配色覆盖根节点与弹窗，背景与边界保持正式主题值',()=>{
   applyPalette();expect(document.documentElement.style.getPropertyValue('--workspace')).toBe('#f7f7f7');expect(document.documentElement.style.getPropertyValue('--syntax-variable')).toBe(palette.syntaxVariable);expect(appTheme.token.colorBgContainer).toBe('#ffffff');expect(appTheme.components.Table.colorFillAlter).toBe('#fafafa')
@@ -43,12 +42,12 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
  describe('应用入口、路由和登录',()=>{
  it('平台实际路由拒绝未登录和越权访问，并保留站内回跳地址',async()=>{
   const{session}=await import('../platform/src/session'),user=session.current as ShallowRef<Principal|null>,{router}=await import('../platform/src/router')
-  user.value=null;await router.push('/sensors?view=tasks');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/sensors/tasks')
-  restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/alerts');expect(router.currentRoute.value.path).toBe('/login')
-  user.value={...principal,role:'viewer'};await router.push('/operations');expect(router.currentRoute.value.path).toBe('/sensors/list')
+  user.value=null;await router.push('/sensors/tasks?task=task_1');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/sensors/tasks?task=task_1')
+  restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/alerts/list');expect(router.currentRoute.value.path).toBe('/login')
+  user.value={...principal,role:'viewer'};await router.push('/system/operations/health');expect(router.currentRoute.value.path).toBe('/sensors/list')
  })
  it.each([
-  ['/alerts','告警列表'],['/traffic','协议流量'],['/rules','规则包'],['/assets','资产列表'],['/operations','平台运行状态'],['/overview','态势总览'],['/screen','态势大屏'],['/notifications','通知渠道'],['/models','模型提供方'],['/assistant','智能助手'],['/reports','报告记录'],['/retention','数据留存'],['/incidents','事件调查'],['/users','用户管理'],['/unknown','页面不存在'],
+  ['/alerts/list','告警列表'],['/traffic/events','协议流量'],['/detection/rules/packages','规则包'],['/inventory/list','资产列表'],['/system/operations/health','平台运行状态'],['/overview/dashboard','态势总览'],['/overview/screen','态势大屏'],['/notifications/channels','通知渠道'],['/ai/models','模型提供方'],['/ai/assistant','智能助手'],['/reports/records','报告记录'],['/system/governance/retention','数据留存'],['/incidents/investigation','事件调查'],['/system/accounts/users','用户管理'],['/unknown','页面不存在'],
  ])('平台地址 %s 可直接打开并展示 %s',async(path,title)=>{
   const{session}=await import('../platform/src/session'),{router}=await import('../platform/src/router'),{default:App}=await import('../platform/src/App.vue')
   const user=session.current as ShallowRef<Principal|null>;user.value=principal;await router.push(path)
@@ -86,9 +85,9 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
   expect(wrapper.findAll('.shell-breadcrumb .ant-breadcrumb-link').map(item=>item.text())).toEqual(['态势总览'])
   await router.push('/reports/records');await flushPromises();expect(wrapper.findAll('.shell-breadcrumb .ant-breadcrumb-link').map(item=>item.text())).toEqual(['安全报告','报告记录']);wrapper.unmount()
  })
- it('采集器实际路由保护本地管理，默认状态及旧网络地址进入规范页面',async()=>{
-  const{session}=await import('../collector/src/session'),user=session.current as ShallowRef<Principal|null>,{router}=await import('../collector/src/router');user.value=null;await router.push('/network?view=capture');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/network/capture');restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/network?view=tasks');expect(router.currentRoute.value.path).toBe('/login');user.value=principal;await router.push('/');expect(router.currentRoute.value.path).toBe('/overview/status')
-  const{default:App}=await import('../collector/src/App.vue');const wrapper=mount(App,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.get('h1').text()).toBe('运行状态');await router.push('/unknown');await flushPromises();expect(wrapper.text()).toContain('页面不存在');await router.push('/login?redirect=%2Fnetwork%3Fview%3Dcapture');await flushPromises();const form=wrapper.findComponent({name:'LoginForm'});form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/login');login.mockResolvedValueOnce(true);form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/network/capture');expect(router.currentRoute.value.query.view).toBeUndefined();user.value=null;await flushPromises();expect(router.currentRoute.value.path).toBe('/login');user.value=principal;await router.push('/network');await flushPromises();logout.mockRejectedValueOnce('offline');await click('退出');expect(router.currentRoute.value.path).toBe('/network/interfaces');await click('退出');expect(router.currentRoute.value.path).toBe('/login');wrapper.unmount()
+ it('采集器实际路由保护本地管理，默认状态及登录回跳进入规范页面',async()=>{
+  const{session}=await import('../collector/src/session'),user=session.current as ShallowRef<Principal|null>,{router}=await import('../collector/src/router');user.value=null;await router.push('/network/capture');expect(router.currentRoute.value.path).toBe('/login');expect(router.currentRoute.value.query.redirect).toBe('/network/capture');restore.mockRejectedValueOnce(new Error('session unavailable'));await router.push('/rules/tasks');expect(router.currentRoute.value.path).toBe('/login');user.value=principal;await router.push('/');expect(router.currentRoute.value.path).toBe('/overview/status')
+  const{default:App}=await import('../collector/src/App.vue');const wrapper=mount(App,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.get('h1').text()).toBe('运行状态');await router.push('/unknown');await flushPromises();expect(wrapper.text()).toContain('页面不存在');await router.push('/login?redirect=%2Fnetwork%2Fcapture%3Fsource%3Dmirror');await flushPromises();const form=wrapper.findComponent({name:'LoginForm'});form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.path).toBe('/login');login.mockResolvedValueOnce(true);form.vm.$emit('submit','admin','password');await flushPromises();expect(router.currentRoute.value.fullPath).toBe('/network/capture?source=mirror');user.value=null;await flushPromises();expect(router.currentRoute.value.path).toBe('/login');user.value=principal;await router.push('/network');await flushPromises();logout.mockRejectedValueOnce('offline');await click('退出');expect(router.currentRoute.value.path).toBe('/network/interfaces');await click('退出');expect(router.currentRoute.value.path).toBe('/login');wrapper.unmount()
   document.body.innerHTML='<div id="app"></div>';await import('../collector/src/main');await flushPromises();expect(document.body.textContent).toContain('登录采集器');const app=(document.getElementById('app') as HTMLElement&{__vue_app__:{unmount:()=>void}}).__vue_app__;app.unmount()
  })
  })

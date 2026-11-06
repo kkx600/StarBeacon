@@ -19,7 +19,7 @@ func TestCSVPreservesMetadataAndRejectsFormulaExecution(t *testing.T) {
 		t.Fatal(err)
 	}
 	rows, err := csv.NewReader(strings.NewReader(strings.TrimPrefix(string(c.Bytes()), "\ufeff"))).ReadAll()
-	if err != nil || len(rows) != 2 || len(rows[0]) != 28 || len(rows[1]) != 28 || c.Rows() != 1 {
+	if err != nil || len(rows) != 2 || len(rows[0]) != 28 || len(rows[1]) != 28 || c.rows != 1 {
 		t.Fatal("CSV 字段或记录不完整", rows, err)
 	}
 	if rows[1][1] != "2026-10-08T19:00:00.000000007Z" || rows[1][2] != "" || rows[1][8] != "'18446744073709551615" || rows[1][10] != "65535" || !strings.HasPrefix(rows[1][21], "'") || rows[1][24] != "/a,\"b\"\npath" || rows[1][25] != "'18446744073709551615" || strings.Contains(string(c.Bytes()), v.Event.Original) {
@@ -44,7 +44,7 @@ func TestCSVLimitsNeverAppendPartialRows(t *testing.T) {
 		if v.EventID == "" {
 			v.Rule.Name = strings.Repeat("x", MaxBytes)
 		}
-		if c.Append(v) == nil || c.Rows() != 0 || string(c.Bytes()) != before {
+		if c.Append(v) == nil || c.rows != 0 || string(c.Bytes()) != before {
 			t.Fatal("失败字段留下部分记录")
 		}
 	}
@@ -55,7 +55,7 @@ func TestCSVLimitsNeverAppendPartialRows(t *testing.T) {
 		}
 	}
 	before := len(c.Bytes())
-	if !errors.Is(c.Append(model.Alert{}), ErrLimit) || c.Rows() != MaxRows || len(c.Bytes()) != before {
+	if !errors.Is(c.Append(model.Alert{}), ErrLimit) || c.rows != MaxRows || len(c.Bytes()) != before {
 		t.Fatal("记录上限没有生效")
 	}
 }

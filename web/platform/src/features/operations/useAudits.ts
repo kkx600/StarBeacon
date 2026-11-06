@@ -2,7 +2,7 @@ import {computed,shallowReadonly,shallowRef,watch,type Ref} from 'vue'
 import type {AuditResult} from '@starbeacon/shared/types.ts'
 import {session} from '../../session'
 export type AuditCategory='operations'|'logins'
-export interface AuditFilters {username:string;action:string;success:string;hours:number}
+interface AuditFilters {username:string;action:string;success:string;hours:number}
 export function useAudits(category:Ref<AuditCategory>){
   const result=shallowRef<AuditResult>({items:[],next_cursor:''}),pending=shallowRef(true),error=shallowRef(''),cursors=shallowRef(['']),tick=shallowRef(0)
   const end=shallowRef(new Date().toISOString()),filters=shallowRef<AuditFilters>({username:'',action:'',success:'',hours:168})

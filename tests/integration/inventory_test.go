@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -64,7 +65,7 @@ func TestInventoryHTTPPersistenceHistoryAndTenantIsolation(t *testing.T) {
 	require(t, admin.Bootstrap(ctx, owner, tenants[0], "资产验收", tenants[0]+"_viewer", password, "viewer"))
 	auth := httpapi.NewAuth(db, cache, "http://127.0.0.1", "it_inventory", false)
 	api := &platform.API{DB: db, Auth: auth, Redis: cache}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	client := func() *http.Client {

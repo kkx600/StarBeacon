@@ -95,7 +95,7 @@ func TestSignedCollectorBundleAuthenticityBudgetAndPathBoundaries(t *testing.T) 
 	pub, key := testKeys(t)
 	archive, envelope := writeZIP(t, key, 1, items(1))
 	root := t.TempDir()
-	release, err := Stage(context.Background(), root, archive, envelope, pub, fixedTime)
+	release, err := stage(context.Background(), root, archive, envelope, pub, fixedTime, 180)
 	if err != nil || release.validate() != nil || release.Proof != envelope.Proof {
 		t.Fatalf("签名制品不能暂存：%+v %v", release, err)
 	}
@@ -103,7 +103,7 @@ func TestSignedCollectorBundleAuthenticityBudgetAndPathBoundaries(t *testing.T) 
 	if err != nil || info.Mode().Perm() != 0755 {
 		t.Fatal("采集器执行权限不正确", err)
 	}
-	if _, err = Stage(context.Background(), root, archive, envelope, pub, fixedTime); err == nil {
+	if _, err = stage(context.Background(), root, archive, envelope, pub, fixedTime, 180); err == nil {
 		t.Fatal("重复版本目录被覆盖")
 	}
 	for name, mutate := range map[string]func(*Proof){
@@ -139,7 +139,7 @@ func TestSignedCollectorBundleAuthenticityBudgetAndPathBoundaries(t *testing.T) 
 	for _, name := range []string{"starbeacon-collector/../escape", "/absolute", "starbeacon-collector/a\\b", "starbeacon-collector/a/./b"} {
 		entries := append(items(2), zipItem{name, []byte("invalid"), 0644})
 		archive, proof := writeZIP(t, key, 2, entries)
-		if _, err := Stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime); err == nil {
+		if _, err := stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime, 180); err == nil {
 			t.Fatal("接受越界文件", name)
 		}
 	}
@@ -154,20 +154,20 @@ func TestSignedCollectorBundleAuthenticityBudgetAndPathBoundaries(t *testing.T) 
 	} {
 		t.Run(name, func(t *testing.T) {
 			archive, proof := writeZIP(t, key, 2, entries)
-			if _, err := Stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime); err == nil {
+			if _, err := stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime, 180); err == nil {
 				t.Fatal("接受无效 ZIP")
 			}
 		})
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := Stage(ctx, t.TempDir(), archive, envelope, pub, fixedTime); !errors.Is(err, context.Canceled) {
+	if _, err := stage(ctx, t.TempDir(), archive, envelope, pub, fixedTime, 180); !errors.Is(err, context.Canceled) {
 		t.Fatal("忽略取消", err)
 	}
 	if err := os.WriteFile(archive, []byte("changed"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Stage(context.Background(), t.TempDir(), archive, envelope, pub, fixedTime); err == nil {
+	if _, err := stage(context.Background(), t.TempDir(), archive, envelope, pub, fixedTime, 180); err == nil {
 		t.Fatal("读取被替换的 ZIP")
 	}
 }
@@ -425,7 +425,7 @@ func TestCollectorBundleRejectsCorruptionAndDeclaredExpansionBudget(t *testing.T
 				proof.Proof.SHA256 = checksum(raw)
 				proof, _ = Sign(proof.Proof, key)
 			}
-			if _, err := Stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime); err == nil {
+			if _, err := stage(context.Background(), t.TempDir(), archive, proof, pub, fixedTime, 180); err == nil {
 				t.Fatal("接受损坏制品")
 			}
 		})

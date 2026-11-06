@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -47,7 +48,7 @@ func TestLocalReplaySampleQuantityAndFailedImportRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	server := httptest.NewServer(httpapi.Middleware(mux))
+	server := httptest.NewServer(httpapi.Middleware(mux, clientip.Policy{}))
 	defer server.Close()
 	auth := httpapi.NewAuth(identity, nil, server.URL, "sample_session", false)
 	service := &ReplayService{WAL: wal, Storage: storage, Engine: &Engine{Config: config.Config{}}, RetentionDays: 180}

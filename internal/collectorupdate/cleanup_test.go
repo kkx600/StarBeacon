@@ -170,7 +170,7 @@ func TestCollectorCleanupResumesBeforeRenameAndBlocksRestaging(t *testing.T) {
 		t.Fatal("移动前中断的回收不能继续", result, err)
 	}
 	atomicJSON(filepath.Join(garbage, release.Directory+".json"), record)
-	if _, err := Stage(context.Background(), m.Root, archive, proof, m.Key, fixedTime); err == nil {
+	if _, err := stage(context.Background(), m.Root, archive, proof, m.Key, fixedTime, 180); err == nil {
 		t.Fatal("未完成回收的同名制品被重新暂存")
 	}
 	result, err = m.Cleanup(context.Background(), true)
@@ -215,29 +215,23 @@ func TestCollectorCleanupRejectsForeignReclaimProofAndOversizedTree(t *testing.T
 	}
 }
 
-func TestCollectorCleanupRetainsUnknownLegacyAndClearsKnownLegacy(t *testing.T) {
+func TestCollectorCleanupKeepsUnmanagedReleaseAndClearsReferencingReceipts(t *testing.T) {
 	m, _, key := managerFixture(t)
-	for i := int64(1); i <= 9; i++ {
-		state := applyFixture(t, m, key, i, i-1)
-		if err := os.Remove(filepath.Join(m.Root, "releases", state.Current.Directory, releaseRetentionFile)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	unknown := filepath.Join(m.Root, "releases", "unmanaged")
-	if err := os.Mkdir(unknown, 0755); err != nil {
+	first := applyFixture(t, m, key, 1, 0)
+	applyFixture(t, m, key, 2, 1)
+	applyFixture(t, m, key, 3, 2)
+	// 到期回执仍引用该目录；目录缺少自身期限文件时，回执身份不能替代来源依据。
+	if err := os.Remove(filepath.Join(m.Root, "releases", first.Current.Directory, releaseRetentionFile)); err != nil {
 		t.Fatal(err)
 	}
 	expireMaintenance(m)
-	first, err := m.Cleanup(context.Background(), true)
-	if err != nil || first.ReleasesRemoved != 5 || !first.MoreEligible || first.UnmanagedReleases != 1 {
-		t.Fatal(first, err)
+	result, err := m.Cleanup(context.Background(), true)
+	if err != nil || result.ReleasesRemoved != 0 || result.UnmanagedReleases != 1 || slices.Contains(result.ReleaseCandidates, first.Current.Directory) || !releaseExists(t, m, first.Current) {
+		t.Fatal("没有期限文件的目录被回收或未计为未登记目录", result, err)
 	}
-	second, err := m.Cleanup(context.Background(), true)
-	if err != nil || second.ReleasesRemoved != 2 || second.MoreEligible || second.UnmanagedReleases != 1 {
-		t.Fatal(second, err)
-	}
-	if _, err := os.Stat(unknown); err != nil {
-		t.Fatal("没有来源依据的目录被删除", err)
+	// 未登记目录不阻塞引用它的到期回执。
+	if _, err := os.Stat(m.receiptPath(first.Operation.ID)); result.ReceiptsRemoved != 2 || !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("引用未登记目录的到期回执未被回收", result, err)
 	}
 }
 

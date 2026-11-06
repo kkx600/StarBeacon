@@ -103,7 +103,7 @@ func TestDecisionPolicyHTTPFieldsBudgetsModesAndAvailability(t *testing.T) {
 	}{
 		{a.saveDecisionPolicy, c, "", 503},
 		{a.validateDecisionPolicy, map[string]any{"definition": c.Definition}, "", 200},
-		{a.evaluateDecisionPolicy, decision.EvaluateRequest{ExpectedRevision: 1, TriageID: "triage_owned"}, c.ID, 503},
+		{a.createDecisionEvaluation, decision.EvaluationRequest{PolicyID: c.ID, ExpectedRevision: 1, TriageID: "triage_owned"}, "", 503},
 	} {
 		raw, _ := json.Marshal(item.input)
 		for _, body := range []string{"null", "[]", "{}", `{"definition":{"mode":"shadow","mode":"automatic"}}`, `{"Definition":{}}`, `{"definition":{"candidateAction":"investigate"}}`, `{"confidence":0.99}`, `{"unknown":true}`, strings.Repeat(" ", 16385) + string(raw), string(raw)} {

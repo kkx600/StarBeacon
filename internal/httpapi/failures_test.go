@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -127,12 +128,12 @@ func TestMiddlewareBoundsUTF8MetadataAndContainsPanic(t *testing.T) {
 			t.Fatal("请求元数据未受约束", meta)
 		}
 		w.WriteHeader(204)
-	})).ServeHTTP(w, r)
+	}), clientip.Policy{}).ServeHTTP(w, r)
 	if w.Code != 204 || w.Header().Get("X-Request-ID") == "" {
 		t.Fatal("请求关联标识缺失")
 	}
 	w = httptest.NewRecorder()
-	Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("private internal error") })).ServeHTTP(w, r)
+	Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("private internal error") }), clientip.Policy{}).ServeHTTP(w, r)
 	if w.Code != 500 || strings.Contains(w.Body.String(), "private internal") || !strings.Contains(w.Body.String(), "internal_error") {
 		t.Fatal("异常泄露内部信息", w.Body.String())
 	}
@@ -143,10 +144,10 @@ func TestMiddlewareBoundsUTF8MetadataAndContainsPanic(t *testing.T) {
 	defer listener.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if Serve(ctx, listener.Addr().String(), http.NotFoundHandler(), "", "") == nil {
+	if Serve(ctx, listener.Addr().String(), http.NotFoundHandler(), "", "", clientip.Policy{}) == nil {
 		t.Fatal("HTTP 监听冲突未返回错误")
 	}
-	if Serve(ctx, "127.0.0.1:0", http.NotFoundHandler(), "missing.crt", "missing.key") == nil {
+	if Serve(ctx, "127.0.0.1:0", http.NotFoundHandler(), "missing.crt", "missing.key", clientip.Policy{}) == nil {
 		t.Fatal("TLS 证书缺失未返回错误")
 	}
 }

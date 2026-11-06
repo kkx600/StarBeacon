@@ -90,9 +90,9 @@ func (p *nativeSyslogProbe) verify(t *testing.T, ctx context.Context, platform, 
 	// 先观察真实入库数量，再以平台 API 核对内容，避免把初始化中的分片当作检索契约失败。
 	unavailable := 0
 	eventually(t, ctx, "原生 Syslog 索引实际可读", func() bool {
-		// 新日志写入全部租户共用的日志索引，按租户条件计数，同时覆盖升级前的租户日索引。
+		// 日志写入全部租户共用的日志索引，检索表达式本身不隔离租户，按租户条件计数。
 		query := strings.NewReader(`{"query":{"term":{"tenant_id":"` + tenant + `"}}}`)
-		response, err := es.API.Count(es.API.Count.WithIndex(contract.SearchIndices("logs", tenant)...), es.API.Count.WithBody(query), es.API.Count.WithContext(ctx))
+		response, err := es.API.Count(es.API.Count.WithIndex(contract.SearchIndex("logs")), es.API.Count.WithBody(query), es.API.Count.WithContext(ctx))
 		if err != nil {
 			unavailable++
 			return false

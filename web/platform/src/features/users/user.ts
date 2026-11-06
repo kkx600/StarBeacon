@@ -5,7 +5,7 @@ export interface UserChange{expected_revision:number;role:UserRecord['role'];act
 export type UserInput=UserCreate|UserChange
 export interface UserPage{items:UserRecord[];next_cursor:string}
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)
-export const userID=(v:unknown):v is string=>typeof v==='string'&&/^[a-z0-9][a-z0-9_-]{0,63}$/.test(v)
+const userID=(v:unknown):v is string=>typeof v==='string'&&/^[a-z0-9][a-z0-9_-]{0,63}$/.test(v)
 export function validUsername(v:unknown):v is string{return typeof v==='string'&&v.trim()===v&&!/[\p{Cc}\p{Cf}]/u.test(v)&&new TextEncoder().encode(v).length>=3&&new TextEncoder().encode(v).length<=64}
 export function userInputError(input:UserInput){
  if(!Object.hasOwn(userRoles,input.role)||typeof input.active!=='boolean')return '请选择有效的角色和账号状态。'

@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -92,7 +93,7 @@ func TestModelConfigurationTLSVerificationIsolationAndBudgets(t *testing.T) {
 	policy := outbound.Policy{PrivateNetworks: networks, Roots: roots}
 	auth := httpapi.NewAuth(db, cache, "", "it_model_session", false)
 	api := &platform.API{DB: db, Redis: cache, Auth: auth, Vault: vault, Outbound: policy}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	login := func(username string) (*liveHTTP, model.Principal) {

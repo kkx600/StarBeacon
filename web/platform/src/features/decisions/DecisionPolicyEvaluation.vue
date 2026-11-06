@@ -45,7 +45,7 @@ onScopeDispose(()=>{stopped=true;read?.abort();attempt=undefined})
   <div v-if="result&&job" aria-label="影子评估结果">
    <a-alert :type="result.status==='matched'?'success':'info'" show-icon :message="policyStatuses[result.status]+' · 未授权执行'" class="section-gap"/>
    <dl class="policy-evaluation-detail">
-    <template v-if="archive"><dt>评估档案</dt><dd class="technical">{{archive.id}}</dd><dt>保留截止</dt><dd>{{formatTime(archive.expires_at)}} · <a href="/models?view=evaluations">查看评估记录</a></dd></template>
+    <template v-if="archive"><dt>评估档案</dt><dd class="technical">{{archive.id}}</dd><dt>保留截止</dt><dd>{{formatTime(archive.expires_at)}} · <a href="/response/evaluations">查看评估记录</a></dd></template>
     <dt>判断依据</dt><dd>{{result.reasons.map(r=>policyReasons[r]).join('；')}}</dd><dt>候选处置</dt><dd>{{policyActions[result.candidate_action]}}</dd>
     <dt>模型自报分数</dt><dd>{{result.confidence===null?'未参与评估':result.confidence.toFixed(3)}} · 未校准</dd><dt>候选源 IP</dt><dd>{{result.target_ip||'无'}}</dd>
     <dt>材料观测时间</dt><dd>{{formatTime(job.evidence.observed_at)}}</dd><dt>评估时间</dt><dd>{{formatTime(result.evaluated_at)}}</dd>

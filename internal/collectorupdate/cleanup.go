@@ -47,9 +47,8 @@ type CleanupReport struct {
 }
 
 type cleanupReceipt struct {
-	name     string
-	releases []string
-	size     int64
+	name string
+	size int64
 }
 
 type cleanupRelease struct {
@@ -153,7 +152,6 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 			if deadline[r.Directory].Before(op.RetainUntil) {
 				deadline[r.Directory] = op.RetainUntil
 			}
-			receipt.releases = append(receipt.releases, r.Directory)
 			if op.RetainUntil.After(report.EvaluatedAt) {
 				protected[r.Directory] = true
 			}
@@ -191,7 +189,6 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 			report.ReleaseCandidates = append(report.ReleaseCandidates, candidate.name)
 		}
 	}
-	legacy := map[string]bool{}
 	for _, item := range releases {
 		if err := ctx.Err(); err != nil {
 			return report, err
@@ -202,28 +199,23 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 			return report, errors.New("历史制品目录含有无法核对的对象，禁止回收")
 		}
 		var record releaseRetention
-		var identity Release
 		err := readJSON(filepath.Join(m.Root, "releases", name, releaseRetentionFile), &record)
+		// 暂存总在原子改名前写入期限文件；缺少该文件的目录（如中断暂存的残留）没有可核对来源，即使回执引用也只计数、不回收。
 		if errors.Is(err, os.ErrNotExist) {
-			legacy[name] = true
-			if _, ok := known[name]; !ok {
-				report.UnmanagedReleases++
-				continue
-			}
-			identity = known[name]
-		} else if err != nil {
+			report.UnmanagedReleases++
+			continue
+		}
+		if err != nil {
 			return report, err
-		} else {
-			if record.SchemaVersion != 1 || record.Release.validate() != nil || record.Release.Directory != name || record.StagedAt.IsZero() || !record.RetainUntil.After(record.StagedAt) {
-				return report, errors.New("历史制品身份或冻结期限无效")
-			}
-			if old, ok := known[name]; ok && old != record.Release {
-				return report, errors.New("历史制品与维护回执不一致")
-			}
-			if deadline[name].Before(record.RetainUntil) {
-				deadline[name] = record.RetainUntil
-			}
-			identity = record.Release
+		}
+		if record.SchemaVersion != 1 || record.Release.validate() != nil || record.Release.Directory != name || record.StagedAt.IsZero() || !record.RetainUntil.After(record.StagedAt) {
+			return report, errors.New("历史制品身份或冻结期限无效")
+		}
+		if old, ok := known[name]; ok && old != record.Release {
+			return report, errors.New("历史制品与维护回执不一致")
+		}
+		if deadline[name].Before(record.RetainUntil) {
+			deadline[name] = record.RetainUntil
 		}
 		if protected[name] || deadline[name].After(report.EvaluatedAt) {
 			protected[name] = true
@@ -237,7 +229,7 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 		if err != nil {
 			return report, err
 		}
-		candidates = append(candidates, cleanupRelease{name: name, bytes: bytes, release: identity, present: true})
+		candidates = append(candidates, cleanupRelease{name: name, bytes: bytes, release: record.Release, present: true})
 		if !slices.Contains(report.ReleaseCandidates, name) {
 			report.ReleaseCandidates = append(report.ReleaseCandidates, name)
 		}
@@ -246,7 +238,6 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 		report.ProtectedReleases = append(report.ProtectedReleases, name)
 	}
 	slices.Sort(report.ProtectedReleases)
-	removed := map[string]bool{}
 	for _, candidate := range candidates {
 		if err := ctx.Err(); err != nil {
 			return report, err
@@ -260,7 +251,6 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 			}
 			report.LogicalBytesRemoved += candidate.bytes
 		}
-		removed[candidate.name] = true
 	}
 	if execute && len(candidates) != 0 {
 		if err := syncDirectory(filepath.Join(m.Root, "releases")); err != nil {
@@ -270,16 +260,6 @@ func (m *Manager) Cleanup(ctx context.Context, execute bool) (CleanupReport, err
 	for _, receipt := range receipts {
 		if err := ctx.Err(); err != nil {
 			return report, err
-		}
-		// 旧目录没有独立期限时，最后一份来源回执必须留到该目录真正回收。
-		blocked := false
-		for _, name := range receipt.releases {
-			if legacy[name] && !removed[name] {
-				blocked = true
-			}
-		}
-		if blocked {
-			continue
 		}
 		if len(report.ReceiptCandidates) >= cleanupReceiptBatch {
 			report.MoreEligible = true

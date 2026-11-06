@@ -18,11 +18,11 @@ func (w *Indexer) ProcessQuality(ctx context.Context, l store.QualityLease) erro
 	if err != nil || e.ID != l.ID || e.TenantID != l.TenantID || l.Partition != e.CreatedAt.UTC().Format("2006-01-02") || !time.Now().Before(l.ExpiresAt) {
 		return qualityevent.ErrEvent
 	}
-	index, days, err := w.eventIndex(ctx, l.TenantID, "context", l.Partition, l.Index)
+	index, err := eventIndex("context", l.Partition, l.Index)
 	if err != nil {
 		return err
 	}
-	if err = w.ES.EnsureIndexRetention(ctx, index, l.Partition, days); err != nil {
+	if err = w.ES.EnsureIndex(ctx, index, l.Partition); err != nil {
 		return err
 	}
 	results := w.ES.Bulk(ctx, index, []model.Alert{l.Document})

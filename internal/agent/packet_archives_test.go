@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net"
 	"net/http"
@@ -280,7 +281,7 @@ func TestLocalPacketDirectoryAuthenticationDownloadAuditAndUnavailableStates(t *
 		t.Fatal(err)
 	}
 	auth := httpapi.NewAuth(identity, nil, "http://packet.test", "packet_session", false)
-	handler := httpapi.Middleware(LocalHandler(w, auth, w.DB.Path()))
+	handler := httpapi.Middleware(LocalHandler(w, auth, w.DB.Path()), clientip.Policy{})
 	request := func(path string, authorized bool, expected int) *httptest.ResponseRecorder {
 		t.Helper()
 		r := httptest.NewRequest("GET", path, nil)

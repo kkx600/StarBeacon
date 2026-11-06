@@ -8,6 +8,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net"
 	"net/http"
@@ -114,7 +115,7 @@ func TestRuleRolloutTwoNativeProbesMTLSAndRealObservation(t *testing.T) {
 	require(t, err)
 	t.Cleanup(func() { _ = os.RemoveAll(base) })
 	pki := filepath.Join(base, "pki")
-	require(t, admin.DevPKI(pki))
+	require(t, admin.DevPKI(pki, nil))
 	pub, signer, err := ed25519.GenerateKey(rand.Reader)
 	require(t, err)
 	objects, err := replay.NewLocal(filepath.Join(base, "samples"), 100<<20)
@@ -166,7 +167,7 @@ func TestRuleRolloutTwoNativeProbesMTLSAndRealObservation(t *testing.T) {
 	}
 	auth := httpapi.NewAuth(f.Runtime, nil, "http://127.0.0.1", "rollout_session", false)
 	api := &platform.API{DB: f.Runtime, Auth: auth, Signer: signer, Samples: objects}
-	web := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	web := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	t.Cleanup(web.Close)
 	auth.Origin = web.URL
 	jar, err := cookiejar.New(nil)

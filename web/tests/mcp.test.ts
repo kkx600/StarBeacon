@@ -10,6 +10,7 @@ import ModelsView from '../platform/src/views/ModelsView.vue'
 import {useMCP} from '../platform/src/features/mcp/useMCP'
 import {bindingState,type Binding,type MCPInfo} from '../platform/src/features/mcp/mcp'
 import {click,closedMessage,deferred} from './fixtures'
+import {platformScreenRoutes} from './routeFixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',()=>({session:{api:{request}}}))
 const global={plugins:[registerAnt]}
@@ -29,8 +30,8 @@ describe('MCP 服务接入界面',()=>{
     const wrapper=mount(MCPWorkspace,{global,attachTo:document.body});await flushPromises();await click('配置');const form=wrapper.findComponent(BindingForm);request.mockRejectedValueOnce(new Error('修订已发生变化'));form.vm.$emit('save',{id:binding.id,expected_revision:1,name:binding.name,subject:binding.subject,oauth_client_id:binding.oauth_client_id,scopes:binding.scopes,enabled:false,expires_at:binding.expires_at,requests_per_minute:60});await flushPromises();expect(document.body.textContent).toContain('修订已发生变化')
     request.mockResolvedValueOnce({...binding,enabled:false,revision:2});form.vm.$emit('save',{id:binding.id,expected_revision:1,name:binding.name,subject:binding.subject,oauth_client_id:binding.oauth_client_id,scopes:binding.scopes,enabled:false,expires_at:binding.expires_at,requests_per_minute:60});await flushPromises();expect(wrapper.findComponent(BindingForm).exists()).toBe(false);expect(message.success).toHaveBeenCalledWith('服务身份配置已保存');expect(request.mock.calls.find(c=>c[1]?.method==='POST')?.[1].body.enabled).toBe(false)
   })
-  it('页签遵循 History 查询参数，切换功能不会展示双表',async()=>{
-    const router=createRouter({history:createMemoryHistory(),routes:[{path:'/models',component:ModelsView}]});await router.push('/models?view=mcp');await router.isReady();const wrapper=mount(ModelsView,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.findComponent(MCPWorkspace).exists()).toBe(true);await wrapper.findAll('[role=tab]').find(tab=>tab.text()==='模型提供方')!.trigger('click');await flushPromises();expect(router.currentRoute.value.query.view).toBeUndefined();expect(wrapper.findComponent(MCPWorkspace).exists()).toBe(false);await wrapper.findAll('[role=tab]').find(tab=>tab.text()==='MCP 服务')!.trigger('click');await flushPromises();expect(router.currentRoute.value.query.view).toBe('mcp');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
+  it('MCP 与模型提供方使用各自规范路径，切换功能不会展示双表',async()=>{
+    const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(ModelsView)});await router.push('/ai/mcp');await router.isReady();const wrapper=mount(ModelsView,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();expect(wrapper.findComponent(MCPWorkspace).exists()).toBe(true);expect(wrapper.findAll('[role=tab]')).toHaveLength(0);await router.push('/ai/models');await flushPromises();expect(wrapper.findComponent(MCPWorkspace).exists()).toBe(false);await router.push('/ai/mcp');await flushPromises();expect(wrapper.findComponent(MCPWorkspace).exists()).toBe(true);expect(wrapper.findAll('.ant-table')).toHaveLength(1)
   })
   it('到期、停用和无效有效期分别展示，不把无效日期当作启用',()=>{
     expect(bindingState(binding,0)).toBe('启用');expect(bindingState({...binding,expires_at:'2020-01-01T00:00:00Z'})).toBe('已到期');expect(bindingState({...binding,enabled:false})).toBe('停用');expect(bindingState({...binding,expires_at:'invalid'})).toBe('有效期异常')

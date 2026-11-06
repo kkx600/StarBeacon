@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -40,7 +41,7 @@ func TestLocalReplayHTTPListCorruptionQuotaAndClosedIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	server := httptest.NewServer(httpapi.Middleware(mux))
+	server := httptest.NewServer(httpapi.Middleware(mux, clientip.Policy{}))
 	defer server.Close()
 	auth := httpapi.NewAuth(identity, nil, server.URL, "replay_boundary", false)
 	s.Register(mux, auth)

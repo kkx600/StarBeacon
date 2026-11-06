@@ -70,7 +70,7 @@ func TestReplayDownloadMTLSObjectIntegrityLimitsAndCancellation(t *testing.T) {
 	require(t, err)
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	id, err := admin.Provision(ctx, f.Owner, tenant, "sensor_owned", "样本验证探针", ca, filepath.Join(dir, "identity"))
 	require(t, err)
 	serverTLS, err := transport.TLS(filepath.Join(ca, "ca.crt"), filepath.Join(ca, "server.crt"), filepath.Join(ca, "server.key"), true)

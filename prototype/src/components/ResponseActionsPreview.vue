@@ -23,8 +23,8 @@ const rows=shallowRef<SensorTask[]>(['unknown','succeeded','queued'].map((state,
 }))
 let disposed=false
 const proofError=shallowRef('')
-const queued=rows.value.find(row=>row.id==='task_action_pending')!,check={schema_version:'watchlist-response-check.v1' as const,checked_at:queued.response_action!.requested_at,state_sha256:'e'.repeat(64),matches:[]}
-void goJSONDigest(check).then(check_sha256=>{if(disposed)return;const proof:ResponseProtection={schema_version:'response.protection.v1',command_sha256:'c'.repeat(64),check_sha256,check};if(!validResponseProtection(proof,queued.kind,queued.response_action!.requested_at,queued.response_action!.expires_at))throw new Error('合成授权记录未通过工程字段与时间边界校验。');rows.value=rows.value.map(row=>row.id===queued.id?{...row,response_protection:proof}:row)}).catch(e=>{if(!disposed)proofError.value=e instanceof Error?e.message:'合成记录无法校验'})
+// 工程端每项封禁任务都在授权事务内保存名单核对记录；合成任务逐项生成并通过同一字段与时间边界校验。
+void Promise.all(rows.value.map(async row=>{const check={schema_version:'watchlist-response-check.v1' as const,checked_at:row.response_action!.requested_at,state_sha256:'e'.repeat(64),matches:[]};const proof:ResponseProtection={schema_version:'response.protection.v1',command_sha256:'c'.repeat(64),check_sha256:await goJSONDigest(check),check};if(!validResponseProtection(proof,row.kind,row.response_action!.requested_at,row.response_action!.expires_at))throw new Error('合成授权记录未通过工程字段与时间边界校验。');return {...row,response_protection:proof}})).then(value=>{if(!disposed)rows.value=value}).catch(e=>{if(!disposed)proofError.value=e instanceof Error?e.message:'合成记录无法校验'})
 onScopeDispose(()=>{disposed=true})
 const items=computed(()=>props.state==='empty'?[]:rows.value.filter(row=>(!filters.target_ip||row.response_action?.target_ip===filters.target_ip)&&(!filters.sensor_id||row.sensor_id===filters.sensor_id)&&(!filters.device_id||row.response_action?.device_id===filters.device_id)&&(!filters.kind||row.kind===filters.kind)&&(!filters.state||row.state===filters.state)))
 const detail=reactive<TaskDetailState>({open:false,item:null,pending:false,error:''})

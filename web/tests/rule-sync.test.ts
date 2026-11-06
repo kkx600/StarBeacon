@@ -20,7 +20,7 @@ const plan:RuleSyncPlan={id:change.id,revision:1,spec:{...change.spec},created_b
 const run={id:'sync_run_1',plan_revision:1,spec:{...change.spec},created_by:principal.id,state:'validating',code:'',stage:0,tasks:['task_validate','','',''] as [string,string,string,string],expected_sha256:'a'.repeat(64),created_at:new Date().toISOString(),expires_at:new Date(Date.now()+86400000).toISOString()}
 beforeEach(()=>{user.value=principal;request.mockReset();request.mockImplementation((path:string)=>Promise.resolve(path.startsWith('/sensors')?{items:[sensor],next_cursor:''}:path==='/rule-packages'?{items:[rulePackage]}:{items:[plan],next_cursor:''}))})
 function host(){let state!:ReturnType<typeof useRuleSync>;const wrapper=mount(defineComponent({setup(){state=useRuleSync();return()=>h('div')}}));return {state,wrapper}}
-async function view(){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/rules',component:RuleSyncWorkspace},{path:'/sensors',component:{render:()=>h('div')}}]});await router.push('/rules');await router.isReady();const wrapper=mount(RuleSyncWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return wrapper}
+async function view(){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/detection/rules/sync',component:RuleSyncWorkspace},{path:'/sensors/tasks',component:{render:()=>h('div')}}]});await router.push('/detection/rules/sync');await router.isReady();const wrapper=mount(RuleSyncWorkspace,{global:{plugins:[registerAnt,router]},attachTo:document.body});await flushPromises();return wrapper}
 function formProps(){return{plan:null,sensors:[sensor],packages:[rulePackage],busy:false,locked:false,error:'',choicesError:'',choicesPending:false}}
 
 describe('规则同步输入与返回边界',()=>{
@@ -104,7 +104,7 @@ describe('规则同步页面操作',()=>{
  })
  it('页面使用单表、详情与任务链接；空状态和编辑使用同一工作区',async()=>{
   request.mockImplementation((path:string)=>Promise.resolve(path.startsWith('/rule-sync-plans')?{items:[{...plan,run}],next_cursor:''}:path.startsWith('/sensors')?{items:[sensor],next_cursor:''}:{items:[rulePackage]}))
-  const wrapper=await view();expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('查看');expect(document.body.textContent).toContain('授权修订 1');expect(document.body.querySelector('a[href="/sensors?view=tasks&task=task_validate"]')).not.toBeNull()
+  const wrapper=await view();expect(wrapper.findAll('.ant-table')).toHaveLength(1);await click('查看');expect(document.body.textContent).toContain('授权修订 1');expect(document.body.querySelector('a[href="/sensors/tasks?task=task_validate"]')).not.toBeNull()
   wrapper.getComponent(Modal).vm.$emit('cancel');await flushPromises();await click('配置');expect(document.body.textContent).toContain('规则同步计划');wrapper.getComponent(RuleSyncForm).vm.$emit('close');await flushPromises()
   await click('创建同步计划');expect(document.body.textContent).toContain('创建规则同步计划');wrapper.getComponent(RuleSyncForm).vm.$emit('close');await flushPromises()
   request.mockResolvedValueOnce({items:[],next_cursor:''});await click('刷新');expect(wrapper.text()).toContain('暂无规则同步计划')

@@ -22,7 +22,7 @@ const columns=[{title:'规则名称',key:'name',width:200},{title:'应用产品 
 function closeDetail(){read?.abort();read=undefined;detail.value=null;detailTarget.value=null;detailError.value='';detailPending.value=false}
 function closeOverlays(){closeDetail();testing.value=false;testRecord.value=null;deployment.hide()}
 function deploy(){if(deployment.busy.value)return;closeOverlays();editing.value=false;deployment.show()}
-function viewDeploymentTask(id:string){deployment.hide();void router.push({path:'/sensors',query:{view:'tasks',task:id}})}
+function viewDeploymentTask(id:string){deployment.hide();void router.push({path:'/sensors/tasks',query:{task:id}})}
 function search(){closeOverlays();model.search(filter.keyword,filter.active)}
 function refresh(){closeOverlays();void model.refresh()}
 function page(direction:'next'|'previous'){closeOverlays();model[direction]()}

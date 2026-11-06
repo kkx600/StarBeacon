@@ -33,7 +33,7 @@ func TestMTLSRejectsInvalidControlAndBatchBeforeAcknowledgment(t *testing.T) {
 	require(t, admin.Bootstrap(ctx, f.Owner, tenant, "传输边界验收", tenant, password, "admin"))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	id, err := admin.Provision(ctx, f.Owner, tenant, "sensor_owned", "受控探针", ca, filepath.Join(dir, "identity"))
 	require(t, err)
 	serverTLS, err := transport.TLS(filepath.Join(ca, "ca.crt"), filepath.Join(ca, "server.crt"), filepath.Join(ca, "server.key"), true)

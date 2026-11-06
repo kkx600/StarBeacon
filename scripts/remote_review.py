@@ -298,13 +298,13 @@ def verify_gateway(state, review):
 rows=[]
 for app,port,prefix in [('platform',8080,'/api/v1'),('collector',8081,'/api/local/v1')]:
     paths=['/index.html','/invalid-page','/assets/missing-resource.js',prefix+'/auth/me']
-    if app=='platform': paths+=['/assets','/assets/','/mcp','/.well-known/oauth-protected-resource/mcp']
+    if app=='platform': paths+=['/assets/','/mcp','/.well-known/oauth-protected-resource/mcp']
     for path in paths:
         try: response=urllib.request.urlopen('http://127.0.0.1:'+str(port)+path,timeout=5)
         except urllib.error.HTTPError as error: response=error
         with response:
             row={'app':app,'path':path,'status':response.status,'content_type':response.headers.get('Content-Type',''),'cache_control':response.headers.get('Cache-Control',''),'nosniff':response.headers.get('X-Content-Type-Options',''),'location':response.headers.get('Location'),'body':response.read(32768).decode('utf-8','replace')}
-            expected=401 if path.endswith('/auth/me') else 404 if path.endswith('missing-resource.js') or path in ['/mcp','/.well-known/oauth-protected-resource/mcp'] else 200
+            expected=401 if path.endswith('/auth/me') else 404 if path.endswith('missing-resource.js') or path in ['/assets/','/mcp','/.well-known/oauth-protected-resource/mcp'] else 200
             assert row['status']==expected and not row['location'], '状态或重定向不符合路由契约'
             if expected==200: assert 'text/html' in row['content_type'] and '<div id="app"' in row['body'] and 'no-store' in row['cache_control'] and row['nosniff']=='nosniff', 'History 页面响应不完整'
             if expected==401: assert 'application/json' in row['content_type'] and json.loads(row['body'])['code']=='unauthenticated' and row['nosniff']=='nosniff', 'API 被当作前端页面或鉴权缺失'

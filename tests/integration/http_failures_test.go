@@ -8,6 +8,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -34,7 +35,7 @@ func authenticatedFaultHTTP(t *testing.T, ctx context.Context, authDB *store.Pos
 	t.Helper()
 	auth := httpapi.NewAuth(authDB, nil, "", "it_failure_session", false)
 	api.Auth = auth
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	t.Cleanup(server.Close)
 	auth.Origin = server.URL
 	jar, err := cookiejar.New(nil)
@@ -117,7 +118,7 @@ func TestPlatformHTTPDependencyFailuresNeverBecomeEmptySuccess(t *testing.T) {
 	csr, _, err := probepki.NewCSR(probeID)
 	require(t, err)
 	// 设备交换不继承浏览器会话；数据库不可用时也不能把 CA 响应当作登记成功。
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	t.Cleanup(server.Close)
 	body, err := json.Marshal(probepki.Exchange{Token: token, CSR: csr})
 	require(t, err)

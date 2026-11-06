@@ -294,10 +294,10 @@ class CollectorRouteAcceptanceTests(unittest.TestCase):
         """)
         (self.root / "web/collector/src/router.ts").write_text(self.source)
         self.paths = BASE_PATHS | {"/network", "/network/interfaces", "/network/capture", "/rules", "/rules/tasks"}
-        self.routes = {"platform": ["/login", "/invalid-page"], "collector": sorted(self.paths) + ["/invalid-page", "/network?view=tasks", "/network?view=capture"]}
-        self.inventory = {"capabilities": [{"pages": ["collector:/rules/tasks", "collector:/network?view=tasks"]}]}
+        self.routes = {"platform": ["/login", "/invalid-page"], "collector": sorted(self.paths) + ["/invalid-page", "/rules/tasks?task=localtask_example", "/network/capture?source=mirror"]}
+        self.inventory = {"capabilities": [{"pages": ["collector:/rules/tasks", "collector:/rules/tasks?task=localtask_example"]}]}
 
-    def test_exact_parent_leaf_and_legacy_query_catalog_is_accepted(self):
+    def test_exact_parent_leaf_and_query_catalog_is_accepted(self):
         alignment.validate_routes(self.root, self.routes, self.inventory)
 
     def test_every_parent_leaf_and_boundary_is_required(self):
@@ -308,14 +308,14 @@ class CollectorRouteAcceptanceTests(unittest.TestCase):
                 alignment.validate_routes(self.root, routes, self.inventory)
 
     def test_duplicate_unknown_or_invalid_inventory_routes_are_rejected(self):
-        for extra in ("/rules/tasks", "/unregistered", "/unregistered?view=tasks", "https://external.invalid/rules/tasks", "//external.invalid/rules/tasks", "/rules/tasks#hidden"):
+        for extra in ("/rules/tasks", "/unregistered", "/unregistered?task=localtask_example", "https://external.invalid/rules/tasks", "//external.invalid/rules/tasks", "/rules/tasks#hidden"):
             with self.subTest(extra=extra), self.assertRaisesRegex(ValueError, "collector"):
                 routes = copy.deepcopy(self.routes)
                 routes["collector"].append(extra)
                 alignment.validate_routes(self.root, routes, self.inventory)
 
     def test_capability_pages_must_reference_an_exact_catalog_entry(self):
-        for page in ("collector:/rules/tasks?view=missing", "collector:/unknown", "unknown:/rules/tasks"):
+        for page in ("collector:/rules/tasks?task=missing", "collector:/unknown", "unknown:/rules/tasks"):
             with self.subTest(page=page), self.assertRaisesRegex(ValueError, "能力页面"):
                 alignment.validate_routes(self.root, self.routes, {"capabilities": [{"pages": [page]}]})
 

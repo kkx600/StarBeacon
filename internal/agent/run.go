@@ -340,7 +340,7 @@ func Run(ctx context.Context, c config.Config) error {
 				cert, key = c.HTTPTLSCert, c.HTTPTLSKey
 			}
 		}
-		return httpapi.ServeWithClientIP(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key, c.HTTPClientIPs)
+		return httpapi.Serve(run, c.HTTPAddr, LocalHandler(wal, auth, c.StatePath, tasks), cert, key, c.HTTPClientIPs)
 	})
 	return group.Wait()
 }

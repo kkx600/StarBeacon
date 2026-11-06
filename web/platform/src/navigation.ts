@@ -1,5 +1,4 @@
-import manifest from '@starbeacon/shared/navigation.json' with {type:'json'}
-import type {RouteRecordRaw,RouteLocationNormalized,RouteLocationRaw} from 'vue-router'
+import type {RouteRecordRaw,RouteLocationNormalized} from 'vue-router'
 import {navigationGroups,navigationWorkspaces,platformScreens,workspacePath,type PlatformScreen} from '@starbeacon/shared/navigation.ts'
 
 const components:Record<string,NonNullable<RouteRecordRaw['component']>>={
@@ -14,17 +13,6 @@ const components:Record<string,NonNullable<RouteRecordRaw['component']>>={
   assistant:()=>import('./views/AssistantView.vue'),reports:()=>import('./views/ReportsView.vue'),
   retention:()=>import('./views/RetentionView.vue'),incidents:()=>import('./views/IncidentsView.vue'),
   users:()=>import('./views/UsersView.vue'),settings:()=>import('./views/SettingsView.vue'),responseActions:()=>import('./views/ResponseActionsView.vue'),responseDevices:()=>import('./views/ResponseDevicesView.vue'),
-}
-export const legacyModules:Record<string,string>=manifest.legacy_modules
-export function legacyDestination(to:Pick<RouteLocationNormalized,'path'|'query'|'hash'>):RouteLocationRaw {
-  const module=legacyModules[to.path.slice(1)]??'sensors'
-  const options=platformScreens.filter(screen=>screen.module===module)
-  const defaults:Record<string,string>=manifest.legacy_defaults
-  const view=typeof to.query.view==='string'?to.query.view:defaults[module]
-  const mode=to.query.mode==='rollouts'?'rollouts':'plans'
-  const screen=options.find(item=>item.view===view&&(item.view!=='sync'||item.mode===mode))??options.find(item=>item.view===defaults[module])??options[0]!
-  const {view:ignoredView,mode:ignoredMode,...query}=to.query
-  return {path:screen.path,query,hash:to.hash}
 }
 export function screenMeta(screen:PlatformScreen) {
   const workspace=navigationWorkspaces.find(item=>item.id===screen.workspace)!
@@ -57,17 +45,17 @@ export function platformRoutes():RouteRecordRaw[] {
     if(platformScreens.some(item=>item.workspace===workspace.id))continue
     insert(workspacePath(workspace),{path:workspacePath(workspace),component:()=>import('./views/UnavailableView.vue'),meta:{title:workspace.title,navGroup:workspace.group,navWorkspace:workspace.id,admin:true}})
   }
+  // 目录父级进入 navigation.json 中排在首位的子页面，查询条件与定位标记随重定向保留；各父级默认页由导航测试固定。
   function defaults(items:RouteRecordRaw[],prefix=''){
     for(const item of items){
       const full=prefix?prefix+'/'+item.path:item.path
       if(!item.component&&item.children?.length){
-        item.redirect=full.slice(1) in legacyModules?legacyDestination:{path:full+'/'+item.children[0]!.path}
+        item.redirect={path:full+'/'+item.children[0]!.path}
         defaults(item.children,full)
       }
     }
   }
   defaults(routes)
-  for(const path of Object.keys(legacyModules))if(!routes.some(route=>route.path==='/'+path))routes.push({path:'/'+path,redirect:legacyDestination})
   return routes
 }
 

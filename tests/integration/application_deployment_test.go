@@ -31,7 +31,7 @@ func TestApplicationDeploymentImmutableSnapshotPermissionsCASAndProvenance(t *te
 	require(t, err)
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	identity, err := admin.Provision(ctx, f.Owner, u.TenantID, "application_probe", "应用识别探针", ca, filepath.Join(dir, "agent"))
 	require(t, err)
 	w, err := agent.OpenWAL(filepath.Join(dir, "wal.db"), identity.TenantID, identity.SensorID, identity.RegistrationID, 4*1024*1024)

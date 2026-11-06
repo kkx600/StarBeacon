@@ -25,15 +25,13 @@ import (
 )
 
 type Elasticsearch struct {
-	API              *esapi.API
-	client           *elastictransport.Client
-	mu               sync.Mutex
-	indices          map[string]bool
-	policies         map[int]bool
-	templates        map[string]bool
-	indexFlight      singleflight.Group
-	templateReady    bool
-	logTemplateReady bool
+	API         *esapi.API
+	client      *elastictransport.Client
+	mu          sync.Mutex
+	indices     map[string]bool
+	policies    map[int]bool
+	templates   map[string]bool
+	indexFlight singleflight.Group
 	// Layout 只决定新建共享索引的主分片与副本；保留期和时间分区由路由冻结的索引名称决定。
 	Layout contract.IndexLayout
 }
@@ -96,22 +94,17 @@ func response(res *esapi.Response, err error, target any) error {
 	}
 	return json.NewDecoder(io.LimitReader(res.Body, 16*1024*1024)).Decode(target)
 }
+
+// EnsurePolicy 确认共享事件与日志模板；生命周期策略随索引按「保留天数+分区跨度」建立。
 func (s *Elasticsearch) EnsurePolicy(ctx context.Context) error {
-	// 旧版模板继续服务升级前的在途路由；新路由只写入共享索引。
-	if err := s.EnsureEventTemplate(ctx); err != nil {
-		return err
-	}
 	for _, template := range []sharedTemplate{sharedEventTemplate, sharedLogTemplate} {
 		if err := s.ensureSharedTemplate(ctx, template); err != nil {
 			return err
 		}
 	}
-	return s.ensureRetentionPolicy(ctx, 180)
+	return nil
 }
 func retentionPolicyName(days int) string {
-	if days == 180 {
-		return "sb-default-180d"
-	}
 	return fmt.Sprintf("sb-retention-%dd", days)
 }
 func (s *Elasticsearch) ensureRetentionPolicy(ctx context.Context, days int) error {
@@ -171,15 +164,8 @@ const mapping = `{"dynamic":"strict","properties":{
 
 const applicationMapping = `{"properties":{"schema_version":{"type":"keyword"},"deployment_id":{"type":"keyword"},"state_sha256":{"type":"keyword"},"raw_sha256":{"type":"keyword"},"product_id":{"type":"keyword"},"product_name":{"type":"keyword","ignore_above":512},"category_id":{"type":"keyword"},"result":{"properties":{"schema_version":{"type":"keyword"},"origin":{"type":"keyword"},"protocol":{"type":"keyword"},"status":{"type":"keyword"},"reason":{"type":"keyword"},"evaluated_at":{"type":"date_nanos"},"observation_sha256":{"type":"keyword"},"rules_sha256":{"type":"keyword"},"rule_count":{"type":"short"},"matched_rule_count":{"type":"short"},"matches":{"type":"object","enabled":false},"limited":{"type":"boolean"}}}}}`
 
+// EnsureIndex 建立共享事件索引。保留期与时间分区取自路由冻结的名称；同名既有索引须具有相同映射与生命周期。
 func (s *Elasticsearch) EnsureIndex(ctx context.Context, index, partition string) error {
-	return s.EnsureIndexRetention(ctx, index, partition, 180)
-}
-
-// EnsureIndexRetention 建立事件索引。共享索引的保留期与时间分区取自路由冻结的名称，旧版租户日索引沿用传入的期限。
-func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partition string, days int) error {
-	if days < 1 || days > 3650 {
-		return fmt.Errorf("索引保留期必须为 1–3650 天")
-	}
 	target, err := contract.ParseEventIndex(index)
 	if err != nil || !target.Covers(partition) {
 		return fmt.Errorf("索引身份与日期分区不一致")
@@ -188,11 +174,7 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 		return nil
 	}
 	// 共享索引从分区起点计时，并额外等待一个分区跨度，使分区内每条记录至少保留设定天数。
-	policyDays, shards, expected := days, 1, 0
-	if !target.Legacy {
-		policyDays, shards = target.Days+target.Period.SpanDays(), s.Layout.For(target.Stream).Shards
-		expected = policyDays
-	}
+	policyDays, shards := target.Days+target.Period.SpanDays(), s.Layout.For(target.Stream).Shards
 	indexMapping := mapping
 	if target.Stream == "logs" {
 		indexMapping = logMapping
@@ -226,16 +208,8 @@ func (s *Elasticsearch) EnsureIndexRetention(ctx context.Context, index, partiti
 				limited := failure.Error.Type == "validation_exception" && strings.Contains(failure.Error.Reason, "maximum") && strings.Contains(failure.Error.Reason, "shards")
 				return nil, &IndexCreateError{Status: res.StatusCode, CapacityLimited: limited}
 			}
-			if target.Stream == "logs" {
-				if err := s.verifyLogIndex(ctx, index, target.Start, expected); err != nil {
-					return nil, err
-				}
-			} else {
-				// 只添加可选分类字段，不覆盖既有字段、分片、生命周期或历史文档。
-				updated, err := s.API.Indices.PutMapping([]string{index}, strings.NewReader(`{"properties":{"application":`+applicationMapping+`}}`), s.API.Indices.PutMapping.WithContext(ctx))
-				if err := response(updated, err, nil); err != nil {
-					return nil, err
-				}
+			if err := s.verifyIndex(ctx, index, indexMapping, target.Start, policyDays); err != nil {
+				return nil, err
 			}
 		}
 		s.mu.Lock()
@@ -518,8 +492,8 @@ func (s *Elasticsearch) readEventPage(ctx context.Context, tenant string, q mode
 			} `json:"hits"`
 		} `json:"hits"`
 	}
-	// 共享索引由查询中的 tenant_id 过滤隔离；索引表达式只排除同前缀其他租户的旧版索引。
-	res, e := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices(stream, tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
+	// 共享索引由查询中的 tenant_id 过滤隔离，命中记录再逐条核对租户与数据流。
+	res, e := s.API.Search(s.API.Search.WithIndex(contract.SearchIndex(stream)), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithContext(ctx))
 	if e = response(res, e, &decoded); e != nil {
 		return result, e
 	}
@@ -538,7 +512,7 @@ func (s *Elasticsearch) readEventPage(ctx context.Context, tenant string, q mode
 		for _, kind := range kinds {
 			allowed = allowed || kind == h.Source.Event.Kind
 		}
-		if !contract.IndexServes(h.Index, stream, tenant) || !contract.ValidID(h.ID) || h.ID != h.Source.EventID || h.Source.TenantID != tenant || !allowed || h.Source.Timestamp.Before(q.Start) || !h.Source.Timestamp.Before(q.End) || seen[h.ID] {
+		if !contract.IndexServes(h.Index, stream) || !contract.ValidID(h.ID) || h.ID != h.Source.EventID || h.Source.TenantID != tenant || !allowed || h.Source.Timestamp.Before(q.Start) || !h.Source.Timestamp.Before(q.End) || seen[h.ID] {
 			return model.SearchResult{Items: []model.Alert{}, Page: q.Page, PageSize: q.PageSize}, fmt.Errorf("事件检索记录不符合来源、时间或唯一性约束")
 		}
 		seen[h.ID] = true

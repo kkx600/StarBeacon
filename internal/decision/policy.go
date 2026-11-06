@@ -166,18 +166,6 @@ type Page struct {
 	NextCursor string   `json:"next_cursor"`
 }
 
-type EvaluateRequest struct {
-	ExpectedRevision int64  `json:"expected_revision"`
-	TriageID         string `json:"triage_id"`
-}
-
-func (r EvaluateRequest) Validate() error {
-	if r.ExpectedRevision < 1 || r.ExpectedRevision > MaxRevision || !contract.ValidID(r.TriageID) {
-		return ErrInput
-	}
-	return nil
-}
-
 type Result struct {
 	SchemaVersion       string    `json:"schema_version"`
 	PolicyID            string    `json:"policy_id"`

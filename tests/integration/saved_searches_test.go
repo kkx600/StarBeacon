@@ -14,7 +14,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/accounts"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/savedsearch"
@@ -48,26 +47,14 @@ func TestSavedSearchHTTPActualElasticsearchPrivateSharingAndVersionBinding(t *te
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), os.Getenv("SB_ES_API_KEY"))
 	require(t, err)
 	now := time.Now().UTC()
-	indices := []string{}
-	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 8*time.Second)
-		defer stop()
-		for _, index := range indices {
-			res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			_ = res.Body.Close()
-			if res.IsError() {
-				t.Error("专属查询索引未能清理", res.StatusCode)
-			}
-		}
-	})
 	for _, tenant := range []string{u.TenantID, foreign.TenantID} {
+		// 共享索引同时承载其他租户，只回收本租户文档。
+		t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
 		for _, dataset := range []string{"alerts", "context"} {
-			index, err := contract.IndexName(tenant, dataset, now.Format("2006-01-02"))
-			require(t, err)
+			index := sharedEventIndex(t, dataset, now.Format("2006-01-02"))
 			require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-			indices = append(indices, index)
-			doc := model.Alert{EventID: "event_saved_query", TenantID: tenant, SensorID: "sensor_saved_query", RegistrationID: "reg_saved_query", SourceGenerationID: "gen_saved_query", Timestamp: now.Add(-time.Minute), ObservedAt: now, ReceivedAt: now, Severity: "high"}
+			// 两个租户的相同夹具写入同一共享索引；事件标识即文档 _id，按租户与数据集生成。
+			doc := model.Alert{EventID: store.RandomID("event_saved_query_"), TenantID: tenant, SensorID: "sensor_saved_query", RegistrationID: "reg_saved_query", SourceGenerationID: "gen_saved_query", Timestamp: now.Add(-time.Minute), ObservedAt: now, ReceivedAt: now, Severity: "high"}
 			doc.Source.IP, doc.Destination.IP = "192.0.2.55", "198.51.100.55"
 			doc.Network.Protocol, doc.Network.Transport, doc.HTTP.Method, doc.HTTP.Path = "http", "tcp", "GET", "/api/status"
 			doc.Rule.ID, doc.Rule.Name, doc.Suricata.FlowID = "100001", "保存查询验收事件", "18446744073709551615"
@@ -82,7 +69,7 @@ func TestSavedSearchHTTPActualElasticsearchPrivateSharingAndVersionBinding(t *te
 			require(t, err)
 			_ = res.Body.Close()
 			if res.IsError() {
-				t.Fatal("专属查询索引未能刷新", res.StatusCode)
+				t.Fatal("查询验收共享索引未能刷新", res.StatusCode)
 			}
 		}
 	}

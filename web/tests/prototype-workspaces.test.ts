@@ -190,8 +190,13 @@ describe('MCP 接入说明',()=>{
    expect(queued.response_protection!.check_sha256).toBe(await goJSONDigest(queued.response_protection!.check));expect(scope().text()).toContain('不构成真实授权');expect(fetch).not.toHaveBeenCalled()
    await click('关闭',document.querySelector('.ant-modal')!);expect(router.currentRoute.value.query.task).toBeUndefined();expect(router.currentRoute.value.query.device_id).toBe('device_hq');expect(router.currentRoute.value.hash).toBe('#response')
   })
-  it.each(['task_action_unknown','task_does_not_exist'])('%s 不冒充已有名单核对记录',async task=>{
-   const router=await routing('/work?task='+task);mount(ResponseActionsPreview,{props:{state:'data'},attachTo:document.body,global:{plugins:[Antd,router]}});await flushPromises()
-   expect(scope().text()).toContain(task==='task_action_unknown'?'该历史任务没有名单核对记录':'所选任务不在当前合成示例范围内');expect(scope().text()).not.toContain('平台授权时未命中有效保护名单');expect(fetch).not.toHaveBeenCalled()
+  it('结果待核实与已核实的封禁任务同样绑定名单核对记录',async()=>{
+   const router=await routing('/work?task=task_action_unknown'),wrapper=mount(ResponseActionsPreview,{props:{state:'data'},attachTo:document.body,global:{plugins:[Antd,router]}});await vi.waitFor(()=>expect(scope().text()).toContain('平台授权时未命中有效保护名单'))
+   for(const row of wrapper.findComponent(TaskTable).props('items'))expect(validResponseProtection(row.response_protection,row.kind,row.response_action!.requested_at,row.response_action!.expires_at)).toBe(true)
+   expect(scope().text()).not.toContain('缺少名单核对记录');expect(fetch).not.toHaveBeenCalled()
+  })
+  it('不存在的任务不冒充已有名单核对记录',async()=>{
+   const router=await routing('/work?task=task_does_not_exist');mount(ResponseActionsPreview,{props:{state:'data'},attachTo:document.body,global:{plugins:[Antd,router]}});await flushPromises()
+   expect(scope().text()).toContain('所选任务不在当前合成示例范围内');expect(scope().text()).not.toContain('平台授权时未命中有效保护名单');expect(fetch).not.toHaveBeenCalled()
   })
  })

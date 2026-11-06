@@ -16,7 +16,7 @@ const {request}=vi.hoisted(()=>({request:vi.fn()}))
 const user=shallowRef(principal)
 vi.mock('../platform/src/session',()=>({session:{api:{request},get current(){return user}}}))
 const body=()=>new DOMWrapper(document.body)
-async function plugins(){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/models?view=evaluations');await router.isReady();return [registerAnt,router]}
+async function plugins(){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/response/evaluations');await router.isReady();return [registerAnt,router]}
 async function modal(e?:EvaluationRecord){const w=mount(DecisionResponseDialog,{props:{record:e??await responseEvaluation()},global:{plugins:await plugins()},attachTo:document.body});await flushPromises();return w}
 async function fill(){await vi.waitFor(()=>expect(body().find('textarea[aria-label="处置操作依据"]').exists()).toBe(true));await body().get('textarea[aria-label="处置操作依据"]').setValue('管理员核对异常通信');await body().get('.ant-modal input[type="checkbox"]').setValue(true)}
 async function submit(){await body().get('.ant-modal form').trigger('submit');await flushPromises()}
@@ -40,7 +40,7 @@ describe('研判到人工处置的界面',()=>{
  it('原源 IP 不可编辑，明确确认后只提交一次，完整回执显示原授权',async()=>{
   const e=await responseEvaluation(),w=await modal(e);await fill();expect(body().find('input[aria-label="封禁目标 IP"]').exists()).toBe(false)
   const pending=deferred<unknown>();request.mockReturnValueOnce(pending.promise);body().get('form').trigger('submit');body().get('form').trigger('submit');await flushPromises();const calls=request.mock.calls.filter(v=>v[1]?.method==='POST');expect(calls).toHaveLength(1);expect(calls[0]?.[1].body).toEqual(responseInput(e));expect(calls[0]?.[1].body.target_ip).toBeUndefined()
-  pending.resolve(await responseReceipt(e,calls[0]?.[1].body));await vi.waitFor(()=>expect(body().text()).toContain('签名任务'));expect(message.success).toHaveBeenCalledOnce();expect(body().text()).toContain('任务受理不等于');expect(body().find('form').exists()).toBe(false);await click('查看任务记录');expect(w.vm.$router.currentRoute.value.path).toBe('/sensors');expect(w.vm.$router.currentRoute.value.query).toEqual({view:'tasks',task:(await responseReceipt(e)).task_id});w.unmount()
+  pending.resolve(await responseReceipt(e,calls[0]?.[1].body));await vi.waitFor(()=>expect(body().text()).toContain('签名任务'));expect(message.success).toHaveBeenCalledOnce();expect(body().text()).toContain('任务受理不等于');expect(body().find('form').exists()).toBe(false);await click('查看任务记录');expect(w.vm.$router.currentRoute.value.path).toBe('/sensors/tasks');expect(w.vm.$router.currentRoute.value.query).toEqual({task:(await responseReceipt(e)).task_id});w.unmount()
  })
  it('未知提交锁定原输入和键，错误回执不能显示成功，核对复用原键',async()=>{
   const e=await responseEvaluation(),w=await modal(e);await fill();request.mockRejectedValueOnce(new Error('网络断开'));await submit();const original=request.mock.lastCall!;expect(body().text()).toContain('核对原提交');expect(body().get('textarea').attributes('disabled')).toBeDefined()

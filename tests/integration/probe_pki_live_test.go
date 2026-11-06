@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -49,7 +50,7 @@ func TestProbePKIRealStepCAEnrollmentAutomaticRenewalAndLiveRevocation(t *testin
 	require(t, err)
 	work := t.TempDir()
 	serverPKI := filepath.Join(work, "server-pki")
-	require(t, admin.DevPKI(serverPKI))
+	require(t, admin.DevPKI(serverPKI, nil))
 	rootFile := filepath.Join(serverPKI, "ca.crt")
 	serverTLS, err := transport.TLS(rootFile, filepath.Join(serverPKI, "server.crt"), filepath.Join(serverPKI, "server.key"), true)
 	require(t, err)
@@ -61,7 +62,7 @@ func TestProbePKIRealStepCAEnrollmentAutomaticRenewalAndLiveRevocation(t *testin
 	}
 	auth := httpapi.NewAuth(f.Runtime, nil, "", "pki_live_session", false)
 	api := &platform.API{DB: f.Runtime, Auth: auth, Authority: ca}
-	web := httptest.NewUnstartedServer(httpapi.Middleware(api.Handler()))
+	web := httptest.NewUnstartedServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	web.TLS = &tls.Config{MinVersion: tls.VersionTLS13, Certificates: serverTLS.Certificates}
 	web.StartTLS()
 	defer web.Close()

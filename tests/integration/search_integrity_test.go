@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -34,19 +33,10 @@ func TestSearchRealEvidenceRejectsIncompleteDependencyResults(t *testing.T) {
 	require(t, es.EnsurePolicy(ctx))
 	now := time.Now().UTC()
 	for _, target := range []string{tenant, foreign} {
-		index, err := contract.IndexName(target, "alerts", now.Format("2006-01-02"))
-		require(t, err)
+		index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 		require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-		t.Cleanup(func() {
-			clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			defer stop()
-			response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			defer response.Body.Close()
-			if response.IsError() {
-				t.Error("无法清理检索验收索引", response.StatusCode)
-			}
-		})
+		// 两个租户写入同一共享索引；只回收本测试租户的文档。
+		t.Cleanup(func() { deleteTenantEvents(t, es, target) })
 		doc := model.Alert{EventID: store.RandomID("event_"), TenantID: target, SensorID: "sensor_owned", Timestamp: now, ReceivedAt: now, ObservedAt: now}
 		doc.Event.Kind, doc.Event.Original, doc.Rule.Name, doc.Severity = "alert", `{"scope":"search_fixture"}`, "检索受控记录", "medium"
 		for _, err := range es.Bulk(ctx, index, []model.Alert{doc}) {

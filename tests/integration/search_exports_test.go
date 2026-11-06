@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -63,21 +62,12 @@ func TestSearchExportRealPITPrunedHistoricalIndices(t *testing.T) {
 	require(t, err)
 	now := time.Now().UTC()
 	currentIDs := map[string]string{}
+	// 共享索引同时承载其他租户，只回收本租户文档；历史记录按路由日落入各自的共享分区。
+	t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
 	for _, dataset := range []string{"alerts", "context"} {
 		for _, at := range []time.Time{now.Add(-96 * time.Hour), now.Add(-72 * time.Hour), now} {
-			index, err := contract.IndexName(tenant, dataset, at.Format("2006-01-02"))
-			require(t, err)
+			index := sharedEventIndex(t, dataset, at.Format("2006-01-02"))
 			require(t, es.EnsureIndex(ctx, index, at.Format("2006-01-02")))
-			t.Cleanup(func() {
-				clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-				defer stop()
-				res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-				require(t, err)
-				defer res.Body.Close()
-				if res.IsError() {
-					t.Error("历史裁剪验收索引无法清理", res.StatusCode)
-				}
-			})
 			doc := model.Alert{EventID: store.RandomID("event_"), TenantID: tenant, Timestamp: at, ObservedAt: at, ReceivedAt: now, SensorID: "sensor_owned", RegistrationID: "reg_owned", SourceGenerationID: "gen_owned", Sequence: "1", RawSHA256: strings.Repeat("a", 64)}
 			doc.Event.Kind = "alert"
 			if dataset == "context" {
@@ -140,21 +130,12 @@ func TestSearchExportRealPITCSVIsolationRefreshAndAudit(t *testing.T) {
 	now := time.Now().UTC()
 	indices := map[string]string{}
 	for _, target := range []string{tenant, foreign} {
+		// 两个租户写入同一共享索引；只回收本测试租户的文档。
+		t.Cleanup(func() { deleteTenantEvents(t, es, target) })
 		for _, dataset := range []string{"alerts", "context"} {
-			index, err := contract.IndexName(target, dataset, now.Format("2006-01-02"))
-			require(t, err)
+			index := sharedEventIndex(t, dataset, now.Format("2006-01-02"))
 			indices[target+"/"+dataset] = index
 			require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-			t.Cleanup(func() {
-				clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-				defer stop()
-				res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-				require(t, err)
-				defer res.Body.Close()
-				if res.IsError() {
-					t.Error("导出验收索引无法清理", res.StatusCode)
-				}
-			})
 			docs := []model.Alert{}
 			count := 1
 			if target == tenant && dataset == "alerts" {
@@ -245,7 +226,7 @@ func TestSearchExportRealPITCSVIsolationRefreshAndAudit(t *testing.T) {
 	emptyHTTP := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, empty, password)
 	raw, headers = searchExportHTTP(t, emptyHTTP, "/alerts/export", q, 200)
 	if headers.Get("X-Export-Rows") != "0" || strings.Count(string(raw), "\r\n") != 1 {
-		t.Fatal("无索引空快照不符合契约")
+		t.Fatal("共享索引中没有本租户记录时，空快照不符合契约")
 	}
 	var count int
 	require(t, f.Owner.Pool.QueryRow(ctx, `SELECT count(*) FROM operation_audits WHERE tenant_id=$1 AND action LIKE 'search.export.prepare.%'`, tenant).Scan(&count))
@@ -275,16 +256,10 @@ func TestSearchExportRealFailuresRevocationAndDistributedQuota(t *testing.T) {
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
 	now := time.Now().UTC()
-	index, err := contract.IndexName(tenant, "alerts", now.Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		defer res.Body.Close()
-	})
+	// 共享索引同时承载其他租户，只回收本租户文档。
+	t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
 	doc := model.Alert{TenantID: tenant, EventID: store.RandomID("event_"), Timestamp: now, ObservedAt: now, ReceivedAt: now}
 	doc.Event.Kind = "alert"
 	for _, err := range es.Bulk(ctx, index, []model.Alert{doc}) {

@@ -7,7 +7,6 @@ export type {WorkspaceSpec} from '../../../web/packages/shared/src/navigation.ts
 export const workspaceById=new Map(workspaces.map(workspace=>[workspace.id,workspace]))
 export const workspaceForPage=new Map(workspaces.flatMap(workspace=>workspace.pages.map(id=>[id,workspace] as const)))
 for(const [child,parent] of Object.entries(nestedPages)){const workspace=workspaceForPage.get(parent);if(workspace)workspaceForPage.set(child,workspace)}
-export const legacyPages:Record<string,string>={'sensor-health':'sensors','pcap-downloads':'pcap-tasks','operation-logs':'audit'}
 export const accountPages=pages.filter(page=>page.id==='my-account')
 
 export function workspaceTitleForPage(id:string):string {

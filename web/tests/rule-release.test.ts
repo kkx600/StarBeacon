@@ -32,8 +32,8 @@ async function ready(state: ReturnType<typeof useRuleRelease>) {
   Object.assign(state.form, {validation: 'check_1', positive: 'hit_1', negative: 'miss_1', confirmed: true})
 }
 async function dialog() {
-  const router = createRouter({history: createMemoryHistory(), routes: [{path: '/rules', component: {render: () => h('div')}}, {path: '/sensors', component: {render: () => h('div')}}]})
-  await router.push('/rules'); await router.isReady()
+  const router = createRouter({history: createMemoryHistory(), routes: [{path: '/detection/rules/packages', component: {render: () => h('div')}}, {path: '/sensors/tasks', component: {render: () => h('div')}}]})
+  await router.push('/detection/rules/packages'); await router.isReady()
   let state!: ReturnType<typeof useRuleRelease>
   const wrapper = mount(defineComponent({setup() {state = useRuleRelease(); return () => h(RuleReleaseDialog, {release: state})}}), {global: {plugins: [registerAnt, router]}, attachTo: document.body})
   await state.open(rulePackage); await flushPromises()
@@ -138,7 +138,7 @@ describe('规则发布对话框', () => {
     for (const [i, id] of ['check_1', 'hit_1', 'miss_1'].entries()) {await selects[i + 1]!.setValue(id, 'value'); selects[i + 1]!.vm.$emit('change', id)}
     await wrapper.getComponent(Checkbox).setValue(true, 'checked'); await click('提交发布任务')
     expect(document.body.textContent).toContain('发布任务已受理'); expect(document.body.textContent).toContain('受理不等于规则已生效'); expect(button('提交发布任务').disabled).toBe(true)
-    expect(document.body.querySelector('a[href="/sensors?view=tasks"]')).not.toBeNull()
+    expect(document.body.querySelector('a[href="/sensors/tasks"]')).not.toBeNull()
     wrapper.getComponent(Modal).vm.$emit('cancel'); await flushPromises(); expect(state.selected.value).toBeNull()
   })
   it('失败展示原因且保留用户选择，提交中不能取消弹窗', async () => {

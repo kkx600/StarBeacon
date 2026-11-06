@@ -69,6 +69,10 @@ func saveResponseProtection(ctx context.Context, tx pgx.Tx, tenant, task, comman
 
 func readResponseProtection(raw []byte, commandSHA string, task SensorTask) (*ResponseProtection, error) {
 	if len(raw) == 0 || string(raw) == "null" {
+		// 封禁授权与名单核对记录同事务保存，任务可读期间记录必定存在；其他任务不得携带记录。
+		if task.Kind == "response.block" {
+			return nil, watchlist.ErrSource
+		}
 		return nil, nil
 	}
 	var proof ResponseProtection

@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory, type RouterHistory, type RouteRecordRaw } from 'vue-router'
-import {migrateLegacyHash} from '@starbeacon/shared/utils/history.ts'
-import {collectorCanonicalDestination,collectorDefaultDestination,collectorLegacyDestination,collectorMeta} from './navigation'
+import {collectorDefaultDestination,collectorMeta} from './navigation'
 import { session } from './session'
-migrateLegacyHash(import.meta.env.BASE_URL)
 
 const workspace=()=>import('./views/CollectorView.vue')
-export function collectorRoutes(): RouteRecordRaw[] {
+function collectorRoutes(): RouteRecordRaw[] {
   return [
     {path:'/',redirect:to=>collectorDefaultDestination(to,'/overview/status')},
     {path:'/login',component:()=>import('./views/LoginView.vue')},
@@ -13,7 +11,7 @@ export function collectorRoutes(): RouteRecordRaw[] {
     {path:'/overview',redirect:to=>collectorDefaultDestination(to,'/overview/status'),children:[
       {path:'status',component:workspace,meta:collectorMeta('overview')},
     ]},
-    {path:'/network',redirect:collectorLegacyDestination,children:[
+    {path:'/network',redirect:to=>collectorDefaultDestination(to,'/network/interfaces'),children:[
       {path:'interfaces',component:workspace,meta:collectorMeta('interfaces')},
       {path:'capture',component:workspace,meta:collectorMeta('capture')},
       {path:'archives',component:workspace,meta:collectorMeta('archives')},
@@ -37,8 +35,6 @@ export function createCollectorRouter(history: RouterHistory = createWebHistory(
   const router=createRouter({history,scrollBehavior:()=>({top:0}),routes:collectorRoutes()})
   router.beforeEach(async to=>{
     if(to.path==='/login')return
-    const canonical=collectorCanonicalDestination(to)
-    if(canonical)return canonical
     try{await session.restore()}catch{return {path:'/login',query:{redirect:to.fullPath}}}
     if(!session.current.value)return {path:'/login',query:{redirect:to.fullPath}}
     if(to.meta.admin&&session.current.value.role!=='admin')return {path:'/access-denied',query:{redirect:to.fullPath}}

@@ -21,7 +21,7 @@ type TaskRunner interface {
 	Execute(context.Context, control.Command) (json.RawMessage, string, error)
 }
 type LocalTask struct {
-	Origin         string          `json:"origin,omitempty"`
+	Origin         string          `json:"origin"`
 	Command        control.Command `json:"command"`
 	SHA256         string          `json:"sha256"`
 	Receipt        control.Receipt `json:"receipt"`
@@ -66,11 +66,6 @@ func NewTaskManager(w *WAL, publicKey ed25519.PublicKey, runner TaskRunner) (*Ta
 				return e
 			}
 			changed := false
-			if task.RetainUntil.IsZero() {
-				// 历史记录继承其接收时的默认期限，不由重启后的配置延长或缩短。
-				task.RetainUntil = localTaskRetention(task)
-				changed = true
-			}
 			// 崩溃后的执行阶段不能推断为成功，也不盲目重放有副作用的命令。
 			if task.Receipt.State == "running" {
 				now := time.Now().UTC()
@@ -295,31 +290,20 @@ type LocalTaskSummary struct {
 	RetentionProtected bool            `json:"retention_protected"`
 }
 
-func localTaskRetention(task LocalTask) time.Time {
-	if !task.RetainUntil.IsZero() {
-		return task.RetainUntil
-	}
-	return task.Receipt.StartedAt.AddDate(0, 0, 180)
-}
-
 func localTaskProtected(task LocalTask) bool {
 	return !task.Acknowledged || task.Receipt.State == "running" || task.Receipt.State == "unknown" && len(task.RuleResolution) == 0
 }
 
 func summarizeLocalTask(row LocalTask) LocalTaskSummary {
-	origin := row.Origin
-	if origin == "" {
-		origin = "platform"
-	}
-	return LocalTaskSummary{Origin: origin, ID: row.Command.ID, SensorID: row.Command.SensorID, Kind: row.Command.Kind, State: row.Receipt.State, CreatedAt: row.Command.IssuedAt, ExpiresAt: row.Command.ExpiresAt, Acknowledged: row.Acknowledged, Receipt: row.Receipt, RuleResolution: row.RuleResolution, RetainUntil: localTaskRetention(row), RetentionProtected: localTaskProtected(row)}
+	return LocalTaskSummary{Origin: row.Origin, ID: row.Command.ID, SensorID: row.Command.SensorID, Kind: row.Command.Kind, State: row.Receipt.State, CreatedAt: row.Command.IssuedAt, ExpiresAt: row.Command.ExpiresAt, Acknowledged: row.Acknowledged, Receipt: row.Receipt, RuleResolution: row.RuleResolution, RetainUntil: row.RetainUntil, RetentionProtected: localTaskProtected(row)}
 }
 
 func (m *TaskManager) validateLocalTask(row LocalTask, id string) error {
 	digest, err := hex.DecodeString(row.SHA256)
-	if !contract.ValidID(id) || err != nil || len(digest) != 32 || hex.EncodeToString(digest) != row.SHA256 || row.Command.ID != id || row.Command.TenantID != m.WAL.TenantID || row.Command.SensorID != m.WAL.SensorID || row.Command.RegistrationID != m.WAL.RegistrationID || row.Receipt.CommandID != id || row.Receipt.CommandSHA256 != row.SHA256 || row.Receipt.StartedAt.IsZero() || row.Command.IssuedAt.IsZero() || !row.Command.ExpiresAt.After(row.Command.IssuedAt) || !localTaskRetention(row).After(row.Receipt.StartedAt) {
+	if !contract.ValidID(id) || err != nil || len(digest) != 32 || hex.EncodeToString(digest) != row.SHA256 || row.Command.ID != id || row.Command.TenantID != m.WAL.TenantID || row.Command.SensorID != m.WAL.SensorID || row.Command.RegistrationID != m.WAL.RegistrationID || row.Receipt.CommandID != id || row.Receipt.CommandSHA256 != row.SHA256 || row.Receipt.StartedAt.IsZero() || row.Command.IssuedAt.IsZero() || !row.Command.ExpiresAt.After(row.Command.IssuedAt) || !row.RetainUntil.After(row.Receipt.StartedAt) {
 		return errors.New("本地任务身份或回执绑定不一致")
 	}
-	if row.Origin != "" && row.Origin != "platform" && row.Origin != "local" || row.Origin == "local" && (row.Command.Kind != "rules.replay" || !strings.HasPrefix(id, "localtask_")) {
+	if row.Origin != "platform" && row.Origin != "local" || row.Origin == "local" && (row.Command.Kind != "rules.replay" || !strings.HasPrefix(id, "localtask_")) {
 		return errors.New("本地任务来源不一致")
 	}
 	switch row.Command.Kind {
@@ -360,7 +344,7 @@ func (m *TaskManager) Task(id string) (LocalTaskSummary, error) {
 		if err := m.validateLocalTask(row, id); err != nil {
 			return err
 		}
-		if !localTaskRetention(row).After(time.Now().UTC()) && !localTaskProtected(row) {
+		if !row.RetainUntil.After(time.Now().UTC()) && !localTaskProtected(row) {
 			return ErrLocalTaskNotFound
 		}
 		out = summarizeLocalTask(row)
@@ -382,7 +366,7 @@ func (m *TaskManager) List() ([]LocalTaskSummary, error) {
 			if e := json.Unmarshal(v, &row); e != nil {
 				return e
 			}
-			if localTaskRetention(row).After(time.Now().UTC()) || localTaskProtected(row) {
+			if row.RetainUntil.After(time.Now().UTC()) || localTaskProtected(row) {
 				out = append(out, summarizeLocalTask(row))
 			}
 		}

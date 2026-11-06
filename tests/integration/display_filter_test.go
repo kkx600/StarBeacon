@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -26,20 +25,11 @@ func TestDisplayFilterRealFamilyPresenceOrderingAndRawString(t *testing.T) {
 	require(t, err)
 	now := time.Now().UTC()
 	for _, target := range []string{tenant, foreign} {
+		// 共享索引同时承载其他租户，只回收本测试租户的文档。
+		t.Cleanup(func() { deleteTenantEvents(t, es, target) })
 		for _, dataset := range []string{"alerts", "context"} {
-			index, err := contract.IndexName(target, dataset, now.Format("2006-01-02"))
-			require(t, err)
+			index := sharedEventIndex(t, dataset, now.Format("2006-01-02"))
 			require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-			t.Cleanup(func() {
-				cleanup, stop := context.WithTimeout(context.Background(), 5*time.Second)
-				defer stop()
-				res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(cleanup))
-				require(t, err)
-				defer res.Body.Close()
-				if res.IsError() {
-					t.Error("无法清理高级检索验收索引", res.StatusCode)
-				}
-			})
 			var docs []model.Alert
 			for _, ip := range []string{"192.0.2.10", "2001:db8::10", ""} {
 				doc := model.Alert{EventID: store.RandomID("event_"), TenantID: target, SensorID: "sensor_owned", Timestamp: now, ReceivedAt: now, ObservedAt: now}

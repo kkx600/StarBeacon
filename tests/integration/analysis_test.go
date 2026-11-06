@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -83,20 +84,12 @@ func TestAnalysisPersistentJobsReportsOwnershipBudgetsAndCancellation(t *testing
 	require(t, admin.Bootstrap(ctx, owner, tenant, "智能分析验收", tenant+"_other", password, "admin"))
 	require(t, admin.Bootstrap(ctx, owner, tenant, "智能分析验收", tenant+"_viewer", password, "viewer"))
 	window := analytics.Window{Start: time.Now().UTC().Add(-time.Hour), End: time.Now().UTC().Truncate(time.Minute)}
-	index := "sb-alerts-" + tenant + "-" + window.Start.Format("2006.01.02")
+	index := sharedEventIndex(t, "alerts", window.Start.Format("2006-01-02"))
 	require(t, es.EnsurePolicy(ctx))
 	require(t, es.EnsureIndex(ctx, index, window.Start.Format("2006-01-02")))
-	defer func() {
-		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		defer response.Body.Close()
-		if response.IsError() {
-			t.Errorf("自身索引清理失败：%d", response.StatusCode)
-		}
-	}()
-	item := model.Alert{SchemaVersion: "alert.v1", EventID: "owned_event", TenantID: tenant, SensorID: "probe_owned", Timestamp: window.Start.Add(time.Minute), ObservedAt: window.Start.Add(time.Minute), ReceivedAt: window.Start.Add(time.Minute), RawSHA256: control.Digest([]byte("owned")), Severity: "high"}
+	// 共享索引同时承载其他租户，只回收本租户文档；事件标识即文档 _id，按用例生成。
+	defer deleteTenantEvents(t, es, tenant)
+	item := model.Alert{SchemaVersion: "alert.v1", EventID: store.RandomID("owned_event_"), TenantID: tenant, SensorID: "probe_owned", Timestamp: window.Start.Add(time.Minute), ObservedAt: window.Start.Add(time.Minute), ReceivedAt: window.Start.Add(time.Minute), RawSHA256: control.Digest([]byte("owned")), Severity: "high"}
 	item.Event.Kind = "alert"
 	item.Event.Dataset = "suricata.alert"
 	item.Rule.ID = "1000001"
@@ -150,11 +143,11 @@ func TestAnalysisPersistentJobsReportsOwnershipBudgetsAndCancellation(t *testing
 	roots := x509.NewCertPool()
 	roots.AddCert(provider.Certificate())
 	policy := outbound.Policy{PrivateNetworks: networks, Roots: roots}
-	queue, err := jobs.NewAnalysis(db, vault, policy)
+	queue, err := jobs.NewAnalysis(db, vault, policy, nil)
 	require(t, err)
 	auth := httpapi.NewAuth(db, cache, "", "it_analysis", false)
 	api := &platform.API{DB: db, ES: es, Redis: cache, Auth: auth, Vault: vault, Outbound: policy, Jobs: queue}
-	server := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	server := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	defer server.Close()
 	auth.Origin = server.URL
 	login := func(name string) (*liveHTTP, model.Principal) {

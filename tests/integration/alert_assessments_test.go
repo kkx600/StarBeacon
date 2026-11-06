@@ -14,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/assessment"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
@@ -35,26 +34,19 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	require(t, err)
 	require(t, es.EnsurePolicy(ctx))
 	now := time.Now().UTC()
-	indices := []string{}
+	// 共享索引同时承载其他租户，只回收本测试租户的文档。
 	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 8*time.Second)
-		defer stop()
-		for _, index := range indices {
-			r, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			_ = r.Body.Close()
-			if r.IsError() {
-				t.Errorf("专属研判索引未能回收：%d", r.StatusCode)
-			}
+		for _, tenant := range tenants {
+			deleteTenantEvents(t, es, tenant)
 		}
 	})
 	digest := control.Digest([]byte("owned-assessment-fact"))
-	for _, tenant := range tenants {
-		index, indexErr := contract.IndexName(tenant, "alerts", now.Format("2006-01-02"))
-		require(t, indexErr)
+	// 事件标识即共享索引文档 _id，两个租户的同摘要告警使用各自的事件标识。
+	events := []string{store.RandomID("event_assessment_"), store.RandomID("event_assessment_")}
+	for n, tenant := range tenants {
+		index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 		require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-		indices = append(indices, index)
-		item := model.Alert{SchemaVersion: "alert.v1", EventID: "event_assessment", TenantID: tenant, SensorID: "probe_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, RawSHA256: digest, Severity: "high"}
+		item := model.Alert{SchemaVersion: "alert.v1", EventID: events[n], TenantID: tenant, SensorID: "probe_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, RawSHA256: digest, Severity: "high"}
 		item.Event.Kind = "alert"
 		item.Event.Original = `{"owned":true}`
 		for _, err := range es.Bulk(ctx, index, []model.Alert{item}) {
@@ -71,8 +63,8 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	viewer := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, tenants[0]+"_viewer", password)
 	user, _, err := f.Runtime.Password(ctx, tenants[0])
 	require(t, err)
-	path := "/alerts/event_assessment/assessment?sha256=" + digest
-	historyPath := "/alerts/event_assessment/assessment/history?sha256=" + digest
+	path := "/alerts/" + events[0] + "/assessment?sha256=" + digest
+	historyPath := "/alerts/" + events[0] + "/assessment/history?sha256=" + digest
 	var blank assessment.Record
 	a.request("GET", path, "", nil, &blank, 200)
 	if blank.Revision != 0 || blank.Basis != "unreviewed" || blank.Spec.Verdict != "unreviewed" {
@@ -82,7 +74,7 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	viewer.request("POST", path, "denied", assessment.Change{Spec: assessment.Spec{Status: "closed", Verdict: "false_positive", Outcome: "unknown", Note: "人工核对", Evidence: []string{}}}, nil, 403)
 	a.request("GET", "/alerts/bad%20id/assessment?sha256="+digest, "", nil, nil, 400)
 	a.request("GET", "/alerts/event_absent/assessment?sha256="+digest, "", nil, nil, 404)
-	a.request("GET", "/alerts/event_assessment/assessment?sha256="+strings.Repeat("b", 64), "", nil, nil, 409)
+	a.request("GET", "/alerts/"+events[0]+"/assessment?sha256="+strings.Repeat("b", 64), "", nil, nil, 409)
 	a.request("POST", path, "bad_input", map[string]any{"unexpected": "field"}, nil, 400)
 	change := assessment.Change{Spec: assessment.Spec{Status: "closed", Verdict: "false_positive", Outcome: "unknown", Note: "已核对登记的业务请求与规则条件，保存人工误报判断。", Evidence: []string{"case:owned:business-baseline"}}, Claim: true}
 	var first assessment.Record
@@ -99,10 +91,17 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	changed.Spec.Note = "不能使用原请求键修改备注。"
 	a.request("POST", path, "save_initial", changed, nil, 409)
 	a.request("POST", path, "stale_revision", change, nil, 409)
+	// 同一共享索引中的其他租户不能定位本租户告警；其自身同摘要告警和相同事件标识均读不到本租户研判。
+	b.request("GET", path, "", nil, nil, 404)
 	var foreign assessment.Record
-	b.request("GET", path, "", nil, &foreign, 200)
+	b.request("GET", "/alerts/"+events[1]+"/assessment?sha256="+digest, "", nil, &foreign, 200)
 	if foreign.Revision != 0 || foreign.Spec.Verdict != "unreviewed" {
 		t.Fatal("研判记录跨租户泄露", foreign)
+	}
+	foreignUser, _, err := f.Runtime.Password(ctx, tenants[1])
+	require(t, err)
+	if leaked, err := f.Runtime.AlertAssessment(ctx, foreignUser, events[0], digest); err != nil || leaked.Revision != 0 || leaked.Spec.Verdict != "unreviewed" {
+		t.Fatal("研判记录跨租户泄露", leaked, err)
 	}
 	// 检索仍由 ES 执行；人工误报标记不删除、重写或抑制原始检测事件。
 	var found model.SearchResult
@@ -184,19 +183,19 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 		}
 		return nil
 	}))
-	if _, err := f.Runtime.SaveAlertAssessment(ctx, model.Principal{}, "event_assessment", digest, "key", change, ""); !errors.Is(err, assessment.ErrInput) {
+	if _, err := f.Runtime.SaveAlertAssessment(ctx, model.Principal{}, events[0], digest, "key", change, ""); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效身份未拒绝", err)
 	}
 	if _, err := f.Runtime.AlertAssessment(ctx, user, "bad/id", digest); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效事件标识未拒绝", err)
 	}
-	if _, err := f.Runtime.AlertAssessmentHistory(ctx, user, "event_assessment", digest, "bad"); !errors.Is(err, assessment.ErrInput) {
+	if _, err := f.Runtime.AlertAssessmentHistory(ctx, user, events[0], digest, "bad"); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效历史游标未拒绝", err)
 	}
-	if _, err := f.Runtime.AlertAssessmentHistory(ctx, model.Principal{}, "event_assessment", digest, ""); !errors.Is(err, assessment.ErrInput) {
+	if _, err := f.Runtime.AlertAssessmentHistory(ctx, model.Principal{}, events[0], digest, ""); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效历史身份未拒绝", err)
 	}
-	if _, err := f.Runtime.AlertAssessment(ctx, user, "event_assessment", strings.Repeat("b", 64)); !errors.Is(err, store.ErrConflict) {
+	if _, err := f.Runtime.AlertAssessment(ctx, user, events[0], strings.Repeat("b", 64)); !errors.Is(err, store.ErrConflict) {
 		t.Fatal("操作库身份冲突未拒绝", err)
 	}
 	broken, err := store.Open(ctx, f.RuntimeDSN)
@@ -222,11 +221,10 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 		return err
 	}))
 	// 只有原生可定位的唯一告警允许研判，多个分区出现相同身份时必须停止写入。
-	duplicateDay := now.AddDate(0, 0, -1)
-	duplicateIndex, indexErr := contract.IndexName(tenants[0], "alerts", duplicateDay.Format("2006-01-02"))
-	require(t, indexErr)
+	// 告警按周分区，取七天前的路由日，使重复身份落入另一个共享索引。
+	duplicateDay := now.AddDate(0, 0, -7)
+	duplicateIndex := sharedEventIndex(t, "alerts", duplicateDay.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, duplicateIndex, duplicateDay.Format("2006-01-02")))
-	indices = append(indices, duplicateIndex)
 	duplicate := found.Items[0]
 	for _, err := range es.Bulk(ctx, duplicateIndex, []model.Alert{duplicate}) {
 		require(t, err)
@@ -235,13 +233,13 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	require(t, err)
 	_ = r.Body.Close()
 	a.request("POST", path, "duplicate_source", assessment.Change{ExpectedRevision: 23, Spec: change.Spec}, nil, 409)
-	r, err = es.API.Indices.Delete([]string{duplicateIndex}, es.API.Indices.Delete.WithContext(ctx))
+	// 共享索引同时承载其他租户，只移除重复身份文档。
+	r, err = es.API.Delete(duplicateIndex, duplicate.EventID, es.API.Delete.WithRefresh("true"), es.API.Delete.WithContext(ctx))
 	require(t, err)
 	_ = r.Body.Close()
 	if r.IsError() {
-		t.Fatal("身份冲突验收索引未能回收", r.StatusCode)
+		t.Fatal("身份冲突验收文档未能回收", r.StatusCode)
 	}
-	indices = indices[:len(indices)-1]
 	// 清理固化期限后的操作记录，不影响 ES 原始证据。
 	require(t, f.Owner.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, `UPDATE alert_assessment_changes SET expires_at=now()-interval '1 day' WHERE tenant_id=$1`, user.TenantID); err != nil {

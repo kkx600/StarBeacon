@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net"
 	"net/http"
@@ -59,7 +60,7 @@ func TestQualifiedRuleReleaseNativeMTLSPersistenceAndAtomicFailure(t *testing.T)
 	require(t, err)
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 	pki := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(pki))
+	require(t, admin.DevPKI(pki, nil))
 	id, err := admin.Provision(ctx, f.Owner, tenant, "sensor_release", "发布验证探针", pki, filepath.Join(dir, "identity"))
 	require(t, err)
 	pub, signer, err := ed25519.GenerateKey(rand.Reader)
@@ -143,7 +144,7 @@ func TestQualifiedRuleReleaseNativeMTLSPersistenceAndAtomicFailure(t *testing.T)
 	health(control.Digest([]byte(previous)))
 	auth := httpapi.NewAuth(f.Runtime, nil, "http://127.0.0.1", "release_session", false)
 	api := &platform.API{DB: f.Runtime, Auth: auth, Signer: signer, Wakeup: wake, Samples: objects, SampleQuota: 100 << 20}
-	httpServer := httptest.NewServer(httpapi.Middleware(api.Handler()))
+	httpServer := httptest.NewServer(httpapi.Middleware(api.Handler(), clientip.Policy{}))
 	t.Cleanup(httpServer.Close)
 	auth.Origin = httpServer.URL
 	jar, err := cookiejar.New(nil)

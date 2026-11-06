@@ -142,7 +142,7 @@ func TestPromptAndAnswerCitationContract(t *testing.T) {
 			t.Fatal("接收无效引用或叙述", candidate)
 		}
 	}
-	if !SameInput(r, r) || SameInput(r, Request{Kind: "daily"}) || (Args{}).Kind() == "" {
+	if (Args{}).Kind() == "" {
 		t.Fatal("输入或作业类型契约")
 	}
 }

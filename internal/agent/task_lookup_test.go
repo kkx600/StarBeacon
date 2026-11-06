@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -21,7 +22,7 @@ import (
 func archivedLocalTask(m *TaskManager, id string, started time.Time) LocalTask {
 	finished := started.Add(time.Second)
 	digest := control.Digest([]byte(id))
-	return LocalTask{Origin: "platform", Command: control.Command{ID: id, TenantID: m.WAL.TenantID, SensorID: m.WAL.SensorID, RegistrationID: m.WAL.RegistrationID, Kind: "diagnostics", IssuedAt: started.Add(-time.Second), ExpiresAt: started.Add(time.Minute), Payload: json.RawMessage(`{"private_test_marker":"never_return_command"}`)}, SHA256: digest, Acknowledged: true, Receipt: control.Receipt{CommandID: id, CommandSHA256: digest, State: "succeeded", StartedAt: started, FinishedAt: &finished, Result: json.RawMessage(`{"packets":9}`)}}
+	return LocalTask{Origin: "platform", Command: control.Command{ID: id, TenantID: m.WAL.TenantID, SensorID: m.WAL.SensorID, RegistrationID: m.WAL.RegistrationID, Kind: "diagnostics", IssuedAt: started.Add(-time.Second), ExpiresAt: started.Add(time.Minute), Payload: json.RawMessage(`{"private_test_marker":"never_return_command"}`)}, SHA256: digest, Acknowledged: true, Receipt: control.Receipt{CommandID: id, CommandSHA256: digest, State: "succeeded", StartedAt: started, FinishedAt: &finished, Result: json.RawMessage(`{"packets":9}`)}, RetainUntil: started.AddDate(0, 0, 180)}
 }
 
 func saveArchivedTask(t *testing.T, m *TaskManager, row LocalTask) {
@@ -56,7 +57,7 @@ func TestLocalTaskPrimaryLookupOutsideRecentWindowAndReadOnly(t *testing.T) {
 	}
 }
 
-func TestLocalTaskRetentionFreezeLegacyRecoveryAndProtectedResults(t *testing.T) {
+func TestLocalTaskRetentionFreezeRestartAndProtectedResults(t *testing.T) {
 	m, priv := taskFixture(t, terminalRunner{})
 	m.RetentionDays = 7
 	raw, sig := signedFixtureCommand(t, m, priv, "task_retention_frozen", time.Now().UTC().Add(-2*time.Minute))
@@ -90,27 +91,8 @@ func TestLocalTaskRetentionFreezeLegacyRecoveryAndProtectedResults(t *testing.T)
 			t.Fatal("受确认保护的记录不可追溯", state, err)
 		}
 	}
-	legacy := archivedLocalTask(m, "task_legacy", time.Now().UTC().Add(-time.Hour))
-	legacy.Origin = ""
-	saveArchivedTask(t, m, legacy)
 	recovered, err := NewTaskManager(m.WAL, m.PublicKey, terminalRunner{})
 	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := recovered.Task(legacy.Command.ID)
-	if err != nil || result.Origin != "platform" || !result.RetainUntil.Equal(legacy.Receipt.StartedAt.AddDate(0, 0, 180)) {
-		t.Fatal("旧档案期限或来源未兼容", result, err)
-	}
-	if err := m.WAL.DB.View(func(tx *bolt.Tx) error {
-		var stored LocalTask
-		if err := json.Unmarshal(tx.Bucket([]byte("sensor_tasks")).Get([]byte(legacy.Command.ID)), &stored); err != nil {
-			return err
-		}
-		if stored.RetainUntil.IsZero() {
-			t.Fatal("旧档案期限未持久恢复")
-		}
-		return nil
-	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := m.WAL.DB.Update(func(tx *bolt.Tx) error { return recovered.prune(tx, time.Now().UTC()) }); err != nil {
@@ -123,6 +105,40 @@ func TestLocalTaskRetentionFreezeLegacyRecoveryAndProtectedResults(t *testing.T)
 		if _, err := recovered.Task("task_retained_" + state); err != nil {
 			t.Fatal("保护记录被清理", state, err)
 		}
+	}
+}
+
+func TestLocalTaskWithoutOriginOrRetentionRejectedAfterRestart(t *testing.T) {
+	m, _ := taskFixture(t, terminalRunner{})
+	for id, damage := range map[string]func(*LocalTask){
+		"task_without_origin":    func(v *LocalTask) { v.Origin = "" },
+		"task_without_retention": func(v *LocalTask) { v.RetainUntil = time.Time{} },
+	} {
+		v := archivedLocalTask(m, id, time.Now().UTC().Add(-time.Hour))
+		damage(&v)
+		saveArchivedTask(t, m, v)
+	}
+	// 重启不补写来源或期限；缺少任一字段的档案按绑定无效拒绝，不冒充平台任务或不存在。
+	recovered, err := NewTaskManager(m.WAL, m.PublicKey, terminalRunner{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"task_without_origin", "task_without_retention"} {
+		if _, err := recovered.Task(id); err == nil || errors.Is(err, ErrLocalTaskNotFound) {
+			t.Fatal("缺少来源或期限的档案被当作有效或不存在", id, err)
+		}
+	}
+	if err := m.WAL.DB.View(func(tx *bolt.Tx) error {
+		var stored LocalTask
+		if err := json.Unmarshal(tx.Bucket([]byte("sensor_tasks")).Get([]byte("task_without_retention")), &stored); err != nil {
+			return err
+		}
+		if !stored.RetainUntil.IsZero() {
+			t.Fatal("重启补写了缺失的档案期限")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -195,7 +211,7 @@ func TestLocalTaskLookupHTTPAuthenticationAndFailureCodes(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	server := httptest.NewServer(httpapi.Middleware(mux))
+	server := httptest.NewServer(httpapi.Middleware(mux, clientip.Policy{}))
 	defer server.Close()
 	auth := httpapi.NewAuth(identity, nil, server.URL, "local_lookup_session", false)
 	mux.Handle("/", LocalHandler(m.WAL, auth, m.WAL.DB.Path(), m))

@@ -21,7 +21,8 @@ func sourceFixture(q Query, ip, side, id string, at time.Time) map[string]any {
 	if side == "destination" {
 		src, dst = peer, local
 	}
-	return map[string]any{"_id": id, "_index": "sb-context-tenant_owned-" + at.UTC().Format("2006.01.02"), "_source": map[string]any{
+	// 日分区共享索引覆盖记录的路由日；夹具中路由日即事件日。
+	return map[string]any{"_id": id, "_index": "sb-v2-context-r180-d" + at.UTC().Format("2006.01.02"), "_source": map[string]any{
 		"schema_version": "1.0", "event_id": id, "tenant_id": "tenant_owned", "sensor_id": q.SensorID, "sensor_registration_id": q.RegistrationID, "source_generation_id": "epoch_owned", "sequence": "18446744073709551615", "raw_sha256": strings.Repeat("a", 64), "@timestamp": at, "observed_at": at.Add(time.Second), "event": map[string]any{"kind": "flow"}, "source": src, "destination": dst, "suricata": map[string]any{"flow_id": "18446744073709551615"},
 	}}
 }
@@ -114,7 +115,7 @@ func TestDiscoveryRejectsIncompleteOrMismatchedEvidence(t *testing.T) {
 		"partial_count": func(v map[string]any) { firstSource(v)["doc_count"] = 1 }, "counter_sum": func(v map[string]any) {
 			v["aggregations"].(map[string]any)["source"].(map[string]any)["eligible"].(map[string]any)["doc_count"] = 3
 		}, "negative": func(v map[string]any) { firstSource(v)["doc_count"] = -1 }, "fractional": func(v map[string]any) { firstSource(v)["doc_count"] = 1.5 }, "overflow": func(v map[string]any) { firstSource(v)["doc_count"] = json.Number("9223372036854775808") }, "outside_prefix": func(v map[string]any) { firstSource(v)["key"].(map[string]any)["address"] = "198.51.100.20" }, "multicast": func(v map[string]any) { firstSource(v)["key"].(map[string]any)["address"] = "224.0.0.1" }, "invalid_key": func(v map[string]any) { firstSource(v)["key"].(map[string]any)["address"] = "bad" }, "extra_key": func(v map[string]any) { firstSource(v)["key"].(map[string]any)["other"] = "untrusted" },
-		"invalid_index_day": func(v map[string]any) { firstDocument(v)["_index"] = "sb-context-tenant_owned-2026.02.30" }, "prefix_tenant_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-context-tenant_owned-shadow-2026.10.18" }, "foreign_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-context-tenant_other-2026.10.18" }, "wrong_id": func(v map[string]any) { firstDocument(v)["_id"] = "event_other" }, "foreign_tenant": func(v map[string]any) { firstDocument(v)["_source"].(map[string]any)["tenant_id"] = "other" }, "foreign_sensor": func(v map[string]any) { firstDocument(v)["_source"].(map[string]any)["sensor_id"] = "other" }, "foreign_registration": func(v map[string]any) {
+		"invalid_index_day": func(v map[string]any) { firstDocument(v)["_index"] = "sb-v2-context-r180-d2026.02.30" }, "unaligned_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-v2-context-r180-w2026.10.18" }, "alias_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-v2-context-r180-d2026.10.18-shadow" }, "foreign_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-v2-alerts-r180-d2026.10.18" }, "legacy_index": func(v map[string]any) { firstDocument(v)["_index"] = "sb-context-tenant_owned-2026.10.18" }, "wrong_id": func(v map[string]any) { firstDocument(v)["_id"] = "event_other" }, "foreign_tenant": func(v map[string]any) { firstDocument(v)["_source"].(map[string]any)["tenant_id"] = "other" }, "foreign_sensor": func(v map[string]any) { firstDocument(v)["_source"].(map[string]any)["sensor_id"] = "other" }, "foreign_registration": func(v map[string]any) {
 			firstDocument(v)["_source"].(map[string]any)["sensor_registration_id"] = "other"
 		}, "generation": func(v map[string]any) {
 			firstDocument(v)["_source"].(map[string]any)["source_generation_id"] = "../other"
@@ -186,7 +187,7 @@ func TestDiscoveryEmptyIPv6LimitsAndDeterministicOrdering(t *testing.T) {
 func TestDiscoveryAllowsLateEventInDifferentRoutingDay(t *testing.T) {
 	q := queryFixture()
 	raw := responseFixture(q)
-	firstDocument(raw)["_index"] = "sb-context-tenant_owned-2026.10.19"
+	firstDocument(raw)["_index"] = "sb-v2-context-r180-d2026.10.19"
 	encoded, _ := json.Marshal(raw)
 	if _, err := Decode(encoded, "tenant_owned", q); err != nil {
 		t.Fatal("上传路由日期不应被当作事件日期", err)

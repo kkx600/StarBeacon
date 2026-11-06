@@ -118,7 +118,7 @@ func (s *Elasticsearch) scanSnapshot(ctx context.Context, tenant, dataset string
 		ID     string         `json:"id"`
 		Shards snapshotShards `json:"_shards"`
 	}
-	res, err := s.API.OpenPointInTime(contract.SearchIndices(dataset, tenant), time.Minute, s.API.OpenPointInTime.WithAllowPartialSearchResults(false), s.API.OpenPointInTime.WithIgnoreUnavailable(false), s.API.OpenPointInTime.WithExpandWildcards("open", "closed"), s.API.OpenPointInTime.WithMaxConcurrentShardRequests(2), s.API.OpenPointInTime.WithBody(bytes.NewReader(filter)), s.API.OpenPointInTime.WithContext(ctx))
+	res, err := s.API.OpenPointInTime([]string{contract.SearchIndex(dataset)}, time.Minute, s.API.OpenPointInTime.WithAllowPartialSearchResults(false), s.API.OpenPointInTime.WithIgnoreUnavailable(false), s.API.OpenPointInTime.WithExpandWildcards("open", "closed"), s.API.OpenPointInTime.WithMaxConcurrentShardRequests(2), s.API.OpenPointInTime.WithBody(bytes.NewReader(filter)), s.API.OpenPointInTime.WithContext(ctx))
 	if err = snapshotResponse(res, err, &opened); err != nil {
 		return 0, err
 	}
@@ -190,7 +190,7 @@ func (s *Elasticsearch) scanSnapshot(ctx context.Context, tenant, dataset string
 			for _, kind := range kinds {
 				allowed = allowed || kind == hit.Source.Event.Kind
 			}
-			if !contract.IndexServes(hit.Index, dataset, tenant) || !contract.ValidID(hit.ID) || hit.ID != hit.Source.EventID || hit.Source.TenantID != tenant || !allowed || hit.Source.Timestamp.Before(q.Start) || !hit.Source.Timestamp.Before(q.End) || seen[hit.ID] || hit.Source.Event.Original != "" || len(hit.Sort) != 1 {
+			if !contract.IndexServes(hit.Index, dataset) || !contract.ValidID(hit.ID) || hit.ID != hit.Source.EventID || hit.Source.TenantID != tenant || !allowed || hit.Source.Timestamp.Before(q.Start) || !hit.Source.Timestamp.Before(q.End) || seen[hit.ID] || hit.Source.Event.Original != "" || len(hit.Sort) != 1 {
 				return 0, errors.New("导出记录与身份、时间或来源约束不一致")
 			}
 			number := string(hit.Sort[0])

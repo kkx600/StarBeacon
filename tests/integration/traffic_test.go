@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -29,19 +28,10 @@ func TestTrafficHTTPRealIndexIsolationAndViewerMetadata(t *testing.T) {
 	require(t, err)
 	now := time.Now().UTC()
 	for _, target := range []string{tenant, foreign} {
-		index, err := contract.IndexName(target, "context", now.Format("2006-01-02"))
-		require(t, err)
+		index := sharedEventIndex(t, "context", now.Format("2006-01-02"))
 		require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-		t.Cleanup(func() {
-			clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			defer stop()
-			res, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			defer res.Body.Close()
-			if res.IsError() {
-				t.Error("流量验收索引无法清理", res.StatusCode)
-			}
-		})
+		// 两个租户写入同一共享索引；只回收本测试租户的文档。
+		t.Cleanup(func() { deleteTenantEvents(t, es, target) })
 		doc := model.Alert{EventID: store.RandomID("flow_"), TenantID: target, SensorID: "sensor_owned", RegistrationID: "reg_owned", SourceGenerationID: "gen_owned", Timestamp: now, ReceivedAt: now, ObservedAt: now}
 		doc.Event.Kind, doc.Event.Original = "flow", `{"event_type":"flow","flow":{"start":"2026-10-03T01:00:00Z","end":"2026-10-03T01:00:01Z","bytes_toserver":18446744073709551615,"bytes_toclient":0,"pkts_toserver":9,"pkts_toclient":0},"ether":{"src_macs":["02:00:00:00:00:01"]}}`
 		doc.Network.Protocol, doc.Network.Transport, doc.Suricata.FlowID = "http", "tcp", "18446744073709551615"

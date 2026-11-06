@@ -1,9 +1,6 @@
 package contract
 
-import (
-	"slices"
-	"testing"
-)
+import "testing"
 
 func TestSharedIndexNamesUseFrozenRetentionAndPeriodStart(t *testing.T) {
 	for _, tc := range []struct {
@@ -25,13 +22,21 @@ func TestSharedIndexNamesUseFrozenRetentionAndPeriodStart(t *testing.T) {
 			t.Fatalf("%v：得到 %q，%v", tc, got, err)
 		}
 		parsed, err := ParseEventIndex(got)
-		if err != nil || parsed.Legacy || parsed.Stream != tc.stream || parsed.Days != tc.days || parsed.Period != tc.period || !parsed.Covers(tc.day) {
+		if err != nil || parsed.Name != got || parsed.Stream != tc.stream || parsed.Days != tc.days || parsed.Period != tc.period || !parsed.Covers(tc.day) {
 			t.Fatalf("共享索引无法还原：%+v，%v", parsed, err)
 		}
 	}
 	week, _ := ParseEventIndex("sb-v2-alerts-r180-w2026.11.02")
 	if week.Covers("2026-11-01") || week.Covers("2026-11-09") || !week.Covers("2026-11-08") || week.Covers("bad") {
 		t.Fatal("周分区覆盖范围错误")
+	}
+	day, _ := ParseEventIndex("sb-v2-context-r30-d2026.11.05")
+	if !day.Covers("2026-11-05") || day.Covers("2026-11-04") || day.Covers("2026-11-06") {
+		t.Fatal("日分区覆盖范围错误")
+	}
+	month, _ := ParseEventIndex("sb-v2-logs-r3650-m2026.02.01")
+	if !month.Covers("2026-02-01") || !month.Covers("2026-02-28") || month.Covers("2026-01-31") || month.Covers("2026-03-01") {
+		t.Fatal("月分区覆盖范围错误")
 	}
 	for _, args := range []struct {
 		stream string
@@ -46,36 +51,34 @@ func TestSharedIndexNamesUseFrozenRetentionAndPeriodStart(t *testing.T) {
 }
 
 func TestEventIndexParsingRejectsForeignAndNonCanonicalNames(t *testing.T) {
-	legacy, err := ParseEventIndex("sb-alerts-tenant_a-2026.10.03")
-	if err != nil || !legacy.Legacy || legacy.Tenant != "tenant_a" || legacy.Stream != "alerts" || !legacy.Covers("2026-10-03") || legacy.Covers("2026-10-04") {
-		t.Fatalf("旧版索引解析错误：%+v，%v", legacy, err)
-	}
-	dashed, err := ParseEventIndex("sb-context-tenant-a-b-2026.10.03")
-	if err != nil || dashed.Tenant != "tenant-a-b" {
-		t.Fatalf("含连字符租户的旧版索引解析错误：%+v，%v", dashed, err)
-	}
-	for _, name := range []string{"", "sb-v2-alerts-r180-w2026.11.03", "sb-v2-alerts-r180-m2026.11.02", "sb-v2-alerts-r0-d2026.11.02", "sb-v2-alerts-r3651-d2026.11.02", "sb-v2-alerts-r0180-d2026.11.02", "sb-v2-files-r180-d2026.11.02", "sb-v2-alerts-r180-d2026.02.30", "sb-v2-alerts-r180-d2026.11.02-alias", "sb-alerts-tenant_a-2026.10.03-alias", "sb-alerts-tenant_a-2026.02.30", "sb-alerts--2026.10.03", "other-tenant_a-2026.10.03"} {
+	// 旧版租户日索引已不属于事件数据流，与其他非规范名称一样拒绝。
+	for _, name := range []string{"", "sb-alerts-tenant_a-2026.10.03", "sb-context-tenant-a-b-2026.10.03", "sb-logs-tenant_a-2026.10.03", "sb-v2-alerts-r180-w2026.11.03", "sb-v2-alerts-r180-m2026.11.02", "sb-v2-alerts-r0-d2026.11.02", "sb-v2-alerts-r3651-d2026.11.02", "sb-v2-alerts-r0180-d2026.11.02", "sb-v2-files-r180-d2026.11.02", "sb-v2-alerts-r180-d2026.02.30", "sb-v2-alerts-r180-d2026.11.02-alias", "sb-alerts-tenant_a-2026.10.03-alias", "sb-alerts-tenant_a-2026.02.30", "sb-alerts--2026.10.03", "other-tenant_a-2026.10.03"} {
 		if _, err := ParseEventIndex(name); err == nil {
-			t.Fatalf("非规范索引被接受：%q", name)
+			t.Fatalf("旧版或非规范索引被接受：%q", name)
 		}
 	}
 	for _, tc := range []struct {
-		index, stream, tenant string
-		want                  bool
+		index, stream string
+		want          bool
 	}{
-		{"sb-v2-alerts-r180-w2026.11.02", "alerts", "tenant_a", true},
-		{"sb-v2-alerts-r180-w2026.11.02", "context", "tenant_a", false},
-		{"sb-alerts-tenant_a-2026.10.03", "alerts", "tenant_a", true},
-		{"sb-alerts-tenant_a-b-2026.10.03", "alerts", "tenant_a", false},
-		{"sb-alerts-tenant_b-2026.10.03", "alerts", "tenant_a", false},
-		{"sb-v2-alerts-r180-w2026.11.02-alias", "alerts", "tenant_a", false},
+		{"sb-v2-alerts-r180-w2026.11.02", "alerts", true},
+		{"sb-v2-context-r30-d2026.11.05", "context", true},
+		{"sb-v2-logs-r3650-m2026.02.01", "logs", true},
+		{"sb-v2-alerts-r180-w2026.11.02", "context", false},
+		{"sb-v2-logs-r3650-m2026.02.01", "alerts", false},
+		{"sb-v2-alerts-r180-w2026.11.03", "alerts", false},
+		{"sb-v2-alerts-r180-w2026.11.02-alias", "alerts", false},
+		{"sb-alerts-tenant_a-2026.10.03", "alerts", false},
+		{"sb-alerts-tenant_a-b-2026.10.03", "alerts", false},
 	} {
-		if got := IndexServes(tc.index, tc.stream, tc.tenant); got != tc.want {
+		if got := IndexServes(tc.index, tc.stream); got != tc.want {
 			t.Fatalf("%+v：得到 %v", tc, got)
 		}
 	}
-	if got := SearchIndices("logs", "tenant_a"); !slices.Equal(got, []string{"sb-v2-logs-*", "sb-logs-tenant_a-*", "-sb-logs-tenant_a-*-*"}) {
-		t.Fatalf("检索表达式错误：%v", got)
+	for _, stream := range []string{"alerts", "context", "logs"} {
+		if got := SearchIndex(stream); got != "sb-v2-"+stream+"-*" {
+			t.Fatalf("检索表达式错误：%v", got)
+		}
 	}
 }
 

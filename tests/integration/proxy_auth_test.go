@@ -43,7 +43,7 @@ func TestTrustedProxyAuthenticationRedisBudgetAndAuditSource(t *testing.T) {
 		require(t, cache.Del(clean, keys...).Err())
 	}()
 	auth := httpapi.NewAuth(f.Runtime, cache, "", "proxy_owned_session", false)
-	server := httptest.NewServer(httpapi.MiddlewareWithClientIP(http.HandlerFunc(auth.Login), policy))
+	server := httptest.NewServer(httpapi.Middleware(http.HandlerFunc(auth.Login), policy))
 	defer server.Close()
 	login, err := json.Marshal(map[string]string{"username": u.Username, "password": password})
 	require(t, err)

@@ -1,9 +1,9 @@
-import type {LocationQuery, RouteLocationNormalized, RouteLocationRaw} from 'vue-router'
+import type {LocationQuery, RouteLocationRaw} from 'vue-router'
 
 export type CollectorView = 'overview' | 'interfaces' | 'capture' | 'archives' | 'syslog' | 'identity' | 'samples' | 'tasks' | 'responses'
 type CollectorWorkspace = 'overview' | 'network' | 'connection' | 'rules' | 'response'
 
-export interface CollectorScreen {
+interface CollectorScreen {
   view: CollectorView
   workspace: CollectorWorkspace
   path: string
@@ -49,20 +49,7 @@ export function collectorNavigation(admin: boolean) {
   return admin?collectorWorkspaces.map(workspace=>({...workspace,path:collectorScreens.find(screen=>screen.workspace===workspace.id)!.path})):[]
 }
 
-// view 是历史页面选择参数；业务条件与定位标记始终由原地址保留。
-export function collectorLegacyDestination(to: {query: LocationQuery;hash: string}): RouteLocationRaw {
-  const screen=typeof to.query.view==='string'?collectorScreen(to.query.view):undefined
-  const {view:ignoredView,...query}=to.query
-  return {path:screen?.path??'/network/interfaces',query,hash:to.hash}
-}
-
-export function collectorCanonicalDestination(to: Pick<RouteLocationNormalized,'path'|'query'|'hash'|'meta'>): RouteLocationRaw | undefined {
-  if(typeof to.meta.workspaceView!=='string'||!Object.prototype.hasOwnProperty.call(to.query,'view'))return
-  const selected=typeof to.query.view==='string'?collectorScreen(to.query.view):undefined
-  const {view:ignoredView,...query}=to.query
-  return {path:selected?.path??to.path,query,hash:to.hash,replace:true}
-}
-
+// 工作区父级进入默认视图，业务条件与定位标记始终由原地址保留。
 export function collectorDefaultDestination(to: {query: LocationQuery;hash: string},path: string): RouteLocationRaw {
   return {path,query:to.query,hash:to.hash}
 }

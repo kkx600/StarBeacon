@@ -15,7 +15,7 @@ func TestCorruptCAAndUnavailableCertificateDirectoriesNeverPublishIdentity(t *te
 	for _, mode := range []string{"certificate_missing", "certificate_pem", "certificate_der", "not_ca", "key_missing", "key_pem", "key_der", "unsupported_key"} {
 		t.Run(mode, func(t *testing.T) {
 			dir := t.TempDir()
-			if err := DevPKI(dir); err != nil {
+			if err := DevPKI(dir, nil); err != nil {
 				t.Fatal(err)
 			}
 			certificatePath, keyPath := filepath.Join(dir, "ca.crt"), filepath.Join(dir, "ca.key")
@@ -66,7 +66,7 @@ func TestCorruptCAAndUnavailableCertificateDirectoriesNeverPublishIdentity(t *te
 				}
 			}
 			prefix := filepath.Join(dir, "issued")
-			if _, err := Issue(dir, prefix, nil, true); err == nil {
+			if _, err := Issue(dir, prefix, nil, true, nil); err == nil {
 				t.Fatal("损坏的 CA 仍签发了证书")
 			}
 			for _, suffix := range []string{".key", ".crt"} {
@@ -81,7 +81,7 @@ func TestCorruptCAAndUnavailableCertificateDirectoriesNeverPublishIdentity(t *te
 	if err := os.WriteFile(path, []byte("owned"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if DevPKI(filepath.Join(path, "pki")) == nil {
+	if DevPKI(filepath.Join(path, "pki"), nil) == nil {
 		t.Fatal("证书路径经过普通文件仍被接受")
 	}
 	info, err := os.Stat(dir)

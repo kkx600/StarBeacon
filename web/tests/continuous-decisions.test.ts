@@ -71,7 +71,7 @@ describe('持续决策配置与独立授权契约',()=>{
 })
 describe('持续决策表单与授权详情交互',()=>{
  it('触发记录使用单表弹窗视图，分页、错误、决策跳转与身份撤回均保留真实边界',async()=>{
-  const e=await evaluation(),a=e.policy.definition.continuous!.automatic!,router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/models');await router.isReady()
+  const e=await evaluation(),a=e.policy.definition.continuous!.automatic!,router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/response/policies');await router.isReady()
   const row=(i:number):AutomaticTriageRecord=>({id:'trigger_'+String(i).padStart(2,'0'),policy_id:e.policy.id,policy_revision:e.policy.revision,definition_sha256:e.policy.definition_sha256,event_id:e.result.event_id,raw_sha256:e.result.raw_sha256,sensor_id:a.sensor_id,registration_id:a.registration_id,state:'submitted',code:'model_queue_accepted',triage_id:e.result.triage_id,created_at:new Date().toISOString(),expires_at:new Date(Date.now()+180*86400000).toISOString()})
   const first={items:Array.from({length:20},(_,i)=>row(i+1)),next_cursor:'trigger_20'}
   request.mockResolvedValueOnce(first)
@@ -121,7 +121,7 @@ describe('持续决策表单与授权详情交互',()=>{
   const late=deferred<unknown>();request.mockReturnValueOnce(late.promise);await click('刷新模型与探针');const signal=request.mock.lastCall?.[1].signal as AbortSignal;w.unmount();expect(signal.aborted).toBe(true);late.resolve({items:[]});await flushPromises();expect(body().text()).not.toContain('持续决策指定模型')
  })
  it('授权为空、错误、独立任务跳转及身份切换均核对原评估',async()=>{
-  const e=await evaluation(),r=await run(e),router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/models');await router.isReady()
+  const e=await evaluation(),r=await run(e),router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:defineComponent({render:()=>h('div')})}]});await router.push('/response/policies');await router.isReady()
   request.mockResolvedValue({item:null});const w=mount(ContinuousDecisionPanel,{props:{record:e},attachTo:document.body,global:{plugins:[registerAnt,router]}});await flushPromises();expect(w.text()).toContain('没有持续决策授权记录')
   request.mockResolvedValueOnce({item:{...r,task_id:'task_tampered'}});await click('刷新授权记录');await vi.waitFor(()=>expect(w.text()).toContain('摘要不一致'))
   request.mockResolvedValueOnce({item:r});await click('重试');await vi.waitFor(()=>expect(w.text()).toContain('策略已授权签名任务'));await click('查看任务记录');expect(router.currentRoute.value.query.task).toBe(r.task_id)

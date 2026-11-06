@@ -181,11 +181,6 @@ func (p *Postgres) SaveDecisionPolicy(ctx context.Context, u model.Principal, ke
 }
 
 // 仅评估当前策略与调用者自己的已存研判；输出不会进入设备任务或通知队列。
-func (p *Postgres) EvaluateDecisionPolicy(ctx context.Context, u model.Principal, id string, request decision.EvaluateRequest) (decision.Result, error) {
-	record, err := p.CreateDecisionEvaluation(ctx, u, RandomID("evaluation_request_"), decision.EvaluationRequest{PolicyID: id, ExpectedRevision: request.ExpectedRevision, TriageID: request.TriageID})
-	return record.Result, err
-}
-
 // 原提交确认先读取不可变档案；当前策略已改变或研判已到期不改变已完成的历史判断。
 func (p *Postgres) CreateDecisionEvaluation(ctx context.Context, u model.Principal, key string, request decision.EvaluationRequest) (decision.Evaluation, error) {
 	var record decision.Evaluation

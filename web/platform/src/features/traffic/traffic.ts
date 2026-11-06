@@ -3,7 +3,7 @@ import type {Alert,SearchRequest} from '@starbeacon/shared/types.ts'
 export const trafficKinds:Record<string,string>={flow:'会话摘要',http:'HTTP',http2:'HTTP/2',dns:'DNS',tls:'TLS',quic:'QUIC',ssh:'SSH',smtp:'SMTP',ftp:'FTP',smb:'SMB',nfs:'NFS',dhcp:'DHCP',rdp:'RDP',anomaly:'协议异常',fileinfo:'文件元数据'}
 export interface TrafficQuery extends SearchRequest {event_kind:string;sensor_id:string;sensor_registration_id:string;source_generation_id:string;flow_id:string}
 export type TrafficFilters=Omit<TrafficQuery,'start'|'end'|'page'|'page_size'>&{filter:string}
-export interface TrafficFlow {start:string|null;end:string|null;state:string;reason:string;packets_to_server:string;packets_to_client:string;bytes_to_server:string;bytes_to_client:string}
+interface TrafficFlow {start:string|null;end:string|null;state:string;reason:string;packets_to_server:string;packets_to_client:string;bytes_to_server:string;bytes_to_client:string}
 export interface TrafficDetails {state:'available'|'unavailable';truncated:boolean;flow:TrafficFlow|null;tls:{sni:string;version:string;subject:string;issuer:string;fingerprint:string}|null;dns:{version:string;type:string;rcode:string;queries:{name:string;type:string}[]}|null;source_macs:string[];destination_macs:string[];community_id:string;packet_source:string;direction:string}
 export interface TrafficRecord extends Alert {details:TrafficDetails;sensor_registration_id?:string;source_generation_id?:string}
 export interface TrafficResult {items:TrafficRecord[];total:number;page:number;page_size:number}

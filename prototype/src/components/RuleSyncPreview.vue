@@ -8,6 +8,7 @@ import {syncStates,syncCodes} from '../../../web/platform/src/features/rules/syn
 import RuleSyncForm from '../../../web/platform/src/features/rules/RuleSyncForm.vue'
 import PageHeader from './PageHeader.vue'
 import StatePanel from './StatePanel.vue'
+import {prototypePath} from '../data/navigation'
 const message=useFeedback()
 const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>()
 const at='2026-10-17T01:00:00Z'
@@ -21,7 +22,7 @@ watch(()=>props.state,state=>{editing.value=state==='action'?null:undefined;deta
 function save(c:RuleSyncChange){records.value=[{id:c.id,revision:c.expected_revision+1,spec:c.spec,created_by:'admin_example',updated_at:at,next_at:at,processed_revision:0}];editing.value=undefined;emit('state','data');message.success('计划已保存为本地示例，未提交设备任务')}
 </script>
 <template>
- <PageHeader title="规则自动同步" description="管理批准规则修订的同步计划，核对各阶段独立任务与实际执行结果。"><router-link to="/page/rule-sync?mode=rollouts&amp;state=data"><a-button>分批发布</a-button></router-link><a-button @click="emit('state','data')">刷新</a-button><a-button type="primary" @click="editing=null">创建同步计划</a-button></PageHeader>
+ <PageHeader title="规则自动同步" description="管理批准规则修订的同步计划，核对各阶段独立任务与实际执行结果。"><router-link :to="{path:prototypePath('rule-rollouts'),query:{state:'data'}}"><a-button>分批发布</a-button></router-link><a-button @click="emit('state','data')">刷新</a-button><a-button type="primary" @click="editing=null">创建同步计划</a-button></PageHeader>
  <a-alert type="info" show-icon message="本页面为合成示例。计划绑定指定规则修订、样本和探针注册代次，不跟随未批准修订；原型不向真实设备下发任务。" class="section-gap" />
  <section class="panel"><StatePanel v-if="['empty','error','loading'].includes(state)" :state="state as 'empty'|'error'|'loading'" :title="state==='empty'?'暂无规则同步计划':undefined" :description="state==='empty'?'创建计划前，请导入正反样本并核对探针执行能力。':undefined" :action="state==='empty'?'创建同步计划':'重新加载'" @action="state==='empty'?editing=null:emit('state','data')" />
  <a-table v-else :columns="columns" :data-source="items" row-key="id" :pagination="false" :scroll="{x:970}"><template #bodyCell="{column,record}"><template v-if="column.key==='name'"><a-button type="link" @click="detail=record">{{record.spec.name}}</a-button><small class="record-id">{{record.spec.sensor_id}}</small></template><template v-else-if="column.key==='package'">{{record.spec.package_id}}<small class="record-id">修订 {{record.spec.package_revision}} · 授权修订 {{record.revision}}</small></template><template v-else-if="column.key==='state'"><a-tag :color="record.spec.enabled?'blue':'default'">{{record.spec.enabled?'启用':'停用'}}</a-tag><small class="record-id">{{record.run?syncStates[record.run.state]:'等待核对'}}</small></template><template v-else-if="column.key==='time'">2026-10-17 09:00:00</template><template v-else-if="column.key==='action'"><a-button type="link" @click="detail=record">查看</a-button><a-button type="link" @click="editing=record">配置</a-button></template></template></a-table></section>

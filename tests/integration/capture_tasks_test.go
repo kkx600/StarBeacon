@@ -29,7 +29,7 @@ func TestCaptureTaskTransactionsRejectStaleHealthAndFalseSuccess(t *testing.T) {
 	require(t, admin.Bootstrap(ctx, f.Owner, tenant, "采集任务验收", tenant, password, "admin"))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	identity, err := admin.Provision(ctx, f.Owner, tenant, "sensor_capture", "采集验收探针", ca, filepath.Join(dir, "sensor"))
 	require(t, err)
 	pub, signer, err := ed25519.GenerateKey(rand.Reader)

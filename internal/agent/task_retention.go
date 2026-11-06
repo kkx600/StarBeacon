@@ -59,7 +59,7 @@ func (m *TaskManager) pruneWithContext(ctx context.Context, tx *bolt.Tx, now tim
 			return errors.New("本地任务历史索引不一致")
 		}
 		last = bytes.Clone(k)
-		if !localTaskRetention(row).After(now) && !localTaskProtected(row) {
+		if !row.RetainUntil.After(now) && !localTaskProtected(row) {
 			expired = append(expired, expiredTask{index: bytes.Clone(k), id: bytes.Clone(id), size: taskSize(raw, row.Receipt.State)})
 		}
 		k, id = cursor.Next()

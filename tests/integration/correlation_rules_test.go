@@ -14,7 +14,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	accounts "github.com/kkx600/StarBeacon/internal/accounts"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/correlation"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/platform"
@@ -64,27 +63,20 @@ func TestCorrelationHTTPVersionsIsolationSnapshotEvidenceAndAudit(t *testing.T) 
 	start := end.Add(-2 * time.Minute)
 	query := correlation.Request{ExpectedRevision: 1, Start: start, End: end}
 	v.request("POST", "/correlation-rules/correlation_source/backtest", "", query, nil, 403)
+	// 两个租户的同源记录写入同一共享索引，回测只能计入本租户文档。
 	for _, tenant := range []string{u.TenantID, foreign.TenantID} {
 		partition := time.Now().UTC().Format("2006-01-02")
-		index, err := contract.IndexName(tenant, "alerts", partition)
-		require(t, err)
+		index := sharedEventIndex(t, "alerts", partition)
 		require(t, es.EnsureIndex(ctx, index, partition))
-		t.Cleanup(func() {
-			clean, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			defer stop()
-			response, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			defer response.Body.Close()
-			if response.IsError() {
-				t.Error("关联验收索引清理失败", response.StatusCode)
-			}
-		})
+		// 共享索引同时承载其他租户，只回收本租户文档；事件标识即文档 _id，按租户生成。
+		t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
+		prefix := store.RandomID("correlation_")
 		docs := []model.Alert{}
 		for n := range 4 {
 			at := start.Add(time.Duration(n/2)*time.Minute + time.Duration(n%2+1)*time.Second)
 			raw := fmt.Sprintf(`{"event_type":"alert","src_ip":"192.0.2.1","dest_ip":"198.51.100.%d","alert":{"signature_id":1000001,"signature":"fixture"}}`, n+1)
 			digest := sha256.Sum256([]byte(raw))
-			doc := model.Alert{SchemaVersion: "1.0", TenantID: tenant, EventID: fmt.Sprintf("correlation_event_%02d", n), SensorID: "correlation_probe", RegistrationID: "correlation_registration", Timestamp: at, ObservedAt: at, ReceivedAt: at, RawSHA256: hex.EncodeToString(digest[:])}
+			doc := model.Alert{SchemaVersion: "1.0", TenantID: tenant, EventID: fmt.Sprintf("%s_%02d", prefix, n), SensorID: "correlation_probe", RegistrationID: "correlation_registration", Timestamp: at, ObservedAt: at, ReceivedAt: at, RawSHA256: hex.EncodeToString(digest[:])}
 			doc.Event.Kind, doc.Event.Original, doc.Source.IP, doc.Destination.IP, doc.Destination.Port, doc.Rule.ID = "alert", raw, "192.0.2.1", fmt.Sprintf("198.51.100.%d", n+1), 443, "1000001"
 			docs = append(docs, doc)
 		}

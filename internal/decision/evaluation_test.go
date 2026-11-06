@@ -90,7 +90,7 @@ func TestEvaluationRequestsAndDirectoryAreBounded(t *testing.T) {
 	if (EvaluationRequest{PolicyID: "policy_owned", ExpectedRevision: 1, TriageID: "triage_owned"}).Validate() != nil {
 		t.Fatal("合法请求被拒绝")
 	}
-	for _, r := range []EvaluationRequest{{PolicyID: "/", ExpectedRevision: 1, TriageID: "triage_owned"}, {PolicyID: "policy_owned", ExpectedRevision: 0, TriageID: "triage_owned"}, {PolicyID: "policy_owned", ExpectedRevision: 1, TriageID: "/"}} {
+	for _, r := range []EvaluationRequest{{PolicyID: "/", ExpectedRevision: 1, TriageID: "triage_owned"}, {PolicyID: "policy_owned", ExpectedRevision: 0, TriageID: "triage_owned"}, {PolicyID: "policy_owned", ExpectedRevision: MaxRevision + 1, TriageID: "triage_owned"}, {PolicyID: "policy_owned", ExpectedRevision: 1, TriageID: "/"}} {
 		if r.Validate() == nil {
 			t.Fatal("无效引用被接受")
 		}

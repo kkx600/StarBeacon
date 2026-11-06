@@ -107,7 +107,7 @@ func TestHistoryCleanupExpiryReferencesRuntimeIsolationAndRecovery(t *testing.T)
 		}
 		exec(`INSERT INTO sensor_tasks(tenant_id,id,sensor_id,registration_id,kind,state,idempotency_key,request_sha256,command,signature,command_sha256,created_by,expires_at,delivery_count,retain_until) VALUES('history_a',$1,$2,$2,$3,$4,$1,$5,$6,$7,$5,'owner',$8,$9,$10)`, item.id, identity, item.kind, item.state, control.Digest(raw), raw, signature, command.ExpiresAt, item.deliveries, retained)
 	}
-	exec(`INSERT INTO routes(token,tenant_id,sensor_id,registration_id,stream_id,partition_day,expires_at) VALUES('expired_route','history_a','probe_done','probe_done','alerts',current_date-200,now()-interval '1 minute'),('live_route','history_a','probe_done','probe_done','alerts',current_date,now()+interval '1 day')`)
+	exec(`INSERT INTO routes(token,tenant_id,sensor_id,registration_id,stream_id,partition_day,expires_at,index_name) SELECT token,'history_a','probe_done','probe_done','alerts',day,expires,'sb-v2-alerts-r180-w'||to_char(date_trunc('week',day::timestamp),'YYYY.MM.DD') FROM (VALUES('expired_route',current_date-200,now()-interval '1 minute'),('live_route',current_date,now()+interval '1 day')) AS v(token,day,expires)`)
 	exec(`INSERT INTO sessions(token_hash,user_id,csrf_token,expires_at) SELECT 'expired_session',id,'csrf',now()-interval '1 minute' FROM users WHERE tenant_id='history_a'`)
 	exec(`INSERT INTO sessions(token_hash,user_id,csrf_token,expires_at) SELECT 'live_session',id,'csrf',now()+interval '1 day' FROM users WHERE tenant_id='history_a'`)
 

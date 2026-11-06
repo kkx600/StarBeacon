@@ -329,18 +329,11 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	}()
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
-	defer func() {
-		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		res, err := es.API.Indices.Delete([]string{"sb-alerts-" + tenant + "-*", "sb-context-" + tenant + "-*", "sb-logs-" + tenant + "-*"}, es.API.Indices.Delete.WithContext(clean))
-		if err == nil {
-			res.Body.Close()
-		}
-		deleteTenantEvents(t, es, tenant)
-	}()
+	// 共享索引同时承载其他租户，只回收本租户文档。
+	defer deleteTenantEvents(t, es, tenant)
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	identity, err := admin.Provision(ctx, owner, tenant, "sensor_live", "真实链路探针", ca, filepath.Join(dir, "sensor"))
 	require(t, err)
 	privatePath, publicPath := filepath.Join(dir, "command.key"), filepath.Join(dir, "command.pub")

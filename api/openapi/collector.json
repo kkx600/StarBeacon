@@ -2414,8 +2414,7 @@
           "origin": {
             "enum": [
               "local",
-              "platform",
-              ""
+              "platform"
             ]
           },
           "rule_resolution": {
@@ -2424,7 +2423,7 @@
           "retain_until": {
             "type": "string",
             "format": "date-time",
-            "description": "接收时冻结的计划记录保留截止；无历史字段的记录继承原默认 180 天。"
+            "description": "接收时冻结的计划记录保留截止。"
           },
           "retention_protected": {
             "type": "boolean",

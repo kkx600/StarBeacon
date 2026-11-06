@@ -9,23 +9,24 @@ import RulesWorkspace from '../platform/src/features/rules/RulesWorkspace.vue'
 import RuleEditor from '../packages/shared/src/components/RuleEditor.vue'
 import {session} from '../platform/src/session'
 import {closedMessage,principal,rulePackage,sensor,task,rules,click,button,writeRule,deferred} from './fixtures'
+import {platformScreenRoutes} from './routeFixtures'
 const {request}=vi.hoisted(()=>({request:vi.fn()}))
 vi.mock('../platform/src/session',async()=>({session:{api:{request},current:(await import('vue')).shallowRef(null)}}))
 const user=session.current as ShallowRef<Principal|null>
 beforeEach(()=>{user.value=principal;request.mockReset();request.mockImplementation((path:string)=>Promise.resolve(path==='/rule-packages'?{items:[rulePackage]}:path==='/sensors'?{items:[sensor]}:rulePackage));vi.spyOn(message,'success').mockImplementation(closedMessage);vi.spyOn(message,'error').mockImplementation(closedMessage)})
-async function workspace(path='/rules',stubs:Record<string,boolean|Component>={}){const router=createRouter({history:createMemoryHistory(),routes:[{path:'/rules',component:RulesWorkspace}]});await router.push(path);await router.isReady();const wrapper=mount(RulesWorkspace,{global:{plugins:[registerAnt,router],stubs},attachTo:document.body});await flushPromises();return{wrapper,router}}
+async function workspace(path='/detection/rules/packages',stubs:Record<string,boolean|Component>={}){const router=createRouter({history:createMemoryHistory(),routes:platformScreenRoutes(RulesWorkspace)});await router.push(path);await router.isReady();const wrapper=mount(RulesWorkspace,{global:{plugins:[registerAnt,router],stubs},attachTo:document.body});await flushPromises();return{wrapper,router}}
 async function name(value:string){const input=document.body.querySelector<HTMLInputElement>('#rule-package_name')!;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));await flushPromises()}
 
 describe('规则包编辑',()=>{
  it('切换历史视图后返回时保留未保存的名称和规则草稿',async()=>{
-  const {wrapper,router}=await workspace('/rules',{ApplicationRulesWorkspace:true});await click('创建规则包');await name('尚未保存的规则草稿');await writeRule(wrapper.getComponent(RuleEditor),rules)
-  request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(router.currentRoute.value.query.view).toBe('applications')
-  await router.push('/rules');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.querySelector<HTMLInputElement>('#rule-package_name')?.value).toBe('尚未保存的规则草稿');expect(document.body.textContent).not.toContain('创建应用识别规则')
+  const {wrapper,router}=await workspace('/detection/rules/packages',{ApplicationRulesWorkspace:true});await click('创建规则包');await name('尚未保存的规则草稿');await writeRule(wrapper.getComponent(RuleEditor),rules)
+  request.mockResolvedValue({items:[],next_cursor:''});await router.push('/detection/rules/applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(router.currentRoute.value.meta.workspaceView).toBe('applications')
+  await router.push('/detection/rules/packages');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.querySelector<HTMLInputElement>('#rule-package_name')?.value).toBe('尚未保存的规则草稿');expect(document.body.textContent).not.toContain('创建应用识别规则')
   expect(wrapper.getComponent(RuleEditor).get('.cm-content').text()).toBe(rules)
  })
  it('跨规则工作区切换时只保留当前业务的弹窗',async()=>{
-  const {router}=await workspace();await click('创建规则包');request.mockResolvedValue({items:[],next_cursor:''});await router.push('/rules?view=applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0)
-  await click('创建规则');expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).toContain('创建应用识别规则');await router.push('/rules');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).not.toContain('创建应用识别规则')
+  const {router}=await workspace();await click('创建规则包');request.mockResolvedValue({items:[],next_cursor:''});await router.push('/detection/rules/applications');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(0)
+  await click('创建规则');expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).toContain('创建应用识别规则');await router.push('/detection/rules/packages');await flushPromises();expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(document.body.textContent).not.toContain('创建应用识别规则')
  })
  it('无数据与读取失败有恢复入口，字段摘要与修订正确显示',async()=>{
   request.mockResolvedValue({items:[]});const{wrapper}=await workspace();expect(wrapper.text()).toContain('暂无规则包');request.mockRejectedValueOnce('offline');await click('刷新');expect(wrapper.text()).toContain('规则包读取失败');request.mockResolvedValueOnce({items:[rulePackage]});await click('重试');expect(wrapper.text()).toContain(rulePackage.name);expect(wrapper.text()).toContain('4');expect(wrapper.findAll('.ant-table')).toHaveLength(1)
@@ -42,7 +43,7 @@ describe('规则包编辑',()=>{
   const signal=request.mock.lastCall?.[1].signal as AbortSignal;wrapper.unmount();expect(signal.aborted).toBe(true);pending.resolve(rulePackage);await flushPromises();expect(message.success).not.toHaveBeenCalled()
  })
  it('只读账号可以查看高亮规则，编辑和重放入口不可用',async()=>{
-  user.value={...principal,role:'viewer'};const{wrapper,router}=await workspace('/rules?view=samples');expect(wrapper.findAll('button').some(value=>value.text()==='创建规则包')).toBe(false);expect(wrapper.findAll('[role=tab]').map(tab=>tab.text())).toEqual(['规则包','应用识别规则']);expect(router.currentRoute.value.query.view).toBe('samples')
+  user.value={...principal,role:'viewer'};const{wrapper,router}=await workspace('/detection/rules/samples');expect(wrapper.findAll('button').some(value=>value.text()==='创建规则包')).toBe(false);expect(wrapper.findAll('[role=tab]').map(tab=>tab.text())).toEqual(['规则包','应用识别规则','关联规则']);expect(router.currentRoute.value.path).toBe('/detection/rules/samples')
   await click('查看规则');expect(document.body.textContent).toContain('查看规则包');expect(document.body.querySelector('.cm-content')?.getAttribute('contenteditable')).toBe('false');expect(document.body.textContent).not.toContain('保存修订')
  })
  it('编辑读取失败显示原因，旧响应在离开后不打开弹窗',async()=>{

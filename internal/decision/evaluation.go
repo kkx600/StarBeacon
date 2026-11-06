@@ -86,10 +86,10 @@ type EvaluationRequest struct {
 }
 
 func (r EvaluationRequest) Validate() error {
-	if !contract.ValidID(r.PolicyID) {
+	if !contract.ValidID(r.PolicyID) || r.ExpectedRevision < 1 || r.ExpectedRevision > MaxRevision || !contract.ValidID(r.TriageID) {
 		return ErrInput
 	}
-	return (EvaluateRequest{ExpectedRevision: r.ExpectedRevision, TriageID: r.TriageID}).Validate()
+	return nil
 }
 
 type EvaluationQuery struct {

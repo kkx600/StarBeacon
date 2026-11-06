@@ -2,7 +2,6 @@
 package assistant
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -261,11 +260,4 @@ type Job struct {
 	StartedAt       *time.Time `json:"started_at"`
 	FinishedAt      *time.Time `json:"finished_at"`
 	ExpiresAt       time.Time  `json:"expires_at"`
-}
-
-// SameInput 只比较规范化输入；重试不得用相同键改变范围或模型修订。
-func SameInput(a, b Request) bool {
-	x, _ := json.Marshal(a)
-	y, _ := json.Marshal(b)
-	return bytes.Equal(x, y)
 }

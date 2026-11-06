@@ -36,9 +36,9 @@ pnpm --dir prototype dev
 
 顶栏的“原型状态”下拉是原型评审工具。它可直接打开详情、操作、空状态和异常状态，不属于正式生产页面的业务权限。URL 示例：`/alerts/list?state=detail`。
 
-导航按照工作任务组织，相关对象通过工作区页签进入，详情以弹窗呈现；完整需求与路由映射见[页面原型设计](../docs/页面原型设计.md)。旧探针运行状态、PCAP 下载和重复操作日志地址保留兼容跳转。
+导航按照工作任务组织，相关对象通过工作区页签进入，详情以弹窗呈现；完整需求与路由映射见[页面原型设计](../docs/页面原型设计.md)。
 
-路由使用 History 模式，迁移旧 `#/` 地址并保留查询参数。检测规则工作区的「重放样本」与「重放任务」分别为 `/detection/rules/samples`、`/detection/rules/tasks`，旧 `/page/rule-samples`、`/page/rule-tests` 保留兼容跳转。采集器规范路径按运行状态、网络与采集、平台接入、规则与任务、联动设备组织，分别提供 `/collector/overview/status`、`/collector/network/interfaces`、`/collector/network/capture`、`/collector/network/archives`、`/collector/network/syslog`、`/collector/connection/identity`、`/collector/rules/samples`、`/collector/rules/tasks`、`/collector/response/devices`。旧工作区与查询链接保留兼容跳转；管理网络、编辑接入密钥、集中同步、系统升级与维护的目标设计在上下文中明确区分，不能作为工程可操作能力。刷新、后退和前进恢复规范路径。
+路由使用 History 模式。检测规则工作区的「重放样本」与「重放任务」分别为 `/detection/rules/samples`、`/detection/rules/tasks`；页面目录与内部链接使用的 `/page/rule-samples`、`/page/rule-tests` 跳转至这些规范路径并保留查询参数。采集器规范路径按运行状态、网络与采集、平台接入、规则与任务、联动设备组织，分别提供 `/collector/overview/status`、`/collector/network/interfaces`、`/collector/network/capture`、`/collector/network/archives`、`/collector/network/syslog`、`/collector/connection/identity`、`/collector/rules/samples`、`/collector/rules/tasks`、`/collector/response/devices`。采集器原型的旧工作区与查询链接仍保留兼容跳转；管理网络、编辑接入密钥、集中同步、系统升级与维护的目标设计在上下文中明确区分，不能作为工程可操作能力。刷新、后退和前进恢复规范路径。
 
 ## 交互范围
 
@@ -116,7 +116,7 @@ node scripts/check-screenshots.mjs
 node scripts/check-screenshots.mjs --strict
 ```
 
-正式工程的 `/traffic/events` 提供协议事件与会话摘要检索，旧 `/traffic` 保留兼容入口，包括实际双向计数、会话时间、MAC 集合和 TLS／DNS 展示；原型中的应用流重组与应用会话流量排行仍属于目标设计。应用识别规则已有受限可见元数据分类子流程，不能等同完整产品效果。独立原包捕获、归档、有界逐包协议查看和会话导出已具备工程子流程，不表示海量取证、全部协议或生产资格已经交付。常驻验收实例未启用持久托管采集，实际入口与数据边界见[流量检索与会话观测](../docs/流量检索与会话观测.md)。
+正式工程的 `/traffic/events` 提供协议事件与会话摘要检索，包括实际双向计数、会话时间、MAC 集合和 TLS／DNS 展示；原型中的应用流重组与应用会话流量排行仍属于目标设计。应用识别规则已有受限可见元数据分类子流程，不能等同完整产品效果。独立原包捕获、归档、有界逐包协议查看和会话导出已具备工程子流程，不表示海量取证、全部协议或生产资格已经交付。常驻验收实例未启用持久托管采集，实际入口与数据边界见[流量检索与会话观测](../docs/流量检索与会话观测.md)。
 
 原包归档的「协议查看」复用工程 PacketInspector，独立弹窗展示固定九帧 HTTP 合成样本，包含序号翻页、MAC／IP／TCP 字段、纳秒时间及 HEX／UTF-8；样本字节与协议字段由实际测试 PCAP 和 gopacket 生成，弹窗明确标识合成来源，不读取列表记录的实际原文。平台已归档行可查看，采集器仅等待上传行可查看；已回收、捕获中和待核查原件禁用该操作。工程两端已有有界逐包读取接口，范围和限制见[原包归档与会话导出](../docs/原包归档与会话导出.md)。相应状态图已纳入 Chrome194 严格图库，不替代真实网卡或对象存储验收。归档列表与重放独立示例表仍存在字段和完整失败回执差异，不能因为复用协议组件认定整个工作区已完全一致。
 

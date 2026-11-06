@@ -29,27 +29,13 @@ type Indexer struct {
 	DB  *store.Postgres
 }
 
-// eventIndex 选择批次的物理索引。路由冻结的共享索引必须属于同一数据流且覆盖路由日；
-// 升级前入队的批次没有冻结索引，继续写入原租户日索引，保证重投仍按同一 _id 去重。
-func (w *Indexer) eventIndex(ctx context.Context, tenant, stream, partition, frozen string) (string, int, error) {
-	if frozen != "" {
-		target, err := contract.ParseEventIndex(frozen)
-		if err != nil || target.Legacy || target.Stream != stream || !target.Covers(partition) {
-			return "", 0, errors.New("路由索引与数据流或分区不一致")
-		}
-		return frozen, target.Days, nil
+// eventIndex 核对路由冻结的共享索引属于同一数据流并覆盖路由日；重投沿用同一索引，按同一 _id 去重。
+func eventIndex(stream, partition, frozen string) (string, error) {
+	target, err := contract.ParseEventIndex(frozen)
+	if err != nil || target.Stream != stream || !target.Covers(partition) {
+		return "", errors.New("路由索引与数据流或分区不一致")
 	}
-	index, err := contract.IndexName(tenant, stream, partition)
-	if err != nil {
-		return "", 0, err
-	}
-	days := 180
-	if w.DB != nil && !w.ES.IndexKnown(index) {
-		if days, err = w.DB.EventRetention(ctx, tenant, stream); err != nil {
-			return "", 0, err
-		}
-	}
-	return index, days, nil
+	return frozen, nil
 }
 
 func (w *Indexer) Process(ctx context.Context, data []byte) error {
@@ -66,11 +52,11 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	if e := contract.Validate(envelope.TenantID, batch.SensorId, batch.SensorRegistrationId, &batch); e != nil {
 		return e
 	}
-	index, days, e := w.eventIndex(ctx, envelope.TenantID, batch.StreamId, envelope.Partition, envelope.Index)
+	index, e := eventIndex(batch.StreamId, envelope.Partition, envelope.Index)
 	if e != nil {
 		return e
 	}
-	if e = w.ES.EnsureIndexRetention(ctx, index, envelope.Partition, days); e != nil {
+	if e = w.ES.EnsureIndex(ctx, index, envelope.Partition); e != nil {
 		return e
 	}
 	if batch.StreamId == "logs" {

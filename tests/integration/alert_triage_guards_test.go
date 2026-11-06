@@ -36,7 +36,7 @@ func TestAlertTriageExecutionGuardsAndBoundedHistory(t *testing.T) {
 	config := llm.Config{Name: "受控资格模型", Kind: "openai_responses", BaseURL: "https://models.example.com/v1", Model: "owned", Enabled: true, APIKey: "owned-key", MaxOutputTokens: 256, TimeoutSeconds: 5, DailyRequests: 10000}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", ReplaceKey: true, Config: config}, vault, outbound.Policy{}, "seed")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{})
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{}, nil)
 	require(t, err)
 	now := time.Now().UTC()
 	alert := model.Alert{EventID: "event_owned", RawSHA256: control.Digest([]byte("owned")), SensorID: "sensor_owned", RegistrationID: "registration_owned", Timestamp: now, ObservedAt: now}

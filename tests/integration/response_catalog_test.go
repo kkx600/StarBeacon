@@ -17,6 +17,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/platform"
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
 func catalogPath(q responseapi.CatalogQuery) string {
@@ -58,6 +59,17 @@ func TestResponseCatalogCursorFiltersAndImmutableReads(t *testing.T) {
 				state, delivered = "queued", 0
 			}
 			if _, err = tx.Exec(ctx, `INSERT INTO sensor_tasks(tenant_id,id,sensor_id,registration_id,kind,state,idempotency_key,request_sha256,command,signature,command_sha256,created_by,created_at,expires_at,delivery_count) VALUES($1,$2,'sensor_response','registration_response',$3,$4,$2,$5,$6,$7,$5,$8,$9,$10,$11)`, u.TenantID, id, kind, state, control.Digest(raw), raw, signature, u.ID, base, c.ExpiresAt, delivered); err != nil {
+				return err
+			}
+			if kind != "response.block" {
+				continue
+			}
+			// 封禁授权与名单核对依据同事务保存；直接写入的目录夹具同样补齐原命令绑定的核对记录。
+			check, err := json.Marshal(watchlist.ResponseCheck{SchemaVersion: watchlist.ResponseSchema, CheckedAt: base, StateSHA256: control.Digest([]byte("catalog-watchlist-state")), Matches: []watchlist.Reference{}})
+			if err != nil {
+				return err
+			}
+			if _, err = tx.Exec(ctx, `INSERT INTO response_watchlist_checks(tenant_id,task_id,command_sha256,check_sha256,check_data,expires_at) SELECT tenant_id,id,command_sha256,$3,$4,retain_until FROM sensor_tasks WHERE tenant_id=$1 AND id=$2`, u.TenantID, id, control.Digest(check), check); err != nil {
 				return err
 			}
 		}

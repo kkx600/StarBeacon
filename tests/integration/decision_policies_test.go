@@ -93,7 +93,7 @@ func TestDecisionPolicyCASRetentionAndPermissionRevocation(t *testing.T) {
 	if _, err := f.Runtime.SaveDecisionPolicy(ctx, u, "policy_after_revoke", decisionPolicyEdit(current)); !errors.Is(err, decision.ErrPermission) {
 		t.Fatal("停用账号仍可保存规则", err)
 	}
-	if _, err := f.Runtime.EvaluateDecisionPolicy(ctx, u, input.ID, decision.EvaluateRequest{ExpectedRevision: 2, TriageID: "triage_owned"}); !errors.Is(err, decision.ErrPermission) {
+	if _, err := f.Runtime.CreateDecisionEvaluation(ctx, u, "evaluation_after_revoke", decision.EvaluationRequest{PolicyID: input.ID, ExpectedRevision: 2, TriageID: "triage_owned"}); !errors.Is(err, decision.ErrPermission) {
 		t.Fatal("停用账号仍可测试规则", err)
 	}
 	if _, err := f.Runtime.SaveDecisionPolicy(ctx, model.Principal{ID: u.ID, TenantID: u.TenantID, Role: "viewer"}, "policy_viewer", input); !errors.Is(err, decision.ErrPermission) {
@@ -140,7 +140,7 @@ func TestDecisionPolicyQuotaRollbackAndCorruptVersions(t *testing.T) {
 	}))
 	a.request("GET", "/decision-policies", "", nil, nil, 503)
 	a.request("GET", "/decision-policies/policy_quota/revisions/1", "", nil, nil, 503)
-	a.request("POST", "/decision-policies/policy_quota/evaluate", "", decision.EvaluateRequest{ExpectedRevision: 1, TriageID: "triage_owned"}, nil, 503)
+	a.request("POST", "/decision-evaluations", "evaluation_corrupt_policy", decision.EvaluationRequest{PolicyID: "policy_quota", ExpectedRevision: 1, TriageID: "triage_owned"}, nil, 503)
 	require(t, f.Owner.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `UPDATE decision_policy_revisions SET definition_sha256=$2 WHERE tenant_id=$1 AND policy_id=$3`, u.TenantID, first.DefinitionSHA256, first.ID)
 		return err

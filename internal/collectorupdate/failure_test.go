@@ -262,7 +262,7 @@ func TestCollectorMaintenanceRejectsSpecialInputsWithoutBlocking(t *testing.T) {
 	if err := unix.Mkfifo(fifo, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Stage(context.Background(), t.TempDir(), fifo, proof, pub, fixedTime); err == nil {
+	if _, err := stage(context.Background(), t.TempDir(), fifo, proof, pub, fixedTime, 180); err == nil {
 		t.Fatal("维护制品接受 FIFO")
 	}
 	if readJSON(fifo, new(State)) == nil {

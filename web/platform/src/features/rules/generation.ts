@@ -4,7 +4,7 @@ import {sampleOrigin} from '@starbeacon/shared/utils/sample.ts'
 
 export type GenerationSource='natural_language'|'pcap'|'http_raw'
 export interface GenerationRequest {description:string;source:GenerationSource;sample_id:string;sample_sha256:string;provider_id:string;provider_revision:number;candidate_count:number;allow_context:boolean}
-export interface PacketSnippet {packet:number;protocol:'tcp'|'udp';source_ip:string;destination_ip:string;source_port:number;destination_port:number;payload_hex:string;payload_limited:boolean}
+interface PacketSnippet {packet:number;protocol:'tcp'|'udp';source_ip:string;destination_ip:string;source_port:number;destination_port:number;payload_hex:string;payload_limited:boolean}
 export interface RuleCandidate {sid:number;engine_version:'8.0.7';title:string;rule:string;explanation:string;risks:string[];references:number[];package_id:string;sha256:string}
 export interface GenerationEvidence {sample:ReplaySample|null;metadata:Record<string,unknown>|null;packets:PacketSnippet[];limited:boolean;sha256:string}
 export interface GenerationJob {id:string;request:GenerationRequest;state:string;cancel_requested:boolean;template:'suricata-rule/1';evidence:GenerationEvidence;sids:number[];candidates:RuleCandidate[];result:ModelResult;created_at:string;started_at:string|null;finished_at:string|null;expires_at:string}

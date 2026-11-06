@@ -866,33 +866,6 @@
     }
   ],
   "schema_version": 1,
-  "legacy_modules": {
-    "overview": "overview",
-    "screen": "screen",
-    "sensors": "sensors",
-    "rules": "rules",
-    "alerts": "alerts",
-    "traffic": "traffic",
-    "assets": "assets",
-    "operations": "operations",
-    "notifications": "notifications",
-    "models": "models",
-    "assistant": "assistant",
-    "reports": "reports",
-    "retention": "retention",
-    "incidents": "incidents",
-    "users": "users"
-  },
-  "legacy_defaults": {
-    "sensors": "devices",
-    "rules": "packages",
-    "models": "providers",
-    "assets": "assets",
-    "operations": "health",
-    "reports": "records",
-    "notifications": "channels",
-    "traffic": "events"
-  },
   "group_paths": {
     "assets": "inventory"
   }

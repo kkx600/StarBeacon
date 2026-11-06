@@ -27,7 +27,6 @@ import (
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/analytics"
 	"github.com/kkx600/StarBeacon/internal/config"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/inventory"
 	"github.com/kkx600/StarBeacon/internal/mcpaccess"
@@ -92,23 +91,13 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 	require(t, admin.Bootstrap(ctx, owner, tenants[0], "MCP 接入验收", tenants[0]+"_viewer", password, "viewer"))
 	start := time.Now().UTC().Truncate(time.Hour).Add(-time.Hour)
 	window := analytics.Window{Start: start, End: start.Add(2 * time.Hour)}
-	index, err := contract.IndexName(tenants[0], "alerts", start.Format("2006-01-02"))
-	require(t, err)
+	index := sharedEventIndex(t, "alerts", start.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, index, start.Format("2006-01-02")))
-	contextIndex, err := contract.IndexName(tenants[0], "context", start.Format("2006-01-02"))
-	require(t, err)
+	contextIndex := sharedEventIndex(t, "context", start.Format("2006-01-02"))
 	require(t, es.EnsureIndex(ctx, contextIndex, start.Format("2006-01-02")))
-	defer func() {
-		clean, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		response, err := es.API.Indices.Delete([]string{index, contextIndex}, es.API.Indices.Delete.WithContext(clean))
-		require(t, err)
-		defer response.Body.Close()
-		if response.IsError() {
-			t.Error("自身索引清理失败")
-		}
-	}()
-	alert := model.Alert{SchemaVersion: "alert.v1", TenantID: tenants[0], SensorID: "probe_owned", EventID: "event_owned", Timestamp: start.Add(time.Minute), ObservedAt: start.Add(time.Minute), ReceivedAt: start.Add(time.Minute), RawSHA256: control.Digest([]byte("owned-eve")), Severity: "high"}
+	// 共享索引同时承载其他租户，只回收本租户文档；事件标识即文档 _id，不复用其他用例的固定标识。
+	defer deleteTenantEvents(t, es, tenants[0])
+	alert := model.Alert{SchemaVersion: "alert.v1", TenantID: tenants[0], SensorID: "probe_owned", EventID: store.RandomID("event_owned_"), Timestamp: start.Add(time.Minute), ObservedAt: start.Add(time.Minute), ReceivedAt: start.Add(time.Minute), RawSHA256: control.Digest([]byte("owned-eve")), Severity: "high"}
 	alert.Event.Kind = "alert"
 	alert.Event.Dataset = "suricata.alert"
 	alert.Event.Original = "private-eve-payload"
@@ -118,7 +107,7 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 		require(t, err)
 	}
 	protocol := alert
-	protocol.EventID, protocol.RegistrationID = "protocol_owned", "private-registration"
+	protocol.EventID, protocol.RegistrationID = store.RandomID("protocol_owned_"), "private-registration"
 	protocol.Event.Kind, protocol.Event.Dataset = "tls", "suricata.eve"
 	protocol.Event.Original = `{"tls":{"sni":"service.example","version":"TLS 1.3"},"flow":{"bytes_toserver":18446744073709551615,"bytes_toclient":0}}`
 	protocol.RawSHA256 = control.Digest([]byte(protocol.Event.Original))
@@ -160,7 +149,7 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 	// 原生平台只获得运行账号和受限内省凭据，TLS 网关代理实际二进制入口。
 	directory := t.TempDir()
 	pki := filepath.Join(directory, "pki")
-	require(t, admin.DevPKI(pki))
+	require(t, admin.DevPKI(pki, nil))
 	caPath := filepath.Join(directory, "oauth-ca.crt")
 	require(t, os.WriteFile(caPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: issuer.Certificate().Raw}), 0600))
 	redisEndpoint, err := url.Parse(os.Getenv("SB_REDIS_URL"))
@@ -324,7 +313,7 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 	}
 	result := call(session, "alerts.search", window, false)
 	raw, _ := json.Marshal(result.StructuredContent)
-	if !strings.Contains(string(raw), "event_owned") || strings.Contains(string(raw), "private-eve-payload") || !strings.Contains(string(raw), `"total":"1"`) {
+	if !strings.Contains(string(raw), alert.EventID) || strings.Contains(string(raw), "private-eve-payload") || !strings.Contains(string(raw), `"total":"1"`) {
 		t.Fatal("告警工具没有遵守精度或证据权限", string(raw))
 	}
 	call(session, "assets.get", map[string]string{"id": "asset_owned"}, false)
@@ -332,7 +321,7 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 	call(foreign, "assets.get", map[string]string{"id": "asset_owned"}, true)
 	result = call(foreign, "alerts.search", window, false)
 	raw, _ = json.Marshal(result.StructuredContent)
-	if strings.Contains(string(raw), "event_owned") || !strings.Contains(string(raw), `"total":"0"`) {
+	if strings.Contains(string(raw), alert.EventID) || !strings.Contains(string(raw), `"total":"0"`) {
 		t.Fatal("告警工具跨租户")
 	}
 	change.ExpectedRevision = 1
@@ -343,12 +332,12 @@ func TestMCPRealDataTLSAuthorizationBudgetsRevocationAndIsolation(t *testing.T) 
 	query := map[string]any{"start": window.Start, "end": window.End, "event_kind": "tls", "filter": "tcp.port == 443 and ip.src == 192.0.2.10"}
 	result = call(session, "traffic.search", query, false)
 	raw, _ = json.Marshal(result.StructuredContent)
-	if !strings.Contains(string(raw), "protocol_owned") || !strings.Contains(string(raw), "service.example") || !strings.Contains(string(raw), "18446744073709551615") || !strings.Contains(string(raw), `"total":"1"`) || strings.Contains(string(raw), "private-registration") || strings.Contains(string(raw), `"original":"{`) {
+	if !strings.Contains(string(raw), protocol.EventID) || !strings.Contains(string(raw), "service.example") || !strings.Contains(string(raw), "18446744073709551615") || !strings.Contains(string(raw), `"total":"1"`) || strings.Contains(string(raw), "private-registration") || strings.Contains(string(raw), `"original":"{`) {
 		t.Fatal("原生协议查询未遵守元数据、精度和载荷权限", string(raw))
 	}
 	result = call(foreign, "traffic.search", query, false)
 	raw, _ = json.Marshal(result.StructuredContent)
-	if strings.Contains(string(raw), "protocol_owned") || !strings.Contains(string(raw), `"total":"0"`) {
+	if strings.Contains(string(raw), protocol.EventID) || !strings.Contains(string(raw), `"total":"0"`) {
 		t.Fatal("协议检索跨租户", string(raw))
 	}
 	result = call(session, "traffic.fields", map[string]any{}, false)

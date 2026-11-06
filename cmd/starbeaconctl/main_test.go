@@ -19,7 +19,7 @@ func TestEnrollmentCommandRejectsInvalidMaterialsWithoutDatabase(t *testing.T) {
 	t.Cleanup(func() { os.Args = originalArgs })
 	root := t.TempDir()
 	pkiDir := filepath.Join(root, "pki")
-	if err := admin.DevPKI(pkiDir); err != nil {
+	if err := admin.DevPKI(pkiDir, nil); err != nil {
 		t.Fatal(err)
 	}
 	id := transport.SensorIdentity{TenantID: "tenant_cli", SensorID: "sensor_cli", RegistrationID: "registration_cli"}

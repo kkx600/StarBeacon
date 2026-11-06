@@ -67,7 +67,7 @@ func (s *Elasticsearch) DiscoverAddresses(ctx context.Context, tenant string, q 
 		return discovery.Result{}, err
 	}
 	// 分区日期来自上传路由，不能用事件时间推算应读取的分区；共享索引由查询中的 tenant_id 隔离。
-	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndices("context", tenant)...), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithMaxConcurrentShardRequests(2), s.API.Search.WithPreFilterShardSize(1), s.API.Search.WithExpandWildcards("open", "closed"), s.API.Search.WithContext(ctx))
+	res, err := s.API.Search(s.API.Search.WithIndex(contract.SearchIndex("context")), s.API.Search.WithBody(bytes.NewReader(body)), s.API.Search.WithIgnoreUnavailable(false), s.API.Search.WithAllowNoIndices(true), s.API.Search.WithAllowPartialSearchResults(false), s.API.Search.WithMaxConcurrentShardRequests(2), s.API.Search.WithPreFilterShardSize(1), s.API.Search.WithExpandWildcards("open", "closed"), s.API.Search.WithContext(ctx))
 	if err != nil {
 		if res != nil && res.Body != nil {
 			res.Body.Close()

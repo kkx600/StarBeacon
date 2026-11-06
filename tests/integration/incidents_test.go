@@ -13,7 +13,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/admin"
-	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/incident"
 	"github.com/kkx600/StarBeacon/internal/model"
@@ -41,26 +40,19 @@ func TestIncidentsRealInvestigationAssignmentClosureAndTenantIsolation(t *testin
 	require(t, es.EnsurePolicy(ctx))
 	// PostgreSQL timestamptz 以微秒保存；目录与 JSON 的夹具时间必须遵循相同精度。
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	indices := []string{}
 	digest := control.Digest([]byte("owned-incident-alert"))
+	// 共享索引同时承载其他租户，只回收本测试租户的文档。
 	t.Cleanup(func() {
-		clean, stop := context.WithTimeout(context.Background(), 8*time.Second)
-		defer stop()
-		for _, index := range indices {
-			r, err := es.API.Indices.Delete([]string{index}, es.API.Indices.Delete.WithContext(clean))
-			require(t, err)
-			_ = r.Body.Close()
-			if r.IsError() {
-				t.Errorf("事件验收索引回收失败：%d", r.StatusCode)
-			}
+		for _, tenant := range []string{aTenant, bTenant} {
+			deleteTenantEvents(t, es, tenant)
 		}
 	})
-	for _, tenant := range []string{aTenant, bTenant} {
-		index, indexErr := contract.IndexName(tenant, "alerts", now.Format("2006-01-02"))
-		require(t, indexErr)
+	// 事件标识即共享索引文档 _id，两个租户的同摘要告警使用各自的事件标识。
+	events := []string{store.RandomID("event_case_"), store.RandomID("event_case_")}
+	for n, tenant := range []string{aTenant, bTenant} {
+		index := sharedEventIndex(t, "alerts", now.Format("2006-01-02"))
 		require(t, es.EnsureIndex(ctx, index, now.Format("2006-01-02")))
-		indices = append(indices, index)
-		item := model.Alert{SchemaVersion: "alert.v1", EventID: "event_case_owned", TenantID: tenant, SensorID: "sensor_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, RawSHA256: digest, Severity: "high"}
+		item := model.Alert{SchemaVersion: "alert.v1", EventID: events[n], TenantID: tenant, SensorID: "sensor_owned", Timestamp: now, ObservedAt: now, ReceivedAt: now, RawSHA256: digest, Severity: "high"}
 		item.Event.Kind = "alert"
 		item.Event.Original = `{"owned_original":"must_remain_in_es"}`
 		for _, failure := range es.Bulk(ctx, index, []model.Alert{item}) {
@@ -86,7 +78,7 @@ func TestIncidentsRealInvestigationAssignmentClosureAndTenantIsolation(t *testin
 		t.Fatal("责任人列表包含只读或其他租户身份", assignees)
 	}
 	spec := incident.Spec{Title: "授权 HTTP 事件调查", Category: "network_intrusion", Severity: "high", Status: "open", Summary: "核对合法测试流量的检测事实与业务影响。", OwnerID: analyst.ID}
-	input := incident.Create{Spec: spec, Alerts: []incident.AlertRef{{EventID: "event_case_owned", SHA256: digest}}}
+	input := incident.Create{Spec: spec, Alerts: []incident.AlertRef{{EventID: events[0], SHA256: digest}}}
 	var first incident.Record
 	a.request("POST", "/incidents", "case_create_owned", input, &first, 200)
 	if first.Validate() != nil || first.Revision != 1 || first.OwnerName != analyst.Username || len(first.Alerts) != 1 || first.Alerts[0].SensorID != "sensor_owned" || first.ExpiresAt.Sub(first.RecordedAt) < 179*24*time.Hour {
@@ -116,9 +108,12 @@ func TestIncidentsRealInvestigationAssignmentClosureAndTenantIsolation(t *testin
 	}
 	b.request("GET", "/incidents/"+first.ID, "", nil, nil, 404)
 	b.request("GET", "/incidents/"+first.ID+"/history", "", nil, nil, 404)
+	// 同一共享索引中的其他租户不能引用本租户告警，只能升级其自身的同摘要告警。
 	var bFirst incident.Record
 	bInput := input
 	bInput.Spec.OwnerID = foreign.ID
+	b.request("POST", "/incidents", "case_foreign_source", bInput, nil, 404)
+	bInput.Alerts = []incident.AlertRef{{EventID: events[1], SHA256: digest}}
 	b.request("POST", "/incidents", "case_foreign", bInput, &bFirst, 200)
 	if bFirst.ID == first.ID || bFirst.OwnerName != foreign.Username {
 		t.Fatal("不同租户共享了事件身份或责任人")
@@ -126,7 +121,7 @@ func TestIncidentsRealInvestigationAssignmentClosureAndTenantIsolation(t *testin
 	bad := input
 	bad.Alerts = []incident.AlertRef{{EventID: "event_missing", SHA256: digest}}
 	a.request("POST", "/incidents", "case_missing", bad, nil, 404)
-	bad.Alerts = []incident.AlertRef{{EventID: "event_case_owned", SHA256: strings.Repeat("b", 64)}}
+	bad.Alerts = []incident.AlertRef{{EventID: events[0], SHA256: strings.Repeat("b", 64)}}
 	a.request("POST", "/incidents", "case_digest_conflict", bad, nil, 409)
 	manual := incident.Create{Spec: spec, Alerts: []incident.AlertRef{}}
 	manual.Spec.OwnerID = ""

@@ -62,11 +62,7 @@ func appendAudit(tx *bolt.Tx, audit LocalAudit) error {
 		if e = json.Unmarshal(v, &item); e != nil {
 			return e
 		}
-		expires := item.ExpiresAt
-		if expires.IsZero() {
-			expires = item.CreatedAt.AddDate(0, 0, 180)
-		}
-		if time.Now().Before(expires) {
+		if time.Now().Before(item.ExpiresAt) {
 			break
 		}
 		if e = c.Delete(); e != nil {

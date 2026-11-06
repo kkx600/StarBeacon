@@ -20,7 +20,6 @@ func (a *API) registerDecisionPolicies(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/decision-policies/{id}/revisions/{revision}/triggers", a.Auth.Require(true, a.automaticTriages))
 	m.HandleFunc("POST /api/v1/decision-policies", a.Auth.Require(true, a.saveDecisionPolicy))
 	m.HandleFunc("POST /api/v1/decision-policies/validate", a.Auth.Require(false, a.validateDecisionPolicy))
-	m.HandleFunc("POST /api/v1/decision-policies/{id}/evaluate", a.Auth.Require(true, a.evaluateDecisionPolicy))
 	m.HandleFunc("POST /api/v1/decision-evaluations", a.Auth.Require(true, a.createDecisionEvaluation))
 	m.HandleFunc("GET /api/v1/decision-evaluations", a.Auth.Require(false, a.decisionEvaluations))
 	m.HandleFunc("GET /api/v1/decision-evaluations/{id}", a.Auth.Require(false, a.decisionEvaluation))
@@ -195,21 +194,4 @@ func (a *API) validateDecisionPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpapi.JSON(w, 200, map[string]any{"valid": true, "schema_version": decision.Schema, "definition_sha256": decision.Digest(input.Definition), "execution_authorized": false})
-}
-
-func (a *API) evaluateDecisionPolicy(w http.ResponseWriter, r *http.Request) {
-	var input decision.EvaluateRequest
-	if decodeDecision(w, r, &input) != nil || input.Validate() != nil || !contract.ValidID(r.PathValue("id")) {
-		decisionFailure(w, r, decision.ErrInput)
-		return
-	}
-	if !a.decisionReady(w, r) {
-		return
-	}
-	result, err := a.DB.EvaluateDecisionPolicy(r.Context(), httpapi.Principal(r), r.PathValue("id"), input)
-	if err != nil {
-		decisionFailure(w, r, err)
-		return
-	}
-	httpapi.JSON(w, 200, result)
 }

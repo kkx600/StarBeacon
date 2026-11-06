@@ -7,12 +7,12 @@ export const triageRecommendations={investigate:'继续调查',notify:'通知安
 export const triageCodes:Record<string,string>={awaiting_execution:'作业等待执行',request_in_progress:'正在请求模型，结果尚未返回',invalid_triage_output:'研判结构、结论或事实引用未通过校验',alert_source_unavailable:'告警来源已变化、过期或不可访问，调用未执行',authorization_revoked:'作业所有者已失去执行权限，调用未执行',provider_revision_changed:'模型修订已改变，调用未执行',provider_disabled:'模型提供方已停用，调用未执行',provider_config_unavailable:'模型配置或凭据不可用，调用未执行',triage_input_invalid:'冻结材料或研判模板无法核验，调用未执行',queue_wait_expired:'等待执行超时，调用未执行',cancelled_before_execution:'作业在模型调用前取消'}
 export type TriageState=keyof typeof triageStates
 export interface TriageRequest {event_id:string;raw_sha256:string;provider_id:string;provider_revision:number;note:string;allow_context:boolean}
-export interface TriageFact {id:string;label:string;value:string}
+interface TriageFact {id:string;label:string;value:string}
 export interface TriageEvidence {event_id:string;raw_sha256:string;observed_at:string;facts:TriageFact[];limitations:string[];limited:boolean;sha256:string}
 export interface TriageAnswer {verdict:keyof typeof triageVerdicts;outcome:keyof typeof triageOutcomes;confidence:number;reason:string;references:string[];counter_evidence:string[];missing:string[];recommendation:keyof typeof triageRecommendations;needs_review:true}
 export interface TriageJob {id:string;request:TriageRequest;state:TriageState;cancel_requested:boolean;template:'alert-triage/1';evidence:TriageEvidence;answer:TriageAnswer|null;result:ModelResult;confidence_kind:'self_reported';created_at:string;started_at:string|null;finished_at:string|null;expires_at:string}
 export interface TriageSummary {id:string;state:TriageState;provider_id:string;created_at:string}
-export interface TriagePage {items:TriageSummary[];next_cursor:string;model_execution_available:boolean}
+interface TriagePage {items:TriageSummary[];next_cursor:string;model_execution_available:boolean}
 export interface TriageProvider {id:string;revision:number;name:string;enabled:boolean;has_key:boolean}
 const factIDs=['event.time','sensor.id','sensor.registration','source.ip','destination.ip','network.transport','network.protocol','rule.id','rule.revision','rule.name','http.method','http.hostname','http.path','severity','suricata.flow','suricata.action','evidence.status']
 function record(v:unknown):v is Record<string,unknown>{return !!v&&typeof v==='object'&&!Array.isArray(v)}

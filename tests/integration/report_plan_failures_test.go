@@ -34,7 +34,7 @@ func TestReportPlanDatabaseInterruptionPreservesScheduleAndHistory(t *testing.T)
 	provider := llm.Config{Name: "计划模型", Kind: "openai_responses", BaseURL: "https://models.example.com/v1", Model: "owned", Enabled: true, APIKey: "owned-test-key", MaxOutputTokens: 256, TimeoutSeconds: 5, DailyRequests: 1000}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", ReplaceKey: true, Config: provider}, vault, policy, "provider_seed")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy, nil)
 	require(t, err)
 	spec := assistant.PlanSpec{Name: "故障边界统计", Kind: "daily", Timezone: "UTC", At: "00:00", Enabled: true}
 	plan, err := f.Runtime.SaveReportPlan(ctx, u, assistant.PlanChange{ID: "plan_owned", Spec: spec}, queue, vault, "plan_seed")
@@ -100,7 +100,7 @@ func TestReportPlanDatabaseInterruptionPreservesScheduleAndHistory(t *testing.T)
 				t.Run(fmt.Sprintf("%s/%02d", op.name, i), func(t *testing.T) {
 					before := snapshot()
 					db, tracer := disconnectedStore(t, ctx, f.RuntimeDSN, prefix)
-					q, err := jobs.NewAnalysis(db, vault, policy)
+					q, err := jobs.NewAnalysis(db, vault, policy, nil)
 					require(t, err)
 					if err := op.run(db, q); err == nil {
 						t.Fatal("计划连接中断仍返回成功")

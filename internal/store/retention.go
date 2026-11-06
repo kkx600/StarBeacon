@@ -124,16 +124,3 @@ func eventCategory(stream string) (string, error) {
 	}
 	return "", errors.New("事件流无效")
 }
-
-// EventRetention 只服务升级前的租户日索引：新索引固化策略后不随配置变更漂移。
-func (p *Postgres) EventRetention(ctx context.Context, tenant, stream string) (int, error) {
-	category, err := eventCategory(stream)
-	if err != nil {
-		return 0, err
-	}
-	days := retention.DefaultDays
-	err = p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		return tx.QueryRow(ctx, "SELECT days FROM retention_policies WHERE tenant_id=$1 AND category=$2", tenant, category).Scan(&days)
-	})
-	return days, err
-}

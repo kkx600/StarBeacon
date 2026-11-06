@@ -35,7 +35,7 @@ func TestAlertTriageDatabaseInterruptionPreservesFrozenJobsAndQueue(t *testing.T
 	policy := outbound.Policy{}
 	_, err = f.Runtime.SaveModelProvider(ctx, u, store.ModelChange{ID: "provider_owned", ReplaceKey: true, Config: llm.Config{Name: "事务验收模型", Kind: "openai_responses", BaseURL: "https://models.example.com/v1", Model: "owned", Enabled: true, APIKey: "owned-key", MaxOutputTokens: 256, TimeoutSeconds: 5, DailyRequests: 1000}}, vault, policy, "seed")
 	require(t, err)
-	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy)
+	queue, err := jobs.NewAnalysis(f.Runtime, vault, policy, nil)
 	require(t, err)
 	alert := model.Alert{EventID: "event_owned", RawSHA256: control.Digest([]byte("owned")), SensorID: "sensor_owned", RegistrationID: "registration_owned", Timestamp: time.Now().UTC(), ObservedAt: time.Now().UTC()}
 	alert.Event.Kind = "alert"
@@ -73,7 +73,7 @@ func TestAlertTriageDatabaseInterruptionPreservesFrozenJobsAndQueue(t *testing.T
 				t.Run(fmt.Sprintf("%s/%02d", op.name, i), func(t *testing.T) {
 					before := snapshot()
 					db, tracer := disconnectedStore(t, ctx, f.RuntimeDSN, prefix)
-					q, err := jobs.NewAnalysis(db, vault, policy)
+					q, err := jobs.NewAnalysis(db, vault, policy, nil)
 					require(t, err)
 					if err := op.run(db, q); err == nil || !tracer.fired.Load() {
 						t.Fatalf("目标断连未发生或被当作成功: %v", err)

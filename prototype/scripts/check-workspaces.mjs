@@ -1,16 +1,11 @@
 import assert from 'node:assert/strict'
 import {pages,pageById as actualPageById} from '../src/data/catalog.ts'
-import {workspaces,workspaceForPage,legacyPages,nestedPages} from '../src/data/navigation.ts'
+import {workspaces,workspaceForPage,nestedPages} from '../src/data/navigation.ts'
 import {createFixtures} from '../src/data/fixtures.ts'
 import {healthFor,sensorMetrics,defaultSensorThresholds} from '../src/data/sensorHealth.ts'
 import {formValueFor,expiryFromDuration} from '../src/composables/formValues.ts'
 
 const pageById=new Map(pages.map(page=>[page.id,page]))
-for(const [legacy,target] of Object.entries(legacyPages)){
-  assert(!actualPageById.has(legacy),`${legacy} 不应留在渲染字典`)
-  assert(!pageById.has(legacy),`${legacy} 不应继续创建独立数据集`)
-  assert(pageById.has(target),`${legacy} 需要有效的兼容入口`)
-}
 assert.equal(workspaceForPage.get('models'),workspaceForPage.get('knowledge'))
 assert.equal(workspaceForPage.get('pcap-tasks'),workspaceForPage.get('sessions'))
 assert(workspaces.every(workspace=>workspace.pages.length<=7),'工作区不能形成无边界的页签集合')
@@ -56,4 +51,4 @@ for(const record of pcaps.filter(record=>record.status==='可下载'&&record.mod
   assert(!/缺少|缺口|活动/.test(`${record.handshake} ${record.continuity} ${record.closure}`),'可下载完整会话不得存在已知完整性缺口')
   assert.equal(record.exportObject,null,'合成任务不能冒充真实 PCAP 对象')
 }
-console.log('工作区与数据边界核对通过：兼容入口、对象身份、业务选项、表单单位、报告周期、执行引用、遥测与 PCAP 完整性。')
+console.log('工作区与数据边界核对通过：对象身份、业务选项、表单单位、报告周期、执行引用、遥测与 PCAP 完整性。')

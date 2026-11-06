@@ -27,8 +27,8 @@ const release=useRuleRelease()
 const {view,change}=useWorkspaceView(session.current.value?.role==='admin'?['packages','samples','tasks','generation','applications','sync']:['packages','applications'])
 const canEdit=computed(()=>session.current.value?.role==='admin')
 const route=useRoute(),router=useRouter()
-const syncMode=computed(()=>typeof route.meta.syncMode==='string'?route.meta.syncMode:(route.query.mode==='rollouts'?'rollouts':'plans'))
-function changeSyncMode(key:string){const paths=route.meta.modePaths as Record<string,string>|undefined;const {mode:ignored,...query}=route.query;void router.push(paths?.[key]?{path:paths[key],query,hash:route.hash}:{path:route.path,query:{...route.query,mode:key==='rollouts'?'rollouts':undefined},hash:route.hash})}
+const syncMode=computed(()=>typeof route.meta.syncMode==='string'?route.meta.syncMode:'plans')
+function changeSyncMode(key:string){const path=(route.meta.modePaths as Record<string,string>|undefined)?.[key];if(path)void router.push({path,query:route.query,hash:route.hash})}
 const views=[{key:'packages',label:'规则包'},{key:'samples',label:'重放样本'},{key:'tasks',label:'重放任务'},{key:'generation',label:'AI 规则生成'},{key:'applications',label:'应用识别规则'},{key:'sync',label:'规则自动同步'}]
 const items=shallowRef<RulePackage[]>([]),pending=shallowRef(true),error=shallowRef(''),saving=shallowRef(false),editor=shallowRef(false),editing=shallowRef(false),formError=shallowRef('')
 const form=reactive({id:'',name:'',text:'',expected_revision:0})
@@ -122,7 +122,7 @@ onMounted(refresh);onScopeDispose(()=>{stopped=true;controller?.abort();actionCo
     <a-form layout="vertical" :model="form" name="rule-package"><a-form-item label="规则包名称" name="name" required><a-input v-model:value="form.name" :maxlength="128" :disabled="saving||!canEdit" placeholder="输入规则包名称" /></a-form-item><a-form-item v-if="editing" label="当前修订"><span>修订 {{ form.expected_revision }}，保存时生成下一修订并保留原内容。</span></a-form-item><a-form-item label="规则文本" name="text" required><RuleEditor v-model="form.text" :disabled="saving" :readonly="!canEdit" /></a-form-item></a-form>
   </a-modal>
   <a-modal v-if="view==='packages'" title="规则装载检查" :open="selected!==null" :width="640" :footer="null" :closable="!checking" :mask-closable="!checking" :keyboard="!checking" @cancel="selected=null">
-    <template v-if="selected"><p class="page-description section-gap">{{ selected.name }} · 修订 {{ selected.revision }} · Suricata {{ selected.engine_version }}</p><a-alert v-if="checkError" type="error" show-icon :message="checkError" class="section-gap" /><a-alert v-if="checkResult" type="success" show-icon message="检查任务已受理" class="section-gap"><template #description>任务 <span class="technical">{{ checkResult }}</span>，<router-link to="/sensors?view=tasks">查看探针执行回执</router-link>。</template></a-alert>
+    <template v-if="selected"><p class="page-description section-gap">{{ selected.name }} · 修订 {{ selected.revision }} · Suricata {{ selected.engine_version }}</p><a-alert v-if="checkError" type="error" show-icon :message="checkError" class="section-gap" /><a-alert v-if="checkResult" type="success" show-icon message="检查任务已受理" class="section-gap"><template #description>任务 <span class="technical">{{ checkResult }}</span>，<router-link to="/sensors/tasks">查看探针执行回执</router-link>。</template></a-alert>
       <a-form layout="vertical"><a-form-item label="目标探针" html-for="rule-target-sensor" required><a-select id="rule-target-sensor" v-model:value="sensorID" :options="options" :loading="checking" :disabled="checking" style="width:100%" placeholder="选择已配置 Suricata 8.0.7 的探针" @change="taskKey=undefined;checkResult='';checkError=''" /></a-form-item></a-form><a-button type="primary" :loading="checking" :disabled="!sensorID||!!checkResult" @click="check">提交装载检查</a-button>
     </template>
   </a-modal>

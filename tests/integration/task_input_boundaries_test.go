@@ -28,7 +28,7 @@ func TestTaskHTTPRejectsMixedEvidenceAndMissingReplaySources(t *testing.T) {
 	require(t, admin.Bootstrap(ctx, f.Owner, tenant, "任务准入验收", tenant, password, "admin"))
 	dir := t.TempDir()
 	ca := filepath.Join(dir, "pki")
-	require(t, admin.DevPKI(ca))
+	require(t, admin.DevPKI(ca, nil))
 	identity, err := admin.Provision(ctx, f.Owner, tenant, "sensor_owned", "任务准入探针", ca, filepath.Join(dir, "sensor"))
 	require(t, err)
 	pub, signer, err := ed25519.GenerateKey(rand.Reader)

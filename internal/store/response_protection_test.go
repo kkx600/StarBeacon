@@ -63,8 +63,13 @@ func TestResponseProtectionBindsOriginalCommandAndAuthorizedInstant(t *testing.T
 		}
 	}
 	for _, value := range [][]byte{nil, []byte("null")} {
-		if got, err := readResponseProtection(value, proof.CommandSHA256, task); err != nil || got != nil {
-			t.Fatal("历史任务缺少名单依据不能被当作曾核验", err)
+		if got, err := readResponseProtection(value, proof.CommandSHA256, task); err == nil || got != nil {
+			t.Fatal("封禁任务缺少名单依据被当作有效", err)
+		}
+		read := task
+		read.Kind = "response.read"
+		if got, err := readResponseProtection(value, proof.CommandSHA256, read); err != nil || got != nil {
+			t.Fatal("非封禁任务不携带名单依据时被拒绝", err)
 		}
 	}
 	for _, value := range []string{"{}", "[]", "not json", strings.Repeat(" ", 32769), strings.Replace(string(raw), `"schema_version":`, `"extra":true,"schema_version":`, 1), strings.Replace(string(raw), `"check":{`, `"check":{"schema_version":"duplicate",`, 1), strings.Replace(string(raw), `"check":{`, `"check":{"extra":1,`, 1)} {
