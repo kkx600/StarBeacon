@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
+import {tablePagination} from '../../../web/packages/shared/src/pagination'
 import {computed,shallowRef,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
 import type {PreviewState} from '../models'
@@ -45,8 +47,8 @@ function closeNotes(){notesOpen.value=false;void router.replace({query:{...route
 </script>
 <template>
  <PageHeader title="事件调查" description="关联检测事实与人工线索，记录责任分派、协作任务和可复核的结案依据。"><a-button @click="emit('state','data')">刷新</a-button><a-button type="primary" @click="formOpen=true;detailOpen=false;taskOpen=false;notesOpen=false">建立事件</a-button></PageHeader>
- <a-alert type="info" show-icon message="本页面为合成示例，复用工程调查与协作组件。记录保留180天，可按分类策略配置；原型不提交调查或设备操作。" class="section-gap"/>
- <section class="panel"><StatePanel v-if="empty" :state="state as 'empty'|'loading'|'error'" title="安全事件" description="当前条件下没有可读取的事件调查。" action="重新加载" @action="emit('state','data')"/><a-table v-else :data-source="[parent]" :columns="columns" row-key="id" :pagination="false" :scroll="{x:880}"><template #bodyCell="{column,record}"><a-button v-if="column.key==='title'" type="link" @click="detailOpen=true;formOpen=false;taskOpen=false;notesOpen=false">{{record.spec.title}}</a-button><a-tag v-else-if="column.key==='status'" :color="record.spec.status==='closed'?'green':'blue'">{{record.spec.status==='closed'?'已结案':'调查中'}}</a-tag><span v-else-if="column.key==='time'">2026-10-18 09:00:00</span><a-button v-else-if="column.key==='actions'" type="link" @click="detailOpen=true;formOpen=false;taskOpen=false;notesOpen=false">查看</a-button></template></a-table></section>
+ <HelpNote message="本页面为合成示例，复用工程调查与协作组件。记录保留180天，可按分类策略配置；原型不提交调查或设备操作。"/>
+ <section class="panel"><StatePanel v-if="empty" :state="state as 'empty'|'loading'|'error'" title="安全事件" description="当前条件下没有可读取的事件调查。" action="重新加载" @action="emit('state','data')"/><a-table v-else :data-source="[parent]" :columns="columns" row-key="id" :pagination="tablePagination()" :scroll="{x:880}"><template #bodyCell="{column,record}"><a-button v-if="column.key==='title'" type="link" @click="detailOpen=true;formOpen=false;taskOpen=false;notesOpen=false">{{record.spec.title}}</a-button><a-tag v-else-if="column.key==='status'" :color="record.spec.status==='closed'?'green':'blue'">{{record.spec.status==='closed'?'已结案':'处理中'}}</a-tag><span v-else-if="column.key==='time'">2026-10-18 09:00:00</span><a-button v-else-if="column.key==='actions'" type="link" @click="detailOpen=true;formOpen=false;taskOpen=false;notesOpen=false">查看</a-button></template></a-table></section>
  <IncidentDetail v-if="detailOpen" :record="parent" :pending="false" error="" :history="[parent]" :history-pending="false" history-error="" next="" @close="detailOpen=false" @edit="detailOpen=false;formOpen=true" @tasks="tasks" @notes="notes" @reload="()=>{}" @history="()=>{}"/>
  <IncidentForm v-if="formOpen" :record="state==='action'?null:parent" :assignees="owners" :assignee-pending="false" assignee-error="" :busy="false" :unconfirmed="false" :error="caseError" @save="saveCase" @close="formOpen=false"/>
  <IncidentTasksModal v-if="taskOpen" :parent="parent" :state="taskState" :assignees="owners" :owner-pending="false" owner-error="" :parent-pending="false" parent-error="" @close="taskOpen=false;notesOpen=false" @reload-parent="refresh" @reload-owners="()=>{}"/>

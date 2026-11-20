@@ -18,10 +18,13 @@ import {validResponseProtection} from '../packages/shared/src/responseProtection
 import {goJSONDigest} from '../packages/shared/src/utils/goJSONDigest'
 import {watchlistExamples,previewWatchlistExample,watchlistExampleClock} from '../../prototype/src/data/watchlists'
 import {collectorPrototypeScreens} from '../../prototype/src/data/collectorNavigation'
+import {helpEntries} from '../../prototype/src/composables/pageHelp'
 import {incidentRecord,incidentClosed} from './incidentFixtures'
 import {button,click} from './fixtures'
 
 const scope=()=>new DOMWrapper(document.body)
+// 合成数据声明等静态说明收在页面标题旁的“说明”里，不再常驻页面；这里直接核对登记内容。
+const helpText=()=>helpEntries.value.map(entry=>`${entry.message} ${entry.description??''}`).join(' ')
 beforeEach(()=>{vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn().mockRejectedValue(new Error('合成原型不得发出网络请求')))})
 // 静态消息有独立的挂载实例，须在每项真实 DOM 用例后释放。
 afterEach(()=>message.destroy())
@@ -52,7 +55,7 @@ describe('名单合成示例与工程契约',()=>{
  it('单一名单表与互斥详情，修订读取不增加第二个业务表',async()=>{
   await lists();expect(document.querySelectorAll('.ant-table')).toHaveLength(1)
   await click('查看');expect(document.querySelectorAll('.ant-modal')).toHaveLength(1);expect(document.querySelectorAll('.ant-modal .ant-table')).toHaveLength(0)
-  expect(scope().text()).toContain('合成名单示例');expect(fetch).not.toHaveBeenCalled()
+  expect(helpText()).toContain('合成名单示例');expect(fetch).not.toHaveBeenCalled()
  })
  it('创建表单默认停用，关闭返回列表且不提交任何外部请求',async()=>{
   const {wrapper}=await lists();await click('创建名单');expect(wrapper.findComponent(WatchlistForm).props('record')).toBeNull();expect(document.querySelectorAll('.ant-modal')).toHaveLength(1)
@@ -187,7 +190,7 @@ describe('MCP 接入说明',()=>{
    const router=await routing('/work?task=task_action_pending&device_id=device_hq#response'),wrapper=mount(ResponseActionsPreview,{props:{state:'data'},attachTo:document.body,global:{plugins:[Antd,router]}});await vi.waitFor(()=>expect(scope().text()).toContain('平台授权时未命中有效保护名单'))
    const queued=wrapper.findComponent(TaskTable).props('items').find(row=>row.id==='task_action_pending')!
    expect(validResponseProtection(queued.response_protection,queued.kind,queued.response_action!.requested_at,queued.response_action!.expires_at)).toBe(true)
-   expect(queued.response_protection!.check_sha256).toBe(await goJSONDigest(queued.response_protection!.check));expect(scope().text()).toContain('不构成真实授权');expect(fetch).not.toHaveBeenCalled()
+   expect(queued.response_protection!.check_sha256).toBe(await goJSONDigest(queued.response_protection!.check));expect(helpText()).toContain('不构成真实授权');expect(fetch).not.toHaveBeenCalled()
    await click('关闭',document.querySelector('.ant-modal')!);expect(router.currentRoute.value.query.task).toBeUndefined();expect(router.currentRoute.value.query.device_id).toBe('device_hq');expect(router.currentRoute.value.hash).toBe('#response')
   })
   it('结果待核实与已核实的封禁任务同样绑定名单核对记录',async()=>{

@@ -11,7 +11,7 @@ defineProps<{record:BusinessRecord;tab:string}>()
     <a-descriptions-item label="格式">{{record.format??'未配置'}}</a-descriptions-item><a-descriptions-item label="网络域">{{record.scope??'未配置'}}</a-descriptions-item>
   </a-descriptions>
   <template v-else-if="tab==='会话完整性'">
-    <a-descriptions bordered :column="1" size="small"><a-descriptions-item label="真实三次握手">{{record.handshake??'未验证'}}</a-descriptions-item><a-descriptions-item label="双向字节连续性">{{record.continuity??'未验证'}}</a-descriptions-item><a-descriptions-item label="连接结束">{{record.closure??'未验证'}}</a-descriptions-item></a-descriptions>
+    <a-descriptions bordered :column="1" size="small"><a-descriptions-item label="真实三次握手">{{record.handshake??'待验证'}}</a-descriptions-item><a-descriptions-item label="双向字节连续性">{{record.continuity??'待验证'}}</a-descriptions-item><a-descriptions-item label="连接结束">{{record.closure??'待验证'}}</a-descriptions-item></a-descriptions>
     <p class="field-hint">完整会话导出需要逐项通过验证。观测快照保留已见数据及缺口说明；不补造握手、载荷或连接结束包。</p>
   </template>
   <template v-else>

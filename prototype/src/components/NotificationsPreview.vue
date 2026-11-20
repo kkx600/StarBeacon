@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,ref,shallowRef,watch} from 'vue'
 import {Descriptions as ADescriptions,Modal as AModal} from 'ant-design-vue'
 import type {PreviewState} from '../models'
@@ -23,7 +24,7 @@ function save(_change:ChannelChange){formOpen.value=false;emit('state','data')}
 </script>
 <template>
  <PageHeader :title="title" description="维护明确的订阅范围，核对渠道受理与传输结果。"><a-button v-if="page!=='delivery-logs'" type="primary" @click="editing=null;formOpen=true">创建通知渠道</a-button><a-button @click="emit('state','data')">刷新</a-button></PageHeader>
- <a-alert type="info" show-icon message="以下为合成示例，仅用于演示订阅范围与投递回执。此处不保存连接信息或发送通知。渠道受理、传输写入与实际送达分别记录；检测质量事件须显式订阅。" class="section-gap"/>
+ <HelpNote message="以下为合成示例，仅用于演示订阅范围与投递回执。此处不保存连接信息或发送通知。渠道受理、传输写入与实际送达分别记录；检测质量事件须显式订阅。"/>
  <a-form layout="inline" class="panel notification-preview-filter" @finish="emit('state','data')"><a-form-item :label="page==='delivery-logs'?'投递标识':'渠道名称'"><a-input v-model:value="keyword" :maxlength="128" placeholder="输入查询关键词"/></a-form-item><a-button type="primary" html-type="submit">查询</a-button><a-button @click="keyword='';emit('state','data')">重置</a-button></a-form>
  <section class="panel"><StatePanel :loading="state==='loading'" :error="state==='error'?'通知数据读取失败，请稍后重试。':''" :empty="state==='empty'||page!=='delivery-logs'&&!channelRows.length" description="当前条件下没有记录，请调整查询或配置通知渠道。" @retry="emit('state','data')"><DeliveryTable v-if="page==='delivery-logs'" :items="[delivery]" @view="deliveryOpen=true"/><ChannelTable v-else :items="channelRows" :busy="false" available @edit="edit" @test="selected=$event"/></StatePanel></section>
  <ChannelForm v-if="formOpen" :record="editing" :pending="false" error="" :development="false" @save="save" @close="formOpen=false"/>

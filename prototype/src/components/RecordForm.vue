@@ -54,8 +54,8 @@ async function submit(){
 
 <template>
   <a-modal :open="open" :title="title" :width="page.family==='decision'?820:720" :body-style="{maxHeight:'calc(100vh - 252px)',overflowY:'auto'}" :confirm-loading="busy" ok-text="提交" cancel-text="取消" destroy-on-close @cancel="emit('close')" @ok="submit" class="record-form-modal">
-    <a-alert v-if="page.notice" :message="page.notice" type="info" show-icon class="modal-notice"/>
-    <a-alert v-if="page.family==='action'||page.family==='emergency'" message="此原型仅创建本地示例任务，不连接设备。生产执行前需核对目标、授权、保护名单和撤销路径。" type="warning" show-icon class="modal-notice"/>
+    
+    <a-alert v-if="page.family==='action'||page.family==='emergency'" message="此原型仅创建本地示例任务，不连接设备。生产执行前要核对目标、授权、保护名单和撤销路径。" type="warning" show-icon class="modal-notice"/>
     <a-alert v-if="exportMode" message="导出内容仅包含当前有权限的示例记录；生产导出绑定查询快照、脱敏策略和下载期限。" type="info" show-icon class="modal-notice"/>
     <div v-if="formError" ref="errorRef" role="alert" tabindex="-1" aria-label="表单校验信息" class="form-validation-error"><a-alert type="error" show-icon :message="formError" /></div>
     <a-form ref="formRef" :model="values" :rules="rules" layout="vertical" class="operation-form">

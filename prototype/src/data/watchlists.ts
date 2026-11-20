@@ -11,7 +11,7 @@ export async function watchlistExamples():Promise<WatchlistRecord[]> {
   {id:'watch_protect_example',name:'管理地址保护（示例）',description:'核对管理地址保护范围；该示例不接入设备执行。',active:true,definition:base},
   {id:'watch_observe_example',name:'业务域名观察（示例）',description:'保留相关检测事实，展示材料匹配与名单状态。',active:true,definition:{...base,kind:'observe' as const,match_type:'domain' as const,values:['example.test']}},
   {id:'watch_expired_example',name:'到期临时保护（示例）',description:'期限结束后不参与后续判断，历史记录保留。',active:true,definition:{...base,values:['198.51.100.20'],valid_until:'2026-10-21T00:00:00Z'}},
-  {id:'watch_disabled_example',name:'宽范围待核对（示例）',description:'宽网段仅允许停用保存，不能直接启用。',active:false,definition:{...base,match_type:'cidr' as const,values:['192.0.0.0/16']}},
+  {id:'watch_disabled_example',name:'宽范围待复核（示例）',description:'宽网段仅允许停用保存，不能直接启用。',active:false,definition:{...base,match_type:'cidr' as const,values:['192.0.0.0/16']}},
  ]
  return Promise.all(examples.map(async row=>readWatchlist({...row,tenant_id:'tenant_example',revision:2,definition_sha256:await goJSONDigest(watchlistDefinitionShape(row.definition)),created_by:'admin_example',created_at:'2026-10-18T01:00:00Z',expires_at:'2027-04-16T01:00:00Z'},'tenant_example')))
 }

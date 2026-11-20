@@ -5,7 +5,7 @@ import {computed,ref,watch} from 'vue'
 import {Modal} from 'ant-design-vue'
 import {useRoute,useRouter} from 'vue-router'
 import {PlusOutlined,SearchOutlined,ReloadOutlined,DownloadOutlined,SettingOutlined,FilterOutlined} from '@ant-design/icons-vue'
-import type {BusinessRecord,PageSpec,PreviewState} from '../models'
+import type {BusinessRecord,ColumnSpec,PageSpec,PreviewState} from '../models'
 import {metricsFor} from '../data/fixtures'
 import {compareCells,formatCell} from '../composables/formatRecord'
 import {useRecords,exportCsv,exportJson} from '../composables/useRecords'
@@ -20,7 +20,9 @@ import PacketSessionDialog from './PacketSessionDialog.vue'
 import PacketInspectionDialog from './PacketInspectionDialog.vue'
 import SavedQueries from './SavedQueries.vue'
 import type {QuerySnapshot} from './SavedQueries.vue'
-import SensorHealthSettings from './SensorHealthSettings.vue'
+import HelpNote from './HelpNote.vue'
+import ListPager from '../../../web/packages/shared/src/components/ListPager.vue'
+import {defaultPageSize,pageOf} from '../../../web/packages/shared/src/pagination'
 import {healthFor,sensorMetrics} from '../data/sensorHealth'
 import {sensorThresholds} from '../composables/useSensorHealth'
 import {packetPreviewLocation,openPacketPreview,closePacketPreview} from '../composables/packetPreview'
@@ -29,7 +31,7 @@ const message=useFeedback()
 const props=defineProps<{page:PageSpec;state:PreviewState;embedded?:boolean;localArchives?:boolean}>();const emit=defineEmits<{state:[value:PreviewState]}>()
 const {records,save,updateStatus}=useRecords(props.page)
 const router=useRouter(),route=useRoute()
-const query=ref('');const filterStatus=ref<string>();const scope=ref('全部网络域');const selectedKeys=ref<string[]>([]);const currentPage=ref(1);const pageSize=ref(8)
+const query=ref('');const filterStatus=ref<string>();const scope=ref('全部网络域');const selectedKeys=ref<string[]>([]);const currentPage=ref(1);const pageSize=ref<number>(defaultPageSize)
 const detailOpen=ref(false);const formOpen=ref(false);const selected=ref<BusinessRecord>();const editing=ref<BusinessRecord>();const activeQuery=ref('');const advanced=ref(false);const protocol=ref<string>();const method=ref<string>();const source=ref('');const destination=ref('');const path=ref('');const timeWindow=ref('最近 24 小时')
 const healthFilter=ref<string>()
 const batchIds=ref<string[]>([])
@@ -50,7 +52,25 @@ const statusOptions=computed(()=>[...new Set(records.value.map(r=>r.status))].ma
 const displayRecords=computed(()=>props.page.family==='sensor'?records.value.map(record=>({...record,health:healthFor(record,sensorThresholds)})):props.localArchives?records.value.map(record=>record.status==='已归档'?({...record,rawSize:'未保留',codec:'详见主平台归档'}):record):records.value)
 const filtered=computed(()=>props.state==='empty'?[]:displayRecords.value.filter(r=>(!activeQuery.value||[r.id,...props.page.columns.map(c=>r[c.key])].some(v=>String(v??'').toLowerCase().includes(activeQuery.value.toLowerCase())))&&(!filterStatus.value||r.status===filterStatus.value)&&(!healthFilter.value||r.health===healthFilter.value)&&(scope.value==='全部网络域'||(r.zone??r.scope)===scope.value)&&(!protocol.value||r.protocol===protocol.value)&&(!method.value||r.method===method.value)&&(!source.value||String(r.source).includes(source.value))&&(!destination.value||String(r.destination).includes(destination.value))&&(!path.value||String(r.path).includes(path.value))&&(timeWindow.value!=='最近 1 小时'||String(r.time)>='2026-09-30 08:45:00')))
 const hasFilters=computed(()=>Boolean(activeQuery.value||filterStatus.value||healthFilter.value||scope.value!=='全部网络域'||protocol.value||method.value||source.value||destination.value||path.value||timeWindow.value!=='最近 24 小时'))
-const columns=computed(()=>[...props.page.columns.filter(c=>visibleCols.value.includes(c.key)).map(c=>({...c,dataIndex:c.key,ellipsis:c.key!=='status'&&c.key!=='name'&&!(props.page.family==='sensor'&&c.key==='lastSeen'),sorter:(a:BusinessRecord,b:BusinessRecord)=>compareCells(a[c.key],b[c.key],c)})),{title:'操作',key:'actions',width:props.page.family==='sensor'?100:props.page.family==='packet-archive'?220:120,fixed:'right' as const}])
+// 表格列标准：编号独立一列；每行单行显示；只有时间、级别和数值列可排序；操作列固定在右侧。
+const sortableKeys=new Set(['time','updated','created','expires','lastSeen','start','end','due','risk','score','count','cvss','epss','p50','p95','p99','packets'])
+const timeKeys=new Set(['time','updated','created','expires','lastSeen','start','end','due','captureWindow'])
+const extraColumns=computed<ColumnSpec[]>(()=>props.page.family==='sensor'?[{key:'site',title:'站点',width:120},{key:'role',title:'角色',width:120}]:[])
+const columns=computed(()=>[
+  {title:'编号',key:'id',dataIndex:'id',width:124,kind:'code' as const,ellipsis:true},
+  ...[...props.page.columns.slice(0,1),...extraColumns.value,...props.page.columns.slice(1)]
+    .filter(c=>visibleCols.value.includes(c.key)||extraColumns.value.includes(c))
+    .map(c=>({
+      ...c,
+      dataIndex:c.key,
+      // 名称列不定宽，吃掉剩余空间；时间与地址类列给足单行宽度。
+      width:c.key==='name'?undefined:timeKeys.has(c.key)?160:c.kind==='code'?128:c.width,
+      ellipsis:c.key!=='status',
+      ...(sortableKeys.has(c.key)||c.kind==='level'||c.kind==='percent'||c.kind==='progress'?{sorter:(a:BusinessRecord,b:BusinessRecord)=>compareCells(a[c.key],b[c.key],c)}:{}),
+    })),
+  {title:'操作',key:'actions',width:props.page.family==='packet-archive'?196:96,fixed:'right' as const},
+])
+const paged=computed(()=>pageOf(filtered.value,currentPage.value,pageSize.value))
 const metrics=computed(()=>props.page.family==='sensor'?sensorMetrics(filtered.value,sensorThresholds):metricsFor(props.page,props.state==='empty'))
 watch(()=>props.state,state=>{responseOpen.value=state==='action'&&props.page.family==='decision-evaluation';detailOpen.value=state==='detail'||Boolean(props.localArchives&&state==='action');sessionOpen.value=state==='action'&&props.page.family==='packet-archive'&&!props.localArchives;formOpen.value=state==='action'&&!sessionOpen.value&&!props.localArchives&&props.page.family!=='decision-evaluation';if(detailOpen.value||responseOpen.value)selected.value=props.localArchives&&state==='action'?(displayRecords.value.find(record=>record.status==='已归档')??displayRecords.value[0]):displayRecords.value[0];if(state==='action'){if(props.page.family==='packet-archive')selectedKeys.value=records.value.filter(row=>row.status==='已归档').slice(0,2).map(row=>row.id);editing.value=undefined;batchIds.value=props.page.family==='alert'?records.value.map(r=>r.id):[]}},{immediate:true})
 watch([()=>route.query.inspect,()=>route.query.inspect_archive,()=>route.query.packet,()=>route.query.layer,()=>route.query.inspection,()=>props.page.id,()=>props.state,displayRecords],()=>{
@@ -68,7 +88,7 @@ function operate(record:BusinessRecord){
   batchIds.value=[]
   if(props.page.readOnly){exportJson(record.id,record);return}
   if(props.page.family==='action'){
-    Modal.confirm({title:'撤销响应租约',content:`目标：${record.target}。本原型将更新本地租约状态；生产撤销需要执行采集器回执与设备配置核验。`,okText:'确认撤销',cancelText:'取消',onOk:()=>{updateStatus([record.id],'撤销待核验');message.success('本地示例租约已进入撤销待核验状态。')}});return
+    Modal.confirm({title:'撤销响应租约',content:`目标：${record.target}。本原型将更新本地租约状态；生产撤销需要执行采集器回执与设备配置核验。`,okText:'确认撤销',cancelText:'取消',onOk:()=>{updateStatus([record.id],'结果未知');message.success('已提交撤销。本地示例租约标记为结果未知，回读设备配置后才能确认已撤销。')}});return
   }
   editing.value=record;formOpen.value=true
 }
@@ -78,22 +98,84 @@ function submit(values:Record<string,unknown>){if(props.page.actionMode==='expor
 function batch(){if(!selectedKeys.value.length)return;batchIds.value=[...selectedKeys.value];editing.value=undefined;formOpen.value=true}
 </script>
 <template>
-  <PageHeader v-if="!embedded" :title="page.title" :description="page.description"><a-space wrap><SavedQueries v-if="['alert','session'].includes(page.family)" :snapshot="querySnapshot" @apply="applySaved"/><SensorHealthSettings v-if="page.family==='sensor'"/><a-button v-if="page.family!=='decision-evaluation'" @click="exportCsv(page,filtered)"><DownloadOutlined/> 导出</a-button><a-button v-if="page.kind==='table'&&page.family!=='audit'&&page.family!=='login-log'&&page.family!=='decision-evaluation'" type="primary" @click="create"><PlusOutlined v-if="!page.readOnly"/>{{page.primary}}</a-button></a-space></PageHeader>
+  <PageHeader v-if="!embedded" :title="page.title" :description="page.description" :notice="page.notice">
+    <a-space wrap>
+      <SavedQueries v-if="['alert','session'].includes(page.family)" :snapshot="querySnapshot" @apply="applySaved"/>
+      <a-button v-if="page.family!=='decision-evaluation'" @click="exportCsv(page,filtered)"><DownloadOutlined/> 导出</a-button>
+      <a-button v-if="page.kind==='table'&&page.family!=='audit'&&page.family!=='login-log'&&page.family!=='decision-evaluation'" type="primary" @click="create"><PlusOutlined v-if="!page.readOnly"/>{{page.primary}}</a-button>
+    </a-space>
+  </PageHeader>
+  <HelpNote v-if="embedded&&page.notice" :message="page.notice"/>
+  <HelpNote v-if="page.family==='sensor'" message="离线或心跳超时的探针，当前指标显示为无数据；执行采集器不计入捕获流量。健康阈值在系统设置的“探针健康”里调整。"/>
   <MetricBar v-if="metrics.length&&state!=='loading'&&state!=='error'" :items="metrics"/>
-  <a-alert v-if="page.notice" :message="page.notice" :type="'info'" show-icon class="page-notice"/>
-  <p v-if="page.family==='sensor'" class="snapshot-note">遥测快照：2026-09-30 09:45:00 · 离线或心跳超时的当前指标显示为不可观测；执行采集器不计入捕获流量。</p>
   <slot name="before"/>
   <section class="panel filter-panel" aria-label="检索条件">
-    <div :class="['filter-grid',{'sensor-filter-grid':page.family==='sensor'}]"><label><span>关键词</span><a-input v-model:value="query" :placeholder="`名称、编号或${page.columns[1]?.title??'字段'}`" allow-clear @press-enter="search"/></label><label><span>状态</span><a-select v-model:value="filterStatus" placeholder="全部状态" allow-clear :options="statusOptions"/></label><label v-if="page.family==='sensor'"><span>健康</span><a-select v-model:value="healthFilter" placeholder="全部健康状态" allow-clear :options="[...new Set(displayRecords.map(record=>String(record.health)))].map(value=>({value,label:value}))"/></label><label v-if="page.family!=='sensor-group'&&page.family!=='decision-evaluation'"><span>网络域</span><a-select v-model:value="scope" :options="['全部网络域','总部网络域','研发网络域','分支网络域'].map(value=>({value,label:value}))"/></label><div class="filter-buttons"><a-button type="primary" @click="search"><SearchOutlined/>查询</a-button><a-button @click="reset">重置</a-button><a-button v-if="['alert','session','log','behavior'].includes(page.family)" type="link" @click="advanced=!advanced">{{advanced?'收起':'高级筛选'}}<FilterOutlined/></a-button></div></div>
-    <div v-if="advanced" class="filter-grid advanced-filters"><label><span>源 IP</span><a-input v-model:value="source" placeholder="例如 198.51.100.24"/></label><label><span>目的 IP</span><a-input v-model:value="destination" placeholder="例如 10.20.1.15"/></label><label><span>协议</span><a-select v-model:value="protocol" placeholder="全部协议" allow-clear :options="['HTTP','TLS','DNS','TCP','UDP','SMB'].map(value=>({value,label:value}))"/></label><label><span>请求方法</span><a-select v-model:value="method" placeholder="全部方法" allow-clear :options="['GET','POST','PUT','DELETE','HEAD','OPTIONS'].map(value=>({value,label:value}))"/></label><label><span>Path 路径</span><a-input v-model:value="path" placeholder="例如 /admin/login"/></label><label><span>时间范围</span><a-select v-model:value="timeWindow" :options="['最近 1 小时','最近 24 小时','最近 7 天'].map(value=>({value,label:value}))"/></label></div>
+    <div :class="['filter-grid',{'sensor-filter-grid':page.family==='sensor'}]">
+      <label><span>关键词</span><a-input v-model:value="query" :placeholder="`名称、编号或${page.columns[1]?.title??'字段'}`" allow-clear @press-enter="search"/></label>
+      <label><span>状态</span><a-select v-model:value="filterStatus" placeholder="全部状态" allow-clear :options="statusOptions"/></label>
+      <label v-if="page.family==='sensor'"><span>健康</span><a-select v-model:value="healthFilter" placeholder="全部健康状态" allow-clear :options="[...new Set(displayRecords.map(record=>String(record.health)))].map(value=>({value,label:value}))"/></label>
+      <label v-if="page.family!=='sensor-group'&&page.family!=='decision-evaluation'"><span>网络域</span><a-select v-model:value="scope" :options="['全部网络域','总部网络域','研发网络域','分支网络域'].map(value=>({value,label:value}))"/></label>
+      <div class="filter-buttons">
+        <a-button type="primary" @click="search"><SearchOutlined/>查询</a-button>
+        <a-button @click="reset">重置</a-button>
+        <a-button v-if="['alert','session','log','behavior'].includes(page.family)" type="link" @click="advanced=!advanced">{{advanced?'收起':'高级筛选'}}<FilterOutlined/></a-button>
+      </div>
+    </div>
+    <div v-if="advanced" class="filter-grid advanced-filters">
+      <label><span>源 IP</span><a-input v-model:value="source" placeholder="例如 198.51.100.24"/></label>
+      <label><span>目的 IP</span><a-input v-model:value="destination" placeholder="例如 10.20.1.15"/></label>
+      <label><span>协议</span><a-select v-model:value="protocol" placeholder="全部协议" allow-clear :options="['HTTP','TLS','DNS','TCP','UDP','SMB'].map(value=>({value,label:value}))"/></label>
+      <label><span>请求方法</span><a-select v-model:value="method" placeholder="全部方法" allow-clear :options="['GET','POST','PUT','DELETE','HEAD','OPTIONS'].map(value=>({value,label:value}))"/></label>
+      <label><span>Path 路径</span><a-input v-model:value="path" placeholder="例如 /admin/login"/></label>
+      <label><span>时间范围</span><a-select v-model:value="timeWindow" :options="['最近 1 小时','最近 24 小时','最近 7 天'].map(value=>({value,label:value}))"/></label>
+    </div>
   </section>
   <section class="panel table-panel">
-    <div class="table-toolbar"><div><h2>{{page.family==='sensor'?'探针列表':page.family==='decision-evaluation'?'评估记录':page.objectLabel+'记录'}}</h2><span class="muted">{{filtered.length}} 条记录</span><a-tag v-if="selectedKeys.length" class="selection-count">已选 {{selectedKeys.length}} 项</a-tag></div><a-space><a-button v-if="!page.readOnly&&page.family!=='sensor-group'" size="small" :disabled="!selectedKeys.length" @click="batch">批量{{page.family==='alert'?'分派':'操作'}}</a-button><a-tooltip title="刷新记录"><a-button size="small" aria-label="刷新记录" @click="emit('state','data')"><ReloadOutlined/></a-button></a-tooltip><a-popover trigger="click" title="显示字段" placement="bottomRight"><template #content><a-checkbox-group v-model:value="visibleCols" class="column-selector" :options="page.columns.map(c=>({label:c.title,value:c.key}))"/></template><a-button size="small" aria-label="设置表格字段"><SettingOutlined/></a-button></a-popover></a-space></div>
+    <div class="table-toolbar">
+      <div>
+        <h2>{{page.family==='sensor'?'探针列表':page.family==='decision-evaluation'?'评估记录':page.objectLabel+'记录'}}</h2>
+        <span v-if="page.family==='sensor'" class="muted tabular">遥测快照 2026-09-30 09:45:00</span>
+        <a-tag v-if="selectedKeys.length" class="selection-count">已选 {{selectedKeys.length}} 项</a-tag>
+      </div>
+      <a-space>
+        <a-button v-if="!page.readOnly&&page.family!=='sensor-group'" size="small" :disabled="!selectedKeys.length" @click="batch">批量{{page.family==='alert'?'分派':'操作'}}</a-button>
+        <a-tooltip title="刷新记录"><a-button size="small" aria-label="刷新记录" @click="emit('state','data')"><ReloadOutlined/></a-button></a-tooltip>
+        <a-popover trigger="click" title="显示字段" placement="bottomRight">
+          <template #content><a-checkbox-group v-model:value="visibleCols" class="column-selector" :options="page.columns.map(c=>({label:c.title,value:c.key}))"/></template>
+          <a-button size="small" aria-label="设置表格字段"><SettingOutlined/></a-button>
+        </a-popover>
+      </a-space>
+    </div>
     <StatePanel v-if="state==='loading'||state==='error'" :state="state" @action="emit('state','data')"/>
     <StatePanel v-else-if="!filtered.length" state="empty" :title="hasFilters?'暂无符合条件的记录':page.emptyTitle" :description="hasFilters?'没有匹配当前条件的记录。请调整筛选或清除条件。':page.emptyDescription" :action="hasFilters?'清除筛选':page.family==='alert'?'查看数据源':page.readOnly?'重新加载':page.primary" @action="hasFilters?reset():page.family==='alert'?router.push('/page/data-sources'):page.readOnly?emit('state','data'):create()"/>
-    <a-table v-else :columns="columns" :data-source="filtered" row-key="id" size="middle" :scroll="{x:Math.max(1000,columns.reduce((sum,c)=>sum+(c.width??140),0))}" :pagination="{current:currentPage,pageSize,total:filtered.length,showSizeChanger:true,pageSizeOptions:['8','16','32'],showTotal:(total:number)=>`共 ${total} 条`}" :row-selection="page.family==='sensor-group'||page.family==='decision-evaluation'||localArchives?undefined:{selectedRowKeys:selectedKeys,onChange:(keys:unknown[])=>selectedKeys=keys.map(String),getCheckboxProps:(record:BusinessRecord)=>({disabled:page.family==='packet-archive'&&(record.status!=='已归档'||selectedKeys.length>=16&&!selectedKeys.includes(record.id))})}" @change="(pagination:{current?:number;pageSize?:number})=>{currentPage=pagination.current??1;pageSize=pagination.pageSize??8}">
-      <template #bodyCell="{column,record,text}"><template v-if="column.key==='name'"><button class="record-link" @click="view(record)">{{text}}</button><small v-if="page.family==='sensor'" class="record-subtitle">{{record.site}} · {{record.role}}</small><small v-else class="row-id">{{record.id}}</small></template><span v-else-if="page.family==='sensor'&&column.key==='lastSeen'" class="sensor-heartbeat tabular">{{String(text??'尚未上报').replace(' ','\n')}}</span><span v-else-if="page.family==='sensor'&&column.key==='resources'" class="tabular sensor-resources" :class="{muted:record.health==='不可观测'}">{{record.health==='不可观测'?'不可观测':text}}</span><span v-else-if="page.family==='sensor'&&['bps','drop'].includes(column.key)&&(record.health==='不可观测'||record.role==='执行采集器')" class="muted">{{record.role==='执行采集器'?'不适用':'不可观测'}}</span><StatusTag v-else-if="column.kind==='status'||column.kind==='level'" :value="text"/><template v-else-if="column.kind==='progress'"><a-progress :percent="Number(text)" size="small" :stroke-color="palette.primary"/></template><span v-else-if="column.kind==='percent'" class="tabular">{{formatCell(text,column)}}</span><span v-else-if="column.key==='actions'" class="row-actions"><a-button type="link" size="small" @click="view(record)">查看</a-button><a-button v-if="page.family==='packet-archive'" type="link" size="small" :disabled="!canInspect(record)" @click="inspect(record)">协议查看</a-button><a-button v-if="page.family!=='decision-evaluation'" type="link" size="small" @click="operate(record)">{{page.rowAction}}</a-button></span><span v-else :class="{mono:column.kind==='code',muted:text===null||text===undefined}">{{formatCell(text,column)}}</span></template>
-    </a-table>
+    <template v-else>
+      <a-table
+        :columns="columns"
+        :data-source="paged"
+        row-key="id"
+        size="small"
+        :scroll="{x:columns.reduce((sum,c)=>sum+(c.width??200),44)}"
+        :pagination="false"
+        :row-selection="page.family==='sensor-group'||page.family==='decision-evaluation'||localArchives?undefined:{selectedRowKeys:selectedKeys,onChange:(keys:unknown[])=>selectedKeys=keys.map(String),getCheckboxProps:(record:BusinessRecord)=>({disabled:page.family==='packet-archive'&&(record.status!=='已归档'||selectedKeys.length>=16&&!selectedKeys.includes(record.id))})}"
+      >
+        <template #bodyCell="{column,record,text}">
+          <button v-if="column.key==='name'" class="record-link" @click="view(record)">{{text}}</button>
+          <span v-else-if="page.family==='sensor'&&column.key==='lastSeen'" class="tabular">{{text??'尚未上报'}}</span>
+          <span v-else-if="page.family==='sensor'&&column.key==='resources'" class="tabular" :class="{muted:record.health==='无数据'}">{{record.health==='无数据'?'无数据':text}}</span>
+          <span v-else-if="page.family==='sensor'&&['bps','drop'].includes(column.key)&&(record.health==='无数据'||record.role==='执行采集器')" class="muted">{{record.role==='执行采集器'?'不适用':'无数据'}}</span>
+          <StatusTag v-else-if="column.kind==='status'||column.kind==='level'" :value="text"/>
+          <a-progress v-else-if="column.kind==='progress'" :percent="Number(text)" size="small" :stroke-color="palette.primary"/>
+          <span v-else-if="column.kind==='percent'" class="tabular">{{formatCell(text,column)}}</span>
+          <span v-else-if="column.key==='actions'" class="row-actions">
+            <a-button type="link" size="small" @click="view(record)">查看</a-button>
+            <a-button v-if="page.family==='packet-archive'" type="link" size="small" :disabled="!canInspect(record)" @click="inspect(record)">协议查看</a-button>
+            <a-button v-if="page.family!=='decision-evaluation'" type="link" size="small" @click="operate(record)">{{page.rowAction}}</a-button>
+          </span>
+          <span v-else :class="{mono:column.kind==='code',muted:text===null||text===undefined}">{{formatCell(text,column)}}</span>
+        </template>
+      </a-table>
+      <ListPager v-model:page="currentPage" v-model:page-size="pageSize" :total="filtered.length"/>
+    </template>
   </section>
   <RecordDetail :open="detailOpen" :page="page" :record="selected" :local-archive="localArchives" @close="close" @action="detailOpen=false;operate(selected!)" @respond="confirmResponse"/>
   <DecisionResponseDialog v-if="responseOpen&&selected" :record="selected" @close="close"/>

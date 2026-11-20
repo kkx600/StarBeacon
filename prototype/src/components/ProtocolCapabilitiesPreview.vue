@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import { computed,shallowRef } from 'vue'
 import { Modal as AModal } from 'ant-design-vue'
 import type { PreviewState } from '../models'
@@ -17,7 +18,7 @@ const report=computed(()=>props.state==='empty'?undefined:props.state==='error'?
 </script>
 <template>
   <PageHeader title="协议能力" description="按探针、检测引擎和配置摘要，核对六层协议能力及显式检测限额。"><a-button @click="qualityOpen=true">检测质量</a-button><a-button @click="emit('state','action')">查看协议能力</a-button></PageHeader>
-  <a-alert class="page-notice" type="info" show-icon message="本页面为合成示例，不调用采集器或原生引擎，不代表真实协议效果验收。" />
+  <HelpNote message="本页面为合成示例，不调用采集器或原生引擎，不代表真实协议效果验收。"/>
   <section class="panel protocol-preview-card"><div class="protocol-preview-heading"><h2>协议能力目录</h2><span class="muted">总部核心探针 · 总部站点</span></div><div><StatePanel v-if="state==='loading'" state="loading"/><ProtocolCapabilities v-else :report="report" /></div></section>
   <ProtocolCapabilitiesDialog :open="state==='action'" name="总部核心探针" :report="example" @close="emit('state','data')" />
   <a-modal title="协议能力详情" :open="state==='detail'" :width="680" :footer="null" @cancel="emit('state','data')"><ProtocolCapabilityDetails :entry="example.protocols.find(item=>item.protocol==='imap')!" /></a-modal>

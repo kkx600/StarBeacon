@@ -12,7 +12,7 @@
 .ant-modal .ant-modal-title {font-size: 18px; line-height: 1.5; font-weight: 600}
 .ant-modal .ant-modal-content {display: flex; flex-direction: column; max-height: calc(100dvh - 128px)}
 .ant-modal .ant-modal-header {margin-bottom: 16px; padding-right: 28px; flex-shrink: 0}
-.ant-modal .ant-modal-body {min-height: 0; overflow: auto; padding-right: 8px; scrollbar-gutter: stable}
+.ant-modal .ant-modal-body {min-height: 0; overflow: auto; margin-inline-end: -16px; padding-inline-end: 16px}
 .ant-modal .ant-modal-footer {margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); flex-shrink: 0}
 .ant-modal .ant-modal-close {color: var(--muted); border-radius: 6px}
 .ant-modal .ant-modal-close:hover {background: var(--row-hover); color: var(--text)}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,shallowRef,watch} from 'vue'
 import type {PreviewState} from '../models'
 import StatePanel from './StatePanel.vue'
@@ -12,5 +13,5 @@ const items=computed(()=>props.state==='empty'?[]:rows),checkOpen=shallowRef(fal
 watch(()=>props.state,value=>{checkOpen.value=value==='action'},{immediate:true})
 function close(){checkOpen.value=false;if(['detail','action'].includes(props.state))emit('state','data')}
 </script>
-<template><StatePanel v-if="['loading','error'].includes(state)" :state="state as 'loading'|'error'" :description="state==='error'?'设备目录未能读取，当前认证与配置状态未知。请刷新核对。':undefined" @action="emit('state','data')"/><template v-else><a-alert type="info" show-icon message="以下为合成目录，与工程端使用相同的设备列表、详情及本地配置核对组件，不读取本机文件或连接设备。" class="section-gap"/><div class="configuration-check"><span class="page-description">核对本机文件与运行配置是否一致。</span><a-button @click="checkOpen=true">核对本地配置</a-button></div><ResponseConnectors :items="items" :detailID="state==='detail'?'connector_hq':undefined" @close="close"/></template><ResponseConfigCheckDialog :open="checkOpen" :result="result" :pending="false" error="" @retry="checkOpen=true" @close="close"/></template>
+<template><StatePanel v-if="['loading','error'].includes(state)" :state="state as 'loading'|'error'" :description="state==='error'?'设备目录未能读取，当前认证与配置状态未知。请刷新核对。':undefined" @action="emit('state','data')"/><template v-else><HelpNote message="以下为合成目录，与工程端使用相同的设备列表、详情及本地配置核对组件，不读取本机文件或连接设备。"/><div class="configuration-check"><span class="page-description">核对本机文件与运行配置是否一致。</span><a-button @click="checkOpen=true">核对本地配置</a-button></div><ResponseConnectors :items="items" :detailID="state==='detail'?'connector_hq':undefined" @close="close"/></template><ResponseConfigCheckDialog :open="checkOpen" :result="result" :pending="false" error="" @retry="checkOpen=true" @close="close"/></template>
 <style scoped>.configuration-check{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:var(--related-gap);margin-bottom:var(--section-gap)}.section-gap{margin-bottom:var(--section-gap)}</style>

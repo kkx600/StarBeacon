@@ -58,7 +58,7 @@ test('当前主题的真实浏览器来源与 JPEG 可以通过严格检查', as
 }))
 test('默认检查只核对图库完整性，源码变化后提示截图过期但不阻断', async () => fixture(async ({root, check}) => {
   const theme = join(root, 'web/packages/shared/src/theme.ts')
-  await writeFile(theme, (await readFile(theme, 'utf8')).replace('#5d87ff', '#5d87fe'))
+  await writeFile(theme, (await readFile(theme, 'utf8')).replace('#2f54eb', '#2f54ec'))
   await writeFile(join(root, 'web/platform/src/unrecorded-component.ts'), 'export const label="当前界面"\n')
   const result = check()
   assert.equal(result.status, 0, result.stderr)
@@ -77,7 +77,7 @@ test('在 GitHub Actions 中以警告注解提示过期截图', async () => fixt
 
 test('主题改变后，即使刷新清单也不能把旧图标记为当前截图', async () => fixture(async ({root, check}) => {
   const file = join(root, 'web/packages/shared/src/theme.ts')
-  await writeFile(file, (await readFile(file, 'utf8')).replace('#5d87ff', '#5d87fe'))
+  await writeFile(file, (await readFile(file, 'utf8')).replace('#2f54eb', '#2f54ec'))
   const result = check('--refresh')
   assert.equal(result.status, 1)
   assert.match(result.stderr, /截图主题与当前全局主题不同/)

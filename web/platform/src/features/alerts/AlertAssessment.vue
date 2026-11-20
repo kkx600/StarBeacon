@@ -60,4 +60,4 @@ onMounted(()=>{void state.refresh()})
   </StatePanel>
  </template>
 </template>
-<style scoped>.assessment-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.assessment-note{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.block{display:block;overflow-wrap:anywhere;margin-top:4px}@media(max-width:680px){.assessment-fields{grid-template-columns:1fr}}</style>
+<style scoped>.assessment-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.assessment-note{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.block{display:block;overflow-wrap:anywhere;margin-top:4px}</style>

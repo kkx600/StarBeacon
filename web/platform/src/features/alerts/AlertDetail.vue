@@ -10,6 +10,7 @@ import {session} from '../../session'
 import {router} from '../../router'
 import AlertAssessment from './AlertAssessment.vue'
 import AlertTriage from './AlertTriage.vue'
+import AlertWatchlistHits from './AlertWatchlistHits.vue'
 import ApplicationAttribution from '@starbeacon/shared/components/ApplicationAttribution.vue'
 const props=defineProps<{alert: Alert | null}>()
 const active=ref('evidence'),locked=ref(false)
@@ -40,6 +41,6 @@ function investigate(){if(!props.alert||locked.value||session.current.value?.rol
       <ByteViewer :original="alert.event.original" />
       <h2>原始 EVE</h2><pre v-if="alert.event.original" class="raw-data technical">{{ alert.event.original }}</pre><a-empty v-else description="当前账号未获原始载荷读取权限" />
     </div>
-   </TabPane><TabPane v-if="session.current.value?.role==='admin'" key="assessment" tab="告警研判" :disabled="locked&&active!=='assessment'"><AlertAssessment v-if="active==='assessment'" :key="alert.event_id+alert.raw_sha256" :event-id="alert.event_id" :digest="alert.raw_sha256" @locked="locked=$event"/></TabPane><TabPane v-if="session.current.value?.role==='admin'" key="triage" tab="模型研判" :disabled="locked&&active!=='triage'"><AlertTriage v-if="active==='triage'" :key="alert.event_id+alert.raw_sha256" :event-id="alert.event_id" :digest="alert.raw_sha256" @locked="locked=$event"/></TabPane></Tabs>
+   </TabPane><TabPane v-if="session.current.value?.role==='admin'" key="assessment" tab="告警研判" :disabled="locked&&active!=='assessment'"><AlertAssessment v-if="active==='assessment'" :key="alert.event_id+alert.raw_sha256" :event-id="alert.event_id" :digest="alert.raw_sha256" @locked="locked=$event"/></TabPane><TabPane v-if="session.current.value?.role==='admin'" key="triage" tab="模型研判" :disabled="locked&&active!=='triage'"><AlertTriage v-if="active==='triage'" :key="alert.event_id+alert.raw_sha256" :event-id="alert.event_id" :digest="alert.raw_sha256" @locked="locked=$event"/></TabPane><TabPane key="watchlist" tab="名单命中" :disabled="locked"><AlertWatchlistHits v-if="active==='watchlist'" :key="alert.event_id+alert.raw_sha256" :event-id="alert.event_id" :digest="alert.raw_sha256"/></TabPane></Tabs>
   </a-modal>
 </template>

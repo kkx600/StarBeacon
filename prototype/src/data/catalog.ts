@@ -79,7 +79,7 @@ const definitions: Definition[] = [
   ['SB-FIL-006','analysis-reports','detection','文件分析报告','file-report','查看后到报告、复核和重新分析，分别关联响应依据。','name:报告|sample:样本|verdict:结论|revision:修订|owner:复核人|status:复核状态','创建重新分析'],
   ['SB-RSP-001','decision-policies','response','决策策略','decision','配置判断条件、模型修订与限时处置授权，持续核对本人完成的研判。','name:策略名称|mode:运行模式|model:模型来源|confidence:自报分数阈值|scope:保护范围|status:状态','创建决策策略'],
   ['SB-RSP-002','devices','response','联动设备','device','按执行探针检索 HTTP 连接器，核对设备身份、配置绑定、观测时效和相关响应动作。','device:设备 / 连接器|sensor:执行探针|version:接口版本|status:当前条件|ttl:最长封禁|observed:设备核验时间','查询联动设备'],
-  ['SB-RSP-003','auth-plugins','response','认证插件','auth-plugin','管理控制台认证、会话缓存、续期与设备版本兼容性。','name:插件名称|device:设备|version:插件版本|auth:认证方式|expires:会话到期|status:认证状态','配置认证插件'],
+  ['SB-RSP-003','auth-plugins','response','联动插件','auth-plugin','由采集器访问内网的防火墙、EDR 等设备，拉取告警并执行封禁、解封与核验；简单设备填模板，复杂设备写脚本。','name:插件名称|device:适配设备|version:插件版本|auth:形式|expires:最近执行|status:状态','新建插件'],
   ['SB-RSP-004','actions','response','响应动作','action','检索限时封禁、租约回读与解除任务，分别核对平台受理、设备配置与实际流量效果。','kind:响应任务|sensor:执行探针|target:目标 / 设备|status:执行状态|created:提交时间|expires:租约到期','查询响应动作'],
   ['SB-RSP-005','playbooks','response','响应剧本','playbook','编排触发、条件、人工审批、受控动作和补偿路径。','name:剧本名称|trigger:触发器|nodes:节点数|version:版本|status:发布状态','创建剧本'],
   ['SB-RSP-006','playbook-runs','response','剧本实例','playbook-run','跟踪检查点、等待、结果未知、取消与补偿。','name:实例|playbook:剧本|node:当前节点|duration:耗时|owner:审批人|status:运行状态','创建演练实例'],
@@ -103,7 +103,7 @@ const definitions: Definition[] = [
   ['SB-DAT-006','parsers','system','解析器','parser','测试样例映射、时间解析和脱敏，灰度发布后保留回放能力。','name:解析器名称|type:来源类型|version:版本|quality:测试通过率|scope:数据源范围|status:发布状态','创建解析器'],
   ['SB-DAT-007','data-quality','system','数据质量','data-quality','检查缺失、迟到、重复、乱序和字段漂移，保留受影响范围。','name:数据源|missing:必需字段缺失|late:迟到比例|duplicates:重复比例|quality:解析成功率|status:质量状态','创建质量检查'],
   ['SB-DAT-008','replays','system','隔离与重放','replay','从隔离队列创建有界重放任务，冻结解析和检测版本。','name:重放任务|source:来源队列|version:解析版本|count:事件数|progress:进度|status:任务状态','创建重放任务'],
-  ['SB-OPS-004','platform-health','system','平台运行状态','platform','查看依赖健康、资源和数据影响，按业务链路定位故障。','name:组件|role:职责|cpu:CPU|memory:内存|backlog:积压|status:运行状态','配置监控阈值'],
+  ['SB-OPS-004','platform-health','system','平台运行状态','platform','查看依赖健康、资源和数据影响，按业务链路定位异常。','name:组件|role:职责|cpu:CPU|memory:内存|backlog:积压|status:运行状态','配置监控阈值'],
   ['SB-OPS-007','backups','system','备份与恢复','backup','管理备份范围、恢复点与隔离演练，核对恢复验证。','name:备份任务|scope:范围|bytes:体积|rpo:恢复点|validated:验证时间|status:状态','创建备份任务'],
   ['SB-OPS-008','connectors','system','连接器与许可','connector','管理连接器签名、版本适配、权限、许可与维护责任。','name:连接器|type:类别|version:版本|license:许可|owner:维护方|status:适配状态','注册连接器'],
   ['SB-GOV-001','authentication','system','登录与会话','auth','配置 OIDC、MFA、会话期限与撤销，查看当前活动会话。','name:会话|account:账号|source:登录来源|mfa:MFA|expires:到期时间|status:状态','配置登录策略'],
@@ -111,7 +111,7 @@ const definitions: Definition[] = [
   ['SB-GOV-003','tenants','system','租户与组织','tenant','管理集团组织、租户委派与数据单元归属。','name:租户名称|parent:上级组织|cell:数据单元|sensors:探针数|owner:管理员|status:状态','创建租户'],
   ['SB-GOV-004','api-keys','system','服务身份与 API 密钥','api-key','为 API 与 MCP 签发有范围和期限的服务身份，支持轮换。','name:服务身份|scope:授权范围|tools:工具权限|expires:到期时间|used:最近使用|status:状态','创建服务身份'],
   ['SB-GOV-005','data-security','system','数据脱敏与外发','data-security','控制敏感字段、模型外发、样本导出和驻留范围。','name:策略名称|scope:数据范围|redaction:脱敏方式|egress:外发规则|owner:负责人|status:状态','创建数据策略'],
-  ['SB-GOV-006','retention','system','留存与证据保全','retention','所有已启用业务数据默认保留 180 天，变更前预览影响与保全。','name:数据类别|retention:留存天数|storage:存储层|held:保全数量|estimate:预计占用|status:策略状态','调整留存策略'],
+  ['SB-GOV-006','retention','system','留存与证据保全','retention','所有启用的业务数据默认保留 180 天，变更前预览影响与保全。','name:数据类别|retention:留存天数|storage:存储层|held:保全数量|estimate:预计占用|status:策略状态','调整留存策略'],
   ['SB-GOV-007','audit','system','审计日志','audit','追溯登录、操作、访问与导出，保留主体和对象快照。','name:操作摘要|actor:操作人|object:对象|source:来源 IP|time:时间|status:结果','导出审计记录'],
   ['SB-GOV-008','quotas','system','用量与配额','quota','按租户治理流量、索引、对象存储、模型和任务资源。','name:配额项|scope:租户|used:已使用|limit:限额|period:计费窗口|status:状态','调整配额'],
   ['SB-GOV-009','software-catalog','system','软件物料与供应链','software','查看 SBOM、签名、许可、支持版本与升级资格。','name:组件|version:版本|license:许可|signature:签名|support:维护状态|status:核验状态','导入物料清单'],
@@ -145,7 +145,7 @@ const policyFields: Record<string, FieldSpec[]> = {
   decision: [field('name','策略名称'),field('mode','运行模式','select','影子评估',['影子评估','持续评估与人工确认','持续评估与自动执行']),field('provider','模型配置','text','provider_example',undefined,'持续模式绑定本人研判与模型修订；开启独立自动研判许可后，按指定探针、等级和费用额度提交新告警。'),field('providerRevision','模型修订','number',1),field('sensor','执行探针','select','总部采集探针',['总部采集探针','分支采集探针']),field('registration','探针注册代次','text','registration_example',undefined,'重新登记探针后，必须重新核对并授权。'),field('connector','设备连接器','text','connector_example'),field('configSha','设备配置摘要','text','未提供实际设备配置',undefined,'生产表单由所选设备绑定完整 SHA-256；此原型不生成虚构摘要。'),field('ttl','处置期限（秒）','number',300,undefined,'30–3600 秒；设备租约固定到期。'),field('cooldown','目标冷却（秒）','number',3600,undefined,'不得短于处置期限，上限 86400 秒；人工任务也计入。'),field('hourly','每小时授权上限','number',10,undefined,'1–100 次；跨策略修订累计。'),field('acceptScore','授权使用未校准分数','switch',false,undefined,'模型自报分数不是攻击概率。必须明确授权，且仍须满足攻击尝试、事实引用、证据一致和保护地址等固定条件。'),field('autoTriage','自动提交新告警研判','switch',false,undefined,'默认关闭，只处理指定探针与注册代次的新观测告警。'),field('triageSeverity','自动研判告警等级','select','高危及严重',['高危','高危及严重','中危及以上','全部已定义等级']),field('triageDaily','每日自动研判上限','number',100,undefined,'1–1000 项；按 UTC 自然日、跨策略修订计数，同时受模型与租户共享费用额度约束。'),field('triagePermission','自动研判数据使用许可','switch',false,undefined,'明确允许向指定模型提交白名单告警字段并接受调用费用；不发送原始载荷或 PCAP。'),field('confidence','模型自报分数阈值','number',0.8,undefined,'取值大于 0 且不超过 1；自动模式不得低于 0.5。'),field('age','材料观测时限（秒）','number',3600,undefined,'60–86400 秒，按平台观测时间核对。'),field('expression','决策表达式','textarea','confidence >= threshold && verdict == "confirmed"',undefined,'CEL 布尔表达式，最多 2048 字节；固定授权条件不能被表达式绕过。'),field('scope','保护网段','textarea','10.20.0.0/24\n2001:db8::/32',undefined,'每行一个规范 CIDR，最多 32 个。'),field('notes','维护说明','textarea')],
   device: [field('name','设备名称'),field('type','设备类型','select','防火墙',['防火墙','EDR','交换机']),field('address','管理地址','text','https://192.0.2.20'),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('auth','访问模式','select','官方 API',['官方 API','认证插件']),field('credential','凭据引用','text','vault/device/hq-fw'),field('scope','授权网络域','select','总部网络域',['总部网络域','研发网络域','分支网络域'])],
   action: [field('target','目标 IP','text','198.51.100.24'),field('operation','动作类型','select','封禁 IP',['封禁 IP','解封 IP','隔离终端','恢复终端']),field('device','目标设备','select','总部边界防火墙',['总部边界防火墙','总部终端 EDR']),field('sensor','执行采集器','select','总部执行探针',['总部执行探针','分支执行探针']),field('ttl','有效期（分钟）','number',30),field('approval','授权依据','text','审批单 APR-20260930-001'),field('reason','处置原因','textarea')],
-  emergency: [field('scope','控制范围','select','当前租户',['当前租户','总部网络域','总部边界防火墙']),field('operation','控制类型','select','停止新动作',['停止新动作','撤销有效动作','隔离故障执行器']),field('reason','执行原因','textarea'),field('confirm','输入确认文字','text','',undefined,'输入“确认控制”后才能提交。停止调度与撤销租约分别追踪。')],
+  emergency: [field('scope','控制范围','select','当前租户',['当前租户','总部网络域','总部边界防火墙']),field('operation','控制类型','select','停止新动作',['停止新动作','撤销有效动作','隔离异常执行器']),field('reason','执行原因','textarea'),field('confirm','输入确认文字','text','',undefined,'输入“确认控制”后才能提交。停止调度与撤销租约分别追踪。')],
   channel: [field('name','渠道名称'),field('type','渠道类型','select','邮件',['邮件','企业微信','钉钉','飞书','Webhook']),field('address','接收地址','text','security@example.test'),field('credential','凭据引用','text','vault/notification/mail'),field('rate','每分钟限额','number',30),field('notes','消息模板','textarea','[星烽] {{alert.severity}} · {{alert.name}} · {{alert.id}}')],
   syslog: [field('name','目标名称'),field('address','服务器地址','text','192.0.2.40:6514'),field('transport','传输方式','select','TLS/TCP',['TLS/TCP','TCP','UDP']),field('format','消息格式','select','RFC 5424',['RFC 5424','RFC 3164']),field('credential','TLS 凭据引用','text','vault/syslog/client'),field('streams','日志类别','select','安全告警',['安全告警','操作日志','登录日志','安全告警＋操作日志＋登录日志']),field('notes','转发说明','textarea','审计日志按租户归属发送脱敏材料；传输写入不代表日志服务器落盘。')],
   model: [field('name','配置名称'),field('provider','供应商／适配器','select','本地模型',['本地模型','通用 API','Jev','Laya']),field('endpoint','服务地址','text','https://model.example.test/v1'),field('model','精确模型 ID','text','security-small-example'),field('credential','API 密钥引用','text','vault/models/local'),field('residency','数据驻留','select','本地',['本地','授权云区域']),field('budget','每日预算（元）','number',100),field('notes','允许的任务','textarea')],
@@ -161,9 +161,9 @@ const policyFields: Record<string, FieldSpec[]> = {
 
 const notices: Record<string, string> = {
   alert: '检测命中表示观察到规则条件。利用成功和是否可封禁需要独立证据与处置授权。',
-  assessment: '校准置信度、自报分数和处置资格分别记录；证据不足时保留“无法判定”。',
+  assessment: '校准置信度、自报分数和处置资格分别记录；证据不足时如实显示“证据不足”。',
   application: '应用识别以规则、域名、SNI 等观测依据为准。共享域名、CDN、ECH 或加密载荷可能造成未知或冲突。',
-  'packet-time': '旁路单臂镜像通常只有捕获时间；没有独立观测来源时，入站／出站时间显示“不可观测”。',
+  'packet-time': '旁路单臂镜像通常只有捕获时间；没有独立观测来源时，入站／出站时间显示“无数据”。',
   pcap: '完整会话必须验证真实三次握手、双向连续性与结束证据；缺包时只能导出观测快照。',
   integrity: '握手完整不代表应用内容全部可见。TLS 密文、丢包、重组限制和单向镜像分别核对。',
   tls: '保存 TLS 密文不等于能够解密。没有授权密钥或明文来源时，仅提供可观测元数据。',
@@ -225,7 +225,7 @@ pages.push(
   {...supplemental('decision-evaluations','评估记录','response','decision-evaluation','查看本人评估的不可变判断、策略快照和独立持续授权。','name:评估标识|policy:策略 / 修订|status:判断结果|confidence:模型自报分数|model:研判作业|time:评估时间','查看评估记录'),readOnly:true,requirement:['SB-RSP-001','SB-RSP-004'],detailTabs:['判断快照','策略快照','持续授权','来源与限制'],notice:'本页面为合成示例。判断、授权与任务分别留存，默认 180 天；判断自身不授予执行权限，任务受理不代表设备已生效或流量已阻断。'},
   supplemental('notification-routes','通知规则','notifications','notification-rule','按严重级别、业务范围、值班与升级条件分派通知。','name:规则名称|level:告警级别|channels:通知渠道|owner:接收组|schedule:静默窗口|status:状态','创建通知规则'),
   supplemental('notification-templates','消息模板','notifications','template','维护邮件、机器人卡片和 Webhook 的字段、脱敏与版本。','name:模板名称|type:渠道类型|version:版本|redaction:脱敏策略|status:状态','创建模板'),
-  { ...supplemental('delivery-logs','推送日志','notifications','delivery','查看发送尝试、供应商接受、送达和阅读回执，支持有界重试。','name:推送内容|type:渠道类型|recipient:接收对象|accepted:供应商接受|delivered:送达回执|read:阅读回执|status:投递状态','导出推送记录'),actionMode:'export',readOnly:true,requirement:['SB-OPS-005'],notice:'供应商接受、送达和阅读是不同状态；渠道不提供回执时显示“不可观测”。' },
+  { ...supplemental('delivery-logs','推送日志','notifications','delivery','查看发送尝试、供应商接受、送达和阅读回执，支持有界重试。','name:推送内容|type:渠道类型|recipient:接收对象|accepted:供应商接受|delivered:送达回执|read:阅读回执|status:投递状态','导出推送记录'),actionMode:'export',readOnly:true,requirement:['SB-OPS-005'],notice:'供应商接受、送达和阅读是不同状态；渠道不提供回执时显示“无回执”。' },
   {...supplemental('application-rules','应用识别规则','detection','application-rule','管理产品名称规则、不可变修订与可见元数据输入验证。','name:规则名称|product:应用产品|category:类别|protocol:协议范围|revision:修订|status:状态','创建应用识别规则'),notice:'本页面全部为合成示例。名称条件只形成产品候选；不同产品同时命中时保留冲突，不按优先级隐藏。'},
   supplemental('rule-samples','重放样本','detection','replay-sample','导入 PCAP 与 PCAPNG 样本，选择目标探针与规则包进行离线验证。','name:样本名称|bytes:大小|format:格式|status:完整性','导入 PCAP'),
   { ...supplemental('rule-tests','重放任务','detection','rule-test','管理离线重放任务、执行探针与规则来源，核对包处理统计、命中和执行日志。','name:重放任务|version:规则版本|positive:正样本|negative:负样本|performance:性能验证|status:结果','创建重放测试'),requirement:['SB-DET-002','SB-AI-004'] },
@@ -236,9 +236,15 @@ pages.push(
   supplemental('discovery','被动发现','assets','discovery','按当前探针、网段和时间窗口核对已有地址观测。','name:观测地址|ip:IP 地址|mac:MAC 地址|source:方向|status:观测状态','执行发现'),
   supplemental('rule-rollouts','分批发布','detection','rule-rollout','固定目标计划修订，逐批验证原生装载、样本与观察水位。','name:发布名称|scope:目标探针|progress:当前批次|status:发布状态','创建分批发布'),
   {...supplemental('sensor-tasks','任务记录','sensors','task','核对签名任务、设备接收与执行回执，受理不代表执行成功。','name:任务标识|sensor:目标探针|type:任务类型|time:提交时间|status:执行状态','查看任务'),readOnly:true},
-  supplemental('system-settings','系统设置','system','settings','统一查找账号、运行状态、留存与审计配置，核对当前版本的功能范围。','name:功能名称|group:功能分组|scope:可用范围|status:状态','查看功能范围'),
+  supplemental('system-settings','系统设置','system','settings','系统级配置集中在这里：用户、自动处置、旁路阻断、全流量存储和探针健康。','name:功能名称|group:功能分组|scope:可用范围|status:状态','查看功能范围'),
   supplemental('my-account','个人设置','system','account','管理显示偏好、通知订阅与会话安全。','name:设置项|value:当前值|scope:作用范围|status:状态','保存个人设置'),
+  // AI 自动化运营、旁路阻断与全流量回溯使用各自的专用视图。
+  {...supplemental('ai-ops','AI 值守','ai','ai-ops','集中查看 AI 的研判结论、处置方案和执行流水，确认或驳回方案，并可一键暂停自动处置。','name:处置方案|summary:AI 结论与建议|updated:生成时间|status:状态','查看处置策略'),kind:'ai-ops',requirement:['SB-AI-002','SB-RSP-001']},
+  {...supplemental('bypass-blocking','旁路阻断','response','bypass','由采集器向命中的连接注入 TCP RST 或 ICMP 不可达，先断开连接，再由联动插件完成持久封禁。','name:阻断策略|summary:触发条件与范围|updated:更新时间|status:状态','新建阻断策略'),kind:'bypass',requirement:['SB-RSP-004']},
+  {...supplemental('full-traffic','全流量回溯','traffic','full-traffic','按时间和五元组查找任意会话，查看原包留存情况并下载；原包按留存策略保存。','name:会话|summary:留存情况|updated:开始时间|status:状态','留存策略'),kind:'full-traffic',requirement:['SB-NET-001','SB-SRH-007']},
 )
+// 联动插件沿用原有需求编号与表单字段，页面改用专用视图。
+pages.find(page=>page.id==='auth-plugins')!.kind='plugins'
 
 const customFields: Record<string, FieldSpec[]> = {
   'auth-plugins': [field('name','插件名称'),field('device','目标设备','select','总部边界防火墙',['总部边界防火墙']),field('plugin','签名插件','text','connector.example.auth'),field('version','兼容版本','text','1.2.0'),field('credential','凭据引用','text','vault/device/hq-fw'),field('scope','允许访问的管理域','text','https://192.0.2.20'),field('notes','会话续期说明','textarea')],
@@ -288,7 +294,7 @@ sensorGroupPage.rowAction='编辑'
 sensorGroupPage.emptyTitle='暂无探针分组'
 sensorGroupPage.emptyDescription='当前条件下没有分组。管理员可创建分组，再将探针归入对应站点。'
 sensorGroupPage.notice='停用分组必须没有成员，停用的探针仍计入成员数量。当前有效配置不按业务历史留存期限自动删除。'
-sensorPage.columns=[{key:'name',title:'探针',width:180},{key:'group',title:'探针分组',width:150},{key:'status',title:'连接',width:70,kind:'status'},{key:'health',title:'健康',width:110,kind:'status'},{key:'resources',title:'资源（CPU / 内存 / 磁盘）',width:178},{key:'bps',title:'镜像流量',width:105},{key:'drop',title:'丢包率',width:74},{key:'lastSeen',title:'最近心跳',width:145},{key:'version',title:'引擎版本',width:180}]
+sensorPage.columns=[{key:'name',title:'探针',width:180},{key:'group',title:'探针分组',width:150},{key:'status',title:'连接',width:70,kind:'status'},{key:'health',title:'健康',width:140,kind:'status'},{key:'resources',title:'资源（CPU / 内存 / 磁盘）',width:178},{key:'bps',title:'镜像流量',width:105},{key:'drop',title:'丢包率',width:74},{key:'lastSeen',title:'最近心跳',width:145},{key:'version',title:'引擎版本',width:180}]
 
 const auditPage=pages.find(page=>page.id==='audit')!
 auditPage.title='操作日志'

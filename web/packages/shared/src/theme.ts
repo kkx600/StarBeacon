@@ -1,17 +1,30 @@
 import {theme} from 'ant-design-vue'
 import type {ThemeConfig} from 'ant-design-vue/es/config-provider/context'
 
-// 基础色沿用参考前端；组件交互色与提示底色由组件库同一算法生成。
+// 浅色取值。深色主题落地时在同一结构下再提供一组取值，变量名不带明暗含义。
+// 基础色交给组件库算法派生悬停、按下等交互状态。
 export const componentSeeds = {
-  colorPrimary: '#5d87ff',
-  colorSuccess: '#60c041',
-  colorWarning: '#f9901f',
-  colorError: '#e13c39',
-  colorInfo: '#38c0fc',
+  colorPrimary: '#2f54eb',
+  colorSuccess: '#3a9e50',
+  colorWarning: '#e08a00',
+  colorError: '#e5484d',
+  colorInfo: '#2f54eb',
 } as const
 export const componentColors = theme.defaultAlgorithm({...theme.defaultSeed, ...componentSeeds})
 
-// 自绘图形与业务标记复用组件派生色；控制台和态势大屏各自保持表面层次。
+// 提示类表面不取算法派生值：信息提示是纯灰表面，成功、警示、危险与业务标签共用同一组浅底。
+export const componentSurfaces = {
+  colorInfoBg: '#fafafa',
+  colorInfoBorder: '#e5e5e5',
+  colorSuccessBg: '#ecf8ee',
+  colorSuccessBorder: '#b9dfc2',
+  colorWarningBg: '#fff4dc',
+  colorWarningBorder: '#f5d48a',
+  colorErrorBg: '#fdeceb',
+  colorErrorBorder: '#f5c2c0',
+} as const
+
+// 业务语义文字显式指定，保证在白底和对应浅底上的对比度不低于 4.5:1。
 export const palette = {
   primary: componentColors.colorPrimary,
   primaryHover: componentColors.colorPrimaryHover,
@@ -21,17 +34,16 @@ export const palette = {
   actionActive: componentColors.colorPrimaryActive,
   link: componentColors.colorPrimary,
   surface: '#ffffff',
-  workspace: '#f7f7f7',
-  line: '#e8e8e8',
-  controlBorder: '#e4e7ed',
+  workspace: '#f4f4f4',
+  line: '#e5e5e5',
+  controlBorder: '#d9d9d9',
   controlHover: componentColors.colorPrimaryHover,
   controlDisabled: '#f5f5f5',
   textDisabled: '#bfbfbf',
   scrollbar: '#e0e3e9',
-  navigationShadow: '#29394a1c',
   text: '#29343d',
   muted: '#6b6b6b',
-  textPlaceholder: '#a8abb2',
+  textPlaceholder: '#8c8c8c',
   fieldLabel: '#6b6b6b',
   recordText: '#29343d',
   tableHeader: '#fafafa',
@@ -40,25 +52,31 @@ export const palette = {
   tabSelected: '#f3f3f3',
   selectionSurface: componentColors.colorPrimaryBg,
   selectionText: componentColors.colorPrimaryTextActive,
-  success: componentColors.colorSuccessTextActive,
+  success: '#2a7e3b',
   successDot: componentColors.colorSuccess,
-  warning: componentColors.colorWarningTextActive,
+  warning: '#9a5b00',
   warningDot: componentColors.colorWarning,
-  danger: componentColors.colorErrorTextActive,
+  danger: '#c4262e',
   dangerDot: componentColors.colorError,
-  statusSurface: '#f3f3f3',
-  statusText: '#6b6b6b',
-  successSurface: componentColors.colorSuccessBg,
-  warningSurface: componentColors.colorWarningBg,
-  dangerSurface: componentColors.colorErrorBg,
-  infoSurface: componentColors.colorInfoBg,
+  // “严重”用实底，与“高危”的浅底标签区分。
+  critical: '#b42318',
+  criticalText: '#ffffff',
+  statusSurface: '#f2f2f2',
+  statusText: '#595959',
+  successSurface: componentSurfaces.colorSuccessBg,
+  warningSurface: componentSurfaces.colorWarningBg,
+  dangerSurface: componentSurfaces.colorErrorBg,
+  infoSurface: componentSurfaces.colorInfoBg,
   infoText: '#29343d',
   infoDot: componentColors.colorInfo,
-  warningBorder: componentColors.colorWarningBorder,
+  // “进行中”一类状态的标签：主色文字配极浅的主色底。
+  progressSurface: '#eef2ff',
+  progressText: componentColors.colorPrimary,
+  warningBorder: componentSurfaces.colorWarningBorder,
   teal: '#0095ad',
   violet: '#8950e9',
   chartOrange: '#d97900',
-  chartNeutral: '#6d83a5',
+  chartNeutral: '#8c8c8c',
   chartGrid: '#ededed',
   screenWorkspace: '#181818',
   screenPanel: '#222222',
@@ -95,7 +113,8 @@ export const appTheme = {
   algorithm: theme.defaultAlgorithm,
   token: {
     ...componentSeeds,
-    // 库默认链接跟随信息色；记录入口与链接按钮统一使用参考前端的主蓝。
+    ...componentSurfaces,
+    // 库默认链接跟随信息色；记录入口与链接按钮统一使用主色。
     colorLink: palette.link,
     colorLinkHover: palette.primaryHover,
     colorLinkActive: palette.primaryActive,

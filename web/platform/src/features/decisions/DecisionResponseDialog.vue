@@ -84,4 +84,4 @@ onScopeDispose(()=>{stopped=true;clearInterval(timer);controller?.abort()})
   </StatePanel>
  </a-modal>
 </template>
-<style scoped>.decision-response-context{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;margin:12px 0}.decision-response-context dt{color:var(--muted)}.decision-response-context dd{margin:0;overflow-wrap:anywhere}.decision-response-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.decision-response-grid .ant-input-number{width:100%}@media(max-width:600px){.decision-response-grid{grid-template-columns:1fr}}</style>
+<style scoped>.decision-response-context{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;margin:12px 0}.decision-response-context dt{color:var(--muted)}.decision-response-context dd{margin:0;overflow-wrap:anywhere}.decision-response-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.decision-response-grid .ant-input-number{width:100%}</style>

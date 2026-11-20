@@ -26,4 +26,4 @@ watch(()=>({id:props.record?.id,kind:props.record?.kind,tick:tick.value}),async(
     </div>
   </a-modal>
 </template>
-<style scoped>.revision-picker {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--field-gap);margin-bottom:var(--related-gap)}.inventory-value {white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:600px){.revision-picker {grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.revision-picker {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--field-gap);margin-bottom:var(--related-gap)}.inventory-value {white-space:pre-wrap;overflow-wrap:anywhere}</style>

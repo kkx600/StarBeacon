@@ -40,4 +40,4 @@ function download(){
   <template #footer><div class="pki-actions"><a-button :disabled="busy" @click="emit('close')">{{receipt?'关闭窗口':'关闭'}}</a-button><a-button v-if="receipt" type="primary" @click="download">保存令牌文件</a-button><a-button v-else-if="locked" type="primary" :loading="busy" @click="emit('confirm')">核对原提交</a-button><a-button v-else type="primary" :loading="busy" @click="submit">创建注册凭据</a-button></div></template>
  </a-modal>
 </template>
-<style scoped>.pki-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.full-width{width:100%}.pki-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}@media(max-width:640px){.pki-form-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.pki-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.full-width{width:100%}.pki-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}</style>

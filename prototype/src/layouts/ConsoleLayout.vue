@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,LogoutOutlined } from '@ant-design/icons-vue'
 import type {PreviewState} from '../models'
@@ -7,11 +7,11 @@ import { groups,pageById,pages,states } from '../data/catalog'
 import {platformScreens} from '../../../web/packages/shared/src/navigation'
 import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage,pageIdForRoute,prototypePath} from '../data/navigation'
 import { usePreview } from '../composables/usePreview'
+import CopilotDrawer from '../components/CopilotDrawer.vue'
 
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
-const compact=window.matchMedia('(max-width:899px)');const collapsed=ref(compact.matches);const tenant=ref('总部安全中心');const searchOpen=ref(false);const search=ref('');const noticesOpen=ref(false);const read=ref(false)
-function onViewportChange(event:MediaQueryListEvent){collapsed.value=event.matches}
-onMounted(()=>compact.addEventListener('change',onViewportChange));onBeforeUnmount(()=>compact.removeEventListener('change',onViewportChange))
+const copilotOpen=ref(false)
+const collapsed=ref(false);const tenant=ref('总部安全中心');const searchOpen=ref(false);const search=ref('');const noticesOpen=ref(false);const read=ref(false)
 const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SettingOutlined,ThunderboltOutlined} as Record<string,typeof AlertOutlined>
 const current=computed(()=>pageById.get(pageIdForRoute(route)))
 const title=computed(()=>current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
@@ -29,7 +29,7 @@ watch(()=>pageIdForRoute(route),id=>{
 watch(title,value=>{document.title=`${value} · 星烽 StarBeacon`},{immediate:true})
 watch(collapsed,value=>{menuOpen.value=value?[]:['group:'+(current.value?.group??'overview')]})
 const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
-function navigate(id:string){void router.push(prototypePath(id));searchOpen.value=false;if(window.innerWidth<900)collapsed.value=true}
+function navigate(id:string){void router.push(prototypePath(id));searchOpen.value=false}
 function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??platformScreens.find(screen=>screen.workspace===id)?.id??workspace.pages[0]!)}
 function profileAction(key:string){if(key==='account')navigate('my-account');if(key==='logout')void router.push('/auth/login')}
 </script>
@@ -51,9 +51,10 @@ function profileAction(key:string){if(key==='account')navigate('my-account');if(
     </aside>
     <div class="console-main">
       <header class="topbar">
-        <div class="topbar-left"><a-button type="text" :aria-label="collapsed?'展开导航':'收起导航'" @click="collapsed=!collapsed"><MenuUnfoldOutlined v-if="collapsed"/><MenuFoldOutlined v-else/></a-button><a-breadcrumb><a-breadcrumb-item>工作空间</a-breadcrumb-item><a-breadcrumb-item>{{groupTitle}}</a-breadcrumb-item><a-breadcrumb-item v-if="currentWorkspace&&currentWorkspace.title!==groupTitle">{{currentWorkspace.title}}</a-breadcrumb-item><a-breadcrumb-item v-if="title!==currentWorkspace?.title">{{title}}</a-breadcrumb-item></a-breadcrumb></div>
-        <div class="topbar-actions"><a-dropdown v-if="current" trigger="click"><a-button size="small" class="preview-state-button" :aria-label="`原型状态：${states.find(item=>item.value===state)?.label}`">原型状态：{{states.find(item=>item.value===state)?.label}}</a-button><template #overlay><a-menu :selected-keys="[state]" @click="({key}:{key:string|number})=>setState(String(key) as PreviewState)"><a-menu-item v-for="item in states" :key="item.value">{{item.label}}</a-menu-item></a-menu></template></a-dropdown>
+        <div class="topbar-left"><a-button type="text" :aria-label="collapsed?'展开导航':'收起导航'" @click="collapsed=!collapsed"><MenuUnfoldOutlined v-if="collapsed"/><MenuFoldOutlined v-else/></a-button><a-breadcrumb><a-breadcrumb-item>{{groupTitle}}</a-breadcrumb-item><a-breadcrumb-item v-if="currentWorkspace&&currentWorkspace.title!==groupTitle">{{currentWorkspace.title}}</a-breadcrumb-item><a-breadcrumb-item v-if="title!==currentWorkspace?.title">{{title}}</a-breadcrumb-item></a-breadcrumb></div>
+        <div class="topbar-actions"><a-dropdown v-if="current" trigger="click"><a-button size="small" class="preview-state-button" :aria-label="`原型状态：${states.find(item=>item.value===state)?.label}`"><span class="preview-state-prefix">原型状态：</span>{{states.find(item=>item.value===state)?.label}}</a-button><template #overlay><a-menu :selected-keys="[state]" @click="({key}:{key:string|number})=>setState(String(key) as PreviewState)"><a-menu-item v-for="item in states" :key="item.value">{{item.label}}</a-menu-item></a-menu></template></a-dropdown>
           <a-select aria-label="当前租户" v-model:value="tenant" class="tenant-select" :options="['总部安全中心','研发事业部','集团审计组织'].map(value=>({value,label:value}))" />
+          <a-button class="copilot-entry" @click="copilotOpen=true"><RobotOutlined/>AI 助手</a-button>
           <a-tooltip title="搜索页面"><a-button type="text" aria-label="搜索页面" @click="searchOpen=true"><SearchOutlined/></a-button></a-tooltip>
           <a-tooltip title="页面目录"><a-button type="text" aria-label="页面目录" @click="router.push('/catalog')"><AppstoreOutlined/></a-button></a-tooltip>
           <a-popover v-model:open="noticesOpen" trigger="click" placement="bottomRight" title="通知中心">
@@ -67,6 +68,7 @@ function profileAction(key:string){if(key==='account')navigate('my-account');if(
       <main class="content-area"><slot/></main>
       <footer class="app-footer">星烽 StarBeacon <span>合成数据仅用于界面评审</span></footer>
     </div>
+    <CopilotDrawer v-model:open="copilotOpen" :context="title"/>
     <a-modal v-model:open="searchOpen" title="搜索页面" :footer="null" :width="650"><a-input v-model:value="search" placeholder="输入功能或页面名称" allow-clear autofocus><template #prefix><SearchOutlined/></template></a-input><div class="page-search-results"><button v-for="result in results" :key="result.id" @click="navigate(result.id)"><div><b>{{result.title}}</b><small>{{result.description}}</small></div><span>{{workspaceTitleForPage(result.id)}}</span></button><a-empty v-if="!results.length" description="没有匹配的页面，请尝试其他关键词。"/></div></a-modal>
   </div>
 </template>

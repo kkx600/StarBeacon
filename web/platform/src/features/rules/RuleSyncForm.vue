@@ -39,5 +39,5 @@ function submit(){if(props.busy||props.locked||props.choicesPending||props.choic
  </a-modal>
 </template>
 <style scoped>
-.sync-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px}.full-width{width:100%}.sync-identity{display:flex;gap:8px}.sync-identity>.ant-input{min-width:0}.sync-form-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}@media(max-width:640px){.sync-form-grid{grid-template-columns:minmax(0,1fr)}}
+.sync-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px}.full-width{width:100%}.sync-identity{display:flex;gap:8px}.sync-identity>.ant-input{min-width:0}.sync-form-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 </style>

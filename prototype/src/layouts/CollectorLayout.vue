@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed,ref,watch,onMounted,onBeforeUnmount} from 'vue'
+import {computed,ref,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
 import {ApiOutlined,DashboardOutlined,ClusterOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,AppstoreOutlined,SafetyCertificateOutlined} from '@ant-design/icons-vue'
 import {collectorPages,collectorDevice} from '../data/collector'
@@ -8,15 +8,13 @@ import {states} from '../data/catalog'
 import {usePreview} from '../composables/usePreview'
 import type {PreviewState} from '../models'
 const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
-const media=window.matchMedia('(max-width:899px)');const collapsed=ref(media.matches)
+const collapsed=ref(false)
 const screen=computed(()=>collectorPreviewScreen(route.path,String(route.params.id??''),route.query))
 const current=computed(()=>screen.value??collectorPages.find(page=>page.id===route.params.id))
 const workspace=computed(()=>collectorPreviewWorkspace(String(route.params.id??''),screen.value))
 const icons={DashboardOutlined,ClusterOutlined,ApiOutlined,FileProtectOutlined,SafetyCertificateOutlined}
-function viewport(event:MediaQueryListEvent){collapsed.value=event.matches}
-onMounted(()=>media.addEventListener('change',viewport));onBeforeUnmount(()=>media.removeEventListener('change',viewport))
 watch(current,page=>{document.title=`${page?.title??'采集器管理'} · 星烽 StarBeacon 采集器`},{immediate:true})
-function navigate(id:string){const target=collectorPrototypeScreens.find(item=>item.workspace===id);if(target)void router.push(collectorPreviewDestination(target.path,route.query,route.hash));if(window.innerWidth<900)collapsed.value=true}
+function navigate(id:string){const target=collectorPrototypeScreens.find(item=>item.workspace===id);if(target)void router.push(collectorPreviewDestination(target.path,route.query,route.hash))}
 </script>
 <template>
   <div class="console-shell collector-shell" :class="{'is-collapsed':collapsed}">

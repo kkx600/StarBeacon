@@ -1,0 +1,259 @@
+/* 2026-11 改版：紧凑密度、说明收进标题、表格与分页标准。
+   加载在 styles.css 之后，逐条覆盖旧规则；旧规则在源码格式化（开发任务 T03）时合并清理。 */
+
+/* 页面标题一行：标题 20px，说明只在“?”里出现。 */
+.page-header {
+  align-items: center;
+  min-height: 34px;
+  margin-bottom: var(--related-gap);
+}
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.page-help-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+}
+.page-help-trigger:hover {
+  color: var(--link);
+  background: var(--row-hover);
+}
+.page-help {
+  display: flex;
+  flex-direction: column;
+  gap: var(--related-gap);
+  max-width: 420px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.page-help p {
+  margin: 0;
+}
+.page-header-actions {
+  max-width: 70%;
+}
+.workspace-views {
+  margin-bottom: var(--related-gap);
+}
+
+/* 需要处理的动态提醒保留，但收窄。 */
+.page-notice.ant-alert {
+  padding: 6px 12px;
+  margin-bottom: var(--related-gap);
+}
+
+/* 指标条单行：说明在左，数字在右；数字默认正文色。 */
+.metric-bar:not(.situation-screen .metric-bar) {
+  padding: var(--related-gap) 0;
+  margin-bottom: var(--related-gap);
+}
+.metric-bar:not(.situation-screen .metric-bar) .metric-item {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong {
+  color: var(--text);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong.warning {
+  color: var(--warning);
+}
+.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong.danger {
+  color: var(--danger);
+}
+.metric-bar:not(.situation-screen .metric-bar) .metric-note {
+  font-size: 12px;
+}
+
+/* 筛选：标签与控件同行。 */
+.filter-panel {
+  padding: var(--related-gap) var(--panel-inset);
+  margin-bottom: var(--related-gap);
+}
+.filter-grid {
+  grid-template-columns: minmax(240px, 1.4fr) minmax(170px, 1fr) minmax(190px, 1fr) auto;
+  align-items: center;
+  gap: var(--field-gap);
+}
+.filter-grid > label {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--related-gap);
+}
+.filter-grid > label > span:first-child {
+  flex: none;
+  white-space: nowrap;
+}
+.filter-grid > label > :not(span:first-child) {
+  flex: 1;
+  min-width: 0;
+}
+.filter-grid .filter-buttons {
+  grid-column: auto;
+}
+.sensor-filter-grid {
+  grid-template-columns: minmax(200px, 1.3fr) repeat(3, minmax(140px, 1fr)) auto;
+}
+.advanced-filters {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: var(--related-gap);
+  margin-top: var(--related-gap);
+}
+@media (max-width: 1180px) {
+  .filter-grid,
+  .sensor-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 表格：单行、行高约 40px；表头 12px，正文 13px。 */
+.table-toolbar {
+  padding: var(--related-gap) var(--panel-inset);
+}
+.table-panel .ant-table-wrapper .ant-table-thead > tr > th {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.table-panel .ant-table-wrapper .ant-table-tbody > tr > td {
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 22px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.table-panel .record-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 22px;
+}
+
+/* 状态标签：进行中用主色浅底；“严重”用实底，与“高危”分开。 */
+.status-tag {
+  padding: 1px 7px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.status-dot {
+  margin-top: 0;
+}
+.status-tag.info {
+  background: var(--progress-surface);
+  color: var(--progress-text) !important;
+}
+.status-dot.info {
+  background: var(--progress-text);
+}
+.status-tag.critical {
+  background: var(--critical);
+  color: var(--critical-text) !important;
+}
+.status-dot.critical {
+  background: var(--critical-text);
+}
+
+/* 深色大屏上的标签：半透明色底加浅色字，不直接套用浅色标签。 */
+.situation-screen .status-tag {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  color: var(--screen-muted) !important;
+}
+.situation-screen .status-tag.critical,
+.situation-screen .status-tag.danger {
+  color: var(--screen-danger) !important;
+}
+.situation-screen .status-tag.warning {
+  color: var(--screen-amber) !important;
+}
+.situation-screen .status-tag.success {
+  color: var(--screen-teal) !important;
+}
+.situation-screen .status-tag.info {
+  color: var(--screen-blue) !important;
+}
+.situation-screen .status-dot {
+  background: currentColor;
+}
+
+/* 顶栏在 1024px 宽度下不折行。 */
+.topbar-left {
+  flex: 1;
+  min-width: 0;
+}
+.topbar-left .ant-breadcrumb {
+  min-width: 0;
+  overflow: hidden;
+}
+.topbar-left .ant-breadcrumb ol {
+  flex-wrap: nowrap;
+}
+.topbar-left .ant-breadcrumb li {
+  flex: none;
+  white-space: nowrap;
+}
+@media (max-width: 1180px) {
+  /* 窄屏只留当前页名称，避免面包屑被截成半截。 */
+  .topbar-left .ant-breadcrumb li:not(:last-child) {
+    display: none;
+  }
+  .topbar-left .ant-breadcrumb li:last-child {
+    display: block;
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .preview-state-button .preview-state-prefix {
+    display: none;
+  }
+}
+.topbar-actions {
+  flex: none;
+}
+.profile-button {
+  white-space: nowrap;
+}
+
+/* AI 规则生成的步骤条：不再向右溢出内容栏。 */
+.rule-steps {
+  margin: 0 0 var(--section-gap);
+  border-radius: 8px;
+}
+
+/* 仍在使用工程端旧分页条的页面：先对齐位置并收起分页条里的长说明，等工程端迁移到统一分页组件后删除本段。 */
+[class$='-pagination']:not([class*='ant-']) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--related-gap);
+  padding: var(--related-gap) var(--panel-inset);
+  font-size: 13px;
+}
+[class$='-pagination']:not([class*='ant-']) .page-description {
+  display: none;
+}

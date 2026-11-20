@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,ref} from 'vue'
 import {useRoute} from 'vue-router'
 import type {PreviewState} from '../models'
@@ -22,7 +23,7 @@ const result=computed(()=>{
 </script>
 <template>
  <PageHeader title="质量事件" description="按探针、注册代次和时间窗口核对检测区间历史。"><router-link to="/page/sensors"><a-button>探针列表</a-button></router-link></PageHeader>
- <a-alert type="info" show-icon message="以下为合成示例，仅用于演示质量事件检索。此处不查询设备或发送通知。事件仅描述历史区间，不代表探针当前状态或逐流检测覆盖。" class="section-gap"/>
+ <HelpNote message="以下为合成示例，仅用于演示质量事件检索。此处不查询设备或发送通知。事件仅描述历史区间，不代表探针当前状态或逐流检测覆盖。"/>
  <QualityEventsFilters v-model="form" :pending="state==='loading'" @query="emit('state','data')" @cancel="emit('state','error')" @reset="emit('state','empty')"/>
  <QualityEventsPanel :result="result" :pending="state==='loading'" :error="state==='error'?'未能完整核对质量事件，本次不提供部分结果。请稍后重试。':''" attempted :initial-i-d="state==='detail'||state==='action'?'a'.repeat(64):undefined" @retry="emit('state','data')" @page="emit('state','data')"/>
 </template>

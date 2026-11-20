@@ -33,11 +33,11 @@ for(const record of sensors){
   if(record.status==='离线')for(const field of ['cpu','memory','disk','bps','drop'])assert.equal(record[field],null,`离线遥测不能显示为当前 ${field}`)
 }
 const first=sensors[0]
-assert.equal(healthFor({...first,heartbeatAge:181}),'不可观测')
-assert.equal(healthFor({...first,cpu:80}),'CPU 负载高')
+assert.equal(healthFor({...first,heartbeatAge:181}),'无数据')
+assert.equal(healthFor({...first,cpu:80}),'CPU 占用高')
 assert.equal(healthFor({...first,cpu:80},{...defaultSensorThresholds,cpu:90}),'正常')
-assert.equal(healthFor({...first,dropPercent:0.1}),'丢包关注')
-assert.equal(healthFor({...first,dropPercent:null}),'遥测不完整')
+assert.equal(healthFor({...first,dropPercent:0.1}),'丢包率高')
+assert.equal(healthFor({...first,dropPercent:null}),'指标不全')
 const execution=sensors.find(record=>record.role==='执行采集器')
 for(const action of createFixtures(pageById.get('actions')))assert(sensors.some(sensor=>sensor.name===action.sensor&&sensor.role==='执行采集器'),'动作只能引用已登记的执行采集器')
 assert.equal(sensorMetrics([execution],defaultSensorThresholds)[3].value,'—','执行角色不能叠加为捕获流量')

@@ -6,12 +6,14 @@ import {Select,Form} from 'ant-design-vue'
 import {registerAnt} from '../packages/shared/src/ant'
 import {ApiError} from '../packages/shared/src/api'
 import {goJSONDigest} from '../packages/shared/src/utils/goJSONDigest'
-import {watchlistDefinitionShape,type WatchlistChange,type WatchlistPreviewRequest,type WatchlistRecord} from '../packages/shared/src/watchlists'
+import {watchlistDefinitionShape,watchlistImpactFields,type WatchlistChange,type WatchlistImpactRequest,type WatchlistPreviewRequest,type WatchlistRecord} from '../packages/shared/src/watchlists'
 import WatchlistForm from '../packages/shared/src/components/WatchlistForm.vue'
 import WatchlistDetail from '../packages/shared/src/components/WatchlistDetail.vue'
 import WatchlistPreview from '../packages/shared/src/components/WatchlistPreview.vue'
 import WatchlistTable from '../packages/shared/src/components/WatchlistTable.vue'
 import WatchlistPreviewResultView from '../packages/shared/src/components/WatchlistPreviewResult.vue'
+import WatchlistHits from '../packages/shared/src/components/WatchlistHits.vue'
+import WatchlistImpactView from '../packages/shared/src/components/WatchlistImpact.vue'
 import WatchlistsWorkspace from '../platform/src/features/watchlists/WatchlistsWorkspace.vue'
 import WatchlistsView from '../platform/src/views/WatchlistsView.vue'
 import {useWatchlists} from '../platform/src/features/watchlists/useWatchlists'
@@ -30,9 +32,15 @@ function good(){request.mockImplementation(async(path:string,options?:{method?:s
  if(path.startsWith('/sensors'))return {items:[sensor],next_cursor:''}
  if(path.endsWith('/preview'))return watchlistPreview(options?.body as WatchlistPreviewRequest)
  if(path.includes('/revisions/'))return row
+ if(path.includes('/hits?'))return {items:[],next_cursor:'',observed_at:'2026-10-22T00:00:00Z',capped_days:[]}
+ if(path.endsWith('/impact'))return watchlistImpactResult(row,options?.body as WatchlistImpactRequest)
  if(options?.method==='POST'){row=await watchlistRecord(options.body as WatchlistChange);return row}
  return {items:[row],next_cursor:''}
 })}
+// 影响预览的最小合法响应：字段范围由匹配方式决定，无告警时每值计数为 0 且不带样本。
+function watchlistImpactResult(record:WatchlistRecord,input:WatchlistImpactRequest){
+ return {schema_version:'watchlist-impact.v1',list_id:record.id,list_revision:input.revision,definition_sha256:record.definition_sha256,kind:record.definition.kind,match_type:record.definition.match_type,current:true,active:record.active,start:input.start,end:input.end,checked_at:'2026-10-22T00:00:00Z',fields:watchlistImpactFields(record.definition.match_type),total:0,values:record.definition.values.map(value=>({value,count:0})),samples:[],hits_recorded:false,execution_authorized:false}
+}
 async function screen(component:Parameters<typeof mount>[0]=WatchlistsWorkspace){const w=mount(component,{attachTo:document.body,global:{plugins:[registerAnt]}});wrappers.push(w);await vi.waitFor(()=>expect(w.find('.ant-spin-spinning').exists()).toBe(false));await flushPromises();return w}
 // 表单关闭表示写入回执已确认；目录仍须完成独立读取与摘要核验。
 async function settledDirectory(w:VueWrapper,record:WatchlistRecord){await vi.waitFor(()=>{expect(w.get('.page-header button').classes()).not.toContain('ant-btn-loading');expect(w.getComponent(WatchlistTable).props('items')).toEqual([record])})}
@@ -154,5 +162,59 @@ describe('独立修订与材料输入边界',()=>{
  })
  it('结果区区分过宽、停用、当前有效与无材料，不包含设备成功结论',async()=>{
   const input={definition:watchlistDefinitionShape(row.definition),active:true,targets:[]},result=await watchlistPreview(input),w=mount(WatchlistPreviewResultView,{props:{result},global:{plugins:[registerAnt]}});wrappers.push(w);expect(w.text()).toContain('处于有效期内且已启用');expect(w.text()).toContain('不授予设备执行权限');const broad={...input,active:false,definition:{...input.definition,match_type:'cidr' as const,values:['192.0.0.0/16']}};await w.setProps({result:await watchlistPreview(broad)});expect(w.text()).toContain('当前范围不能启用');expect(w.text()).toContain('CIDR 范围超过启用限制')
+ })
+})
+
+describe('名单详情分节与命中接线',()=>{
+ async function openDetail(){const w=await screen();await settledDirectory(w,row);await click('查看');await vi.waitFor(()=>expect(body().text()).toContain('定义 SHA-256'));return w}
+ const tabs=()=>body().findAll('[role=tab]').map(tab=>tab.text())
+ it('管理员可见三个分节，切到命中记录才按当前名单发起读取',async()=>{
+  const w=await openDetail()
+  expect(tabs()).toEqual(['修订详情','命中记录','历史影响'])
+  expect(request.mock.calls.some(c=>String(c[0]).includes('/hits?'))).toBe(false)
+  await click('命中记录')
+  await vi.waitFor(()=>expect(request.mock.calls.some(c=>String(c[0]).includes('/hits?'))).toBe(true))
+  const path=String(request.mock.calls.filter(c=>String(c[0]).includes('/hits?')).at(-1)![0])
+  expect(path.startsWith(`/watchlists/${row.id}/hits?`)).toBe(true)
+  expect(path).toContain('limit=20')
+  await vi.waitFor(()=>expect(body().text()).toContain('当前时间窗内没有命中记录'))
+  expect(w.findComponent(WatchlistHits).exists()).toBe(true)
+ })
+ it('历史影响仅管理员可见，预览对保护名单同样可用且不登记命中',async()=>{
+  await openDetail()
+  await click('历史影响')
+  await click('执行预览',document.querySelector('.ant-modal')!)
+  await vi.waitFor(()=>expect(request.mock.calls.some(c=>String(c[0]).endsWith('/impact'))).toBe(true))
+  const call=request.mock.calls.filter(c=>String(c[0]).endsWith('/impact')).at(-1)!
+  expect(call[1].method).toBe('POST')
+  expect(Object.keys(call[1].body as object).sort()).toEqual(['end','revision','start'])
+  // 预览不限定名单类型：保护名单的修订也能核对历史告警。
+  expect(row.definition.kind).toBe('protect')
+  await vi.waitFor(()=>expect(body().text()).toContain('本次未登记任何命中'))
+  // 结果必须标出名单类型，避免把保护名单的核对误读为会自动登记命中。
+  expect(body().text()).toContain('保护名单 · 修订')
+  expect(body().text()).toContain('保护名单不会自动登记命中')
+ })
+ it('viewer 看不到历史影响分节，命中记录仍可读',async()=>{
+  user.value={...principal,role:'viewer'}
+  const w=await screen();await settledDirectory(w,row);await click('查看');await vi.waitFor(()=>expect(body().text()).toContain('定义 SHA-256'))
+  expect(tabs()).toEqual(['修订详情','命中记录'])
+  await click('命中记录')
+  await vi.waitFor(()=>expect(request.mock.calls.some(c=>String(c[0]).includes('/hits?'))).toBe(true))
+  expect(w.findComponent(WatchlistImpactView).exists()).toBe(false)
+ })
+ it('关闭详情取消命中读取并清空，重开不沿用上一张名单的结果',async()=>{
+  const w=await openDetail()
+  const late=deferred<unknown>()
+  request.mockImplementationOnce(()=>late.promise)
+  await click('命中记录')
+  await flushPromises()
+  const signal=request.mock.calls.filter(c=>String(c[0]).includes('/hits?')).at(-1)![1].signal as AbortSignal
+  await click('关闭',document.querySelector('.ant-modal')!)
+  expect(signal.aborted).toBe(true)
+  expect(w.findComponent(WatchlistDetail).exists()).toBe(false)
+  late.resolve({items:[],next_cursor:'',observed_at:'2026-10-22T00:00:00Z',capped_days:[]})
+  await flushPromises()
+  expect(w.findComponent(WatchlistHits).exists()).toBe(false)
  })
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,onScopeDispose,reactive,shallowRef,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
 import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
@@ -10,6 +11,7 @@ import type {PreviewState} from '../models'
 import {goJSONDigest} from '../../../web/packages/shared/src/utils/goJSONDigest'
 import {validResponseProtection,type ResponseProtection} from '../../../web/packages/shared/src/responseProtection'
 import PageHeader from './PageHeader.vue'
+import ListPager from '../../../web/packages/shared/src/components/ListPager.vue'
 import StatePanel from './StatePanel.vue'
 const props=defineProps<{state:PreviewState}>(),emit=defineEmits<{state:[value:PreviewState]}>(),message=useFeedback()
 const filters=reactive(defaultResponseFilters())
@@ -35,13 +37,13 @@ function example(){message.info('以下为合成示例，未提交平台或设�
 </script>
 <template>
  <PageHeader title="响应动作" description="集中核对限时封禁、租约回读与解除任务，追溯执行位置、目标和独立设备回执。"/>
- <a-alert type="info" show-icon message="以下为合成示例，展示工程端相同的筛选、任务列表和详情组件。名单核对记录也为合成材料，不构成真实授权，不连接设备或提交响应动作。" class="section-gap"/>
+ <HelpNote message="以下为合成示例，展示工程端相同的筛选、任务列表和详情组件。名单核对记录也为合成材料，不构成真实授权，不连接设备或提交响应动作。"/>
  <a-alert v-if="proofError" type="error" show-icon :message="proofError" class="section-gap"/>
  <ResponseActionFilters :model="filters" :pending="state==='loading'" @search="emit('state','data')" @reset="Object.assign(filters,defaultResponseFilters());emit('state','data')"/>
  <section class="panel"><div class="panel-header"><div><h2>响应记录</h2><p class="page-description">按创建时间检索，每页 20 项，窗口最多 31 天。执行状态以读取时为准；设备回读与真实阻断效果分别核对。</p></div><a-button @click="emit('state','data')">刷新任务</a-button></div>
   <StatePanel v-if="['empty','loading','error'].includes(state)" :state="state as 'empty'|'loading'|'error'" :description="state==='empty'?'当前条件下没有响应动作，请调整时间、目标或状态。':undefined" @action="emit('state','data')"/>
   <TaskTable v-else :items="items" :detail="detail" response-catalog responseable cancellable @view="view($event.id)" @open-task="view" @close="close" @refresh-detail="example" @response="example" @cancel="example"/>
-  <div class="response-pagination"><a-button disabled>上一页</a-button><span>第 1 页 · 当前 {{items.length}} 项</span><a-button disabled>下一页</a-button></div>
+  <ListPager mode="cursor" :page="1" :count="items.length"/>
  </section>
 </template>
 <style scoped>.panel-header{padding:var(--section-gap) var(--panel-inset);display:flex;align-items:center;justify-content:space-between;gap:var(--field-gap)}.panel-header h2{margin:0;font-size:16px}.page-description{margin:0;color:var(--muted);line-height:1.6;font-size:13px;max-width:72ch}.section-gap{margin-bottom:var(--section-gap)}.response-pagination{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:var(--related-gap);padding:var(--panel-inset)}</style>

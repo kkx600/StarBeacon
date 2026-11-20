@@ -11,11 +11,11 @@ import EngineHealthSummary from '../../../web/packages/shared/src/components/Eng
 import {engineHealthExample} from '../data/engineHealth'
 const props=defineProps<{record:BusinessRecord;tab:string}>()
 const health=computed(()=>healthFor(props.record,sensorThresholds))
-const observable=computed(()=>health.value!=='不可观测')
+const observable=computed(()=>health.value!=='无数据')
 const execution=computed(()=>props.record.role==='执行采集器')
 const qualityOpen=shallowRef(false)
 watch(()=>[props.record.id,props.tab],()=>{qualityOpen.value=false})
-function metric(key:string,suffix=''){return observable.value&&props.record[key]!=null?key==='bps'?formatQuantity(props.record[key]):`${props.record[key]}${suffix}`:'不可观测'}
+function metric(key:string,suffix=''){return observable.value&&props.record[key]!=null?key==='bps'?formatQuantity(props.record[key]):`${props.record[key]}${suffix}`:'无数据'}
 </script>
 <template>
   <template v-if="tab==='基本信息'">
@@ -33,7 +33,7 @@ function metric(key:string,suffix=''){return observable.value&&props.record[key]
   <template v-else-if="tab==='运行状态'">
     <div class="sensor-runtime-heading"><h3>资源与采集质量</h3><StatusTag :value="health"/></div>
     <p class="snapshot-note">遥测快照：{{record.snapshotAt??'尚未上报'}} · 最近心跳：{{record.lastSeen??'尚未上报'}}</p>
-    <a-alert v-if="!observable" message="探针离线、心跳超时或尚未接入。当前指标不可观测，不能据此判断资源和流量正常。" type="warning" show-icon class="modal-notice"/>
+    <a-alert v-if="!observable" message="探针离线、心跳超时或尚未注册。当前没有指标数据，不能据此判断资源和流量正常。" type="warning" show-icon class="modal-notice"/>
     <a-descriptions bordered :column="{xs:1,sm:1,md:2}" size="small">
       <a-descriptions-item label="CPU 使用率">{{metric('cpu','%')}}</a-descriptions-item><a-descriptions-item label="内存使用率">{{metric('memory','%')}}</a-descriptions-item>
       <a-descriptions-item label="磁盘使用率">{{metric('disk','%')}}</a-descriptions-item><a-descriptions-item label="持久缓冲积压">{{metric('backlog',' 条')}}</a-descriptions-item>

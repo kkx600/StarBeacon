@@ -35,4 +35,4 @@ function save(){
     </a-form>
   </Modal>
 </template>
-<style scoped>.binding-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--field-gap)}.binding-actions{justify-content:flex-end;margin-top:var(--section-gap)}@media(max-width:640px){.binding-fields{grid-template-columns:minmax(0,1fr);gap:0}}</style>
+<style scoped>.binding-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--field-gap)}.binding-actions{justify-content:flex-end;margin-top:var(--section-gap)}</style>

@@ -29,7 +29,7 @@ export function useRecords(page: PageSpec) {
     if (index>=0) items[index] = {...items[index]!,...clean,updated:'2026-09-30 09:48:00'}
     else items.unshift({...clean,id:`${page.id.toUpperCase()}-LOCAL-${Date.now()}`,name: typeof values.name==='string' && values.name ? values.name : `${page.objectLabel}示例记录`,status:typeof clean.status==='string'?clean.status:initialStatusFor(page),updated:'2026-09-30 09:48:00'})
   }
-  function updateStatus(ids: string[], status: string) { for(const record of recordsByPage[page.id]!) if(ids.includes(record.id)){record.status=status;if(page.family==='action'&&status==='撤销待核验'){record.effective='撤销待核验';record.observed='无法判定'}} }
+  function updateStatus(ids: string[], status: string) { for(const record of recordsByPage[page.id]!) if(ids.includes(record.id)){record.status=status;if(page.family==='action'&&status==='结果未知'){record.effective='结果未知';record.observed='证据不足'}} }
   return {records,save,updateStatus}
 }
 

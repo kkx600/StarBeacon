@@ -6,7 +6,7 @@ import {appTheme, componentSeeds, palette} from '../packages/shared/src/theme'
 import {useFeedback} from '../packages/shared/src/composables/useFeedback'
 
 describe('共享组件配色', () => {
-  it('四类提示使用浅色派生表面，正文与页面背景保持中性', async () => {
+  it('四类提示使用主题指定的浅色表面，正文与页面背景保持中性', async () => {
     const wrapper = mount(ConfigProvider, {
       props: {theme: appTheme},
       slots: {default: () => [...['warning', 'success', 'error', 'info'].map(type => h(Alert, {type: type as 'warning', message: `${type} 状态`, showIcon: true})), h(Button, {type: 'link'}, () => '查看记录')]},
@@ -19,14 +19,14 @@ describe('共享组件配色', () => {
       expect(getComputedStyle(alert.element).backgroundColor).toBe(`rgb(${rgb.join(', ')})`)
       expect(getComputedStyle(alert.element.querySelector('.ant-alert-message')!).color).toBe('rgb(41, 52, 61)')
     }
-    expect(appTheme.token.colorBgLayout).toBe('#f7f7f7')
+    expect(appTheme.token.colorBgLayout).toBe('#f4f4f4')
     expect(appTheme.token.colorBgContainer).toBe('#ffffff')
-    expect(getComputedStyle(wrapper.get('.ant-btn-link').element).color).toBe('rgb(93, 135, 255)')
+    expect(getComputedStyle(wrapper.get('.ant-btn-link').element).color).toBe('rgb(47, 84, 235)')
   })
 
-  it('主按钮、开关与选择状态复用参考主色，交互色由默认算法生成', () => {
+  it('主按钮、开关与选择状态使用主色，交互色由默认算法生成', () => {
     const tokens = theme.defaultAlgorithm({...theme.defaultSeed, ...appTheme.token})
-    expect(componentSeeds).toEqual({colorPrimary: '#5d87ff', colorSuccess: '#60c041', colorWarning: '#f9901f', colorError: '#e13c39', colorInfo: '#38c0fc'})
+    expect(componentSeeds).toEqual({colorPrimary: '#2f54eb', colorSuccess: '#3a9e50', colorWarning: '#e08a00', colorError: '#e5484d', colorInfo: '#2f54eb'})
     expect(palette.action).toBe(tokens.colorPrimary)
     expect(palette.actionHover).toBe(tokens.colorPrimaryHover)
     expect(palette.actionActive).toBe(tokens.colorPrimaryActive)
@@ -48,7 +48,7 @@ describe('共享组件配色', () => {
     await flushPromises()
     const icon = document.querySelector('.ant-message-success .anticon')!
     expect(icon).not.toBeNull()
-    expect(getComputedStyle(icon).color).toBe('rgb(96, 192, 65)')
+    expect(getComputedStyle(icon).color).toBe('rgb(58, 158, 80)')
     expect(document.querySelector('.ant-message-notice-content')?.textContent).toContain('主题消息')
     wrapper.unmount()
   })

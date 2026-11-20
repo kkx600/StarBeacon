@@ -24,4 +24,4 @@ async function saveRecord(data:InventoryData,id:string){const record=editing.val
   <InventoryForm v-if="editorOpen" :kind="kind" :record="editing" :pending="saving" :error="saveError" @save="saveRecord" @close="editorOpen=false" />
   <InventoryDetail :record="selected" @close="selected=null" />
 </template>
-<style scoped>.inventory-search {display:flex;gap:var(--related-gap);flex-wrap:wrap;align-items:center;padding:var(--panel-inset);margin-bottom:var(--section-gap)}.inventory-search .ant-form-item {margin:0}.inventory-pagination {display:flex;justify-content:flex-end;align-items:center;gap:var(--related-gap);padding:var(--panel-inset);flex-wrap:wrap}@media(max-width:700px){.inventory-search .ant-form-item {flex:1 1 100%;min-width:0}}</style>
+<style scoped>.inventory-search {display:flex;gap:var(--related-gap);flex-wrap:wrap;align-items:center;padding:var(--panel-inset);margin-bottom:var(--section-gap)}.inventory-search .ant-form-item {margin:0}.inventory-pagination {display:flex;justify-content:flex-end;align-items:center;gap:var(--related-gap);padding:var(--panel-inset);flex-wrap:wrap}</style>

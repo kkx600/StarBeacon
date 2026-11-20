@@ -33,7 +33,7 @@ export class PacketExampleClient extends ApiClient {
    if(!signal)throw new ApiError(400,'example_cancel_required','加载示例需要可取消的读取请求')
    return new Promise<T>((_resolve,reject)=>signal.addEventListener('abort',()=>reject(aborted()),{once:true}))
   }
-  if(state.mode==='error')throw new ApiError(503,'example_source_unavailable','合成读取失败示例：原包存储暂时不可用，请核对来源后重试')
+  if(state.mode==='error')throw new ApiError(503,'example_source_unavailable','合成读取失败示例：原包存储服务异常，请稍后重试')
   if(state.mode==='expired')throw new ApiError(410,'example_archive_expired','合成到期示例：归档已超过保留期限，不再返回通信原文')
   const response=structuredClone(packets[index-1]!)
   if(state.mode==='corrupt')response.packet_sha256='0'.repeat(64)

@@ -36,4 +36,4 @@ function save(){
     </a-form>
   </Modal>
 </template>
-<style scoped>.provider-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--field-gap)}.provider-budgets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--field-gap)}.provider-actions{justify-content:flex-end;margin-top:var(--section-gap)}@media(max-width:640px){.provider-fields,.provider-budgets{grid-template-columns:minmax(0,1fr);gap:0}}</style>
+<style scoped>.provider-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--field-gap)}.provider-budgets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--field-gap)}.provider-actions{justify-content:flex-end;margin-top:var(--section-gap)}</style>

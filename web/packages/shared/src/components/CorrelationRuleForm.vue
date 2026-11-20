@@ -41,4 +41,4 @@ async function submit(){
   <template #footer><a-button :disabled="busy" @click="emit('close')">关闭</a-button><a-button v-if="unconfirmed" type="primary" :loading="busy" @click="emit('confirm')">核对原提交</a-button><a-button v-else type="primary" :loading="busy" :disabled="locked" @click="submit">保存规则</a-button></template>
  </a-modal>
 </template>
-<style scoped>.correlation-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}@media(max-width:700px){.correlation-form-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.correlation-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}</style>

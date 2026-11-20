@@ -43,5 +43,5 @@ function submit(){
   </a-modal>
 </template>
 <style scoped>
-.session-source{margin:12px 0;color:var(--muted);overflow-wrap:anywhere}.session-grid{display:grid;grid-template-columns:1.4fr .8fr 1.4fr;gap:0 12px}.session-grid :deep(.ant-input-number){width:100%}.session-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}@media(max-width:760px){.session-grid{grid-template-columns:1fr}}
+.session-source{margin:12px 0;color:var(--muted);overflow-wrap:anywhere}.session-grid{display:grid;grid-template-columns:1.4fr .8fr 1.4fr;gap:0 12px}.session-grid :deep(.ant-input-number){width:100%}.session-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 </style>

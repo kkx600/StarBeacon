@@ -104,4 +104,4 @@ onScopeDispose(()=>{stopped=true;read?.abort();bindingRead?.abort()})
   </template>
  </a-modal>
 </template>
-<style scoped>.policy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.policy-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.policy-binding{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.ant-input-number{width:100%}@media(max-width:700px){.policy-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.policy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.policy-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.policy-binding{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.ant-input-number{width:100%}</style>

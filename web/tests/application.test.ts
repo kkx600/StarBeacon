@@ -28,14 +28,14 @@ beforeEach(()=>{request.mockReset();restore.mockReset();restore.mockResolvedValu
   expect(safeReturnPath('/alerts/list?severity=high#detail','/sensors/list')).toBe('/alerts/list?severity=high#detail')
  })
  it('浅色配色覆盖根节点与弹窗，背景与边界保持正式主题值',()=>{
-  applyPalette();expect(document.documentElement.style.getPropertyValue('--workspace')).toBe('#f7f7f7');expect(document.documentElement.style.getPropertyValue('--syntax-variable')).toBe(palette.syntaxVariable);expect(appTheme.token.colorBgContainer).toBe('#ffffff');expect(appTheme.components.Table.colorFillAlter).toBe('#fafafa')
+  applyPalette();expect(document.documentElement.style.getPropertyValue('--workspace')).toBe('#f4f4f4');expect(document.documentElement.style.getPropertyValue('--syntax-variable')).toBe(palette.syntaxVariable);expect(appTheme.token.colorBgContainer).toBe('#ffffff');expect(appTheme.components.Table.colorFillAlter).toBe('#fafafa')
  })
  })
 
  describe('导航壳层',()=>{
- it('桌面折叠、移动抽屉、导航和退出均可操作',async()=>{
-  const match=vi.mocked(window.matchMedia);match.mockReturnValue({matches:false,media:'',onchange:null,addListener:vi.fn(),removeListener:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn(),dispatchEvent:vi.fn()});const wrapper=mount(AppShell,{props:{title:'采集器管理',username:'admin',current:'/network',items:[{key:'/network',label:'网络与采集',icon:()=>h('span','N')}]},slots:{default:'工作区内容'},global:{plugins:[registerAnt]},attachTo:document.body});expect(wrapper.text()).toContain('工作区内容');await wrapper.get('[aria-label=收起导航]').trigger('click');expect(wrapper.find('[aria-label=展开导航]').exists()).toBe(true);await wrapper.get('[aria-label=展开导航]').trigger('click');await click('退出');expect(wrapper.emitted('logout')).toHaveLength(1)
-  wrapper.getComponent(Menu).vm.$emit('click',{key:'/network'});await flushPromises();expect(wrapper.emitted('navigate')).toEqual([['/network']]);match.mockReturnValue({matches:true,media:'',onchange:null,addListener:vi.fn(),removeListener:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn(),dispatchEvent:vi.fn()});await wrapper.get('[aria-label=收起导航]').trigger('click');await flushPromises();expect(document.body.querySelector('.ant-drawer-open')).not.toBeNull();(document.body.querySelector('.ant-drawer-close') as HTMLButtonElement).click();await flushPromises()
+ it('桌面折叠、导航和退出均可操作',async()=>{
+  const wrapper=mount(AppShell,{props:{title:'采集器管理',username:'admin',current:'/network',items:[{key:'/network',label:'网络与采集',icon:()=>h('span','N')}]},slots:{default:'工作区内容'},global:{plugins:[registerAnt]},attachTo:document.body});expect(wrapper.text()).toContain('工作区内容');await wrapper.get('[aria-label=收起导航]').trigger('click');expect(wrapper.find('[aria-label=展开导航]').exists()).toBe(true);await wrapper.get('[aria-label=展开导航]').trigger('click');await click('退出');expect(wrapper.emitted('logout')).toHaveLength(1)
+  wrapper.getComponent(Menu).vm.$emit('click',{key:'/network'});await flushPromises();expect(wrapper.emitted('navigate')).toEqual([['/network']])
  })
  })
 

@@ -66,4 +66,4 @@ function submit(){
   </a-form>
  </a-modal>
 </template>
-<style scoped>.incident-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.incident-form-actions{display:flex;gap:var(--related-gap);justify-content:flex-end;flex-wrap:wrap}.incident-hint{font-size:12px;margin:-8px 0 12px;overflow-wrap:anywhere}@media(max-width:700px){.incident-form-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.incident-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.incident-form-actions{display:flex;gap:var(--related-gap);justify-content:flex-end;flex-wrap:wrap}.incident-hint{font-size:12px;margin:-8px 0 12px;overflow-wrap:anywhere}</style>

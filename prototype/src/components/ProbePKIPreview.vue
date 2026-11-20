@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,shallowRef,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
 import type {PreviewState} from '../models'
@@ -24,7 +25,7 @@ function revokeExample(){revokeResult.value=revoke.value?.kind==='certificate'?{
 </script>
 <template>
  <PageHeader title="注册与证书" description="核对生产探针注册凭据、签发记录和证书吊销状态。"><a-button @click="emit('state','data')">刷新</a-button><a-button v-if="mode==='enrollments'" type="primary" @click="receipt=null;formOpen=true">创建注册凭据</a-button></PageHeader>
- <a-alert type="info" show-icon message="本页面为合成示例，复用工程表单和只读详情，不调用 CA 或真实探针。证书有效、平台允许通信与 CA 吊销确认分别核对。" class="section-gap" />
+ <HelpNote message="本页面为合成示例，复用工程表单和只读详情，不调用 CA 或真实探针。证书有效、平台允许通信与 CA 吊销确认分别核对。"/>
  <div class="panel pki-preview-toolbar"><a-button :type="mode==='enrollments'?'primary':'default'" @click="select('enrollments')">注册凭据</a-button><a-button :type="mode==='certificates'?'primary':'default'" @click="select('certificates')">证书目录</a-button><a-tag v-if="mode==='certificates'">{{certificate.sensor_id}}</a-tag></div>
  <section class="panel"><StatePanel v-if="['empty','error','loading'].includes(state)" :state="state as 'empty'|'error'|'loading'" :title="state==='empty'?'暂无'+(mode==='enrollments'?'注册凭据':'托管证书'):undefined" :description="state==='empty'?'核对当前探针和目录范围。开发证书不进入托管证书目录。':undefined" action="重新加载" @action="emit('state','data')" /><PKITable v-else :mode="mode" :enrollments="[enrollment]" :certificates="[certificate]" :locked="false" @view="detail=$event" @revoke="choose" @certificates="select('certificates')" /></section>
  <EnrollmentForm v-if="formOpen" :busy="false" :locked="false" error="" :receipt="receipt" :token="receipt?'合成示例，不能用于设备注册':''" @save="save" @close="formOpen=false;receipt=null" />

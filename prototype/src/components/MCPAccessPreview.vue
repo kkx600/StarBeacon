@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {shallowRef} from 'vue'
 import {Modal as AModal,Table as ATable,Tabs as ATabs} from 'ant-design-vue'
 import MCPResourceGuide from '../../../web/platform/src/features/mcp/MCPResourceGuide.vue'
@@ -10,5 +11,5 @@ function openDirectory(){tab.value='tools';open.value=true}
 </script>
 <template>
  <a-button class="section-gap" @click="openDirectory">工具与资源</a-button>
- <a-modal :open="open" title="MCP 工具与资源" :width="980" :footer="null" :body-style="{maxHeight:'calc(100vh - 240px)',overflowY:'auto'}" @cancel="open=false"><a-alert type="info" show-icon message="接入说明" description="以下为静态接入目录，不代表当前身份已发现或获准使用全部工具和资源。原型不建立 MCP 会话，不读取真实业务数据。" class="section-gap"/><a-tabs v-model:active-key="tab"><a-tab-pane key="tools" tab="工具目录"><a-table :data-source="rows" :columns="columns" row-key="name" :pagination="false" :scroll="{x:620}"/></a-tab-pane><a-tab-pane key="resources" tab="元数据资源"><MCPResourceGuide/></a-tab-pane></a-tabs></a-modal>
+ <a-modal :open="open" title="MCP 工具与资源" :width="980" :footer="null" :body-style="{maxHeight:'calc(100vh - 240px)',overflowY:'auto'}" @cancel="open=false"><HelpNote message="接入说明" description="以下为静态接入目录，不代表当前身份已发现或获准使用全部工具和资源。原型不建立 MCP 会话，不读取真实业务数据。"/><a-tabs v-model:active-key="tab"><a-tab-pane key="tools" tab="工具目录"><a-table :data-source="rows" :columns="columns" row-key="name" :pagination="false" :scroll="{x:620}"/></a-tab-pane><a-tab-pane key="resources" tab="元数据资源"><MCPResourceGuide/></a-tab-pane></a-tabs></a-modal>
 </template>

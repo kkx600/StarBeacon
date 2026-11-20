@@ -15,6 +15,26 @@ export interface WatchlistTarget extends WatchlistScope {type:'ip'|'domain';valu
 export interface WatchlistPreviewRequest {definition:WatchlistDefinition;active:boolean;targets:WatchlistTarget[]}
 export interface WatchlistPreviewResult {schema_version:'watchlist-preview.v1';definition_sha256:string;active:boolean;admissible:boolean;effective:boolean;checked_at:string;scope_sensor_count:number;value_count:number;reasons:string[];matches:{index:number;matched:boolean}[];execution_authorized:false;fact_deletion_allowed:false}
 
+// 命中与历史影响：命中只关联修订保存后接收的新告警，预览只核对已入索引的告警，两者都不表示攻击成立或设备已执行。
+export const watchlistHitFields={'source.ip':'源 IP','destination.ip':'目的 IP','http.hostname':'HTTP 主机名','tls.sni':'TLS SNI','dns.rrname':'DNS 查询名'} as const
+export const watchlistSeverities={high:'高危',medium:'中危',low:'低危',unknown:'未知'} as const
+export const maxWatchlistHitWindow=31*86400000
+export const maxWatchlistHitMatches=16
+export const maxWatchlistHitDays=32
+export const maxWatchlistImpactSamples=20
+export const maxWatchlistImpactValues=64
+export const watchlistDailyHitCap=10000
+export interface WatchlistObserved {field:keyof typeof watchlistHitFields;value:string}
+export interface WatchlistHit {schema_version:'watchlist-hit.v1';id:string;list_id:string;list_revision:number;definition_sha256:string;event_id:string;raw_sha256:string;sensor_id:string;registration_id:string;matches:WatchlistObserved[];severity:keyof typeof watchlistSeverities;rule_id:string;rule_name:string;observed_at:string;received_at:string;created_at:string;expires_at:string}
+export interface WatchlistHitDay {day:string;recorded:number;capped_at:string}
+export interface WatchlistHitQuery {list_id:string;start:string;end:string;cursor:string;limit:number}
+export interface WatchlistHitPage {items:WatchlistHit[];next_cursor:string;observed_at:string;capped_days:WatchlistHitDay[]}
+export interface WatchlistAlertHits {items:WatchlistHit[];observed_at:string}
+export interface WatchlistImpactRequest {revision:number;start:string;end:string}
+export interface WatchlistImpactValue {value:string;count:number}
+export interface WatchlistImpactSample {event_id:string;raw_sha256:string;'@timestamp':string;sensor_id:string;registration_id:string;severity:keyof typeof watchlistSeverities;rule_name:string;matches:WatchlistObserved[]}
+export interface WatchlistImpact {schema_version:'watchlist-impact.v1';list_id:string;list_revision:number;definition_sha256:string;kind:keyof typeof watchlistKinds;match_type:keyof typeof watchlistMatchTypes;current:boolean;active:boolean;start:string;end:string;checked_at:string;fields:string[];total:number;values:WatchlistImpactValue[];samples:WatchlistImpactSample[];hits_recorded:false;execution_authorized:false}
+
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)
 const id=(v:unknown):v is string=>typeof v==='string'&&/^[a-z0-9][a-z0-9_-]{0,63}$/.test(v)
 const integer=(v:unknown,min:number,max:number):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max
@@ -129,4 +149,116 @@ export async function readWatchlistPreview(v:unknown,input:WatchlistPreviewReque
  if(v.admissible!==(!broad&&!expired)||v.effective!==(input.active&&!broad&&!expired&&!future)||JSON.stringify(v.reasons)!==JSON.stringify(reasons))throw failure()
  for(const [index,result] of v.matches.entries())if(!object(result)||!fields(result,['index','matched'])||result.index!==index||typeof result.matched!=='boolean'||result.matched!==watchlistTargetMatched(input.definition,input.targets[index]!))throw failure()
  return v as unknown as WatchlistPreviewResult
+}
+
+// ——— 观察命中与历史影响 ———
+
+const hitFailure=()=>new Error('命中记录与当前租户、名单或查询窗口不一致，请刷新后重试。')
+const impactFailure=()=>new Error('历史影响结果与本次核对范围不一致，本次未交付计数。')
+// 命中字段按值类型校验：源与目的地址按 IP 规范，主机名、SNI 与查询名按精确域名规范。
+const hitFieldType=(field:string)=>field==='source.ip'||field==='destination.ip'?'ip':'domain'
+export const watchlistImpactFields=(matchType:string)=>matchType==='domain'?['http.hostname']:['source.ip','destination.ip']
+// 本地时间输入转 datetime-local 字面量；窗口口径与质量事件一致，结束时刻不包含在查询内。
+export const localWatchlistTime=(value:Date)=>new Date(value.getTime()-value.getTimezoneOffset()*60000).toISOString().slice(0,19)
+// 游标按服务端结构顺序重建摘要，因此窗口必须是整秒 UTC 字面量，与 Go 的时间序列化一致。
+const utcSecond=(value:Date)=>new Date(Math.floor(value.getTime()/1000)*1000).toISOString().replace('.000Z','Z')
+
+function observedList(v:unknown,allowed:readonly string[],max:number):v is WatchlistObserved[] {
+ if(!Array.isArray(v)||v.length<1||v.length>max)return false
+ return v.every((o,index)=>object(o)&&fields(o,['field','value'])&&typeof o.field==='string'&&allowed.includes(o.field)&&typeof o.value==='string'&&watchlistValueValid(hitFieldType(o.field),o.value)&&!v.slice(0,index).some(prior=>object(prior)&&prior.field===o.field&&prior.value===o.value))
+}
+
+export function watchlistHitQuery(listId:string,start:string,end:string,cursor='',limit=20):WatchlistHitQuery {
+ const from=new Date(start),to=new Date(end)
+ if(!id(listId)||!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from.getUTCFullYear()<2000||to.getUTCFullYear()>2100||to<=from||to.getTime()-from.getTime()>maxWatchlistHitWindow||!integer(limit,1,100)||cursor.length>512)throw new Error('请核对命中查询窗口：窗口须大于 0 且不超过 31 天，结束时刻不包含在查询内。')
+ return {list_id:listId,start:utcSecond(from),end:utcSecond(to),cursor,limit}
+}
+
+export const watchlistHitPath=(q:WatchlistHitQuery)=>`/watchlists/${encodeURIComponent(q.list_id)}/hits?`+new URLSearchParams({start:q.start,end:q.end,limit:String(q.limit),...(q.cursor?{cursor:q.cursor}:{})})
+
+async function readWatchlistHit(v:unknown,tenant:string,q:{start:string;end:string}):Promise<WatchlistHit> {
+ const start=instant(q.start)!,end=instant(q.end)!
+ if(!object(v)||!fields(v,['schema_version','id','list_id','list_revision','definition_sha256','event_id','raw_sha256','sensor_id','registration_id','matches','severity','rule_id','rule_name','observed_at','received_at','created_at','expires_at'])||v.schema_version!=='watchlist-hit.v1'||!id(v.list_id)||!integer(v.list_revision,1,1000000)||!digest(v.definition_sha256)||!id(v.event_id)||!digest(v.raw_sha256)||!id(v.sensor_id)||!id(v.registration_id)||!observedList(v.matches,Object.keys(watchlistHitFields),maxWatchlistHitMatches)||typeof v.severity!=='string'||!Object.hasOwn(watchlistSeverities,v.severity)||!text(v.rule_id,64)||!text(v.rule_name,512)||!date(v.observed_at)||!date(v.received_at)||!date(v.created_at)||!date(v.expires_at)||instant(v.expires_at)!<=instant(v.created_at)!)throw hitFailure()
+ // 命中标识由租户、名单、修订与告警身份固化；不一致说明记录不属于当前租户或被改写。
+ if(v.id!=='whit_'+(await goJSONDigest([tenant,v.list_id,v.list_revision,v.event_id,v.raw_sha256])).slice(0,56))throw hitFailure()
+ if(instant(v.observed_at)!<start||instant(v.observed_at)!>=end)throw hitFailure()
+ return v as unknown as WatchlistHit
+}
+
+async function hitCursorScope(q:WatchlistHitQuery,tenant:string):Promise<string> {
+ return goJSONDigest({tenant,query:{list_id:q.list_id,start:q.start,end:q.end,cursor:'',limit:q.limit}})
+}
+
+// 游标绑定租户、名单、窗口与页大小；篡改或跨窗口复用都在渲染前拒绝。
+async function readHitCursor(value:string,q:WatchlistHitQuery,tenant:string,last:WatchlistHit):Promise<void> {
+ if(!/^[A-Za-z0-9_-]{1,512}$/.test(value))throw hitFailure()
+ let decoded:unknown
+ try{const raw=atob(value.replaceAll('-','+').replaceAll('_','/'));if(btoa(raw).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')!==value)throw hitFailure();decoded=JSON.parse(raw)}catch{throw hitFailure()}
+ if(!object(decoded)||!fields(decoded,['time','id','scope'])||decoded.id!==last.id||!date(decoded.time)||instant(decoded.time)!==instant(last.observed_at)||decoded.scope!==await hitCursorScope(q,tenant))throw hitFailure()
+}
+
+export async function readWatchlistHitPage(v:unknown,q:WatchlistHitQuery,tenant:string):Promise<WatchlistHitPage> {
+ if(!id(tenant)||!object(v)||!fields(v,['items','next_cursor','observed_at','capped_days'])||!Array.isArray(v.items)||v.items.length>q.limit||typeof v.next_cursor!=='string'||!date(v.observed_at)||!Array.isArray(v.capped_days)||v.capped_days.length>maxWatchlistHitDays)throw hitFailure()
+ const items:WatchlistHit[]=[]
+ for(const raw of v.items){
+  const hit=await readWatchlistHit(raw,tenant,q)
+  const prior=items.at(-1)
+  // 按告警观测时间倒序，同刻按命中标识倒序；重复或乱序说明本页不完整。
+  if(hit.list_id!==q.list_id||prior&&(instant(prior.observed_at)!<instant(hit.observed_at)!||instant(prior.observed_at)===instant(hit.observed_at)&&prior.id<=hit.id))throw hitFailure()
+  items.push(hit)
+ }
+ const from=q.start.slice(0,10),to=q.end.slice(0,10)
+ let previousDay=''
+ for(const day of v.capped_days){
+  if(!object(day)||!fields(day,['day','recorded','capped_at'])||typeof day.day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day.day)||day.day<from||day.day>to||previousDay&&day.day>=previousDay||!integer(day.recorded,0,Number.MAX_SAFE_INTEGER)||!date(day.capped_at))throw hitFailure()
+  previousDay=day.day
+ }
+ if(v.next_cursor){
+  if(items.length!==q.limit)throw hitFailure()
+  await readHitCursor(v.next_cursor,q,tenant,items[items.length-1]!)
+ }
+ return v as unknown as WatchlistHitPage
+}
+
+export async function readWatchlistAlertHits(v:unknown,tenant:string,event:string,sha256:string):Promise<WatchlistAlertHits> {
+ if(!id(tenant)||!id(event)||!digest(sha256)||!object(v)||!fields(v,['items','observed_at'])||!Array.isArray(v.items)||v.items.length>256||!date(v.observed_at))throw hitFailure()
+ const window={start:'2000-01-01T00:00:00Z',end:'2100-01-01T00:00:00Z'},seen=new Set<string>()
+ for(const raw of v.items){
+  const hit=await readWatchlistHit(raw,tenant,window)
+  // 摘要不一致不借用其他告警的命中；同一名单修订不重复出现。
+  if(hit.event_id!==event||hit.raw_sha256!==sha256||seen.has(hit.id))throw hitFailure()
+  seen.add(hit.id)
+ }
+ return v as unknown as WatchlistAlertHits
+}
+
+export function watchlistImpactRequest(revision:number,start:string,end:string):WatchlistImpactRequest {
+ const from=new Date(start),to=new Date(end)
+ if(!integer(revision,1,1000000)||!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from.getUTCFullYear()<2000||to.getUTCFullYear()>2100||to<=from||to.getTime()-from.getTime()>maxWatchlistHitWindow)throw new Error('请核对修订号与核对窗口：窗口须大于 0 且不超过 31 天，结束时刻不包含在查询内。')
+ return {revision,start:utcSecond(from),end:utcSecond(to)}
+}
+
+export function readWatchlistImpact(v:unknown,listId:string,input:WatchlistImpactRequest):WatchlistImpact {
+ const start=instant(input.start)!,end=instant(input.end)!
+ if(!object(v)||!fields(v,['schema_version','list_id','list_revision','definition_sha256','kind','match_type','current','active','start','end','checked_at','fields','total','values','samples','hits_recorded','execution_authorized'])||v.schema_version!=='watchlist-impact.v1'||v.list_id!==listId||v.list_revision!==input.revision||!digest(v.definition_sha256)||typeof v.kind!=='string'||!Object.hasOwn(watchlistKinds,v.kind)||typeof v.match_type!=='string'||!Object.hasOwn(watchlistMatchTypes,v.match_type)||typeof v.current!=='boolean'||typeof v.active!=='boolean'||!date(v.start)||!date(v.end)||instant(v.start)!==start||instant(v.end)!==end||!date(v.checked_at)||!integer(v.total,0,Number.MAX_SAFE_INTEGER))throw impactFailure()
+ // 预览只覆盖已入索引的字段；TLS SNI 与 DNS 查询名没有检索字段，不在范围内。
+ const allowed=watchlistImpactFields(v.match_type)
+ if(!Array.isArray(v.fields)||JSON.stringify(v.fields)!==JSON.stringify(allowed))throw impactFailure()
+ if(!Array.isArray(v.values)||v.values.length<1||v.values.length>maxWatchlistImpactValues)throw impactFailure()
+ const seenValues=new Set<string>()
+ for(const row of v.values){
+  if(!object(row)||!fields(row,['value','count'])||typeof row.value!=='string'||!watchlistValueValid(v.match_type,row.value)||seenValues.has(row.value)||!integer(row.count,0,v.total))throw impactFailure()
+  seenValues.add(row.value)
+ }
+ if(!Array.isArray(v.samples)||v.samples.length!==Math.min(v.total,maxWatchlistImpactSamples))throw impactFailure()
+ let prior:{time:bigint;event:string}|null=null
+ for(const row of v.samples){
+  if(!object(row)||!fields(row,['event_id','raw_sha256','@timestamp','sensor_id','registration_id','severity','rule_name','matches'])||!id(row.event_id)||!digest(row.raw_sha256)||!date(row['@timestamp'])||!id(row.sensor_id)||!id(row.registration_id)||typeof row.severity!=='string'||!Object.hasOwn(watchlistSeverities,row.severity)||!text(row.rule_name,512)||!observedList(row.matches,allowed,maxWatchlistHitMatches))throw impactFailure()
+  const at=instant(row['@timestamp'])!
+  // 样本按时间倒序、同刻按事件标识升序；越界或乱序说明检索材料与本次范围不一致。
+  if(at<start||at>=end||prior&&(at>prior.time||at===prior.time&&row.event_id<=prior.event))throw impactFailure()
+  prior={time:at,event:row.event_id}
+ }
+ if(v.hits_recorded!==false||v.execution_authorized!==false)throw impactFailure()
+ return v as unknown as WatchlistImpact
 }

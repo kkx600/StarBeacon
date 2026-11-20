@@ -14,4 +14,4 @@ const current=computed(()=>props.connectors.find(v=>v.connector_id===props.model
  <p class="page-description section-gap">设备保护范围由采集器再次校验。任务投递期限与设备封禁到期时间分别记录；旁路探针自身不阻断流量。</p>
  <div class="filter-actions"><a-button type="primary" html-type="submit" :loading="saving">{{unconfirmed?'核对原提交':'提交任务'}}</a-button><a-button :disabled="locked" @click="emit('close')">返回</a-button></div>
 </a-form></template>
-<style scoped>.response-form-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.response-form-grid .ant-input-number{width:100%}@media(max-width:600px){.response-form-grid{grid-template-columns:1fr}}</style>
+<style scoped>.response-form-grid{display:grid;grid-template-columns:1fr 170px;gap:var(--related-gap)}.response-form-grid .ant-input-number{width:100%}</style>

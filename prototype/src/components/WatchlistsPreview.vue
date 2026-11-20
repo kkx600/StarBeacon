@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,onScopeDispose,shallowRef,watch} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
 import {Select as ASelect} from 'ant-design-vue'
@@ -23,7 +24,7 @@ const filtered=computed(()=>props.state==='empty'?[]:records.value.filter(row=>(
 const forbidden=computed(()=>route.query.list_state==='forbidden')
 const maximum=computed(()=>records.value.find(row=>row.id===selected.value?.id)?.revision??1)
 const loading=computed(()=>!ready.value||props.state==='loading')
-const pageError=computed(()=>sourceError.value||(forbidden.value?'当前示例无权读取名单，请切换授权示例身份后重试。':props.state==='error'?'合成名单目录暂时不可用，请重试。':''))
+const pageError=computed(()=>sourceError.value||(forbidden.value?'当前示例无权读取名单，请切换授权示例身份后重试。':props.state==='error'?'合成名单目录服务异常，请稍后重试。':''))
 function clearPreview(){generation++;preview.value=null;previewInput.value=null;previewPending.value=false;previewError.value=''}
 function resetAction(){clearPreview();error.value='';unconfirmed.value=false;attempt=undefined;receipt=undefined;draft.value=undefined}
 function close(){if(busy.value)return;overlay.value='';clearPreview();formRecord.value=null;draft.value=undefined;if(!unconfirmed.value)resetAction();if(props.state==='action'||props.state==='detail'||route.query.panel)void router.replace({query:{...route.query,state:'data',panel:undefined,list_state:undefined},hash:route.hash})}
@@ -73,7 +74,7 @@ onScopeDispose(()=>{disposed=true;generation++})
 </script>
 <template>
  <PageHeader title="保护与观察名单" description="核对名单用途、固定探针范围、业务有效期和历史修订。"><a-button @click="emit('state','data')">刷新</a-button><a-button type="primary" :disabled="loading||forbidden||busy" @click="create">{{unconfirmed?'核对原提交':'创建名单'}}</a-button></PageHeader>
- <a-alert type="info" show-icon message="合成名单示例" :description="`示例观测时间：${watchlistExampleTime}。组件与输入校验复用工程实现；保存及核验仅作用于浏览器内存，不查询真实探针、不发布生产名单、不删除告警或调用设备。`" class="section-gap"/>
+ <HelpNote message="合成名单示例" :description="`示例观测时间：${watchlistExampleTime}。组件与输入校验复用工程实现；保存及核验仅作用于浏览器内存，不查询真实探针、不发布生产名单、不删除告警或调用设备。`"/>
  <a-alert v-if="unconfirmed&&overlay!=='form'" type="warning" show-icon message="名单提交结果尚未确认" description="原合成请求与输入已保留，请点击核对原提交继续确认。" class="section-gap"/><section class="panel watchlist-filter"><form class="watchlist-query" @submit.prevent="search"><label for="preview-watchlist-keyword">名单名称<a-input id="preview-watchlist-keyword" v-model:value="keyword" aria-label="筛选名单名称" :maxlength="128" placeholder="名单名称" allow-clear/></label><label for="preview-watchlist-kind">名单类型<a-select id="preview-watchlist-kind" v-model:value="kind" :options="[{value:'',label:'全部类型'},...Object.entries(watchlistKinds).map(([value,label])=>({value,label}))]"/></label><label for="preview-watchlist-active">配置状态<a-select id="preview-watchlist-active" v-model:value="active" aria-label="筛选名单配置状态" :options="[{value:'',label:'全部配置状态'},{value:'true',label:'启用'},{value:'false',label:'停用'}]"/></label><a-space><a-button html-type="submit" type="primary">查询</a-button><a-button @click="resetFilters">重置</a-button></a-space></form></section>
  <section class="panel"><StatePanel v-if="loading||pageError" :state="loading?'loading':'error'" :description="pageError" @action="emit('state','data')"/><StatePanel v-else-if="!filtered.length" state="empty" title="暂无名单" description="当前示例范围内没有匹配记录，可调整筛选或创建停用名单。" action="创建名单" @action="create"/><WatchlistTable v-else :items="filtered" :now="watchlistExampleClock" :can-edit="!forbidden" :disabled="unconfirmed||busy" @inspect="inspect" @edit="edit" @preview="inspectPreview" @state="row=>edit(row,true)"/></section>
  <WatchlistForm v-if="overlay==='form'" :key="`${formRecord?.id??'create'}:${formRecord?.revision??0}`" :record="formRecord" :draft="draft" :busy="busy" :unconfirmed="unconfirmed" :error="error" :sensors="watchlistExampleSensors" :preview="preview" :preview-pending="previewPending" :preview-error="previewError" @change="clearPreview" @preview="runPreview" @save="save" @confirm="confirm" @close="close" @refresh-sensors="()=>{}"/>

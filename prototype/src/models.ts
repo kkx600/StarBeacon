@@ -1,5 +1,5 @@
 export type PreviewState = 'data' | 'empty' | 'detail' | 'action' | 'loading' | 'error'
-export type PageKind = 'table' | 'overview' | 'screen' | 'search' | 'chat' | 'rule-studio' | 'playbook' | 'retention' | 'topology'
+export type PageKind = 'table' | 'overview' | 'screen' | 'search' | 'chat' | 'rule-studio' | 'playbook' | 'retention' | 'topology' | 'ai-ops' | 'plugins' | 'bypass' | 'full-traffic'
 export type CellKind = 'text' | 'status' | 'level' | 'percent' | 'code' | 'progress'
 export interface ColumnSpec { key: string; title: string; width?: number; kind?: CellKind }
 export interface FieldSpec {

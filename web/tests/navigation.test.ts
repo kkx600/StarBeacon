@@ -36,8 +36,8 @@ describe('业务导航与路由契约',()=>{
   const wrapper=mount(RouterView,{global:{plugins:[registerAnt,router]}})
   try{await flushPromises();expect(wrapper.get('h1').text()).toBe(screen.title)}finally{wrapper.unmount()}
  })
- it('十二个业务分组与四十三个原型工作区都有稳定入口，深层页面确实由父子路由匹配',async()=>{
-  expect(navigationGroups).toHaveLength(12);expect(navigationWorkspaces).toHaveLength(43)
+ it('十二个业务分组与四十四个原型工作区都有稳定入口，深层页面确实由父子路由匹配',async()=>{
+  expect(navigationGroups).toHaveLength(12);expect(navigationWorkspaces).toHaveLength(44)
   const router=await routerFor('/system/accounts/users')
   expect(router.currentRoute.value.matched.map(record=>record.path)).toEqual(['/system','/system/accounts','/system/accounts/users'])
   expect(router.currentRoute.value.meta).toMatchObject({navGroup:'system',navWorkspace:'users',admin:true})
@@ -57,7 +57,7 @@ describe('业务导航与路由契约',()=>{
  })
  it('只读角色不显示管理员及未提供的工作区，管理员可定位全部设计目录',()=>{
   const viewer=navigationForRole(false),admin=navigationForRole(true)
-  expect(admin.flatMap(group=>group.children)).toHaveLength(43)
+  expect(admin.flatMap(group=>group.children)).toHaveLength(44)
   expect(viewer.flatMap(group=>group.children).some(item=>['users','models','mcp','decision-policies','tenants'].includes(item.key))).toBe(false)
   expect(viewer.flatMap(group=>group.children).every(item=>item.available)).toBe(true)
   expect(admin.find(group=>group.key==='system')?.children.map(item=>item.label)).toContain('平台运维')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpNote from './HelpNote.vue'
 import {computed,reactive,ref} from 'vue'
 import type {BusinessRecord} from '../models'
 const props=defineProps<{record:BusinessRecord}>(),emit=defineEmits<{close:[]}>()
@@ -9,10 +10,10 @@ function submit(){if(!qualified.value||!form.confirmed||!form.reason.trim()||for
 </script>
 <template>
  <a-modal :open="true" title="处置确认" :width="720" :footer="null" @cancel="emit('close')">
-  <a-alert type="info" show-icon message="合成示例：本页面不访问工程服务、探针或设备。影子判断与人工授权分别记录。" class="page-notice"/>
+  <HelpNote message="合成示例：本页面不访问工程服务、探针或设备。影子判断与人工授权分别记录。"/>
   <a-descriptions :column="1" size="small" bordered><a-descriptions-item label="原评估">{{record.name}}</a-descriptions-item><a-descriptions-item label="策略 / 修订">{{record.policy}}</a-descriptions-item><a-descriptions-item label="源 IP / 自报分数">{{record.source}} / {{record.confidence}} · 未校准</a-descriptions-item></a-descriptions>
   <a-alert v-if="!qualified" class="page-notice" type="warning" show-icon message="本评估没有匹配的源 IP 封禁候选，不能确认处置。"/>
-  <template v-else-if="accepted"><a-alert type="info" show-icon class="page-notice" message="示例授权只保存在当前弹窗。未创建签名任务，不证明设备或流量阻断。工程任务详情使用原任务标识独立读取，不受最近 200 项列表上限影响。"/><a-descriptions :column="1" bordered size="small"><a-descriptions-item label="探针 / 连接器">{{form.sensor}} / {{form.connector}}</a-descriptions-item><a-descriptions-item label="示例期限">{{form.ttl}} 秒</a-descriptions-item><a-descriptions-item label="操作依据">{{form.reason}}</a-descriptions-item><a-descriptions-item label="示例任务标识">task_example</a-descriptions-item><a-descriptions-item label="执行 / 记录期限">限时执行与 180 天记录留存分别呈现（示例）</a-descriptions-item><a-descriptions-item label="档案摘要">未提供实际档案；不生成虚构摘要</a-descriptions-item></a-descriptions><div class="proto-response-actions"><a-button @click="emit('close')">返回</a-button></div></template>
+  <template v-else-if="accepted"><HelpNote message="示例授权只保存在当前弹窗。未创建签名任务，不证明设备或流量阻断。工程任务详情使用原任务标识独立读取，不受最近 200 项列表上限影响。"/><a-descriptions :column="1" bordered size="small"><a-descriptions-item label="探针 / 连接器">{{form.sensor}} / {{form.connector}}</a-descriptions-item><a-descriptions-item label="示例期限">{{form.ttl}} 秒</a-descriptions-item><a-descriptions-item label="操作依据">{{form.reason}}</a-descriptions-item><a-descriptions-item label="示例任务标识">task_example</a-descriptions-item><a-descriptions-item label="执行 / 记录期限">限时执行与 180 天记录留存分别呈现（示例）</a-descriptions-item><a-descriptions-item label="档案摘要">未提供实际档案；不生成虚构摘要</a-descriptions-item></a-descriptions><div class="proto-response-actions"><a-button @click="emit('close')">返回</a-button></div></template>
   <a-form v-else :model="form" layout="vertical" @finish="submit">
    <a-alert v-if="error" class="page-notice" type="error" show-icon :message="error"/>
    <a-form-item label="执行探针" required><a-select v-model:value="form.sensor" aria-label="处置执行探针" :options="[{value:'probe_example',label:'合成执行探针 · probe_example'}]"/></a-form-item>
@@ -24,4 +25,4 @@ function submit(){if(!qualified.value||!form.confirmed||!form.reason.trim()||for
   </a-form>
  </a-modal>
 </template>
-<style scoped>.proto-response-grid{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px}.proto-response-grid .ant-input-number{width:100%}.proto-response-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.ant-form{margin-top:12px}@media(max-width:600px){.proto-response-grid{grid-template-columns:1fr}}</style>
+<style scoped>.proto-response-grid{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px}.proto-response-grid .ant-input-number{width:100%}.proto-response-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.ant-form{margin-top:12px}</style>

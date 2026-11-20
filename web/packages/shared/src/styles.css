@@ -10,7 +10,7 @@
   background: var(--workspace);
 }
 * {box-sizing: border-box}
-body {margin: 0; min-width: 320px}
+body {margin: 0; min-width: 1024px}
 button, input, textarea {font: inherit; caret-color: var(--primary)}
 ::selection {background: var(--selection-surface); color: var(--selection-text)}
 :focus-visible {outline: 2px solid var(--primary); outline-offset: 2px}
@@ -50,9 +50,9 @@ h2 {margin: 0; font-size: 16px; font-weight: 600}
 .detail-content .ant-descriptions {margin-bottom: var(--panel-inset)}
 .raw-data {white-space: pre-wrap; overflow-wrap: anywhere; background: var(--table-header); padding: var(--section-gap); border-radius: 6px; max-height: 320px; overflow: auto; font-size: 12px; line-height: 1.6}
 .status-online {color: var(--success); background: var(--success-surface)}
-.status-offline, .status-unknown, .status-disabled {color: var(--status-text); background: var(--status-surface)}
-.status-high {color: var(--danger); background: var(--danger-surface)}
-.status-medium {color: var(--warning); background: var(--warning-surface)}
+.status-offline, .status-unknown, .status-disabled, .status-neutral {color: var(--status-text); background: var(--status-surface)}
+.status-high, .status-danger {color: var(--danger); background: var(--danger-surface)}
+.status-medium, .status-warning {color: var(--warning); background: var(--warning-surface)}
 .status-low {color: var(--success); background: var(--success-surface)}
 .status {display: inline-block; border-radius: 4px; padding: 1px 7px; white-space: nowrap; font-size: 12px; line-height: 1.7}
 .metric-grid {display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: var(--section-gap) 0}
@@ -65,20 +65,6 @@ h2 {margin: 0; font-size: 16px; font-weight: 600}
 .login-panel {width: 100%; max-width: 400px; border: 1px solid var(--line); border-radius: 8px; padding: 24px; background: var(--surface)}
 .login-panel .page-description {margin-bottom: var(--panel-inset)}
 .capture-form {padding-top: var(--section-gap); max-width: 680px}
-@media (max-width:899px) {
-  :root {--page-inset:12px; --panel-inset:12px}
-  .filter-form {grid-template-columns: repeat(2,minmax(0,1fr))}
-  .metric-grid {grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--section-gap) 0}
-  .metric-grid > div:nth-child(even) {border-right:0}
-}
-@media (max-width:550px) {
-  .app-shell > .ant-layout-sider {display:none}
-  .filter-form {grid-template-columns: minmax(0,1fr)}
-  .page-header {flex-direction:column}
-  h1 {font-size:22px}
-  .header-title {display:none}
-  .app-content {padding:var(--page-inset)}
-}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

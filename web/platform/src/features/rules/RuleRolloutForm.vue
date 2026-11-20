@@ -51,5 +51,5 @@ function submit(){
  </a-modal>
 </template>
 <style scoped>
-.rollout-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.rollout-form-grid .ant-input-number{width:100%}.rollout-choice-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}.rollout-order{max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px;padding:8px 12px}.rollout-order ol{margin:0;padding-left:22px}.rollout-order li{padding:4px;overflow-wrap:anywhere}.rollout-order small{display:block;color:var(--muted)}@media(max-width:640px){.rollout-form-grid{grid-template-columns:minmax(0,1fr)}}
+.rollout-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.rollout-form-grid .ant-input-number{width:100%}.rollout-choice-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}.rollout-order{max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px;padding:8px 12px}.rollout-order ol{margin:0;padding-left:22px}.rollout-order li{padding:4px;overflow-wrap:anywhere}.rollout-order small{display:block;color:var(--muted)}
 </style>

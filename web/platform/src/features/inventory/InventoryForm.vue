@@ -49,5 +49,5 @@ function submit(){if(props.pending)return;const data=JSON.parse(JSON.stringify(f
 .interface-editor .panel-header {padding:0 0 var(--section-gap)}
 .interface-fields {padding:var(--section-gap);border:1px solid var(--line);border-radius:6px;margin-bottom:var(--section-gap);background:var(--surface)}
 .interface-addresses {grid-column:1/-1}.interface-remove {justify-self:start;grid-column:1/-1}
-@media(max-width:700px){.inventory-fields,.interface-fields {grid-template-columns:minmax(0,1fr)}}
+
 </style>

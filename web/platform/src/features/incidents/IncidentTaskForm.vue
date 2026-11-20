@@ -45,4 +45,4 @@ defineExpose({submit})
   <a-form-item v-if="editing" label="变更说明" required><a-textarea v-model:value="note" :disabled="disabled" :rows="2" :maxlength="2048" aria-label="任务变更说明"/></a-form-item>
  </a-form>
 </template>
-<style scoped>.task-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.task-editor :deep(.ant-form-item){min-width:0}@media(max-width:700px){.task-form-grid{grid-template-columns:minmax(0,1fr)}}</style>
+<style scoped>.task-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--related-gap)}.task-editor :deep(.ant-form-item){min-width:0}</style>

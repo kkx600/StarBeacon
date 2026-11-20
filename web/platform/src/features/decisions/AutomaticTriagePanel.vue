@@ -41,4 +41,4 @@ onScopeDispose(()=>{stopped=true;read?.abort()})
  </StatePanel>
  <div class="trigger-pagination"><span>当前页 {{page.items.length}} 条</span><div><a-button :disabled="pending||!history.length" @click="previous">上一页</a-button><a-button :disabled="pending||!page.next_cursor" @click="next">下一页</a-button></div></div>
 </template>
-<style scoped>.trigger-heading,.trigger-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px}.trigger-pagination{margin-top:12px}.trigger-pagination>div{display:flex;gap:8px}.trigger-heading p{margin:0 0 8px;overflow-wrap:anywhere}.trigger-id{overflow-wrap:anywhere}@media(max-width:700px){.trigger-heading{align-items:flex-start;flex-wrap:wrap}}</style>
+<style scoped>.trigger-heading,.trigger-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px}.trigger-pagination{margin-top:12px}.trigger-pagination>div{display:flex;gap:8px}.trigger-heading p{margin:0 0 8px;overflow-wrap:anywhere}.trigger-id{overflow-wrap:anywhere}</style>

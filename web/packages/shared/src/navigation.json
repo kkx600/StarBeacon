@@ -203,6 +203,7 @@
       "title": "会话与 PCAP",
       "group": "traffic",
       "pages": [
+        "full-traffic",
         "sessions",
         "session-integrity",
         "pcap-tasks",
@@ -320,6 +321,7 @@
       "group": "response",
       "pages": [
         "actions",
+        "bypass-blocking",
         "emergency"
       ]
     },
@@ -342,6 +344,14 @@
         "notification-templates",
         "delivery-logs",
         "syslog-output"
+      ]
+    },
+    {
+      "id": "ai-ops",
+      "title": "AI 值守",
+      "group": "ai",
+      "pages": [
+        "ai-ops"
       ]
     },
     {
