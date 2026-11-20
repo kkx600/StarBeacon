@@ -4,12 +4,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -72,5 +76,46 @@ func TestEventIndexRequiresFrozenSharedIndexCoveringPartition(t *testing.T) {
 		if index, err := eventIndex(tc[0], "2026-10-01", tc[1]); err == nil || index != "" {
 			t.Fatal("不可用的路由索引被接受", tc)
 		}
+	}
+}
+
+// 命中登记的错误分类决定告警流是否被单个租户的名单问题拖住：
+// 消费者无限重投，确定性错误整批 NAK 会让所有租户的告警索引永久停住。
+func TestRecordWatchlistHitsSeparatesDeterministicFromTransientFailures(t *testing.T) {
+	docs := []model.Alert{{TenantID: "tenant_owned", EventID: "event_owned"}}
+	transient := errors.New("数据库连接中断")
+	cases := []struct {
+		name     string
+		failure  error
+		returned bool
+	}{
+		{"登记成功", nil, false},
+		{"名单修订损坏", watchlist.ErrSource, false},
+		{"名单数量超限", watchlist.ErrLimit, false},
+		{"批次内容非法", watchlist.ErrInput, false},
+		{"包装后的确定性错误", fmt.Errorf("读取名单目录: %w", watchlist.ErrSource), false},
+		{"数据库暂时性失败", transient, true},
+		{"锁等待超时", context.DeadlineExceeded, true},
+		{"上下文取消", context.Canceled, true},
+		// 确定性哨兵与超时同时出现时按暂时性处理，否则一次超时会永久丢弃该批命中。
+		{"超时与哨兵合并", errors.Join(watchlist.ErrSource, context.DeadlineExceeded), true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			calls := 0
+			e := recordWatchlistHits(context.Background(), func(context.Context, string, []model.Alert) error {
+				calls++
+				return c.failure
+			}, "tenant_owned", docs)
+			if calls != 1 {
+				t.Fatalf("登记调用 %d 次，期望 1 次", calls)
+			}
+			if (e != nil) != c.returned {
+				t.Fatalf("返回错误 %v，期望返回=%v", e, c.returned)
+			}
+			if c.returned && !errors.Is(e, c.failure) {
+				t.Fatalf("暂时性错误未原样返回：%v", e)
+			}
+		})
 	}
 }

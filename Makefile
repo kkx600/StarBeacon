@@ -9,6 +9,7 @@ export GOTOOLCHAIN := local
 
 .PHONY: check-toolchain build test vet generate dev-init deps-up deps-stop db-init dev-cert dev-setup platform ingest worker collector web collector-web sample integration
 .PHONY: test-coverage
+.PHONY: acceptance-cleanup-plan acceptance-cleanup acceptance-cleanup-docker
 check-toolchain:
 	@$(GO) version | awk '$$3 == "go1.26.8" {ok=1} END {if(!ok){print "需要 Go 1.26.8；通过 GO=/绝对路径/go 指定已安装工具链";exit 1}}'
 build: check-toolchain
@@ -63,3 +64,9 @@ sample:
 	python3 scripts/emit-eve-sample.py
 integration: check-toolchain
 	python3 scripts/run-integration.py $(GO)
+acceptance-cleanup-plan:
+	python3 scripts/cleanup_acceptance.py local
+acceptance-cleanup:
+	python3 scripts/cleanup_acceptance.py local --apply
+acceptance-cleanup-docker:
+	python3 scripts/cleanup_acceptance.py docker --apply

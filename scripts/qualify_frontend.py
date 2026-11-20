@@ -120,6 +120,13 @@ def main() -> int:
     parser.add_argument("--max-workers", type=int, choices=range(1, 5), default=1, help="按执行容器资源配置 1–4 个测试进程，不改变超时、覆盖率或用例范围")
     args = parser.parse_args()
     result = qualify(args.output, max_workers=args.max_workers)
+    # 当前轮次已结束才清理旧材料；清理状态独立报告，不能改变测试通过或失败的事实。
+    from cleanup_acceptance import cleanup_local
+    try:
+        cleanup_report, _ = cleanup_local(ROOT, apply=True, keep=[args.output])
+        print("验收清理记录：" + str(cleanup_report), file=sys.stderr)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print("验收清理待完成：" + type(error).__name__, file=sys.stderr)
     print(json.dumps({key: result[key] for key in ("status", "source_sha256", "scope")}, ensure_ascii=False))
     return 0 if result["status"] == "passed" else 1
 

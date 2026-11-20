@@ -122,6 +122,10 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON response_watchlist_checks TO starbeacon_app`); e != nil {
 		return e
 	}
+	// 命中记录不授予改写权限；处理日计数由登记事务更新登记数和截断时刻。
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON watchlist_hits TO starbeacon_app; GRANT SELECT,INSERT,UPDATE,DELETE ON watchlist_hit_days TO starbeacon_app`); e != nil {
+		return e
+	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON decision_continuous_runs TO starbeacon_app`); e != nil {
 		return e
 	}

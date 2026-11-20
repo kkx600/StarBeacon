@@ -10,6 +10,7 @@ import re
 import secrets
 import shlex
 import subprocess
+import sys
 import tarfile
 import tempfile
 
@@ -480,6 +481,23 @@ def main():
         output = args.state.parent / state["project"]
         result = ssh(state["host"], ["tar", "-czf", "-", "-C", state["directory"], "reports"], stdout=subprocess.PIPE)
         reports = store_report_bundle(result.stdout, output, state["workspace_sha256"])
+        from cleanup_acceptance import cleanup_local
+        keep = [reports]
+        if args.state.absolute().is_relative_to(ROOT / ".local/acceptance"):
+            keep.append(args.state)
+        try:
+            cleanup_report, _ = cleanup_local(ROOT, apply=True, keep=keep)
+            print(f"验收清理记录：{cleanup_report}")
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            print(f"本机验收清理待完成：{type(error).__name__}")
+        # 镜像回收只在报告完整回传后执行；不可用时留下独立记录，不能冒充已释放空间。
+        completed = subprocess.run([sys.executable, str(ROOT / "scripts/cleanup_acceptance.py"), "docker", "--host", state["host"], "--directory", state["directory"], "--project", state["project"], "--apply"], check=False, timeout=660)
+        if completed.returncode:
+            print("远程 Docker 清理待完成，请查看 .local/cleanup/ 记录。")
+        if state["directory"] == PERSISTENT_DIRECTORY + "/" + state["project"]:
+            completed = subprocess.run([sys.executable, str(ROOT / "scripts/cleanup_acceptance.py"), "cache", "--host", state["host"], "--directory", state["directory"], "--project", state["project"], "--apply"], check=False, timeout=3720)
+            if completed.returncode:
+                print("远程专属编译缓存清理待完成，请查看 .local/cleanup/ 记录。")
         print(f"验收报告：{reports}")
 
 if __name__ == "__main__":

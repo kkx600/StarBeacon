@@ -18,6 +18,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/notify"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
+	"github.com/kkx600/StarBeacon/internal/watchlist"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
@@ -36,6 +37,29 @@ func eventIndex(stream, partition, frozen string) (string, error) {
 		return "", errors.New("路由索引与数据流或分区不一致")
 	}
 	return frozen, nil
+}
+
+// deterministicWatchlistError 判断命中登记错误是否属于重投也不会改变结果的确定性错误。
+// 上下文超时或取消与哨兵错误合并出现时仍按暂时性处理，保证重投机会不被误吞。
+func deterministicWatchlistError(e error) bool {
+	if errors.Is(e, context.DeadlineExceeded) || errors.Is(e, context.Canceled) {
+		return false
+	}
+	return errors.Is(e, watchlist.ErrSource) || errors.Is(e, watchlist.ErrLimit) || errors.Is(e, watchlist.ErrInput)
+}
+
+// recordWatchlistHits 登记观察名单命中，并区分错误类型以免单个租户的名单问题拖住整条告警流。
+// 消费者无限重投（MaxDeliver=-1），名单修订损坏、数量超限等确定性错误重投多少次结果都一样，
+// 整批 NAK 会让所有租户的告警索引永久停住；此类错误只记录并计数，该批次的命中不再补登，批次照常确认。
+// 数据库超时、锁超时、连接失败等暂时性错误原样返回，由整批重投补登。
+func recordWatchlistHits(ctx context.Context, record func(context.Context, string, []model.Alert) error, tenant string, docs []model.Alert) error {
+	e := record(ctx, tenant, docs)
+	if e == nil || !deterministicWatchlistError(e) {
+		return e
+	}
+	telemetry.WatchlistHitsSkipped.Inc()
+	slog.Warn("观察名单命中未登记，告警批次照常确认", "tenant_id", tenant, "alerts", len(docs), "error", e)
+	return nil
 }
 
 func (w *Indexer) Process(ctx context.Context, data []byte) error {
@@ -134,6 +158,10 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 	if batch.StreamId == "alerts" && w.DB != nil && len(docs) > 0 {
 		// 触发登记与索引重投共享稳定事件身份；持久登记失败时不确认原消息。
 		if e := w.DB.RecordAutomaticTriage(ctx, envelope.TenantID, docs); e != nil {
+			return e
+		}
+		// 观察名单命中同样以稳定事件身份去重；暂时性失败整批重投，确定性失败只记录而不阻塞告警流。
+		if e := recordWatchlistHits(ctx, w.DB.RecordWatchlistHits, envelope.TenantID, docs); e != nil {
 			return e
 		}
 	}

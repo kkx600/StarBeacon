@@ -57,10 +57,12 @@ var historyCategories = []historyCategory{
 	{"sensor_quality_cursors", "expires_at", `NOT EXISTS(SELECT 1 FROM sensors s WHERE s.tenant_id=h.tenant_id AND s.id=h.sensor_id AND s.registration_id=h.registration_id)`},
 	{"rule_rollouts", "expires_at", `finished_at IS NOT NULL`},
 	{"correlation_rule_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM correlation_rules c WHERE c.tenant_id=h.tenant_id AND c.id=h.rule_id AND c.revision=h.revision)`},
-	{"watchlist_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM watchlists w WHERE w.tenant_id=h.tenant_id AND w.id=h.list_id AND w.revision=h.revision)`},
+	{"watchlist_revisions", "expires_at", `NOT EXISTS(SELECT 1 FROM watchlists w WHERE w.tenant_id=h.tenant_id AND w.id=h.list_id AND w.revision=h.revision) AND NOT EXISTS(SELECT 1 FROM watchlist_hits x WHERE x.tenant_id=h.tenant_id AND x.list_id=h.list_id AND x.list_revision=h.revision)`},
 	{"incident_note_changes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed')`},
 	{"incident_notes", "expires_at", `EXISTS(SELECT 1 FROM incidents i WHERE i.tenant_id=h.tenant_id AND i.id=h.incident_id AND i.state='closed') AND NOT EXISTS(SELECT 1 FROM incident_note_changes c WHERE c.tenant_id=h.tenant_id AND c.note_id=h.id)`},
 	{"response_watchlist_checks", "expires_at", `EXISTS(SELECT 1 FROM sensor_tasks t WHERE t.tenant_id=h.tenant_id AND t.id=h.task_id AND t.retain_until<=now() AND (t.state IN('succeeded','failed','expired','cancelled','unknown') OR (t.state='queued' AND t.delivery_count=0 AND t.expires_at<=now())))`},
+	{"watchlist_hits", "expires_at", "true"},
+	{"watchlist_hit_days", "expires_at", "true"},
 }
 
 type HistorySweep struct {

@@ -26,10 +26,11 @@ var PacketStorageFree = prometheus.NewGauge(prometheus.GaugeOpts{Name: "starbeac
 var PacketEvicted = prometheus.NewCounter(prometheus.CounterOpts{Name: "starbeacon_packet_archives_evicted_total", Help: "因共享存储剩余空间或目录上限提前到期的原包数。"})
 var PacketEvictedBytes = prometheus.NewCounter(prometheus.CounterOpts{Name: "starbeacon_packet_archive_evicted_bytes_total", Help: "因共享存储容量提前到期的原包存储字节。"})
 var PacketDeleted = prometheus.NewCounter(prometheus.CounterOpts{Name: "starbeacon_packet_archives_deleted_total", Help: "已删除对象并提交目录的到期原包数。"})
+var WatchlistHitsSkipped = prometheus.NewCounter(prometheus.CounterOpts{Name: "starbeacon_watchlist_hits_skipped_batches_total", Help: "因名单数据或批次内容的确定性错误而未登记观察名单命中的告警批次数；告警索引照常确认。"})
 var AuthPhaseDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{Name: "starbeacon_auth_phase_seconds", Help: "登录身份读取、密码验证、审计与会话提交的实际耗时，不包含客户端传输。", Buckets: []float64{.01, .05, .1, .25, .5, 1, 2, 5, 10}}, []string{"phase"})
 
 func init() {
-	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes, ControlConnections, CommandDeliveries, CommandDuration, CommandResults, HistoryDeleted, HistoryRuns, HistoryDuration, AuthPhaseDuration, PacketStorageFree, PacketEvicted, PacketEvictedBytes, PacketDeleted)
+	Registry.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}), Accepted, Indexed, Quarantined, IndexDuration, CommitAge, ClockAnomalies, WALPending, WALBytes, ControlConnections, CommandDeliveries, CommandDuration, CommandResults, HistoryDeleted, HistoryRuns, HistoryDuration, AuthPhaseDuration, PacketStorageFree, PacketEvicted, PacketEvictedBytes, PacketDeleted, WatchlistHitsSkipped)
 }
 func ObserveCommit(observed time.Time) {
 	d := time.Since(observed).Seconds()

@@ -16742,6 +16742,365 @@
         "x-max-request-bytes": 32768
       }
     },
+    "/api/v1/watchlists/{id}/hits": {
+      "get": {
+        "operationId": "listWatchlistHits",
+        "summary": "读取观察名单命中记录",
+        "description": "管理员与只读用户均按当前会话租户读取单份名单的命中。命中只关联修订保存后由平台接收的新告警并绑定当时修订，不追溯回填历史；历史数据须用影响预览核对。窗口为 [start,end)，最长 31 天，终点不得超过当前时刻 30 秒。按告警观测时间倒序、同观测时间命中标识倒序，为冻结时间窗内的有界实时检索，不提供跨页一致快照。游标绑定租户、名单、时间窗和页大小，篡改、跨窗口或跨租户复用返回 400 invalid_watchlist 而不是 503。capped_days 只列出存在未逐条登记命中的 UTC 处理日，单日上限 10,000 条，截断后的命中次数未统计。名单停用或修订变化不删除既有命中，命中留存期与名单业务有效期独立。拒绝重复与未知查询参数。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "命中记录页，按告警观测时间倒序；Cache-Control: no-store。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistHitPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：时间窗缺失、越界或超过 31 天，limit 越界或非规范十进制，游标非法、跨窗口或跨租户复用，以及重复／未知查询参数和非法百分号编码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found：目标名单在当前租户不存在。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库不可用，或命中记录与名单来源不完整；不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin",
+          "viewer"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WatchlistID"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "告警观测时间起点，包含。"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "告警观测时间终点，不包含；窗口须大于 0 且不超过 31 天，不得超过当前时刻 30 秒。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512,
+              "pattern": "^$|^[A-Za-z0-9_-]+$",
+              "default": ""
+            },
+            "description": "服务端返回的规范 base64url 游标，绑定租户、名单、时间窗和 limit；首屏为空。"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "规范十进制整数；不接受前导零、符号或空值。修改后清空 cursor。"
+          }
+        ]
+      }
+    },
+    "/api/v1/watchlists/{id}/impact": {
+      "post": {
+        "operationId": "previewWatchlistImpact",
+        "summary": "预览名单对既有告警的历史影响",
+        "description": "仅当前管理员，CSRF 必需，严格 JSON 最大 32768 字节，只接受 revision、start、end 三个字段，拒绝所有查询参数。先在租户锁内核对管理员与目标修订并写入预览审计，再执行一次有界历史检索；每租户滚动 24 小时最多 200 次预览。只核对已入索引的告警元数据，查询字段按 match_type 固定为 http.hostname 或 source.ip／destination.ip，TLS SNI 与 DNS 查询名没有检索字段、不在预览范围，也不扫描原始报文。检索超时、分片失败、非精确计数、聚合桶与名单值不符或样本的租户、时间、探针范围、排序不一致时返回 503 watchlist_impact_incomplete，不交付任何部分数字。预览不登记命中、不回填历史、不改写研判、不授予设备动作；hits_recorded 与 execution_authorized 恒为 false。该预览无幂等保存语义，不要求或消费 Idempotency-Key；重复请求各自记录预览审计并各自消耗额度。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "该修订在窗口内的精确总数、逐值计数与最多 20 条样本；结果是 checked_at 时刻的快照。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistImpact"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：输入、JSON、重复／未知字段、查询参数、修订越界、时间或范围无效。32 KiB 请求体超限也返回 400，不静默截断。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found：目标名单修订不存在，或非当前头引用的历史已过留存期限。额度不因此消耗。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "watchlist_quota：每租户滚动 24 小时最多 200 次历史影响预览。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_impact_incomplete：历史告警检索超时、分片失败或返回材料与查询条件不一致，本次未交付计数。watchlist_unavailable 或 auth_unavailable：认证／数据库／告警索引不可用；告警索引缺失同样按检索不完整处理，不回落为空结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WatchlistID"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            "description": "取自当前登录／auth/me 的 csrf_token；同时执行同源 Origin 与 Sec-Fetch-Site 核对。"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistImpactRequest"
+              }
+            }
+          }
+        },
+        "x-max-request-bytes": 32768
+      }
+    },
+    "/api/v1/alerts/{id}/watchlist-hits": {
+      "get": {
+        "operationId": "listAlertWatchlistHits",
+        "summary": "读取告警的观察名单命中",
+        "description": "管理员与只读用户均可读取；读取关联不要求管理员权限。按当前会话租户、事件标识和原始摘要核对唯一原始记录，摘要不一致不借用其他告警的命中。返回按名单标识与修订升序，只包含仍在留存期内的命中。命中表示该告警与观察名单的关联，不表示攻击成立、误报结论或已执行封禁；空数组不证明告警安全。只关联修订保存后由平台接收的新告警，保存前的历史告警即使匹配也没有命中记录。拒绝重复与未知查询参数。",
+        "tags": [
+          "保护与观察名单"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "该告警的全部名单命中；Cache-Control: no-store。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistAlertHits"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_watchlist：事件标识或 sha256 非法，sha256 缺失、非 64 位小写 hex，以及重复／未知查询参数和非法百分号编码。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated 或 session_expired：缺少有效会话或账号／权限已撤销。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden、csrf_failed 或 watchlist_forbidden：角色、CSRF／同源检查或事务内当前权限不允许。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "watchlist_quota：单条告警的命中数超过每租户 256 份名单的读取上限；不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "watchlist_unavailable 或 auth_unavailable：认证／数据库不可用，或命中记录来源不完整；不交付部分结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-roles": [
+          "admin",
+          "viewer"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "sha256",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WatchlistSHA256"
+            },
+            "description": "当前选中告警的原始摘要。服务端按当前租户、事件标识核验唯一原始记录。"
+          }
+        ]
+      }
+    },
     "/api/v1/incidents/{id}/notes": {
       "get": {
         "summary": "读取调查笔记列表",
@@ -32012,6 +32371,481 @@
         ],
         "additionalProperties": false,
         "description": "保护门禁的内部证据，由任务证据对象另行绑定同一命令 SHA-256、租户、探针注册及授权时间；不能单独将此对象当执行授权。state_sha256 是按 ID 排序的当前头修订引用数组摘要，包括停用/观察项。只约束平台之后新授权的封禁，不自动撤销既有签名或已执行动作，也不声称采集器执行时重新检查；回读及解封不受名单阻断。"
+      },
+      "WatchlistHitMatch": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "source.ip",
+              "destination.ip",
+              "http.hostname",
+              "tls.sni",
+              "dns.rrname"
+            ],
+            "description": "告警中实际出现的匹配字段。source.ip／destination.ip 按 IP 或 CIDR 名单核对；http.hostname、tls.sni、dns.rrname 按精确域名核对，域名不经 DNS 解析扩展、不做通配或后缀匹配。"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "description": "已规范化的观测值：IP 为 netip 规范写法；域名为小写 ASCII/IDNA punycode、无尾点。"
+          }
+        },
+        "required": [
+          "field",
+          "value"
+        ],
+        "additionalProperties": false,
+        "description": "单个字段与名单值的匹配事实；不表示该值为攻击者、受害者或任何处置依据。"
+      },
+      "WatchlistHit": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "watchlist-hit.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^whit_[a-f0-9]{56}$",
+            "minLength": 61,
+            "maxLength": 61,
+            "description": "由租户、名单、修订、事件标识和原始摘要派生的稳定标识；同一告警重投不重复登记。"
+          },
+          "list_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "list_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000,
+            "description": "命中时名单的当时修订；后续修订不改写既有命中。"
+          },
+          "definition_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64,
+            "description": "被关联告警的事件标识。"
+          },
+          "raw_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "sensor_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "registration_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "matches": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistHitMatch"
+            },
+            "description": "按 source.ip、destination.ip、http.hostname、tls.sni、dns.rrname 的固定顺序提取并去重；单条告警最多登记 16 项，DNS 查询名最多取前 8 个。"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "unknown"
+            ]
+          },
+          "rule_id": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "告警规则标识；不符合展示约束时为空字符串，不截断成另一个标识。"
+          },
+          "rule_name": {
+            "type": "string",
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "命中时冻结的规则名称；未记录或不符合展示约束时为空字符串，不截断成另一条规则名。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "告警观测时间，命中列表按该时间倒序。"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "平台接收告警的时间；早于名单修订保存时刻的告警不登记命中。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "按创建当时 alerts 分类策略固化的留存到期时间，默认 created_at 后 180 天。它与名单业务有效期完全独立；名单停用或修订变化不删除既有命中。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "id",
+          "list_id",
+          "list_revision",
+          "definition_sha256",
+          "event_id",
+          "raw_sha256",
+          "sensor_id",
+          "registration_id",
+          "matches",
+          "severity",
+          "rule_id",
+          "rule_name",
+          "observed_at",
+          "received_at",
+          "created_at",
+          "expires_at"
+        ],
+        "additionalProperties": false,
+        "description": "观察名单与单条告警的不可变关联，绑定当时修订和定义摘要。命中不表示攻击成立、误报结论、设备授权或已执行封禁；只关联修订保存后由平台接收的新告警，不追溯回填历史。"
+      },
+      "WatchlistHitDay": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+            "minLength": 10,
+            "maxLength": 10,
+            "description": "UTC 处理日。"
+          },
+          "recorded": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "该处理日逐条登记的命中数；单日上限 10,000 条。"
+          },
+          "capped_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "首次发生截断的时刻。本字段仅在已截断的处理日有值，故该数组内不为 null。"
+          }
+        },
+        "required": [
+          "day",
+          "recorded",
+          "capped_at"
+        ],
+        "additionalProperties": false,
+        "description": "只列出存在未逐条登记命中的处理日。截断后的命中次数未统计，recorded 不是该日实际匹配告警总数。"
+      },
+      "WatchlistHitPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistHit"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "maxLength": 512,
+            "pattern": "^$|^[A-Za-z0-9_-]+$",
+            "description": "无 padding 的规范 base64url 游标；绑定租户、名单、时间窗和页大小。无下一页为空；变更时间窗或页大小后须清空，否则返回 400 invalid_watchlist。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "服务端读取的 PG 当前时间，UTC 输出。"
+          },
+          "capped_days": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistHitDay"
+            },
+            "description": "窗口内已截断的处理日，按日倒序最多 32 条；为空表示窗口内没有已知截断。"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "observed_at",
+          "capped_days"
+        ],
+        "additionalProperties": false,
+        "description": "按告警观测时间倒序、同观测时间命中标识倒序的有界实时检索，不是跨页一致快照。空结果不证明窗口内没有匹配流量，也不证明检测完整。"
+      },
+      "WatchlistAlertHits": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistHit"
+            },
+            "description": "按名单标识、修订升序；同一告警最多返回 256 条，超出返回 429。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "服务端读取的 PG 当前时间，UTC 输出。"
+          }
+        },
+        "required": [
+          "items",
+          "observed_at"
+        ],
+        "additionalProperties": false,
+        "description": "按告警身份与原始摘要读取的名单关联。摘要不一致不借用其他告警的命中；空数组表示该告警未命中任何观察名单，不表示告警安全或已完成研判。"
+      },
+      "WatchlistImpactRequest": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000,
+            "description": "待核对的名单修订；必须是本租户未过留存期的历史修订或当前头引用的修订。"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "告警索引时间起点，包含；不得早于 2000-01-01T00:00:00Z。"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "告警索引时间终点，不包含；窗口须大于 0 且不超过 31 天，终点不得超过当前时刻 30 秒。"
+          }
+        },
+        "required": [
+          "revision",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false,
+        "description": "对指定修订在有界时间窗内核对已入索引的告警。预览不登记命中、不回填历史、不改写研判，也不授予任何设备动作。"
+      },
+      "WatchlistImpactValue": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "description": "名单定义中的规范值，与 definition.values 同序。"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "该值在窗口内的精确命中告警数；尚无任何告警索引时为 0。"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "additionalProperties": false,
+        "description": "逐值精确计数。多个值命中同一条告警时各自计数，合计可能大于 total。"
+      },
+      "WatchlistImpactSample": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "raw_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "@timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "告警索引时间，样本按该时间倒序、同时间事件标识升序。"
+          },
+          "sensor_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "registration_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "unknown"
+            ]
+          },
+          "rule_name": {
+            "type": "string",
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+            "description": "未记录或不符合展示约束时为空字符串。"
+          },
+          "matches": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistHitMatch"
+            },
+            "description": "按已索引字段复核的匹配项；域名名单只可能出现 http.hostname，IP／CIDR 名单最多出现 source.ip 与 destination.ip。"
+          }
+        },
+        "required": [
+          "event_id",
+          "raw_sha256",
+          "@timestamp",
+          "sensor_id",
+          "registration_id",
+          "severity",
+          "rule_name",
+          "matches"
+        ],
+        "additionalProperties": false,
+        "description": "预览样本只复核值、探针范围与索引时间，不考虑名单启停和业务有效期；样本不是命中记录，不可据此认定攻击成立。"
+      },
+      "WatchlistImpact": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "watchlist-impact.v1"
+          },
+          "list_id": {
+            "$ref": "#/components/schemas/WatchlistID"
+          },
+          "list_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "definition_sha256": {
+            "$ref": "#/components/schemas/WatchlistSHA256"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "protect",
+              "observe"
+            ]
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "ip",
+              "cidr",
+              "domain"
+            ]
+          },
+          "current": {
+            "type": "boolean",
+            "description": "被核对修订是否仍为当前头引用的修订。"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "被核对修订的配置启停标志，不表示当时或现在业务生效。"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "服务端读取的 PG 当前时间，UTC 输出。结果是该时刻的快照，不随后续告警更新。"
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "source.ip",
+                "destination.ip",
+                "http.hostname"
+              ]
+            },
+            "description": "本次实际查询的已索引字段：domain 为 http.hostname，ip／cidr 为 source.ip 与 destination.ip。TLS SNI 与 DNS 查询名没有检索字段，不在预览范围。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "窗口内命中该修订的精确告警数；非精确计数、超时或分片失败均返回 503，不交付部分计数。"
+          },
+          "values": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistImpactValue"
+            },
+            "description": "与 definition.values 同序且等长。"
+          },
+          "samples": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/WatchlistImpactSample"
+            },
+            "description": "最多 20 条样本，按索引时间倒序；样本数量不代表命中总数。"
+          },
+          "hits_recorded": {
+            "type": "boolean",
+            "const": false,
+            "description": "恒为 false：预览不登记任何命中记录，也不回填历史。"
+          },
+          "execution_authorized": {
+            "type": "boolean",
+            "const": false,
+            "description": "恒为 false：预览不授予封禁或任何设备动作许可。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "list_id",
+          "list_revision",
+          "definition_sha256",
+          "kind",
+          "match_type",
+          "current",
+          "active",
+          "start",
+          "end",
+          "checked_at",
+          "fields",
+          "total",
+          "values",
+          "samples",
+          "hits_recorded",
+          "execution_authorized"
+        ],
+        "additionalProperties": false,
+        "description": "一次性历史核对快照，只覆盖已入索引的告警元数据。不含 TLS SNI 与 DNS 查询名，不扫描原始报文，不代表全量影响；检索不完整时返回 503 且不交付任何部分数字。"
       },
       "ResponseProtection": {
         "type": "object",

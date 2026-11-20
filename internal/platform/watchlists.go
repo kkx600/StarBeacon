@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kkx600/StarBeacon/internal/contract"
@@ -21,12 +22,15 @@ func (a *API) registerWatchlists(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/watchlists", a.Auth.Require(true, a.saveWatchlist))
 	m.HandleFunc("GET /api/v1/watchlists/{id}/revisions/{revision}", a.Auth.Require(false, a.watchlistRevision))
 	m.HandleFunc("POST /api/v1/watchlists/preview", a.Auth.Require(true, a.previewWatchlist))
+	m.HandleFunc("GET /api/v1/watchlists/{id}/hits", a.Auth.Require(false, a.watchlistHits))
+	m.HandleFunc("GET /api/v1/alerts/{id}/watchlist-hits", a.Auth.Require(false, a.alertWatchlistHits))
+	m.HandleFunc("POST /api/v1/watchlists/{id}/impact", a.Auth.Require(true, a.watchlistImpact))
 }
 
-func decodeWatchlist(w http.ResponseWriter, r *http.Request, target any) error {
+func decodeWatchlistBody(w http.ResponseWriter, r *http.Request, target any, fields []string) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 32768)
 	var raw json.RawMessage
-	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), []string{"id", "expected_revision", "name", "description", "active", "definition", "schema_version", "kind", "match_type", "values", "sensors", "sensor_id", "registration_id", "valid_from", "valid_until", "targets", "type", "value"}, 32768) != nil {
+	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), fields, 32768) != nil {
 		return watchlist.ErrInput
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
@@ -35,6 +39,10 @@ func decodeWatchlist(w http.ResponseWriter, r *http.Request, target any) error {
 		return watchlist.ErrInput
 	}
 	return nil
+}
+
+func decodeWatchlist(w http.ResponseWriter, r *http.Request, target any) error {
+	return decodeWatchlistBody(w, r, target, []string{"id", "expected_revision", "name", "description", "active", "definition", "schema_version", "kind", "match_type", "values", "sensors", "sensor_id", "registration_id", "valid_from", "valid_until", "targets", "type", "value"})
 }
 
 func watchlistFailure(w http.ResponseWriter, r *http.Request, e error) {
@@ -51,6 +59,8 @@ func watchlistFailure(w http.ResponseWriter, r *http.Request, e error) {
 		httpapi.Fail(w, r, 409, "watchlist_conflict", "名单修订、探针注册或原提交输入已变化，请刷新后核对")
 	case errors.Is(e, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "名单修订不存在、已到期或不可访问")
+	case errors.Is(e, watchlist.ErrIncomplete):
+		httpapi.Fail(w, r, 503, "watchlist_impact_incomplete", "历史告警检索结果不完整，本次未交付计数")
 	default:
 		httpapi.Fail(w, r, 503, "watchlist_unavailable", "名单服务暂不可用或修订不完整，未提交部分结果")
 	}
@@ -60,6 +70,18 @@ func (a *API) watchlistReady(w http.ResponseWriter, r *http.Request) bool {
 		return true
 	}
 	watchlistFailure(w, r, errors.New("名单存储不可用"))
+	return false
+}
+
+// watchlistImpactReady 要求名单存储与告警索引同时可用；缺任一方都不能给出部分计数。
+func (a *API) watchlistImpactReady(w http.ResponseWriter, r *http.Request) bool {
+	if !a.watchlistReady(w, r) {
+		return false
+	}
+	if a.ES != nil {
+		return true
+	}
+	watchlistFailure(w, r, watchlist.ErrIncomplete)
 	return false
 }
 func (a *API) watchlists(w http.ResponseWriter, r *http.Request) {
@@ -156,4 +178,117 @@ func (a *API) previewWatchlist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpapi.JSON(w, 200, out)
+}
+
+// watchlistHits 读取单份名单在观测时间窗内的命中；游标的租户与窗口绑定由存储复核，此处只校验请求形态。
+func (a *API) watchlistHits(w http.ResponseWriter, r *http.Request) {
+	q := watchlist.HitQuery{ListID: r.PathValue("id"), Limit: 20}
+	values, parseErr := url.ParseQuery(r.URL.RawQuery)
+	if parseErr != nil || !contract.ValidID(q.ListID) {
+		watchlistFailure(w, r, watchlist.ErrInput)
+		return
+	}
+	for k, v := range values {
+		if len(v) != 1 {
+			watchlistFailure(w, r, watchlist.ErrInput)
+			return
+		}
+		var e error
+		switch k {
+		case "start":
+			q.Start, e = time.Parse(time.RFC3339Nano, v[0])
+		case "end":
+			q.End, e = time.Parse(time.RFC3339Nano, v[0])
+		case "cursor":
+			q.Cursor = v[0]
+		case "limit":
+			n, convErr := strconv.Atoi(v[0])
+			if convErr != nil || strconv.Itoa(n) != v[0] {
+				e = watchlist.ErrInput
+				break
+			}
+			q.Limit = n
+		default:
+			e = watchlist.ErrInput
+		}
+		if e != nil {
+			watchlistFailure(w, r, watchlist.ErrInput)
+			return
+		}
+	}
+	if q.Validate(time.Now()) != nil {
+		watchlistFailure(w, r, watchlist.ErrInput)
+		return
+	}
+	// 游标绑定租户、名单、窗口和页大小，篡改或跨查询复用都在进入存储前拒绝。
+	if q.Cursor != "" {
+		if _, _, e := q.Position(httpapi.Principal(r).TenantID); e != nil {
+			watchlistFailure(w, r, e)
+			return
+		}
+	}
+	if !a.watchlistReady(w, r) {
+		return
+	}
+	out, e := a.DB.WatchlistHits(r.Context(), httpapi.Principal(r), q)
+	if e != nil {
+		watchlistFailure(w, r, e)
+		return
+	}
+	httpapi.JSON(w, 200, out)
+}
+
+// alertWatchlistHits 按告警身份与原始摘要读取命中；读取关联不需要管理员权限，摘要不一致不借用其他告警的命中。
+func (a *API) alertWatchlistHits(w http.ResponseWriter, r *http.Request) {
+	values, parseErr := url.ParseQuery(r.URL.RawQuery)
+	if parseErr != nil {
+		watchlistFailure(w, r, watchlist.ErrInput)
+		return
+	}
+	digest := ""
+	for k, v := range values {
+		if len(v) != 1 || k != "sha256" {
+			watchlistFailure(w, r, watchlist.ErrInput)
+			return
+		}
+		digest = v[0]
+	}
+	if !contract.ValidID(r.PathValue("id")) || !watchlist.ValidDigest(digest) {
+		watchlistFailure(w, r, watchlist.ErrInput)
+		return
+	}
+	if !a.watchlistReady(w, r) {
+		return
+	}
+	out, e := a.DB.AlertWatchlistHits(r.Context(), httpapi.Principal(r), r.PathValue("id"), digest)
+	if e != nil {
+		watchlistFailure(w, r, e)
+		return
+	}
+	httpapi.JSON(w, 200, out)
+}
+
+// watchlistImpact 对指定修订核对已索引告警；预览不登记命中、不回填历史，也不授予任何设备动作。
+func (a *API) watchlistImpact(w http.ResponseWriter, r *http.Request) {
+	var c watchlist.ImpactRequest
+	if r.URL.RawQuery != "" || !contract.ValidID(r.PathValue("id")) || decodeWatchlistBody(w, r, &c, []string{"revision", "start", "end"}) != nil || c.Validate(time.Now()) != nil {
+		watchlistFailure(w, r, watchlist.ErrInput)
+		return
+	}
+	if !a.watchlistImpactReady(w, r) {
+		return
+	}
+	u := httpapi.Principal(r)
+	// 先由存储核对管理员与修订并留下操作审计，再执行有界历史检索。
+	record, current, checked, e := a.DB.BeginWatchlistImpact(r.Context(), u, r.PathValue("id"), c.Revision)
+	if e != nil {
+		watchlistFailure(w, r, e)
+		return
+	}
+	total, values, samples, e := a.ES.WatchlistImpact(r.Context(), u.TenantID, record.Definition, c.Start, c.End)
+	if e != nil {
+		watchlistFailure(w, r, e)
+		return
+	}
+	httpapi.JSON(w, 200, watchlist.Impact{SchemaVersion: watchlist.ImpactSchema, ListID: record.ID, ListRevision: record.Revision, DefinitionSHA256: record.DefinitionSHA256, Kind: record.Definition.Kind, MatchType: record.Definition.MatchType, Current: current, Active: record.Active, Start: c.Start.UTC(), End: c.End.UTC(), CheckedAt: checked, Fields: watchlist.ImpactFields(record.Definition.MatchType), Total: total, Values: values, Samples: samples, HitsRecorded: false, ExecutionAuthorized: false})
 }
