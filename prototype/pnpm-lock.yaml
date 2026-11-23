@@ -216,6 +216,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 6.0.9
         version: 6.0.9(vite@8.3.1(@types/node@24.19.1))(vue@3.5.43(typescript@6.0.3))
+      playwright-core:
+        specifier: 1.65.1
+        version: 1.65.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -699,6 +702,11 @@ packages:
 
   pkg-types@2.3.3:
     resolution: {integrity: sha512-j/lCFdcppV0JxWpCEITdbDltBxPP6cHT+yNJ6Go2OgoSA9518X847X9z0p6LtA4Nc16+eQzCZjRrWanTGvHJ5w==}
+
+  playwright-core@1.65.1:
+    resolution: {integrity: sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   postcss@8.5.28:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
@@ -1311,6 +1319,8 @@ snapshots:
       confbox: 0.3.1
       exsolve: 1.1.1
       pathe: 2.0.3
+
+  playwright-core@1.65.1: {}
 
   postcss@8.5.28:
     dependencies:

@@ -1,174 +1,109 @@
-import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {mkdtemp, mkdir, readFile, writeFile, copyFile, appendFile, rm} from 'node:fs/promises'
-import {tmpdir} from 'node:os'
-import {dirname, join} from 'node:path'
-import {fileURLToPath,pathToFileURL} from 'node:url'
-import {spawnSync} from 'node:child_process'
-import {createHash} from 'node:crypto'
-import {renderRoots,digestRenderTree} from './gallery-inputs.mjs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { test } from 'node:test'
+import { collectorPrototypeScreens } from '../src/data/collectorNavigation.ts'
+import { browserManifest, checkGallery, galleryFiles, planGallery, viewport } from './screenshot-gallery.mjs'
 
-const project = fileURLToPath(new URL('../../', import.meta.url))
-const themeInputs = ['prototype/src/theme.ts', 'prototype/src/styles.css', 'web/packages/shared/src/theme.ts', 'web/packages/shared/src/controls.css']
-const layoutInputs=['web/packages/shared/src/navigation.json','web/packages/shared/src/navigation.ts','web/platform/src/navigation.ts','web/platform/src/App.vue','web/packages/shared/src/components/AppShell.vue','web/packages/shared/src/components/NavigationMenu.vue','prototype/src/data/navigation.ts','prototype/src/layouts/ConsoleLayout.vue','prototype/src/router.ts','prototype/src/views/PageView.vue','web/platform/src/features/settings/SettingsWorkspace.vue']
-
-async function fixture(run) {
-  const root = await mkdtemp(join(tmpdir(), 'starbeacon-gallery-'))
-  try {
-    const source = join(project, 'prototype/public/screenshots')
-    const gallery = join(root, 'prototype/public/screenshots')
-    const original = JSON.parse(await readFile(join(source, 'provenance.json'), 'utf8')).entries.find(row => row.state === 'data')
-    const entry = structuredClone(original)
-    for (const file of [...new Set([...themeInputs,...layoutInputs,...(entry.renderInputs??[]).map(input=>input.path), 'prototype/scripts/check-screenshots.mjs','prototype/scripts/gallery-inputs.mjs'])]) {
-      const target = join(root, file)
-      await mkdir(dirname(target), {recursive: true})
-      await copyFile(join(project, file), target)
-    }
-    await mkdir(dirname(join(gallery, entry.file)), {recursive: true})
-    await copyFile(join(source, entry.file), join(gallery, entry.file))
-    // 元数据逻辑使用隔离夹具，不能当作当前真实页面的视觉验收。
-    const digest=async paths=>{
-      const hash=createHash('sha256')
-      for(const file of paths){hash.update(file+'\0');hash.update(await readFile(join(root,file)));hash.update('\0')}
-      return hash.digest('hex')
-    }
-    entry.themeSha256=await digest(themeInputs)
-    entry.layoutSha256=await digest(layoutInputs)
-    for(const input of entry.renderInputs??[])input.sha256=createHash('sha256').update(await readFile(join(root,input.path))).digest('hex')
-    entry.renderRoots=renderRoots
-    entry.renderTreeSha256=(await digestRenderTree(pathToFileURL(root+'/'))).sha256
-    await writeFile(join(gallery, '../page-manifest.json'), JSON.stringify({pages: [{id:entry.viewport.page,states: [{state:entry.viewport.state,image: entry.file}]}], boundary: []}))
-    await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
-    await writeFile(join(gallery, 'provenance.json'), JSON.stringify({entries: [entry]}))
-    const check = (...args) => spawnSync(process.execPath, [join(root, 'prototype/scripts/check-screenshots.mjs'), ...args], {encoding: 'utf8', timeout: 15000})
-    await run({root, gallery, entry, check})
-  } finally {
-    await rm(root, {recursive: true, force: true})
-  }
+// 提供 JPEG 文件头和尺寸段，完整图像由重拍脚本实际生成。
+function jpeg(width = viewport.width, height = viewport.height) {
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 0, 0, 0, 1, 1, 0x11, 0, 0xff, 0xd9])
+  bytes.writeUInt16BE(height, 7)
+  bytes.writeUInt16BE(width, 9)
+  return bytes
 }
 
-test('当前主题的真实浏览器来源与 JPEG 可以通过严格检查', async () => fixture(async ({check}) => {
-  const result = check()
-  assert.equal(result.status, 0, result.stderr)
-  assert.match(result.stdout, /1 张基础状态图，0 张补充图/)
-  assert.doesNotMatch(result.stderr, /早于当前源码/)
-  const strict = check('--strict')
-  assert.equal(strict.status, 0, strict.stderr)
-  assert.match(strict.stdout, /全部与当前主题、导航布局和界面源码一致/)
-}))
-test('默认检查只核对图库完整性，源码变化后提示截图过期但不阻断', async () => fixture(async ({root, check}) => {
-  const theme = join(root, 'web/packages/shared/src/theme.ts')
-  await writeFile(theme, (await readFile(theme, 'utf8')).replace('#2f54eb', '#2f54ec'))
-  await writeFile(join(root, 'web/platform/src/unrecorded-component.ts'), 'export const label="当前界面"\n')
-  const result = check()
-  assert.equal(result.status, 0, result.stderr)
-  assert.match(result.stdout, /图片核对通过/)
-  assert.match(result.stderr, /1 张截图早于当前源码（主题 1、导航布局 0、界面源码 1）/)
-  const strict = check('--strict')
-  assert.equal(strict.status, 1)
-  assert.match(strict.stderr, /截图主题与当前全局主题不同/)
-}))
-test('在 GitHub Actions 中以警告注解提示过期截图', async () => fixture(async ({root, check}) => {
-  await appendFile(join(root, 'web/packages/shared/src/navigation.json'), '\n')
-  const result = spawnSync(process.execPath, [join(root, 'prototype/scripts/check-screenshots.mjs')], {encoding: 'utf8', timeout: 15000, env: {...process.env, GITHUB_ACTIONS: 'true'}})
-  assert.equal(result.status, 0, result.stderr)
-  assert.match(result.stderr, /^::warning title=原型截图早于当前源码::1 张截图早于当前源码（主题 0、导航布局 1、界面源码 1）/m)
-}))
+async function fixture(t) {
+  const directory = await mkdtemp(join(tmpdir(), 'starbeacon-gallery-'))
+  t.after(() => rm(directory, { recursive: true, force: true }))
+  const state = { image: 'alerts/data.jpg', state: 'data', title: '有数据', url: '/alerts/list?state=data' }
+  const manifest = {
+    version: 1, viewport, groups: [{ id: 'alerts', title: '告警中心' }],
+    pages: [{ id: 'alerts', title: '告警列表', group: 'alerts', states: [state] }],
+  }
+  const save = async () => {
+    await writeFile(join(directory, 'manifest.json'), JSON.stringify(manifest))
+    await writeFile(join(directory, 'manifest.js'), browserManifest(manifest))
+  }
+  await mkdir(join(directory, 'alerts'))
+  await writeFile(join(directory, state.image), jpeg())
+  await save()
+  return { directory, manifest, state, save }
+}
 
-test('主题改变后，即使刷新清单也不能把旧图标记为当前截图', async () => fixture(async ({root, check}) => {
-  const file = join(root, 'web/packages/shared/src/theme.ts')
-  await writeFile(file, (await readFile(file, 'utf8')).replace('#2f54eb', '#2f54ec'))
-  const result = check('--refresh')
-  assert.equal(result.status, 1)
-  assert.match(result.stderr, /截图主题与当前全局主题不同/)
-}))
+test('独立图库的清单与图片均齐全', async t => {
+  const { directory } = await fixture(t)
+  assert.equal(await checkGallery(directory), 1)
+})
 
-test('导航变化后，刷新清单不能将旧布局声明为当前截图',async()=>fixture(async({root,check})=>{
-  const file=join(root,'web/packages/shared/src/navigation.json')
-  await appendFile(file,'\n')
-  const result=check('--refresh')
-  assert.equal(result.status,1)
-  assert.match(result.stderr,/截图导航或布局与当前源码不同/)
-}))
+test('浏览器清单与 JSON 清单一致', async t => {
+  const { directory } = await fixture(t)
+  await writeFile(join(directory, 'manifest.js'), 'window.StarBeaconScreenshotManifest = {};\n')
+  await assert.rejects(checkGallery(directory), /浏览器清单.*不一致/)
+})
 
-test('工程组件发生变化时，未改变主题也必须重新捕获原型',async()=>fixture(async({root,check})=>{
-  await writeFile(join(root,'web/platform/src/unrecorded-component.ts'),'export const label="当前界面"\n')
-  const result=check('--refresh')
-  assert.equal(result.status,1)
-  assert.match(result.stderr,/截图界面源码与当前版本不同/)
-}))
+test('报告缺图和未登记的图片', async t => {
+  const { directory, state } = await fixture(t)
+  await rm(join(directory, state.image))
+  await writeFile(join(directory, 'alerts', 'extra.jpg'), jpeg())
+  await assert.rejects(checkGallery(directory), /alerts\/extra\.jpg 未登记.*\nalerts\/data\.jpg 缺少截图/)
+})
 
-test('主题未变时，图片字节变化仍被原有 SHA-256 检查拒绝', async () => fixture(async ({gallery, entry, check}) => {
-  await appendFile(join(gallery, entry.file), '\n')
-  const result = check()
-  assert.equal(result.status, 1)
-  assert.match(result.stderr, /文件校验值与来源清单不一致/)
-}))
+test('拒绝清单外路径与重复登记', async t => {
+  const { directory, manifest, state, save } = await fixture(t)
+  state.image = '../data.jpg'
+  await save()
+  await assert.rejects(checkGallery(directory), /截图路径或链接无效/)
+  state.image = 'alerts/data.jpg'
+  manifest.pages.push({ ...manifest.pages[0], id: 'alerts-copy' })
+  await save()
+  await assert.rejects(checkGallery(directory), /重复登记：alerts\/data\.jpg/)
+})
 
-test('缺少浏览器核对来源时，刷新清单不能放宽原有检查', async () => fixture(async ({gallery, entry, check}) => {
-  await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [{...entry, stateVerified: false}], errors: []}))
-  const result = check('--refresh')
-  assert.equal(result.status, 1)
-  assert.match(result.stderr, /缺少已核对的浏览器截图来源/)
-}))
+test('清单和所有图像都必须使用规定视口', async t => {
+  const { directory, manifest, state, save } = await fixture(t)
+  manifest.viewport = { ...viewport, height: 901 }
+  await save()
+  await assert.rejects(checkGallery(directory), /视口无效/)
+  manifest.viewport = viewport
+  await save()
+  for (const [width, height] of [[1439, 900], [1440, 901]]) {
+    await writeFile(join(directory, state.image), jpeg(width, height))
+    await assert.rejects(checkGallery(directory), new RegExp(`尺寸为 ${width}×${height}，要求 1440×900`))
+  }
+})
 
-test('采集器界面源码变化后，即使刷新清单也不能接受原截图', async () => fixture(async ({root, gallery, entry, check}) => {
-  const path = 'web/collector/src/features/network/ResponseConfiguration.vue'
-  const target = join(root, path)
-  await mkdir(dirname(target), {recursive: true})
-  await copyFile(join(project, path), target)
-  const {createHash} = await import('node:crypto')
-  entry.renderInputs = [...(entry.renderInputs ?? []).filter(input => input.path !== path), {path, sha256: createHash('sha256').update(await readFile(target)).digest('hex')}]
-  await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
-  assert.equal(check().status, 0)
-  await appendFile(target, '\n')
-  const result = check('--refresh')
-  assert.equal(result.status, 1)
-  assert.match(result.stderr, /截图界面源码与当前版本不同/)
-}))
+test('损坏的 JPEG 文件会返回对应路径', async t => {
+  const { directory, state } = await fixture(t)
+  await writeFile(join(directory, state.image), jpeg().subarray(0, -2))
+  await assert.rejects(checkGallery(directory), /alerts\/data\.jpg：JPEG 文件头或结束标记无效/)
+  await writeFile(join(directory, state.image), Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 2, 0xff, 0xd9]))
+  await assert.rejects(checkGallery(directory), /alerts\/data\.jpg：JPEG 尺寸段不完整/)
+})
 
-test('未单独列出的采集器组件同样属于截图来源',async()=>fixture(async({root,check})=>{
- await writeFile(join(root,'web/collector/src/unrecorded-component.ts'),'export const label="采集状态"\n')
- const result=check('--refresh')
- assert.equal(result.status,1)
- assert.match(result.stderr,/截图界面源码与当前版本不同/)
-}))
+test('每个主控视图保留数据图，九类保留各自的代表状态', async () => {
+  const catalog = JSON.parse(await readFile(new URL('../public/page-manifest.json', import.meta.url), 'utf8'))
+  const gallery = planGallery(catalog, collectorPrototypeScreens)
+  const platform = gallery.pages.filter(page => page.group !== 'collector' && page.group !== 'boundary')
+  assert.deepEqual(platform.map(page => page.id), catalog.pages.map(page => page.id))
+  assert.ok(platform.every(page => page.states.some(state => state.state === 'data')))
+  const representatives = platform.filter(page => page.states.length > 1)
+  assert.equal(representatives.length, 9)
+  for (const page of representatives) {
+    assert.deepEqual(page.states.map(state => state.state).sort(), ['action', 'data', 'detail', 'empty', 'error', 'loading'])
+  }
+  assert.equal(new Set(representatives.map(page => catalog.pages.find(entry => entry.id === page.id).kind)).size, 9)
+  const boundaryCount = catalog.boundary.length + catalog.collector.boundary.length
+  assert.equal(galleryFiles(gallery).size, catalog.pages.length + 45 + collectorPrototypeScreens.length + boundaryCount)
+})
 
-test('页面已导航但观测仍属于上一页时不能登记为当前截图',async()=>fixture(async({gallery,entry,check})=>{
- entry.viewport.page='another-page'
- await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
- const result=check('--refresh')
- assert.equal(result.status,1)
- assert.match(result.stderr,/截图可见页面或状态与页面目录不同/)
-}))
-
-test('边界截图不得沿用上一业务页面的观测',async()=>fixture(async({gallery,entry,check})=>{
- const file='boundary/auth-login.jpg'
- await mkdir(join(gallery,'boundary'),{recursive:true})
- await copyFile(join(gallery,entry.file),join(gallery,file))
- await rm(join(gallery,entry.file))
- entry.file=file;entry.state='boundary';entry.url='http://127.0.0.1:4173/auth/login'
- await writeFile(join(gallery,'../page-manifest.json'),JSON.stringify({pages:[],boundary:[{id:'auth-login',url:'/auth/login'}]}))
- await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
- const result=check('--refresh')
- assert.equal(result.status,1)
- assert.match(result.stderr,/边界截图仍停留在业务页面或错误路由/)
-}))
-
-test('组件来源不得通过父目录或工程目录外路径绕过核对', async () => fixture(async ({gallery, entry, check}) => {
-  entry.renderInputs = [{path: 'web/collector/src/../../../secret.json', sha256: '0'.repeat(64)}]
-  await writeFile(join(gallery, 'capture-log.json'), JSON.stringify({entries: [entry], errors: []}))
-  const result = check('--refresh')
-  assert.equal(result.status, 1)
-  assert.match(result.stderr, /截图组件来源路径无效/)
-}))
-
-
-test('备用浏览器的原生截图保留同等来源与当前源码核验',async()=>fixture(async({gallery,entry,check})=>{
- entry.renderer='Chrome DevTools MCP';entry.captureMethod='chrome-devtools-mcp-native'
- await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
- assert.equal(check().status,0)
- delete entry.captureMethod
- await writeFile(join(gallery,'capture-log.json'),JSON.stringify({entries:[entry],errors:[]}))
- assert.equal(check('--refresh').status,1)
-}))
+test('清单覆盖采集器规范路由与两端登录和访问边界', async () => {
+  const catalog = JSON.parse(await readFile(new URL('../public/page-manifest.json', import.meta.url), 'utf8'))
+  const gallery = planGallery(catalog, collectorPrototypeScreens)
+  const collector = gallery.pages.filter(page => page.group === 'collector')
+  const boundary = gallery.pages.filter(page => page.group === 'boundary')
+  assert.deepEqual(collector.map(page => page.states[0].url), collectorPrototypeScreens.map(view => `${view.path}?state=data`))
+  assert.ok(collector.every(page => page.states.length === 1 && page.states[0].state === 'data'))
+  assert.deepEqual(boundary.map(page => page.states[0].url), [...catalog.boundary, ...catalog.collector.boundary].map(page => page.url))
+})

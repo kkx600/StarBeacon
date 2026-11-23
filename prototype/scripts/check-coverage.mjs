@@ -1,4 +1,3 @@
-import {digestRenderTree} from './gallery-inputs.mjs'
 import {platformScreens} from '../../web/packages/shared/src/navigation.ts'
 import {readFile,writeFile,mkdir} from 'node:fs/promises'
 import {pages,groups,states} from '../src/data/catalog.ts'
@@ -20,8 +19,7 @@ const invalid=workspaces.flatMap(workspace=>workspace.pages.filter(id=>!pages.so
 if(orphans.length||duplicates.length||invalid.length){console.error({orphans:orphans.map(page=>page.id),duplicates,invalid});process.exit(1)}
 const boundary=[{id:'auth-login',title:'登录',url:'/auth/login'},{id:'auth-mfa',title:'多因素认证',url:'/auth/mfa'},{id:'auth-reset',title:'找回密码',url:'/auth/reset'},{id:'auth-expired',title:'会话过期',url:'/auth/expired'},{id:'status-403',title:'无访问权限',url:'/status/403'},{id:'status-404',title:'页面不存在',url:'/status/404'},{id:'status-500',title:'服务异常',url:'/status/500'},{id:'status-tenant',title:'租户授权不足',url:'/status/tenant'}]
 const collector={title:'采集器管理',boundary:[{id:'collector-login',title:'采集器登录',url:'/collector/auth/login'},{id:'collector-mfa',title:'采集器多因素认证',url:'/collector/auth/mfa'},{id:'collector-expired',title:'采集器会话过期',url:'/collector/auth/expired'}],pages:collectorPages.map(page=>({id:`collector-${page.id}`,title:page.title,group:'collector',description:page.description,requirements:page.requirements,states:states.map(state=>({state:state.value,title:state.label,url:`/collector/${page.id}?state=${state.value}`,image:`collector/${page.id}/${state.value}.jpg`}))}))}
-const source={renderTreeSha256:(await digestRenderTree(new URL('../../',import.meta.url))).sha256}
-const manifest={source,product:'星烽 StarBeacon',synthetic:true,requirementCount:required.length,workspaces,groups,states,boundary,collector,pages:pages.map(p=>({id:p.id,workspace:workspaceForPage.get(p.id)?.title,title:p.title,group:p.group,kind:p.kind,description:p.description,requirements:p.requirement,states:states.map(s=>({state:s.value,title:s.label,url:`${prototypePath(p.id)}?state=${s.value}`,image:`${p.id}/${s.value}.jpg`}))}))}
+const manifest={product:'星烽 StarBeacon',synthetic:true,requirementCount:required.length,workspaces,groups,states,boundary,collector,pages:pages.map(p=>({id:p.id,workspace:workspaceForPage.get(p.id)?.title,title:p.title,group:p.group,kind:p.kind,description:p.description,requirements:p.requirement,states:states.map(s=>({state:s.value,title:s.label,url:`${prototypePath(p.id)}?state=${s.value}`,image:`${p.id}/${s.value}.jpg`}))}))}
 await mkdir(new URL('../public/',import.meta.url),{recursive:true})
 await writeFile(new URL('../public/page-manifest.json',import.meta.url),JSON.stringify(manifest,null,2)+'\n')
 await writeFile(new URL('../public/page-manifest.js',import.meta.url),`window.StarBeaconPageManifest = ${JSON.stringify(manifest)};\n`)

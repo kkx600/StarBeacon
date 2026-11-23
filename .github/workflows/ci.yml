@@ -75,5 +75,5 @@ jobs:
       - run: pnpm --dir prototype check:collector
       - run: pnpm --dir prototype check:theme
       - run: pnpm --dir prototype build
-      - name: 原型截图完整性（源码变化只提示过期，不阻断）
-        run: node prototype/scripts/check-screenshots.mjs
+      - name: 原型截图清单、文件与尺寸
+        run: pnpm --dir prototype check:screenshots
