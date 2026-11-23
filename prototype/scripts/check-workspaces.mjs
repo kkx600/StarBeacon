@@ -74,10 +74,12 @@ for (const action of createFixtures(pageById.get('actions')))
     sensors.some(sensor => sensor.name === action.sensor && sensor.role === '执行采集器'),
     '动作只能引用已登记的执行采集器',
   );
-assert.equal(sensorMetrics([execution], defaultSensorThresholds)[3].value, '—', '执行角色不能叠加为捕获流量');
+assert.equal(sensorMetrics([execution], defaultSensorThresholds)[3].value, null, '执行角色不能叠加为捕获流量');
 const offline = sensors.find(record => record.status === '离线');
 assert.equal(sensorMetrics([offline], defaultSensorThresholds)[1].value, '0');
-assert.equal(sensorMetrics([offline], defaultSensorThresholds)[3].value, '—', '没有捕获遥测时不能冒充零流量');
+const missingTraffic = sensorMetrics([offline], defaultSensorThresholds)[3];
+assert.equal(missingTraffic.value, null, '没有捕获遥测时以缺测值表达');
+assert.equal(missingTraffic.missingReason, '当前范围没有可用的流量观测');
 assert.equal(sensorMetrics([offline], defaultSensorThresholds)[2].value, '1');
 assert.equal(sensorMetrics([], defaultSensorThresholds)[0].value, '0');
 const pcaps = createFixtures(pageById.get('pcap-tasks'));

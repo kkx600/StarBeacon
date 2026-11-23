@@ -262,35 +262,6 @@ h2 {
   font-size: 12px;
   line-height: 1.7;
 }
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: var(--section-gap) 0;
-}
-.metric-grid > div {
-  padding: 0 var(--panel-inset);
-  border-right: 1px solid var(--line);
-  min-width: 0;
-}
-.metric-grid > div:last-child {
-  border-right: 0;
-}
-.metric-grid span {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-}
-.metric-grid strong {
-  display: block;
-  margin: var(--label-gap) 0;
-  font-size: 24px;
-  color: var(--link);
-  font-variant-numeric: tabular-nums;
-}
-.metric-grid small {
-  color: var(--muted);
-  font-size: 12px;
-}
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -354,12 +325,6 @@ h2 {
 .ant-alert-description,
 .ant-alert-message {
   overflow-wrap: anywhere;
-}
-.metric-grid strong,
-.metric-item strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
 }
 .ant-tabs-nav {
   min-width: 0;

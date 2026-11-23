@@ -16,7 +16,7 @@ import type { CollectorAction, CollectorInterface, CollectorTask } from '../data
 import { useCollector } from '../composables/useCollector';
 import { usePreview } from '../composables/usePreview';
 import PageHeader from '../components/PageHeader.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import StatePanel from '../components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';

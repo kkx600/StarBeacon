@@ -16,7 +16,7 @@ import type { BusinessRecord, ColumnSpec, PageSpec, PreviewState } from '../mode
 import { metricsFor } from '../data/fixtures';
 import { compareCells, formatCell } from '../composables/formatRecord';
 import { useRecords, exportCsv, exportJson } from '../composables/useRecords';
-import MetricBar from './MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import PageHeader from './PageHeader.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { recordStatusTone } from '../data/statuses';

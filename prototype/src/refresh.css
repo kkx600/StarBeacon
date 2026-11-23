@@ -61,33 +61,6 @@
   margin-bottom: var(--related-gap);
 }
 
-/* 指标条单行：说明在左，数字在右；数字默认正文色。 */
-.metric-bar:not(.situation-screen .metric-bar) {
-  padding: var(--related-gap) 0;
-  margin-bottom: var(--related-gap);
-}
-.metric-bar:not(.situation-screen .metric-bar) .metric-item {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 10px;
-}
-.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong {
-  color: var(--text);
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 600;
-}
-.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong.warning {
-  color: var(--warning);
-}
-.metric-bar:not(.situation-screen .metric-bar) .metric-item > strong.danger {
-  color: var(--danger);
-}
-.metric-bar:not(.situation-screen .metric-bar) .metric-note {
-  font-size: 12px;
-}
-
 /* 筛选：标签与控件同行。 */
 .filter-panel {
   padding: var(--related-gap) var(--panel-inset);

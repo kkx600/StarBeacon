@@ -6,7 +6,7 @@ import { useFeedback } from '../../../web/packages/shared/src/composables/useFee
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import StatePanel from '../components/StatePanel.vue';
@@ -114,11 +114,17 @@ const columns = [
 const empty = computed(() => props.state === 'empty');
 const rows = computed(() => (empty.value ? [] : sessions.value));
 const metrics = computed<MetricSpec[]>(() => [
-  { label: '近 24 小时观测', value: empty.value ? '—' : '8.6', suffix: 'TB' },
-  { label: '实际落盘', value: empty.value ? '—' : '0.61', suffix: 'TB', note: empty.value ? undefined : '节省 92.9%' },
+  { label: '近 24 小时观测', value: empty.value ? null : '8.6', suffix: 'TB', missingReason: '未取得流量观测' },
+  {
+    label: '实际落盘',
+    value: empty.value ? null : '0.61',
+    suffix: 'TB',
+    note: '节省 92.9%',
+    missingReason: '暂无原包落盘统计',
+  },
   { label: '会话记录', value: empty.value ? '0' : '1.2 亿' },
-  { label: '预计可回溯', value: empty.value ? '—' : '180', suffix: '天' },
-  { label: '分段索引占原包', value: empty.value ? '—' : '0.3%' },
+  { label: '预计可回溯', value: empty.value ? null : '180', suffix: '天', missingReason: '缺少用于估算的存储观测' },
+  { label: '分段索引占原包', value: empty.value ? null : '0.3%', missingReason: '暂无分段索引统计' },
 ]);
 const retentionTones = { 完整: 'success', 仅元数据: 'neutral', 按策略截断: 'warning' } as const;
 

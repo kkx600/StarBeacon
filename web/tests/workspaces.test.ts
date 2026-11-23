@@ -493,8 +493,23 @@ describe('采集器管理', () => {
     expect(table.text()).toContain('未提供');
     expect(table.text()).toContain('未配置');
     expect(table.text()).toContain('回环');
-    const summary = mount(HealthSummary, { props: { health: { ...health, errors: ['cpu_unavailable'] } }, global });
+    const summary = mount(HealthSummary, {
+      props: {
+        health: {
+          ...health,
+          cpu_percent: null,
+          memory_percent: 0,
+          wal_pending: 0,
+          errors: ['cpu_unavailable', 'wal_unavailable'],
+        },
+      },
+      global,
+    });
     expect(summary.text()).toContain('CPU 指标不可用');
+    expect(summary.text()).toContain('0.0%');
+    const missing = summary.findAll('.metric-item[data-missing]');
+    expect(missing.map(item => item.get('.metric-value').text())).toEqual(['—', '—']);
+    expect(missing[1]!.get('.metric-note').text()).toBe('未获取本机待传队列统计');
   });
 });
 

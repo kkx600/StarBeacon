@@ -19,6 +19,7 @@ import {
 } from '../packages/shared/src/watchlists';
 import WatchlistHits from '../packages/shared/src/components/WatchlistHits.vue';
 import WatchlistImpactView from '../packages/shared/src/components/WatchlistImpact.vue';
+import MetricBar from '../packages/shared/src/components/MetricBar.vue';
 import { useWatchlistHits } from '../platform/src/features/watchlists/useWatchlistHits';
 import { useWatchlistImpact } from '../platform/src/features/watchlists/useWatchlistImpact';
 import { principal, click, deferred } from './fixtures';
@@ -503,7 +504,7 @@ describe('历史影响界面', () => {
     const w = await view({ result: impact(), incomplete: true });
     expect(w.text()).toContain('历史检索结果不完整，本次未交付计数');
     expect(w.text()).not.toContain('192.0.2.10');
-    expect(w.find('.metric-grid').exists()).toBe(false);
+    expect(w.findComponent(MetricBar).exists()).toBe(false);
     expect(w.findAll('.ant-table-wrapper')).toHaveLength(0);
   });
   it('交付结果时显示总数、核对时间与参与字段', async () => {

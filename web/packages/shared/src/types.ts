@@ -182,6 +182,15 @@ export interface PlatformHealth {
   };
   packet_storage?: PacketStorage;
 }
+
+export interface MetricSpec {
+  label: string;
+  value: string | number | null;
+  suffix?: string;
+  note?: string;
+  tone?: 'danger' | 'warning' | 'success';
+  missingReason?: string;
+}
 export interface AuditRecord {
   id: string;
   user_id?: string;

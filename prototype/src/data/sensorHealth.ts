@@ -43,9 +43,10 @@ export function sensorMetrics(records: BusinessRecord[], thresholds: SensorThres
     },
     {
       label: '观测镜像流量',
-      value: observed.length ? String(observed.reduce((total, record) => total + Number(record.bpsMbit), 0)) : '—',
+      value: observed.length ? String(observed.reduce((total, record) => total + Number(record.bpsMbit), 0)) : null,
       suffix: observed.length ? 'Mbit/s' : undefined,
       note: observed.length ? `${observed.length} 个探针` : undefined,
+      missingReason: '当前范围没有可用的流量观测',
     },
   ];
 }

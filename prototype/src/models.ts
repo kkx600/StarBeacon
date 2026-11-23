@@ -66,10 +66,4 @@ export interface BusinessRecord {
   status: string;
   [key: string]: RecordValue;
 }
-export interface MetricSpec {
-  label: string;
-  value: string;
-  suffix?: string;
-  note?: string;
-  tone?: 'danger' | 'warning' | 'success';
-}
+export type { MetricSpec } from '../../web/packages/shared/src/types';

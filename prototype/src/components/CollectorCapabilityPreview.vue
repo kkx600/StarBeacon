@@ -193,27 +193,6 @@ function closeTask() {
 .collector-capability-body {
   padding: var(--panel-inset);
 }
-.collector-capability :deep(.metric-grid) {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-.collector-capability :deep(.metric-grid > div) {
-  display: flex;
-  flex-direction: column;
-  gap: var(--label-gap);
-  min-width: 0;
-}
-.collector-capability :deep(.metric-grid strong) {
-  font-size: 24px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.collector-capability :deep(.metric-grid small),
-.collector-capability :deep(.metric-grid span) {
-  color: var(--muted);
-}
 .collector-capability :deep(.panel-header) {
   display: flex;
   align-items: center;

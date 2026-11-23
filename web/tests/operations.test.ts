@@ -60,7 +60,9 @@ describe('运行状态', () => {
     await flushPromises();
     expect(wrapper.text()).toContain('部分平台依赖不可用');
     expect(wrapper.text()).toContain('内存指标不可用');
-    expect(wrapper.text()).toContain('未获取');
+    const missing = wrapper.get('.metric-item[data-missing]');
+    expect(missing.get('.metric-value').text()).toBe('—');
+    expect(missing.get('.metric-note').text()).toBe('未获取运行环境内存指标');
     expect(wrapper.text()).toContain('1.23 MB');
     expect(wrapper.text()).toContain('test-commit');
     expect(wrapper.find('.ant-table').exists()).toBe(false);
@@ -125,6 +127,9 @@ describe('运行状态', () => {
     for (const text of ['S3 兼容对象存储', '无法测量', '目录上限', '不限', '只按保留期删除', '暂无原包'])
       expect(object).toContain(text);
     expect(object).not.toContain('共享存储剩余空间低于回收阈值');
+    const missing = wrapper.get('.packet-storage .metric-item[data-missing]');
+    expect(missing.get('.metric-value').text()).toBe('—');
+    expect(missing.get('.metric-note').text()).toBe('对象存储无法测量剩余空间');
     request.mockResolvedValue({
       ...health,
       packet_storage: { ...storage, backend: 's3', measured: false, limit_bytes: '2199023255552' },

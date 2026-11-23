@@ -370,53 +370,6 @@ p {
   border-radius: 8px;
   min-width: 0;
 }
-.metric-bar {
-  display: flex;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  margin-bottom: var(--section-gap);
-  padding: var(--section-gap) 0;
-  min-width: 0;
-}
-.metric-item {
-  flex: 1;
-  min-width: 0;
-  padding: 0 var(--panel-inset);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: var(--label-gap);
-}
-.metric-item:last-child {
-  border-right: 0;
-}
-.metric-item > span {
-  font-size: 12px;
-  color: var(--muted);
-}
-.metric-item > strong {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.25;
-  font-variant-numeric: tabular-nums;
-  color: var(--link);
-  white-space: nowrap;
-}
-.metric-item > strong:has(small) {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-}
-.metric-item > strong small {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-}
-.metric-note {
-  font-size: 12px;
-  color: var(--muted);
-}
 .page-notice {
   margin-bottom: var(--section-gap);
 }
@@ -1652,26 +1605,6 @@ p {
   color: var(--screen-muted);
   gap: 9px;
 }
-.situation-screen .metric-bar {
-  background: var(--screen-metric);
-  border-color: var(--screen-line);
-  padding-block: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.situation-screen .metric-item {
-  border-right-color: var(--screen-line);
-}
-.situation-screen .metric-item > span {
-  color: var(--screen-muted);
-  font-size: 12px;
-}
-.situation-screen .metric-item > strong {
-  color: var(--screen-number);
-  font-size: 24px;
-}
-.situation-screen .metric-item small {
-  color: var(--screen-muted);
-}
 .screen-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2055,9 +1988,6 @@ p {
   .content-area {
     padding: var(--page-inset);
   }
-  .metric-bar {
-    padding: var(--section-gap) 0;
-  }
   .situation-screen {
     padding: var(--panel-inset);
   }
@@ -2071,9 +2001,6 @@ p {
 @media (max-width: 1180px) {
   .topbar .ant-breadcrumb li:last-child {
     display: none;
-  }
-  .metric-item {
-    padding: 0 var(--panel-inset);
   }
   .filter-grid {
     gap: 12px;
@@ -2264,32 +2191,6 @@ a,
   text-underline-offset: 3px;
 }
 
-/* 白色指标区以数值和文字表达业务状态，避免大面积状态底色干扰阅读。 */
-.metric-item.danger > span,
-.metric-item.danger .metric-note {
-  color: var(--danger);
-}
-.metric-item.warning > span,
-.metric-item.warning .metric-note {
-  color: var(--warning);
-}
-.metric-item.success > span,
-.metric-item.success .metric-note {
-  color: var(--success);
-}
-.situation-screen .metric-item > strong {
-  color: var(--screen-number);
-}
-.situation-screen .metric-item.danger > strong {
-  color: var(--screen-danger) !important;
-}
-.situation-screen .metric-item.warning > strong {
-  color: var(--screen-amber) !important;
-}
-.situation-screen .metric-item > span,
-.situation-screen .metric-item .metric-note {
-  color: var(--screen-muted);
-}
 .auth-intro h1 {
   color: var(--link);
 }
@@ -2320,12 +2221,6 @@ a,
 .ant-alert-description,
 .ant-alert-message {
   overflow-wrap: anywhere;
-}
-.metric-grid strong,
-.metric-item strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
 }
 .ant-tabs-nav {
   min-width: 0;

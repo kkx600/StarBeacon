@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import StatePanel from '../components/StatePanel.vue';

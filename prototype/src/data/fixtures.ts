@@ -841,8 +841,13 @@ export function metricsFor(page: PageSpec, empty = false): MetricSpec[] {
     return [
       { label: '观测流量', value: zero ?? '21.8', suffix: 'GiB' },
       { label: '活跃会话', value: zero ?? '4,216' },
-      { label: '规则识别覆盖', value: empty ? '—' : '74.6%' },
-      { label: '未知应用', value: empty ? '—' : '25.4%', tone: 'warning' },
+      { label: '规则识别覆盖', value: empty ? null : '74.6%', missingReason: '当前范围没有可统计的应用记录' },
+      {
+        label: '未知应用',
+        value: empty ? null : '25.4%',
+        tone: 'warning',
+        missingReason: '当前范围没有可统计的应用记录',
+      },
     ];
   if (page.family === 'platform')
     return [

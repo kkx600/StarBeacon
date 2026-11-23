@@ -121,6 +121,11 @@ typography:
     lineHeight: 1.65
   metric:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: "28px"
+  metric-dark:
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
     fontSize: "24px"
     fontWeight: 600
     lineHeight: 1.25
@@ -201,7 +206,7 @@ components:
     textColor: "{colors.critical-text}"
   metric:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.link}"
+    textColor: "{colors.text}"
     typography: "{typography.metric}"
   metric-danger:
     backgroundColor: "{colors.surface}"
@@ -209,9 +214,10 @@ components:
   metric-warning:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.warning}"
-  metric-success:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.success}"
+  metric-dark:
+    backgroundColor: "{colors.screen-metric}"
+    textColor: "{colors.screen-number}"
+    typography: "{typography.metric-dark}"
   panel:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.panel}"
@@ -273,7 +279,8 @@ components:
 | 内容 | 原型 | 主控平台与采集器 |
 | --- | --- | --- |
 | 配色（共享主题） | 已落地 | 已落地，同一份主题文件 |
-| 紧凑布局、页面头部、指标条 | 已落地 | 未落地 |
+| 紧凑布局、页面头部 | 已落地 | 未落地 |
+| 指标条 | 已采用共享组件 | 运行状态、原包存储、历史影响预览已采用共享组件 |
 | 列表：编号独立成列、一行一条、统一分页 | 已落地（通用列表页与新页面） | 未落地 |
 | 页面说明收进“?” | 已落地 | 未落地 |
 | 状态标签六种色调、严重度四级 | 已采用共享组件 | 共享组件已就绪，页面迁移见 T16–T19 |
@@ -302,7 +309,7 @@ components:
 | 控件边界 | `#d9d9d9` | |
 | 工作区／分隔线 | `#f4f4f4`／`#e5e5e5` | 纯灰 |
 
-- 指标数字默认用正文色。只有表示风险且数值大于 0 时才用警示或危险色；没有数据时显示“无数据”或“—”。
+- 指标数字默认用正文色。大于零的风险数字使用警示色或危险色。缺测显示“—”与原因，零值使用默认数值色。
 - 严重度四级依次使用实底、危险色、警示色和中性色。告警处理状态单独映射，待研判使用中性色，研判中使用信息色。
 - 调用方根据业务状态键赋予标签色调，并独立传入展示文字。未知状态使用中性色。
 - 深色面板上的状态标签使用半透明色底和浅色字。严重标签使用实底与白字。
@@ -360,12 +367,12 @@ components:
 
 - 健康的具体原因写成一眼能懂的短语：磁盘空间不足、CPU 占用高、内存占用高、丢包率高、指标不全。
 - 没有数据的单元格显示“无数据”或“—”，不显示 0，也不解释成“正常”。
-- 指标旁的小字只放数字或单位补充（例如“平均 8.4 秒”“其中自动 9”），不放描述性的话。
+- 指标旁的小字说明数字补充、单位或缺测原因。
 - 协议可见性、会话完整性这类专业取值（例如“仅元数据”“缺少握手”）不在本表范围内，沿用各自的设计文档。
 
 ### 密度与布局
 
-- 紧凑为默认：页面标题一行，动作在右侧；指标条单行；筛选标签与控件同行。
+- 页面标题单行，动作在右侧。指标项横向排列，空间不足时项内换行。筛选标签与控件同行。
 - 同一位置不重复表达：功能页签与页面标题同名时不再单独显示说明行。
 - 1024px 宽度下顶栏不折行：面包屑只留当前页名称，用户名单行省略。
 - 弹窗正文的左右边缘与标题、底部按钮对齐。
@@ -463,7 +470,7 @@ components:
 | status-label | 小状态标签，文字与圆点同时出现。 |
 | technical | 查询、代码、数据包字节与偏移等原始证据统一用 12px 等宽字体。 |
 | rule-editor | Suricata 规则编辑内容；13px 等宽字体、1.65 行高，不改变通用技术内容字号。 |
-| metric | 普通指标数值为 24px，原型紧凑单行指标为 20px。 |
+| metric / metric-dark | 普通指标数值为 20px，深色大屏指标为 24px。 |
 
 普通表格正文是局部规则（13px），不是 App 主题正文（14px）的替代值。详情名称继承所在标题的字重与行高，不为未显式设置的属性补造 token。
 
@@ -490,7 +497,7 @@ components:
 | related-gap / --related-gap | 关联动作、功能页签纵向内边距、面板标题底部与详情分节标题下方距离。 |
 | label-gap / --label-gap | 筛选标签与控件、指标说明与数值、页面标题与说明的近邻距离。 |
 
-筛选面板与表格工具栏采用同一组 section-gap / panel-inset，分页外沿也与面板对齐。面板标题内边距为 12px 16px 8px，底部说明外边距为 0 16px 12px。普通指标栏上下内边距为 12px、指标横向为 16px、内部间隔为 4px。表格单元格主题内边距仍为纵向 12px、横向 14px；输入、按钮高度和表格行高保持既有控件规则。容器按内容类型应用这些变量，不给面板外壳叠加统一内边距。
+筛选面板与表格工具栏采用同一组 section-gap / panel-inset，分页外沿也与面板对齐。面板标题内边距为 12px 16px 8px，底部说明外边距为 0 16px 12px。普通指标条上下内边距为 8px，每个指标的横向内边距为 16px，同行内容间隔为 10px。表格单元格主题内边距为纵向 12px、横向 14px。输入、按钮及表格沿用各自的高度规则。容器按内容类型应用间距变量。
 
 **The 单一业务视图 Rule.** 每个功能视图只呈现一个业务列表，不同对象通过功能页签或 view 查询参数切换；指标与说明服务于当前数据集。详情中的字段描述表属于对象说明，不计作第二个业务列表。
 
@@ -581,7 +588,7 @@ PC 宽度区间的布局行为如下。1024px 是最小支持宽度，不再设�
 
 ### Cards / Containers
 
-白色面板以细边框与轻度圆角承载内容；筛选、指标、表格、图表、证据列表分别使用自身内部间距。指标栏为白色底，用纵向分隔区分数值；风险、关注、健康数值、标签与说明同时取对应文字色。说明位于数值附近；单位和业务边界使用较低层级文字。大屏指标保持独立深色底，数字取高亮蓝青，高危与关注数字分别取大屏玫红和琥珀。配置类页面不填充缺少业务含义的默认指标组；没有适用指标时直接进入配置与记录。
+白色指标条用竖线分隔各项，数值、单位及原因放在同一项内。数值默认使用正文色，仅正数的风险指标用警示色或危险色。大屏指标使用深色底和亮青色数值，高危与关注数值分别使用大屏玫红和琥珀。配置类页面按当前对象提供有业务意义的指标。[共享指标条](web/packages/shared/src/components/MetricBar.vue)
 
 **The 业务指标 Rule.** 指标必须对应当前对象与可解释的统计口径。探针指标来自同一筛选数据集与健康阈值；离线、心跳超时和执行角色不显示推定正常的采集指标。当前范围没有捕获遥测时，观测镜像流量显示“—”及原因，不能以零流量代替无数据。态势总览与态势大屏的探针指标使用探针列表的同一设备快照和健康阈值，按各自网络域或展示范围筛选，加载与失败时不展示指标；其他业务图表仍为合成场景，不表示所有模块已实现联动统计。
 

@@ -2,6 +2,7 @@
 import { computed, reactive, watch } from 'vue';
 import { Table as ATable, InputNumber as AInputNumber } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
+import MetricBar from './MetricBar.vue';
 import {
   localWatchlistTime,
   watchlistHitFields,
@@ -45,6 +46,11 @@ const sampleColumns = [
 ];
 const fieldLabels = computed(() =>
   (props.result?.fields ?? []).map(field => watchlistHitFields[field as keyof typeof watchlistHitFields] ?? field),
+);
+const metrics = computed(() =>
+  props.result
+    ? [{ label: '命中告警总数', value: props.result.total.toLocaleString('en-US'), note: '当次核对的已索引告警条数' }]
+    : [],
 );
 function run() {
   if (!props.pending && validRevision.value && form.revision !== null) emit('run', form.revision, form.start, form.end);
@@ -117,23 +123,19 @@ watch(
           }}{{ result.current ? '（当前修订）' : '（历史修订）'
           }}<template v-if="result.kind === 'protect'">；保护名单不会自动登记命中，本次结果仅用于核对。</template>
         </p>
-        <div class="panel">
-          <div class="metric-grid watchlist-impact-metrics">
-            <div>
-              <span>命中告警总数</span><strong>{{ result.total.toLocaleString('en-US') }}</strong
-              ><small>当次核对的已索引告警条数</small>
-            </div>
-            <div>
-              <span>核对时间</span
-              ><strong class="technical watchlist-impact-time">{{ formatTime(result.checked_at) }}</strong
-              ><small>快照时刻，不随后续告警更新</small>
-            </div>
-            <div>
-              <span>参与字段</span
-              ><span class="watchlist-impact-tags"
-                ><span v-for="label in fieldLabels" :key="label" class="status status-neutral">{{ label }}</span></span
-              ><small>实际查询的已索引字段</small>
-            </div>
+        <div class="panel watchlist-impact-summary">
+          <MetricBar :items="metrics" embedded />
+          <div class="watchlist-impact-context">
+            <span>核对时间</span>
+            <strong class="technical watchlist-impact-time">{{ formatTime(result.checked_at) }}</strong>
+            <small>快照时刻，不随后续告警更新</small>
+          </div>
+          <div class="watchlist-impact-context">
+            <span>参与字段</span>
+            <span class="watchlist-impact-tags"
+              ><span v-for="label in fieldLabels" :key="label" class="status status-neutral">{{ label }}</span></span
+            >
+            <small>实际查询的已索引字段</small>
           </div>
         </div>
         <h3 class="watchlist-impact-title">每值命中数</h3>
@@ -204,16 +206,27 @@ watch(
 .watchlist-impact-fields .ant-input-number {
   width: 100%;
 }
-.watchlist-impact-metrics {
+.watchlist-impact-summary {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-.watchlist-impact-metrics strong {
-  font-size: 24px;
-  font-weight: 600;
+.watchlist-impact-context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--label-gap);
+  min-width: 0;
+  padding: var(--related-gap) var(--panel-inset);
+  border-inline-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.watchlist-impact-context small {
+  font-size: 12px;
 }
 .watchlist-impact-time {
   font-size: 16px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .watchlist-impact-tags {
   display: flex;

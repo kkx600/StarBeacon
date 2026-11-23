@@ -11,7 +11,7 @@ import { useRecords } from '../composables/useRecords';
 import { sensorThresholds as thresholds } from '../composables/useSensorHealth';
 import { healthFor, sensorMetrics } from '../data/sensorHealth';
 import ChartPanel from '../components/ChartPanel.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import StatePanel from '../components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
@@ -157,7 +157,7 @@ function fullscreen() {
         ><a-button ghost size="small" aria-label="全屏展示" @click="fullscreen"><FullscreenOutlined /></a-button>
       </div>
     </header>
-    <MetricBar v-if="state !== 'loading' && state !== 'error'" :items="metrics" /><StatePanel
+    <MetricBar v-if="state !== 'loading' && state !== 'error'" :items="metrics" dark /><StatePanel
       v-if="state === 'loading' || state === 'error'"
       :state="state"
       @action="emit('state', 'data')"

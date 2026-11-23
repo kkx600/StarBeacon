@@ -2,7 +2,14 @@
 import { computed, onMounted, onScopeDispose, shallowRef } from 'vue';
 import { Descriptions as ADescriptions } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
-import { formatPercent, formatTime, formatHealthErrors, type PlatformHealth } from '@starbeacon/shared/types.ts';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import {
+  formatPercent,
+  formatTime,
+  formatHealthErrors,
+  type MetricSpec,
+  type PlatformHealth,
+} from '@starbeacon/shared/types.ts';
 import { formatBytes } from '@starbeacon/shared/utils/format.ts';
 import { session } from '../../session';
 const ADescriptionsItem = ADescriptions.Item;
@@ -37,6 +44,75 @@ const reach = computed(() => {
   if (!oldest || !observed) return '';
   const days = Math.max(0, (Date.parse(observed) - Date.parse(oldest)) / 86400000);
   return Number.isFinite(days) ? `${days < 10 ? days.toFixed(1) : Math.floor(days)} 天` : '';
+});
+const runtimeMetrics = computed<MetricSpec[]>(() => {
+  const runtime = result.value?.runtime;
+  if (!runtime) return [];
+  return [
+    {
+      label: 'CPU 使用率',
+      value: formatPercent(runtime.cpu_percent),
+      note: '所在运行环境观测',
+      missingReason: '未获取运行环境 CPU 指标',
+    },
+    {
+      label: '内存使用率',
+      value: formatPercent(runtime.memory_percent),
+      note: '所在运行环境观测',
+      missingReason: '未获取运行环境内存指标',
+    },
+    {
+      label: '磁盘使用率',
+      value: formatPercent(runtime.disk_percent),
+      note: '进程工作目录所在磁盘',
+      missingReason: '未获取进程工作目录的磁盘指标',
+    },
+    {
+      label: '进程堆内存',
+      value: formatBytes(runtime.heap_bytes),
+      note: '平台进程实际分配',
+      missingReason: '未获取堆内存观测',
+    },
+  ];
+});
+const storageMetrics = computed<MetricSpec[]>(() => {
+  const value = storage.value;
+  if (!value) return [];
+  const limit = formatBytes(value.limit_bytes, true);
+  const retention = `保留期上限 ${value.retention_days} 天`;
+  const occupied = `占用 ${formatBytes(value.stored_bytes, true)}`;
+  return [
+    {
+      label: '共享剩余空间',
+      value: value.measured ? formatBytes(value.free_bytes, true) : null,
+      note: `总容量 ${formatBytes(value.total_bytes, true)}`,
+      tone: pressure.value ? 'warning' : undefined,
+      missingReason: value.measured ? '未获取部署存储的剩余空间' : '对象存储无法测量剩余空间',
+    },
+    value.measured
+      ? {
+          label: '回收阈值',
+          value: formatBytes(value.floor_bytes, true),
+          note: limited.value ? `剩余低于该值或总量超过 ${limit} 时回收` : '剩余低于该值时回收最早原包',
+        }
+      : {
+          label: '目录上限',
+          value: limited.value ? limit : '不限',
+          note: limited.value ? '总量超过上限时回收最早原包' : '未设置上限，只按保留期删除',
+        },
+    {
+      label: '本租户原包',
+      value: count(value.archives),
+      note: occupied,
+      missingReason: `未获取本租户原包计数 · ${occupied}`,
+    },
+    {
+      label: '实际可回溯',
+      value: reach.value || null,
+      note: `最早 ${formatTime(value.oldest_created_at)}，${retention}`,
+      missingReason: `${value.oldest_created_at ? '无法核对最早归档时间' : '暂无原包'} · ${retention}`,
+    },
+  ];
 });
 let controller: AbortController | undefined;
 async function refresh() {
@@ -78,26 +154,7 @@ onScopeDispose(() => controller?.abort());
         show-icon
         class="section-gap"
       />
-      <section class="panel">
-        <div class="metric-grid">
-          <div>
-            <span>CPU 使用率</span><strong>{{ formatPercent(result.runtime.cpu_percent) }}</strong
-            ><small>所在运行环境观测</small>
-          </div>
-          <div>
-            <span>内存使用率</span><strong>{{ formatPercent(result.runtime.memory_percent) }}</strong
-            ><small>所在运行环境观测</small>
-          </div>
-          <div>
-            <span>磁盘使用率</span><strong>{{ formatPercent(result.runtime.disk_percent) }}</strong
-            ><small>进程工作目录所在磁盘</small>
-          </div>
-          <div>
-            <span>进程堆内存</span><strong>{{ formatBytes(result.runtime.heap_bytes) }}</strong
-            ><small>平台进程实际分配</small>
-          </div>
-        </div>
-      </section>
+      <MetricBar :items="runtimeMetrics" />
       <section class="panel">
         <div class="panel-header"><h2>依赖服务</h2></div>
         <div class="platform-services">
@@ -114,38 +171,7 @@ onScopeDispose(() => controller?.abort());
           <h2 id="packet-storage-title">原包存储</h2>
           <span class="page-description">{{ backendNames[storage.backend] ?? storage.backend }}，全部租户共享</span>
         </div>
-        <div class="metric-grid">
-          <div>
-            <span>共享剩余空间</span
-            ><strong>{{ storage.measured ? formatBytes(storage.free_bytes, true) : '无法测量' }}</strong
-            ><small>{{
-              storage.measured ? `总容量 ${formatBytes(storage.total_bytes, true)}` : '对象存储不提供剩余空间'
-            }}</small>
-          </div>
-          <div v-if="storage.measured">
-            <span>回收阈值</span><strong>{{ formatBytes(storage.floor_bytes, true) }}</strong
-            ><small>{{
-              limited
-                ? `剩余低于该值或总量超过 ${formatBytes(storage.limit_bytes, true)} 时回收`
-                : '剩余低于该值时回收最早原包'
-            }}</small>
-          </div>
-          <div v-else>
-            <span>目录上限</span><strong>{{ limited ? formatBytes(storage.limit_bytes, true) : '不限' }}</strong
-            ><small>{{ limited ? '总量超过上限时回收最早原包' : '未设置上限，只按保留期删除' }}</small>
-          </div>
-          <div>
-            <span>本租户原包</span><strong>{{ count(storage.archives) }}</strong
-            ><small>占用 {{ formatBytes(storage.stored_bytes, true) }}</small>
-          </div>
-          <div>
-            <span>实际可回溯</span><strong>{{ reach || '暂无原包' }}</strong
-            ><small
-              >{{ storage.oldest_created_at ? `最早 ${formatTime(storage.oldest_created_at)}，` : '' }}保留期上限
-              {{ storage.retention_days }} 天</small
-            >
-          </div>
-        </div>
+        <MetricBar :items="storageMetrics" embedded />
         <div class="panel-body">
           <a-alert
             v-if="pressure"
@@ -197,8 +223,5 @@ onScopeDispose(() => controller?.abort());
 .packet-storage .panel-header {
   flex-wrap: wrap;
   justify-content: flex-start;
-}
-.packet-storage .metric-grid {
-  padding-top: 0;
 }
 </style>

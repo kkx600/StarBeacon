@@ -7,7 +7,7 @@ import { SearchOutlined, ArrowRightOutlined, PictureOutlined, LinkOutlined } fro
 import { groups, pages, states } from '../data/catalog';
 import { workspaces, workspaceForPage } from '../data/navigation';
 import PageHeader from '../components/PageHeader.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import { collectorPages } from '../data/collector';
 const catalogMode = ref('platform');
 const router = useRouter();

@@ -10,7 +10,7 @@ import { exportJson, useRecords } from '../composables/useRecords';
 import { sensorThresholds as thresholds } from '../composables/useSensorHealth';
 import { sensorMetrics } from '../data/sensorHealth';
 import PageHeader from '../components/PageHeader.vue';
-import MetricBar from '../components/MetricBar.vue';
+import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import ChartPanel from '../components/ChartPanel.vue';
 import StatePanel from '../components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
