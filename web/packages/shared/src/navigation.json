@@ -66,103 +66,67 @@
       "id": "overview",
       "title": "态势总览",
       "group": "overview",
-      "pages": [
-        "overview"
-      ]
+      "pages": ["overview"]
     },
     {
       "id": "topology",
       "title": "网络拓扑",
       "group": "overview",
-      "pages": [
-        "topology"
-      ]
+      "pages": ["topology"]
     },
     {
       "id": "response-metrics",
       "title": "响应效能",
       "group": "overview",
-      "pages": [
-        "response-metrics"
-      ]
+      "pages": ["response-metrics"]
     },
     {
       "id": "screens",
       "title": "态势大屏",
       "group": "overview",
-      "pages": [
-        "big-screen",
-        "screens"
-      ]
+      "pages": ["big-screen", "screens"]
     },
     {
       "id": "alerts",
       "title": "告警管理",
       "group": "alerts",
-      "pages": [
-        "alerts",
-        "assessments"
-      ]
+      "pages": ["alerts", "assessments"]
     },
     {
       "id": "search",
       "title": "高级检索",
       "group": "alerts",
-      "pages": [
-        "search",
-        "fields",
-        "exports"
-      ]
+      "pages": ["search", "fields", "exports"]
     },
     {
       "id": "investigation",
       "title": "事件调查",
       "group": "incidents",
-      "pages": [
-        "incidents",
-        "cases",
-        "timelines",
-        "case-sharing",
-        "reviews"
-      ]
+      "pages": ["incidents", "cases", "timelines", "case-sharing", "reviews"]
     },
     {
       "id": "duty",
       "title": "值班管理",
       "group": "incidents",
-      "pages": [
-        "duty"
-      ]
+      "pages": ["duty"]
     },
     {
       "id": "tickets",
       "title": "处置工单",
       "group": "incidents",
-      "pages": [
-        "tickets"
-      ]
+      "pages": ["tickets"]
     },
     {
       "id": "assets",
       "title": "资产管理",
       "group": "assets",
-      "pages": [
-        "assets",
-        "interfaces",
-        "address-history",
-        "nat",
-        "identities",
-        "services",
-        "asset-relations"
-      ]
+      "pages": ["assets", "interfaces", "address-history", "nat", "identities", "services", "asset-relations"]
     },
     {
       "id": "asset-groups",
       "title": "资产组与网段",
       "group": "assets",
-      "pages": [
-        "asset-groups"
-      ]
+      "pages": ["asset-groups"]
     },
     {
       "id": "asset-risk",
@@ -182,86 +146,49 @@
       "id": "applications",
       "title": "应用与行为",
       "group": "traffic",
-      "pages": [
-        "applications",
-        "behaviors"
-      ]
+      "pages": ["applications", "behaviors"]
     },
     {
       "id": "packets",
       "title": "通信取证",
       "group": "traffic",
-      "pages": [
-        "packets",
-        "packet-times",
-        "payloads",
-        "tls-visibility"
-      ]
+      "pages": ["packets", "packet-times", "payloads", "tls-visibility"]
     },
     {
       "id": "sessions",
       "title": "会话与 PCAP",
       "group": "traffic",
-      "pages": [
-        "full-traffic",
-        "sessions",
-        "session-integrity",
-        "pcap-tasks",
-        "packet-archives"
-      ]
+      "pages": ["full-traffic", "sessions", "session-integrity", "pcap-tasks", "packet-archives"]
     },
     {
       "id": "capture-policy",
       "title": "流量采集",
       "group": "traffic",
-      "pages": [
-        "capture-policy",
-        "capture-scope",
-        "inspection-depth",
-        "capture-quality",
-        "protocols"
-      ]
+      "pages": ["capture-policy", "capture-scope", "inspection-depth", "capture-quality", "protocols"]
     },
     {
       "id": "pipeline-latency",
       "title": "处理性能",
       "group": "traffic",
-      "pages": [
-        "pipeline-latency",
-        "capacity"
-      ]
+      "pages": ["pipeline-latency", "capacity"]
     },
     {
       "id": "rules",
       "title": "检测规则",
       "group": "detection",
-      "pages": [
-        "rules",
-        "correlation",
-        "sigma",
-        "application-rules",
-        "rule-samples",
-        "rule-tests",
-        "rule-sync"
-      ]
+      "pages": ["rules", "correlation", "sigma", "application-rules", "rule-samples", "rule-tests", "rule-sync"]
     },
     {
       "id": "hunts",
       "title": "威胁狩猎",
       "group": "detection",
-      "pages": [
-        "hunts",
-        "behavior-baselines"
-      ]
+      "pages": ["hunts", "behavior-baselines"]
     },
     {
       "id": "threat-scenarios",
       "title": "威胁场景",
       "group": "detection",
-      "pages": [
-        "threat-scenarios",
-        "attack-coverage"
-      ]
+      "pages": ["threat-scenarios", "attack-coverage"]
     },
     {
       "id": "file-analysis",
@@ -281,218 +208,139 @@
       "id": "intelligence",
       "title": "威胁情报",
       "group": "detection",
-      "pages": [
-        "indicators",
-        "intel-sources",
-        "intel-lifecycle",
-        "intel-hits",
-        "intel-sharing"
-      ]
+      "pages": ["indicators", "intel-sources", "intel-lifecycle", "intel-hits", "intel-sharing"]
     },
     {
       "id": "watchlists",
       "title": "保护与观察名单",
       "group": "detection",
-      "pages": [
-        "watchlists"
-      ]
+      "pages": ["watchlists"]
     },
     {
       "id": "decision-policies",
       "title": "决策策略",
       "group": "response",
-      "pages": [
-        "decision-policies",
-        "decision-evaluations"
-      ]
+      "pages": ["decision-policies", "decision-evaluations"]
     },
     {
       "id": "devices",
       "title": "联动设备",
       "group": "response",
-      "pages": [
-        "devices",
-        "auth-plugins"
-      ]
+      "pages": ["devices", "auth-plugins"]
     },
     {
       "id": "actions",
       "title": "响应动作",
       "group": "response",
-      "pages": [
-        "actions",
-        "bypass-blocking",
-        "emergency"
-      ]
+      "pages": ["actions", "bypass-blocking", "emergency"]
     },
     {
       "id": "playbooks",
       "title": "自动化编排",
       "group": "response",
-      "pages": [
-        "playbooks",
-        "playbook-runs"
-      ]
+      "pages": ["playbooks", "playbook-runs"]
     },
     {
       "id": "notifications",
       "title": "通知管理",
       "group": "notifications",
-      "pages": [
-        "channels",
-        "notification-routes",
-        "notification-templates",
-        "delivery-logs",
-        "syslog-output"
-      ]
+      "pages": ["channels", "notification-routes", "notification-templates", "delivery-logs", "syslog-output"]
     },
     {
       "id": "ai-ops",
       "title": "AI 值守",
       "group": "ai",
-      "pages": [
-        "ai-ops"
-      ]
+      "pages": ["ai-ops"]
     },
     {
       "id": "models",
       "title": "模型与知识",
       "group": "ai",
-      "pages": [
-        "models",
-        "knowledge"
-      ]
+      "pages": ["models", "knowledge"]
     },
     {
       "id": "chat",
       "title": "智能对话",
       "group": "ai",
-      "pages": [
-        "chat"
-      ]
+      "pages": ["chat"]
     },
     {
       "id": "rule-studio",
       "title": "规则生成",
       "group": "ai",
-      "pages": [
-        "rule-studio"
-      ]
+      "pages": ["rule-studio"]
     },
     {
       "id": "mcp",
       "title": "MCP 服务",
       "group": "ai",
-      "pages": [
-        "mcp"
-      ]
+      "pages": ["mcp"]
     },
     {
       "id": "reports",
       "title": "安全报告",
       "group": "reports",
-      "pages": [
-        "reports",
-        "report-schedules"
-      ]
+      "pages": ["reports", "report-schedules"]
     },
     {
       "id": "sensors",
       "title": "探针管理",
       "group": "sensors",
-      "pages": [
-        "sensors",
-        "sensor-groups",
-        "probe-identity"
-      ]
+      "pages": ["sensors", "sensor-groups", "probe-identity"]
     },
     {
       "id": "releases",
       "title": "版本发布",
       "group": "sensors",
-      "pages": [
-        "releases"
-      ]
+      "pages": ["releases"]
     },
     {
       "id": "settings",
       "title": "系统设置",
       "group": "system",
-      "pages": [
-        "system-settings"
-      ]
+      "pages": ["system-settings"]
     },
     {
       "id": "data-sources",
       "title": "数据接入",
       "group": "system",
-      "pages": [
-        "data-sources",
-        "syslog-input",
-        "imports",
-        "flow-sources",
-        "parsers",
-        "data-quality",
-        "replays"
-      ]
+      "pages": ["data-sources", "syslog-input", "imports", "flow-sources", "parsers", "data-quality", "replays"]
     },
     {
       "id": "logs",
       "title": "日志检索",
       "group": "system",
-      "pages": [
-        "logs"
-      ]
+      "pages": ["logs"]
     },
     {
       "id": "platform-health",
       "title": "平台运维",
       "group": "system",
-      "pages": [
-        "platform-health",
-        "backups",
-        "connectors",
-        "software-catalog"
-      ]
+      "pages": ["platform-health", "backups", "connectors", "software-catalog"]
     },
     {
       "id": "users",
       "title": "账号与权限",
       "group": "system",
-      "pages": [
-        "users",
-        "authentication",
-        "roles",
-        "api-keys"
-      ]
+      "pages": ["users", "authentication", "roles", "api-keys"]
     },
     {
       "id": "tenants",
       "title": "租户管理",
       "group": "system",
-      "pages": [
-        "tenants",
-        "quotas"
-      ]
+      "pages": ["tenants", "quotas"]
     },
     {
       "id": "governance",
       "title": "数据治理",
       "group": "system",
-      "pages": [
-        "retention",
-        "data-security",
-        "governance"
-      ]
+      "pages": ["retention", "data-security", "governance"]
     },
     {
       "id": "audit",
       "title": "审计日志",
       "group": "system",
-      "pages": [
-        "audit",
-        "login-logs"
-      ]
+      "pages": ["audit", "login-logs"]
     }
   ],
   "screens": [

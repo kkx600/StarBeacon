@@ -220,6 +220,8 @@ def worker(group, toolchain_path):
             ("toolchain", ["sh", "-c", "node --version && pnpm --version"]),
             ("web-install", ["pnpm", "--dir", "web", "install", "--frozen-lockfile"]),
             ("prototype-install", ["pnpm", "--dir", "prototype", "install", "--frozen-lockfile"]),
+            ("web-format", ["pnpm", "--dir", "web", "format:check"]),
+            ("prototype-format", ["pnpm", "--dir", "prototype", "format:check"]),
             ("frontend", [sys.executable, "scripts/qualify_frontend.py", "--output", str(local_frontend), "--max-workers", "2"]),
             ("prototype-tests", ["node", "--test", "--test-reporter=tap",
                                *(str(p.relative_to(ROOT)) for p in sorted((ROOT / "prototype/scripts").glob("*.test.mjs")))]),

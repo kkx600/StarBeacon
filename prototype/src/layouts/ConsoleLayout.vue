@@ -1,74 +1,276 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,MenuFoldOutlined,MenuUnfoldOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SearchOutlined,SettingOutlined,ThunderboltOutlined,UserOutlined,AppstoreOutlined,LogoutOutlined } from '@ant-design/icons-vue'
-import type {PreviewState} from '../models'
-import { groups,pageById,pages,states } from '../data/catalog'
-import {platformScreens} from '../../../web/packages/shared/src/navigation'
-import {workspaces,workspaceById,workspaceForPage,workspaceTitleForPage,pageIdForRoute,prototypePath} from '../data/navigation'
-import { usePreview } from '../composables/usePreview'
-import CopilotDrawer from '../components/CopilotDrawer.vue'
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  AlertOutlined,
+  ApiOutlined,
+  BarChartOutlined,
+  BellOutlined,
+  ClusterOutlined,
+  DashboardOutlined,
+  FileProtectOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  RadarChartOutlined,
+  RobotOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
+  UserOutlined,
+  AppstoreOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons-vue';
+import type { PreviewState } from '../models';
+import { groups, pageById, pages, states } from '../data/catalog';
+import { platformScreens } from '../../../web/packages/shared/src/navigation';
+import {
+  workspaces,
+  workspaceById,
+  workspaceForPage,
+  workspaceTitleForPage,
+  pageIdForRoute,
+  prototypePath,
+} from '../data/navigation';
+import { usePreview } from '../composables/usePreview';
+import CopilotDrawer from '../components/CopilotDrawer.vue';
 
-const route=useRoute();const router=useRouter();const {state,setState}=usePreview()
-const copilotOpen=ref(false)
-const collapsed=ref(false);const tenant=ref('总部安全中心');const searchOpen=ref(false);const search=ref('');const noticesOpen=ref(false);const read=ref(false)
-const iconMap={AlertOutlined,ApiOutlined,BarChartOutlined,BellOutlined,ClusterOutlined,DashboardOutlined,FileProtectOutlined,RadarChartOutlined,RobotOutlined,SafetyCertificateOutlined,SettingOutlined,ThunderboltOutlined} as Record<string,typeof AlertOutlined>
-const current=computed(()=>pageById.get(pageIdForRoute(route)))
-const title=computed(()=>current.value?.title??(route.path==='/catalog'?'页面目录':'访问状态'))
-const groupTitle=computed(()=>groups.find(g=>g.id===current.value?.group)?.title??'星烽 StarBeacon')
-const currentWorkspace=computed(()=>workspaceForPage.get(pageIdForRoute(route)))
-const lastViews=ref<Record<string,string>>({})
-const menuOpen=ref<string[]>(['group:overview'])
-const visited=ref<string[]>(['overview','alerts','search'])
-watch(()=>pageIdForRoute(route),id=>{
-  if(typeof id!=='string'||!pageById.has(id))return
-  const workspace=workspaceForPage.get(id)
-  menuOpen.value=collapsed.value?[]:['group:'+pageById.get(id)!.group]
-  if(workspace){lastViews.value[workspace.id]=id;if(!visited.value.includes(workspace.id)){visited.value.push(workspace.id);if(visited.value.length>5)visited.value.shift()}}
-},{immediate:true})
-watch(title,value=>{document.title=`${value} · 星烽 StarBeacon`},{immediate:true})
-watch(collapsed,value=>{menuOpen.value=value?[]:['group:'+(current.value?.group??'overview')]})
-const results=computed(()=>pages.filter(p=>`${p.title}${p.description}`.includes(search.value.trim())).slice(0,20))
-function navigate(id:string){void router.push(prototypePath(id));searchOpen.value=false}
-function openWorkspace(id:string){const workspace=workspaceById.get(id);if(workspace)navigate(lastViews.value[id]??platformScreens.find(screen=>screen.workspace===id)?.id??workspace.pages[0]!)}
-function profileAction(key:string){if(key==='account')navigate('my-account');if(key==='logout')void router.push('/auth/login')}
+const route = useRoute();
+const router = useRouter();
+const { state, setState } = usePreview();
+const copilotOpen = ref(false);
+const collapsed = ref(false);
+const tenant = ref('总部安全中心');
+const searchOpen = ref(false);
+const search = ref('');
+const noticesOpen = ref(false);
+const read = ref(false);
+const iconMap = {
+  AlertOutlined,
+  ApiOutlined,
+  BarChartOutlined,
+  BellOutlined,
+  ClusterOutlined,
+  DashboardOutlined,
+  FileProtectOutlined,
+  RadarChartOutlined,
+  RobotOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
+} as Record<string, typeof AlertOutlined>;
+const current = computed(() => pageById.get(pageIdForRoute(route)));
+const title = computed(() => current.value?.title ?? (route.path === '/catalog' ? '页面目录' : '访问状态'));
+const groupTitle = computed(() => groups.find(g => g.id === current.value?.group)?.title ?? '星烽 StarBeacon');
+const currentWorkspace = computed(() => workspaceForPage.get(pageIdForRoute(route)));
+const lastViews = ref<Record<string, string>>({});
+const menuOpen = ref<string[]>(['group:overview']);
+const visited = ref<string[]>(['overview', 'alerts', 'search']);
+watch(
+  () => pageIdForRoute(route),
+  id => {
+    if (typeof id !== 'string' || !pageById.has(id)) return;
+    const workspace = workspaceForPage.get(id);
+    menuOpen.value = collapsed.value ? [] : ['group:' + pageById.get(id)!.group];
+    if (workspace) {
+      lastViews.value[workspace.id] = id;
+      if (!visited.value.includes(workspace.id)) {
+        visited.value.push(workspace.id);
+        if (visited.value.length > 5) visited.value.shift();
+      }
+    }
+  },
+  { immediate: true },
+);
+watch(
+  title,
+  value => {
+    document.title = `${value} · 星烽 StarBeacon`;
+  },
+  { immediate: true },
+);
+watch(collapsed, value => {
+  menuOpen.value = value ? [] : ['group:' + (current.value?.group ?? 'overview')];
+});
+const results = computed(() =>
+  pages.filter(p => `${p.title}${p.description}`.includes(search.value.trim())).slice(0, 20),
+);
+function navigate(id: string) {
+  void router.push(prototypePath(id));
+  searchOpen.value = false;
+}
+function openWorkspace(id: string) {
+  const workspace = workspaceById.get(id);
+  if (workspace)
+    navigate(lastViews.value[id] ?? platformScreens.find(screen => screen.workspace === id)?.id ?? workspace.pages[0]!);
+}
+function profileAction(key: string) {
+  if (key === 'account') navigate('my-account');
+  if (key === 'logout') void router.push('/auth/login');
+}
 </script>
 
 <template>
-  <div class="console-shell" :class="{'is-collapsed':collapsed}">
+  <div class="console-shell" :class="{ 'is-collapsed': collapsed }">
     <aside class="sidebar" aria-label="主导航">
       <button class="brand" aria-label="星烽 StarBeacon 态势总览" @click="navigate('overview')">
-        <span class="brand-symbol"><SafetyCertificateOutlined /></span><span v-if="!collapsed" class="brand-copy"><b>星烽 <span>StarBeacon</span></b><small>态势感知系统</small></span>
+        <span class="brand-symbol"><SafetyCertificateOutlined /></span
+        ><span v-if="!collapsed" class="brand-copy"
+          ><b>星烽 <span>StarBeacon</span></b
+          ><small>态势感知系统</small></span
+        >
       </button>
       <div v-if="!collapsed" class="nav-section-label">安全运营</div>
-      <a-menu mode="inline" :inline-collapsed="collapsed" :selected-keys="['workspace:'+(currentWorkspace?.id??pageIdForRoute(route))]" v-model:openKeys="menuOpen" class="main-menu">
-        <template v-for="group in groups" :key="'group:'+group.id"><a-menu-item v-if="workspaces.filter(w=>w.group===group.id).length===1" :key="'workspace:'+workspaces.find(w=>w.group===group.id)!.id" @click="openWorkspace(workspaces.find(w=>w.group===group.id)!.id)"><template #icon><component :is="iconMap[group.icon]"/></template>{{workspaces.find(w=>w.group===group.id)!.title}}</a-menu-item><a-sub-menu v-else :key="'group:'+group.id">
-          <template #icon><component :is="iconMap[group.icon]" /></template><template #title>{{group.title}}</template>
-          <a-menu-item v-for="workspace in workspaces.filter(w=>w.group===group.id)" :key="'workspace:'+workspace.id" @click="openWorkspace(workspace.id)">{{workspace.title}}</a-menu-item>
-        </a-sub-menu></template>
+      <a-menu
+        mode="inline"
+        :inline-collapsed="collapsed"
+        :selected-keys="['workspace:' + (currentWorkspace?.id ?? pageIdForRoute(route))]"
+        v-model:openKeys="menuOpen"
+        class="main-menu"
+      >
+        <template v-for="group in groups" :key="'group:' + group.id"
+          ><a-menu-item
+            v-if="workspaces.filter(w => w.group === group.id).length === 1"
+            :key="'workspace:' + workspaces.find(w => w.group === group.id)!.id"
+            @click="openWorkspace(workspaces.find(w => w.group === group.id)!.id)"
+            ><template #icon><component :is="iconMap[group.icon]" /></template
+            >{{ workspaces.find(w => w.group === group.id)!.title }}</a-menu-item
+          ><a-sub-menu v-else :key="'group:' + group.id">
+            <template #icon><component :is="iconMap[group.icon]" /></template
+            ><template #title>{{ group.title }}</template>
+            <a-menu-item
+              v-for="workspace in workspaces.filter(w => w.group === group.id)"
+              :key="'workspace:' + workspace.id"
+              @click="openWorkspace(workspace.id)"
+              >{{ workspace.title }}</a-menu-item
+            >
+          </a-sub-menu></template
+        >
       </a-menu>
-      <div class="sidebar-footer"><span class="status-dot success"></span><span v-if="!collapsed">交互原型 · 合成数据</span></div>
+      <div class="sidebar-footer">
+        <span class="status-dot success"></span><span v-if="!collapsed">交互原型 · 合成数据</span>
+      </div>
     </aside>
     <div class="console-main">
       <header class="topbar">
-        <div class="topbar-left"><a-button type="text" :aria-label="collapsed?'展开导航':'收起导航'" @click="collapsed=!collapsed"><MenuUnfoldOutlined v-if="collapsed"/><MenuFoldOutlined v-else/></a-button><a-breadcrumb><a-breadcrumb-item>{{groupTitle}}</a-breadcrumb-item><a-breadcrumb-item v-if="currentWorkspace&&currentWorkspace.title!==groupTitle">{{currentWorkspace.title}}</a-breadcrumb-item><a-breadcrumb-item v-if="title!==currentWorkspace?.title">{{title}}</a-breadcrumb-item></a-breadcrumb></div>
-        <div class="topbar-actions"><a-dropdown v-if="current" trigger="click"><a-button size="small" class="preview-state-button" :aria-label="`原型状态：${states.find(item=>item.value===state)?.label}`"><span class="preview-state-prefix">原型状态：</span>{{states.find(item=>item.value===state)?.label}}</a-button><template #overlay><a-menu :selected-keys="[state]" @click="({key}:{key:string|number})=>setState(String(key) as PreviewState)"><a-menu-item v-for="item in states" :key="item.value">{{item.label}}</a-menu-item></a-menu></template></a-dropdown>
-          <a-select aria-label="当前租户" v-model:value="tenant" class="tenant-select" :options="['总部安全中心','研发事业部','集团审计组织'].map(value=>({value,label:value}))" />
-          <a-button class="copilot-entry" @click="copilotOpen=true"><RobotOutlined/>AI 助手</a-button>
-          <a-tooltip title="搜索页面"><a-button type="text" aria-label="搜索页面" @click="searchOpen=true"><SearchOutlined/></a-button></a-tooltip>
-          <a-tooltip title="页面目录"><a-button type="text" aria-label="页面目录" @click="router.push('/catalog')"><AppstoreOutlined/></a-button></a-tooltip>
+        <div class="topbar-left">
+          <a-button type="text" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="collapsed = !collapsed"
+            ><MenuUnfoldOutlined v-if="collapsed" /><MenuFoldOutlined v-else /></a-button
+          ><a-breadcrumb
+            ><a-breadcrumb-item>{{ groupTitle }}</a-breadcrumb-item
+            ><a-breadcrumb-item v-if="currentWorkspace && currentWorkspace.title !== groupTitle">{{
+              currentWorkspace.title
+            }}</a-breadcrumb-item
+            ><a-breadcrumb-item v-if="title !== currentWorkspace?.title">{{ title }}</a-breadcrumb-item></a-breadcrumb
+          >
+        </div>
+        <div class="topbar-actions">
+          <a-dropdown v-if="current" trigger="click"
+            ><a-button
+              size="small"
+              class="preview-state-button"
+              :aria-label="`原型状态：${states.find(item => item.value === state)?.label}`"
+              ><span class="preview-state-prefix">原型状态：</span
+              >{{ states.find(item => item.value === state)?.label }}</a-button
+            ><template #overlay
+              ><a-menu
+                :selected-keys="[state]"
+                @click="({ key }: { key: string | number }) => setState(String(key) as PreviewState)"
+                ><a-menu-item v-for="item in states" :key="item.value">{{ item.label }}</a-menu-item></a-menu
+              ></template
+            ></a-dropdown
+          >
+          <a-select
+            aria-label="当前租户"
+            v-model:value="tenant"
+            class="tenant-select"
+            :options="['总部安全中心', '研发事业部', '集团审计组织'].map(value => ({ value, label: value }))"
+          />
+          <a-button class="copilot-entry" @click="copilotOpen = true"><RobotOutlined />AI 助手</a-button>
+          <a-tooltip title="搜索页面"
+            ><a-button type="text" aria-label="搜索页面" @click="searchOpen = true"><SearchOutlined /></a-button
+          ></a-tooltip>
+          <a-tooltip title="页面目录"
+            ><a-button type="text" aria-label="页面目录" @click="router.push('/catalog')"><AppstoreOutlined /></a-button
+          ></a-tooltip>
           <a-popover v-model:open="noticesOpen" trigger="click" placement="bottomRight" title="通知中心">
-            <template #content><div class="notice-popover"><p><b>{{read?'暂无未读通知':'3 条未读通知'}}</b><a-button type="link" size="small" @click="read=true">全部标记已读</a-button></p><div class="notice-item"><span class="status-dot warning"></span><div>高危告警等待研判<small>总部网络域 · 3 分钟前</small></div></div><div class="notice-item"><span class="status-dot warning"></span><div>响应动作结果未知<small>需要回读设备配置</small></div></div><div class="notice-item"><span class="status-dot success"></span><div>安全日报等待审核<small>统计窗口 2026-09-29</small></div></div><a-button block @click="navigate('delivery-logs');noticesOpen=false">查看推送日志</a-button></div></template>
-            <a-button type="text" aria-label="查看通知"><a-badge :dot="!read"><BellOutlined/></a-badge></a-button>
+            <template #content
+              ><div class="notice-popover">
+                <p>
+                  <b>{{ read ? '暂无未读通知' : '3 条未读通知' }}</b><a-button
+                    type="link"
+                    size="small"
+                    @click="read = true"
+                    >全部标记已读</a-button
+                  >
+                </p>
+                <div class="notice-item">
+                  <span class="status-dot warning"></span>
+                  <div>高危告警等待研判<small>总部网络域 · 3 分钟前</small></div>
+                </div>
+                <div class="notice-item">
+                  <span class="status-dot warning"></span>
+                  <div>响应动作结果未知<small>需要回读设备配置</small></div>
+                </div>
+                <div class="notice-item">
+                  <span class="status-dot success"></span>
+                  <div>安全日报等待审核<small>统计窗口 2026-09-29</small></div>
+                </div>
+                <a-button
+                  block
+                  @click="
+                    navigate('delivery-logs');
+                    noticesOpen = false;
+                  "
+                  >查看推送日志</a-button
+                >
+              </div></template
+            >
+            <a-button type="text" aria-label="查看通知"
+              ><a-badge :dot="!read"><BellOutlined /></a-badge
+            ></a-button>
           </a-popover>
-          <a-dropdown><button class="profile-button"><a-avatar :size="28"><template #icon><UserOutlined/></template></a-avatar><span>陈宁</span></button><template #overlay><a-menu @click="({key}:{key:string|number})=>profileAction(String(key))"><a-menu-item key="account"><UserOutlined/> 个人设置</a-menu-item><a-menu-item key="logout"><LogoutOutlined/> 退出登录</a-menu-item></a-menu></template></a-dropdown>
+          <a-dropdown
+            ><button class="profile-button">
+              <a-avatar :size="28"
+                ><template #icon><UserOutlined /></template></a-avatar
+              ><span>陈宁</span></button
+            ><template #overlay
+              ><a-menu @click="({ key }: { key: string | number }) => profileAction(String(key))"
+                ><a-menu-item key="account"><UserOutlined /> 个人设置</a-menu-item
+                ><a-menu-item key="logout"><LogoutOutlined /> 退出登录</a-menu-item></a-menu
+              ></template
+            ></a-dropdown
+          >
         </div>
       </header>
-      <nav class="workspace-tabs" aria-label="已访问工作区"><button v-for="id in visited" :key="id" :class="{active:id===currentWorkspace?.id}" @click="openWorkspace(id)"><span v-if="id===currentWorkspace?.id" class="tab-dot"></span>{{workspaceById.get(id)?.title}}</button><button :class="{active:route.path==='/catalog'}" @click="router.push('/catalog')"><AppstoreOutlined/>页面目录</button></nav>
-      <main class="content-area"><slot/></main>
+      <nav class="workspace-tabs" aria-label="已访问工作区">
+        <button
+          v-for="id in visited"
+          :key="id"
+          :class="{ active: id === currentWorkspace?.id }"
+          @click="openWorkspace(id)"
+        >
+          <span v-if="id === currentWorkspace?.id" class="tab-dot"></span>{{ workspaceById.get(id)?.title }}</button
+        ><button :class="{ active: route.path === '/catalog' }" @click="router.push('/catalog')">
+          <AppstoreOutlined />页面目录
+        </button>
+      </nav>
+      <main class="content-area"><slot /></main>
       <footer class="app-footer">星烽 StarBeacon <span>合成数据仅用于界面评审</span></footer>
     </div>
-    <CopilotDrawer v-model:open="copilotOpen" :context="title"/>
-    <a-modal v-model:open="searchOpen" title="搜索页面" :footer="null" :width="650"><a-input v-model:value="search" placeholder="输入功能或页面名称" allow-clear autofocus><template #prefix><SearchOutlined/></template></a-input><div class="page-search-results"><button v-for="result in results" :key="result.id" @click="navigate(result.id)"><div><b>{{result.title}}</b><small>{{result.description}}</small></div><span>{{workspaceTitleForPage(result.id)}}</span></button><a-empty v-if="!results.length" description="没有匹配的页面，请尝试其他关键词。"/></div></a-modal>
+    <CopilotDrawer v-model:open="copilotOpen" :context="title" />
+    <a-modal v-model:open="searchOpen" title="搜索页面" :footer="null" :width="650"
+      ><a-input v-model:value="search" placeholder="输入功能或页面名称" allow-clear autofocus
+        ><template #prefix><SearchOutlined /></template
+      ></a-input>
+      <div class="page-search-results">
+        <button v-for="result in results" :key="result.id" @click="navigate(result.id)">
+          <div>
+            <b>{{ result.title }}</b><small>{{ result.description }}</small>
+          </div>
+          <span>{{ workspaceTitleForPage(result.id) }}</span></button
+        ><a-empty v-if="!results.length" description="没有匹配的页面，请尝试其他关键词。" /></div
+    ></a-modal>
   </div>
 </template>

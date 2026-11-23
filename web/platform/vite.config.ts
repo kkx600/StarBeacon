@@ -1,8 +1,14 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   plugins: [vue()],
-  server: {host: '127.0.0.1', port: 5174, strictPort: true, proxy: {'/api': {target: 'http://127.0.0.1:28080', changeOrigin: false}}, fs: {deny: ['**/.env*', '**/.local/**', '**/.git/**', '**/.impeccable/**']}},
-  build: {target: 'es2022', license: {fileName: 'third-party-licenses.json'}},
-})
+  server: {
+    host: '127.0.0.1',
+    port: 5174,
+    strictPort: true,
+    proxy: { '/api': { target: 'http://127.0.0.1:28080', changeOrigin: false } },
+    fs: { deny: ['**/.env*', '**/.local/**', '**/.git/**', '**/.impeccable/**'] },
+  },
+  build: { target: 'es2022', license: { fileName: 'third-party-licenses.json' } },
+});

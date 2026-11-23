@@ -1,0 +1,15 @@
+# 依赖、构建结果和本地材料
+node_modules/
+dist/
+coverage/
+.local/
+.impeccable/
+pnpm-lock.yaml
+*.md
+*.txt
+
+# 由原型脚本生成的清单
+/prototype/public/page-manifest.js
+/prototype/public/page-manifest.json
+/prototype/public/screenshots/manifest.js
+/prototype/public/screenshots/manifest.json

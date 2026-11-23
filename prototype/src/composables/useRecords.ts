@@ -1,53 +1,85 @@
-import { computed, reactive } from 'vue'
-import type { BusinessRecord, PageSpec } from '../models'
-import { createFixtures } from '../data/fixtures'
-import {initialStatusFor} from '../data/statuses'
-import {formatCell} from './formatRecord'
-import {examplePermissionCounts,expiryFromDuration} from './formValues'
+import { computed, reactive } from 'vue';
+import type { BusinessRecord, PageSpec } from '../models';
+import { createFixtures } from '../data/fixtures';
+import { initialStatusFor } from '../data/statuses';
+import { formatCell } from './formatRecord';
+import { examplePermissionCounts, expiryFromDuration } from './formValues';
 
-const recordsByPage = reactive<Record<string,BusinessRecord[]>>({})
+const recordsByPage = reactive<Record<string, BusinessRecord[]>>({});
 export function useRecords(page: PageSpec) {
-  if (!recordsByPage[page.id]) recordsByPage[page.id] = createFixtures(page)
-  const records = computed(() => recordsByPage[page.id]!)
-  function save(values: Record<string,unknown>, recordId?: string) {
-    const items = recordsByPage[page.id]!
-    const index = items.findIndex(r => r.id === recordId)
-    const clean = Object.fromEntries(Object.entries(values).filter(([key,value]) => key!=='id'&&['string','number','boolean'].includes(typeof value))) as Partial<BusinessRecord>
-    if(page.family==='sensor'&&typeof clean.zone==='string')clean.scope=clean.zone
-    if(typeof clean.scope==='string'&&['总部网络域','研发网络域','分支网络域'].includes(clean.scope))clean.zone=clean.scope
-    if(typeof clean.validity==='string'){
-      const expiry=expiryFromDuration(clean.validity,'2026-09-30T09:48:00Z')
-      if(expiry)clean.expires=expiry
+  if (!recordsByPage[page.id]) recordsByPage[page.id] = createFixtures(page);
+  const records = computed(() => recordsByPage[page.id]!);
+  function save(values: Record<string, unknown>, recordId?: string) {
+    const items = recordsByPage[page.id]!;
+    const index = items.findIndex(r => r.id === recordId);
+    const clean = Object.fromEntries(
+      Object.entries(values).filter(
+        ([key, value]) => key !== 'id' && ['string', 'number', 'boolean'].includes(typeof value),
+      ),
+    ) as Partial<BusinessRecord>;
+    if (page.family === 'sensor' && typeof clean.zone === 'string') clean.scope = clean.zone;
+    if (typeof clean.scope === 'string' && ['总部网络域', '研发网络域', '分支网络域'].includes(clean.scope))
+      clean.zone = clean.scope;
+    if (typeof clean.validity === 'string') {
+      const expiry = expiryFromDuration(clean.validity, '2026-09-30T09:48:00Z');
+      if (expiry) clean.expires = expiry;
     }
-    if(page.family==='role'&&typeof clean.permissionTemplate==='string')clean.permissions=examplePermissionCounts[clean.permissionTemplate]
-    for(const field of page.fields){
-      if(field.type!=='number'||typeof clean[field.key]!=='number')continue
-      if(field.label.includes('MiB'))clean[field.key]=`${clean[field.key]} MiB`
-      else if(field.label.includes('（秒）'))clean[field.key]=`${clean[field.key]} 秒`
-      else if(field.key==='rate')clean[field.key]=`${clean[field.key]} 次／分钟`
+    if (page.family === 'role' && typeof clean.permissionTemplate === 'string')
+      clean.permissions = examplePermissionCounts[clean.permissionTemplate];
+    for (const field of page.fields) {
+      if (field.type !== 'number' || typeof clean[field.key] !== 'number') continue;
+      if (field.label.includes('MiB')) clean[field.key] = `${clean[field.key]} MiB`;
+      else if (field.label.includes('（秒）')) clean[field.key] = `${clean[field.key]} 秒`;
+      else if (field.key === 'rate') clean[field.key] = `${clean[field.key]} 次／分钟`;
     }
-    if (index>=0) items[index] = {...items[index]!,...clean,updated:'2026-09-30 09:48:00'}
-    else items.unshift({...clean,id:`${page.id.toUpperCase()}-LOCAL-${Date.now()}`,name: typeof values.name==='string' && values.name ? values.name : `${page.objectLabel}示例记录`,status:typeof clean.status==='string'?clean.status:initialStatusFor(page),updated:'2026-09-30 09:48:00'})
+    if (index >= 0) items[index] = { ...items[index]!, ...clean, updated: '2026-09-30 09:48:00' };
+    else
+      items.unshift({
+        ...clean,
+        id: `${page.id.toUpperCase()}-LOCAL-${Date.now()}`,
+        name: typeof values.name === 'string' && values.name ? values.name : `${page.objectLabel}示例记录`,
+        status: typeof clean.status === 'string' ? clean.status : initialStatusFor(page),
+        updated: '2026-09-30 09:48:00',
+      });
   }
-  function updateStatus(ids: string[], status: string) { for(const record of recordsByPage[page.id]!) if(ids.includes(record.id)){record.status=status;if(page.family==='action'&&status==='结果未知'){record.effective='结果未知';record.observed='证据不足'}} }
-  return {records,save,updateStatus}
+  function updateStatus(ids: string[], status: string) {
+    for (const record of recordsByPage[page.id]!)
+      if (ids.includes(record.id)) {
+        record.status = status;
+        if (page.family === 'action' && status === '结果未知') {
+          record.effective = '结果未知';
+          record.observed = '证据不足';
+        }
+      }
+  }
+  return { records, save, updateStatus };
 }
 
 function download(content: string, name: string, type: string) {
-  const url=URL.createObjectURL(new Blob([content],{type}))
-  const a=document.createElement('a');a.href=url;a.download=name;a.click()
-  setTimeout(() => URL.revokeObjectURL(url),1000)
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export function exportCsv(page: PageSpec, records: BusinessRecord[]) {
-  if(records.length>10000)throw new Error('导出超过 10,000 条，请缩小范围')
+  if (records.length > 10000) throw new Error('导出超过 10,000 条，请缩小范围');
   // 将可能被表格软件解释成公式的首字符作为文本，防止导出内容执行公式。
-  const escape=(value: unknown) => {
-    const raw=String(value??''),visible=raw.replace(/^[\s\p{Cc}\ufeff]+/u,'');const safe=/^[=+@\-]/.test(visible)||/^\d{16,}$/.test(raw)?`'${raw}`:raw
-    return `"${safe.replace(/"/g,'""')}"`
-  }
-  const text=[page.columns.map(c=>escape(c.title)).join(','),...records.map(r=>page.columns.map(c=>escape(formatCell(r[c.key],c))).join(','))].join('\r\n')
-  const output=`\ufeff${text}`
-  if(new TextEncoder().encode(output).length>8*1024*1024)throw new Error('导出超过 8 MiB，请缩小范围')
-  download(output,`${page.id}-example.csv`,'text/csv;charset=utf-8')
+  const escape = (value: unknown) => {
+    const raw = String(value ?? ''),
+      visible = raw.replace(/^[\s\p{Cc}\ufeff]+/u, '');
+    const safe = /^[=+@\-]/.test(visible) || /^\d{16,}$/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+  const text = [
+    page.columns.map(c => escape(c.title)).join(','),
+    ...records.map(r => page.columns.map(c => escape(formatCell(r[c.key], c))).join(',')),
+  ].join('\r\n');
+  const output = `\ufeff${text}`;
+  if (new TextEncoder().encode(output).length > 8 * 1024 * 1024) throw new Error('导出超过 8 MiB，请缩小范围');
+  download(output, `${page.id}-example.csv`, 'text/csv;charset=utf-8');
 }
-export function exportJson(name: string, value: unknown) { download(JSON.stringify(value,null,2),`${name}-example.json`,'application/json') }
+export function exportJson(name: string, value: unknown) {
+  download(JSON.stringify(value, null, 2), `${name}-example.json`, 'application/json');
+}

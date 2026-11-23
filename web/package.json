@@ -7,6 +7,8 @@
     "node": ">=24.19.0"
   },
   "scripts": {
+    "format": "prettier --write . --ignore-path ../.prettierignore --ignore-unknown",
+    "format:check": "prettier --check . --ignore-path ../.prettierignore --ignore-unknown",
     "build": "pnpm -r --filter './platform' --filter './collector' run build",
     "test": "node --test scripts/*.test.mjs && vitest run",
     "test:coverage": "node --test scripts/*.test.mjs && vitest run --coverage",
@@ -22,6 +24,7 @@
     "ant-design-vue": "catalog:",
     "echarts": "6.1.0",
     "jsdom": "30.1.1",
+    "prettier": "3.10.1",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "5.0.3",

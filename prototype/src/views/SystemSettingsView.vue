@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {computed, h, reactive, ref, watch, type Component} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import { computed, h, reactive, ref, watch, type Component } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -9,16 +9,16 @@ import {
   RobotOutlined,
   StopOutlined,
   TeamOutlined,
-} from '@ant-design/icons-vue'
-import {useFeedback} from '../../../web/packages/shared/src/composables/useFeedback'
-import {tablePagination} from '../../../web/packages/shared/src/pagination'
-import SettingsWorkspace from '../../../web/platform/src/features/settings/SettingsWorkspace.vue'
-import type {BusinessRecord, PageSpec, PreviewState} from '../models'
-import {pageById} from '../data/catalog'
-import {defaultSensorThresholds, type SensorThresholds} from '../data/sensorHealth'
-import {useRecords} from '../composables/useRecords'
-import {sensorThresholds} from '../composables/useSensorHealth'
-import {expiryFromDuration} from '../composables/formValues'
+} from '@ant-design/icons-vue';
+import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
+import { tablePagination } from '../../../web/packages/shared/src/pagination';
+import SettingsWorkspace from '../../../web/platform/src/features/settings/SettingsWorkspace.vue';
+import type { BusinessRecord, PageSpec, PreviewState } from '../models';
+import { pageById } from '../data/catalog';
+import { defaultSensorThresholds, type SensorThresholds } from '../data/sensorHealth';
+import { useRecords } from '../composables/useRecords';
+import { sensorThresholds } from '../composables/useSensorHealth';
+import { expiryFromDuration } from '../composables/formValues';
 import {
   automationLevel,
   automationLevels,
@@ -32,130 +32,184 @@ import {
   retentionPolicies,
   retentionPolicy,
   storageTiers,
-} from '../composables/systemSettings'
-import PageHeader from '../components/PageHeader.vue'
-import HelpNote from '../components/HelpNote.vue'
-import StatusTag from '../components/StatusTag.vue'
-import StatePanel from '../components/StatePanel.vue'
-import RecordForm from '../components/RecordForm.vue'
+} from '../composables/systemSettings';
+import PageHeader from '../components/PageHeader.vue';
+import HelpNote from '../components/HelpNote.vue';
+import StatusTag from '../components/StatusTag.vue';
+import StatePanel from '../components/StatePanel.vue';
+import RecordForm from '../components/RecordForm.vue';
 
 // 系统设置：所有对全员生效的配置集中在这里，业务页面只读显示当前值并链接回对应分类。
-const props = defineProps<{page: PageSpec; state: PreviewState}>()
-const emit = defineEmits<{state: [value: PreviewState]}>()
-const route = useRoute()
-const router = useRouter()
-const message = useFeedback()
+const props = defineProps<{ page: PageSpec; state: PreviewState }>();
+const emit = defineEmits<{ state: [value: PreviewState] }>();
+const route = useRoute();
+const router = useRouter();
+const message = useFeedback();
 
-type SectionKey = 'users' | 'automation' | 'bypass' | 'traffic' | 'sensor-health' | 'features'
+type SectionKey = 'users' | 'automation' | 'bypass' | 'traffic' | 'sensor-health' | 'features';
 interface Section {
-  key: SectionKey
-  title: string
-  icon: Component
-  help: string
+  key: SectionKey;
+  title: string;
+  icon: Component;
+  help: string;
   // 只有整块都是参数的分类用页脚“保存”；旁路阻断的保存按钮跟在参数块下面。
-  savable: boolean
+  savable: boolean;
 }
 const sections: Section[] = [
-  {key: 'users', title: '用户管理', icon: TeamOutlined, help: '账号名称创建后不能修改；变更角色或状态后，该用户需要重新登录。', savable: false},
-  {key: 'automation', title: '自动处置', icon: RobotOutlined, help: '保护名单、限时和可撤销在每一级自动化下都生效。', savable: true},
-  {key: 'bypass', title: '旁路阻断', icon: StopOutlined, help: '开关和注入上限点“保存”后生效；阻断策略逐条授权、启停立即生效，到期自动停用。', savable: false},
-  {key: 'traffic', title: '全流量存储', icon: DatabaseOutlined, help: '会话元数据全部保留；原包按留存策略保存，被截断的会话会明确标记。', savable: true},
-  {key: 'sensor-health', title: '探针健康', icon: DashboardOutlined, help: '资源或丢包达到阈值时标记为需关注；心跳超过期限时显示无数据。', savable: true},
-  {key: 'features', title: '功能目录', icon: AppstoreOutlined, help: '列出各功能的入口，以及当前版本是否提供。', savable: false},
-]
-const menuItems = sections.map(item => ({key: item.key, label: item.title, icon: () => h(item.icon)}))
-const section = computed<SectionKey>(() => sections.find(item => item.key === route.query.section)?.key ?? 'users')
-const current = computed(() => sections.find(item => item.key === section.value)!)
-function selectSection(info: {key: string | number}) {
-  void router.replace({query: {...route.query, section: String(info.key)}})
+  {
+    key: 'users',
+    title: '用户管理',
+    icon: TeamOutlined,
+    help: '账号名称创建后不能修改；变更角色或状态后，该用户需要重新登录。',
+    savable: false,
+  },
+  {
+    key: 'automation',
+    title: '自动处置',
+    icon: RobotOutlined,
+    help: '保护名单、限时和可撤销在每一级自动化下都生效。',
+    savable: true,
+  },
+  {
+    key: 'bypass',
+    title: '旁路阻断',
+    icon: StopOutlined,
+    help: '开关和注入上限点“保存”后生效；阻断策略逐条授权、启停立即生效，到期自动停用。',
+    savable: false,
+  },
+  {
+    key: 'traffic',
+    title: '全流量存储',
+    icon: DatabaseOutlined,
+    help: '会话元数据全部保留；原包按留存策略保存，被截断的会话会明确标记。',
+    savable: true,
+  },
+  {
+    key: 'sensor-health',
+    title: '探针健康',
+    icon: DashboardOutlined,
+    help: '资源或丢包达到阈值时标记为需关注；心跳超过期限时显示无数据。',
+    savable: true,
+  },
+  {
+    key: 'features',
+    title: '功能目录',
+    icon: AppstoreOutlined,
+    help: '列出各功能的入口，以及当前版本是否提供。',
+    savable: false,
+  },
+];
+const menuItems = sections.map(item => ({ key: item.key, label: item.title, icon: () => h(item.icon) }));
+const section = computed<SectionKey>(() => sections.find(item => item.key === route.query.section)?.key ?? 'users');
+const current = computed(() => sections.find(item => item.key === section.value)!);
+function selectSection(info: { key: string | number }) {
+  void router.replace({ query: { ...route.query, section: String(info.key) } });
 }
 
-const busy = computed(() => props.state === 'loading' || props.state === 'error')
-const empty = computed(() => props.state === 'empty')
+const busy = computed(() => props.state === 'loading' || props.state === 'error');
+const empty = computed(() => props.state === 'empty');
 
 // 用户管理：与“用户管理”页面共用同一份示例记录。
-const usersPage = pageById.get('users')!
-const userFormPage: PageSpec = {...usersPage, rowAction: '编辑'}
-const {records: users, save: saveUser} = useRecords(usersPage)
-const userRows = computed(() => (empty.value ? [] : users.value))
+const usersPage = pageById.get('users')!;
+const userFormPage: PageSpec = { ...usersPage, rowAction: '编辑' };
+const { records: users, save: saveUser } = useRecords(usersPage);
+const userRows = computed(() => (empty.value ? [] : users.value));
 // 列宽合计约 920，1440 宽度下不出横向滚动；更窄时表格内横向滚动。
 const userColumns = [
-  {title: '编号', dataIndex: 'id', key: 'id', width: 124},
+  { title: '编号', dataIndex: 'id', key: 'id', width: 124 },
   ...usersPage.columns.map(column => ({
     title: column.title,
     dataIndex: column.key,
     key: column.key,
-    width: column.key === 'name' ? undefined : ['time', 'updated'].includes(column.key) ? 160 : column.key === 'role' ? 96 : 88,
+    width:
+      column.key === 'name'
+        ? undefined
+        : ['time', 'updated'].includes(column.key)
+          ? 160
+          : column.key === 'role'
+            ? 96
+            : 88,
     ellipsis: column.key !== 'status',
   })),
-  {title: '操作', key: 'actions', width: 64, fixed: 'right' as const},
-]
-const userFormOpen = ref(false)
-const editingUser = ref<BusinessRecord>()
+  { title: '操作', key: 'actions', width: 64, fixed: 'right' as const },
+];
+const userFormOpen = ref(false);
+const editingUser = ref<BusinessRecord>();
 function createUser() {
-  editingUser.value = undefined
-  userFormOpen.value = true
+  editingUser.value = undefined;
+  userFormOpen.value = true;
 }
 function editUser(record: BusinessRecord) {
-  editingUser.value = record
-  userFormOpen.value = true
+  editingUser.value = record;
+  userFormOpen.value = true;
 }
 function submitUser(values: Record<string, unknown>) {
-  saveUser(values, editingUser.value?.id)
-  closeDialogs()
-  if (props.state !== 'data') emit('state', 'data')
-  message.success('已保存在本地示例中。')
+  saveUser(values, editingUser.value?.id);
+  closeDialogs();
+  if (props.state !== 'data') emit('state', 'data');
+  message.success('已保存在本地示例中。');
 }
 
 // 自动处置：全局级别是上限，场景级别只能等于或低于它。
-const sceneLevels = ['仅观察', '人机协同', '条件自动', '全自动']
+const sceneLevels = ['仅观察', '人机协同', '条件自动', '全自动'];
 const automationDraft = reactive({
   level: automationLevel.value,
-  scenes: automationScenes.value.map(scene => ({...scene})),
-})
+  scenes: automationScenes.value.map(scene => ({ ...scene })),
+});
 const sceneOptions = computed(() =>
-  sceneLevels.map(value => ({value, label: value, disabled: sceneLevels.indexOf(value) > sceneLevels.indexOf(automationDraft.level)})),
-)
+  sceneLevels.map(value => ({
+    value,
+    label: value,
+    disabled: sceneLevels.indexOf(value) > sceneLevels.indexOf(automationDraft.level),
+  })),
+);
 const sceneColumns = [
-  {title: '场景', dataIndex: 'name', key: 'name', width: 180, ellipsis: true},
-  {title: '级别', dataIndex: 'level', key: 'level', width: 148},
-  {title: '允许的动作', dataIndex: 'actions', key: 'actions', ellipsis: true},
-  {title: '近 7 日研判', dataIndex: 'judged', key: 'judged', width: 100, align: 'right' as const},
-  {title: '执行', dataIndex: 'executed', key: 'executed', width: 64, align: 'right' as const},
-  {title: '撤销', dataIndex: 'revoked', key: 'revoked', width: 64, align: 'right' as const},
-]
+  { title: '场景', dataIndex: 'name', key: 'name', width: 180, ellipsis: true },
+  { title: '级别', dataIndex: 'level', key: 'level', width: 148 },
+  { title: '允许的动作', dataIndex: 'actions', key: 'actions', ellipsis: true },
+  { title: '近 7 日研判', dataIndex: 'judged', key: 'judged', width: 100, align: 'right' as const },
+  { title: '执行', dataIndex: 'executed', key: 'executed', width: 64, align: 'right' as const },
+  { title: '撤销', dataIndex: 'revoked', key: 'revoked', width: 64, align: 'right' as const },
+];
 
 // 旁路阻断：开关和注入上限保存后生效；策略逐条授权，启停立即生效。
-const bypassDraft = reactive({enabled: bypassEnabled.value, limit: bypassInjectLimit.value})
-const policyRows = computed(() => (empty.value ? [] : bypassPolicies.value))
+const bypassDraft = reactive({ enabled: bypassEnabled.value, limit: bypassInjectLimit.value });
+const policyRows = computed(() => (empty.value ? [] : bypassPolicies.value));
 // 触发条件和目标范围不定宽、放不下用省略号，列宽合计约 930，1440 宽度下不出横向滚动；
 // 更窄时横向滚动，状态和启停固定在右侧仍能看到。
 const policyColumns = [
-  {title: '编号', dataIndex: 'id', key: 'id', width: 112},
-  {title: '名称', dataIndex: 'name', key: 'name', width: 120, ellipsis: true},
-  {title: '触发条件', dataIndex: 'trigger', key: 'trigger', ellipsis: true},
-  {title: '目标范围', dataIndex: 'scope', key: 'scope', ellipsis: true},
-  {title: '方式', dataIndex: 'method', key: 'method', width: 100},
-  {title: '授权人', dataIndex: 'owner', key: 'owner', width: 64},
-  {title: '有效期至', dataIndex: 'expires', key: 'expires', width: 156},
-  {title: '状态', dataIndex: 'status', key: 'status', width: 80, fixed: 'right' as const},
-  {title: '操作', key: 'actions', width: 52, fixed: 'right' as const},
-]
-const policyTriggers = ['严重级别为严重', 'AI 结论为真实攻击', '命中指定规则族', '命中关联规则']
-const policyOpen = ref(false)
-const blankPolicy = () => ({name: '', trigger: policyTriggers[0]!, scope: '', method: 'TCP RST 双向', days: 30, confirmed: false})
-const policyDraft = ref(blankPolicy())
+  { title: '编号', dataIndex: 'id', key: 'id', width: 112 },
+  { title: '名称', dataIndex: 'name', key: 'name', width: 120, ellipsis: true },
+  { title: '触发条件', dataIndex: 'trigger', key: 'trigger', ellipsis: true },
+  { title: '目标范围', dataIndex: 'scope', key: 'scope', ellipsis: true },
+  { title: '方式', dataIndex: 'method', key: 'method', width: 100 },
+  { title: '授权人', dataIndex: 'owner', key: 'owner', width: 64 },
+  { title: '有效期至', dataIndex: 'expires', key: 'expires', width: 156 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 80, fixed: 'right' as const },
+  { title: '操作', key: 'actions', width: 52, fixed: 'right' as const },
+];
+const policyTriggers = ['严重级别为严重', 'AI 结论为真实攻击', '命中指定规则族', '命中关联规则'];
+const policyOpen = ref(false);
+const blankPolicy = () => ({
+  name: '',
+  trigger: policyTriggers[0]!,
+  scope: '',
+  method: 'TCP RST 双向',
+  days: 30,
+  confirmed: false,
+});
+const policyDraft = ref(blankPolicy());
 function createPolicy() {
-  policyDraft.value = blankPolicy()
-  policyOpen.value = true
+  policyDraft.value = blankPolicy();
+  policyOpen.value = true;
 }
 function savePolicy() {
-  const draft = policyDraft.value
+  const draft = policyDraft.value;
   if (!draft.name.trim() || !draft.scope.trim()) {
-    message.error('请填写策略名称和目标范围。')
-    return
+    message.error('请填写策略名称和目标范围。');
+    return;
   }
-  const next = Math.max(0, ...bypassPolicies.value.map(item => Number(item.id.split('-').pop()) || 0)) + 1
+  const next = Math.max(0, ...bypassPolicies.value.map(item => Number(item.id.split('-').pop()) || 0)) + 1;
   bypassPolicies.value.unshift({
     id: `BYPASS-P-${String(next).padStart(4, '0')}`,
     name: draft.name.trim(),
@@ -166,79 +220,88 @@ function savePolicy() {
     // 原型使用固定示例时钟，和其他示例记录的时间保持一致。
     expires: expiryFromDuration(`${draft.days} 天`, '2026-09-30T09:48:00Z') ?? '—',
     status: '启用',
-  })
-  closeDialogs()
-  if (props.state !== 'data') emit('state', 'data')
-  message.success('策略已保存在本地示例中，不会向采集器下发。')
+  });
+  closeDialogs();
+  if (props.state !== 'data') emit('state', 'data');
+  message.success('策略已保存在本地示例中，不会向采集器下发。');
 }
-function togglePolicy(record: {status: string; name: string}) {
-  record.status = record.status === '启用' ? '停用' : '启用'
-  message.success(`${record.name}：${record.status}。`)
+function togglePolicy(record: { status: string; name: string }) {
+  record.status = record.status === '启用' ? '停用' : '启用';
+  message.success(`${record.name}：${record.status}。`);
 }
 
 // 全流量存储：参数只在“智能留存”下生效。
 const trafficDraft = reactive({
   policy: retentionPolicy.value,
-  params: {...retentionParams.value, alwaysFull: [...retentionParams.value.alwaysFull]},
-})
+  params: { ...retentionParams.value, alwaysFull: [...retentionParams.value.alwaysFull] },
+});
 
 // 探针健康：与探针列表、详情和总览共用同一份阈值。
-const thresholdFields: {key: keyof SensorThresholds; label: string; suffix: string; min: number; max: number; step: number}[] = [
-  {key: 'cpu', label: 'CPU 使用率', suffix: '%', min: 1, max: 100, step: 1},
-  {key: 'memory', label: '内存使用率', suffix: '%', min: 1, max: 100, step: 1},
-  {key: 'disk', label: '磁盘使用率', suffix: '%', min: 1, max: 100, step: 1},
-  {key: 'drop', label: '丢包率', suffix: '%', min: 0.01, max: 100, step: 0.01},
-  {key: 'heartbeat', label: '心跳超时', suffix: '秒', min: 30, max: 3600, step: 30},
-]
-const thresholdDraft = reactive<SensorThresholds>({...sensorThresholds})
+const thresholdFields: {
+  key: keyof SensorThresholds;
+  label: string;
+  suffix: string;
+  min: number;
+  max: number;
+  step: number;
+}[] = [
+  { key: 'cpu', label: 'CPU 使用率', suffix: '%', min: 1, max: 100, step: 1 },
+  { key: 'memory', label: '内存使用率', suffix: '%', min: 1, max: 100, step: 1 },
+  { key: 'disk', label: '磁盘使用率', suffix: '%', min: 1, max: 100, step: 1 },
+  { key: 'drop', label: '丢包率', suffix: '%', min: 0.01, max: 100, step: 0.01 },
+  { key: 'heartbeat', label: '心跳超时', suffix: '秒', min: 30, max: 3600, step: 30 },
+];
+const thresholdDraft = reactive<SensorThresholds>({ ...sensorThresholds });
 function resetThresholds() {
-  Object.assign(thresholdDraft, defaultSensorThresholds)
+  Object.assign(thresholdDraft, defaultSensorThresholds);
 }
 
 function save() {
   if (section.value === 'automation') {
-    const tooHigh = automationDraft.scenes.find(scene => sceneLevels.indexOf(scene.level) > sceneLevels.indexOf(automationDraft.level))
+    const tooHigh = automationDraft.scenes.find(
+      scene => sceneLevels.indexOf(scene.level) > sceneLevels.indexOf(automationDraft.level),
+    );
     if (tooHigh) {
-      message.error(`“${tooHigh.name}”的级别高于全局级别，请先调低。`)
-      return
+      message.error(`“${tooHigh.name}”的级别高于全局级别，请先调低。`);
+      return;
     }
-    automationLevel.value = automationDraft.level
-    automationScenes.value = automationDraft.scenes.map(scene => ({...scene}))
+    automationLevel.value = automationDraft.level;
+    automationScenes.value = automationDraft.scenes.map(scene => ({ ...scene }));
   } else if (section.value === 'bypass') {
-    bypassEnabled.value = bypassDraft.enabled
-    bypassInjectLimit.value = bypassDraft.limit
+    bypassEnabled.value = bypassDraft.enabled;
+    bypassInjectLimit.value = bypassDraft.limit;
   } else if (section.value === 'traffic') {
-    retentionPolicy.value = trafficDraft.policy
-    retentionParams.value = {...trafficDraft.params, alwaysFull: [...trafficDraft.params.alwaysFull]}
+    retentionPolicy.value = trafficDraft.policy;
+    retentionParams.value = { ...trafficDraft.params, alwaysFull: [...trafficDraft.params.alwaysFull] };
   } else if (section.value === 'sensor-health') {
     const invalid = thresholdFields.find(field => {
-      const value = thresholdDraft[field.key]
-      return typeof value !== 'number' || !Number.isFinite(value) || value < field.min || value > field.max
-    })
+      const value = thresholdDraft[field.key];
+      return typeof value !== 'number' || !Number.isFinite(value) || value < field.min || value > field.max;
+    });
     if (invalid) {
-      message.error(`${invalid.label}需为 ${invalid.min}–${invalid.max}${invalid.suffix}。`)
-      return
+      message.error(`${invalid.label}需为 ${invalid.min}–${invalid.max}${invalid.suffix}。`);
+      return;
     }
-    Object.assign(sensorThresholds, thresholdDraft)
+    Object.assign(sensorThresholds, thresholdDraft);
   }
-  message.success('已保存在本地示例中。')
+  message.success('已保存在本地示例中。');
 }
 
 function closeDialogs() {
-  userFormOpen.value = false
-  policyOpen.value = false
-  if (props.state === 'action' || props.state === 'detail') emit('state', 'data')
+  userFormOpen.value = false;
+  policyOpen.value = false;
+  if (props.state === 'action' || props.state === 'detail') emit('state', 'data');
 }
 // 原型“操作”状态打开当前分类的新建弹窗；其余分类没有弹窗。
 watch(
   () => props.state,
   state => {
-    if (state !== 'action') return
-    if (section.value === 'users') createUser()
-    else if (section.value === 'bypass') createPolicy()
+    if (state !== 'action') return;
+    if (section.value === 'users') createUser();
+    else if (section.value === 'bypass') createPolicy();
   },
-  {immediate: true},
-)
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -263,13 +326,34 @@ watch(
       <StatePanel v-if="busy" :state="state === 'loading' ? 'loading' : 'error'" @action="emit('state', 'data')" />
 
       <template v-else-if="section === 'users'">
-        <StatePanel v-if="!userRows.length" state="empty" title="还没有用户" description="新建用户后，账号会出现在这里。" action="新建用户" @action="createUser" />
-        <a-table v-else :columns="userColumns" :data-source="userRows" row-key="id" size="small" :scroll="{x: 920}" :pagination="tablePagination()">
-          <template #bodyCell="{column, record, text}">
+        <StatePanel
+          v-if="!userRows.length"
+          state="empty"
+          title="还没有用户"
+          description="新建用户后，账号会出现在这里。"
+          action="新建用户"
+          @action="createUser"
+        />
+        <a-table
+          v-else
+          :columns="userColumns"
+          :data-source="userRows"
+          row-key="id"
+          size="small"
+          :scroll="{ x: 920 }"
+          :pagination="tablePagination()"
+        >
+          <template #bodyCell="{ column, record, text }">
             <span v-if="column.key === 'id'" class="mono">{{ text }}</span>
             <span v-else-if="column.key === 'time' || column.key === 'updated'" class="tabular">{{ text }}</span>
             <StatusTag v-else-if="column.key === 'status'" :value="text" />
-            <a-button v-else-if="column.key === 'actions'" type="link" size="small" @click="editUser(record as BusinessRecord)">编辑</a-button>
+            <a-button
+              v-else-if="column.key === 'actions'"
+              type="link"
+              size="small"
+              @click="editUser(record as BusinessRecord)"
+              >编辑</a-button
+            >
           </template>
         </a-table>
       </template>
@@ -285,8 +369,15 @@ watch(
           </a-form-item>
         </a-form>
         <h3 class="settings-subhead">各场景的级别</h3>
-        <a-table :columns="sceneColumns" :data-source="automationDraft.scenes" row-key="name" size="small" :scroll="{x: 760}" :pagination="false">
-          <template #bodyCell="{column, record, text}">
+        <a-table
+          :columns="sceneColumns"
+          :data-source="automationDraft.scenes"
+          row-key="name"
+          size="small"
+          :scroll="{ x: 760 }"
+          :pagination="false"
+        >
+          <template #bodyCell="{ column, record, text }">
             <a-select
               v-if="column.key === 'level'"
               v-model:value="record.level"
@@ -295,7 +386,9 @@ watch(
               :aria-label="`${record.name}的级别`"
               :options="sceneOptions"
             />
-            <span v-else-if="['judged', 'executed', 'revoked'].includes(String(column.key))" class="tabular">{{ text }}</span>
+            <span v-else-if="['judged', 'executed', 'revoked'].includes(String(column.key))" class="tabular">{{
+              text
+            }}</span>
           </template>
         </a-table>
       </div>
@@ -309,7 +402,10 @@ watch(
               <a-switch v-model:checked="bypassDraft.enabled" checked-children="开启" un-checked-children="关闭" />
             </a-form-item>
             <a-form-item label="注入网口">
-              <span class="settings-readonly"><span class="status-dot success"></span><span class="mono">{{ bypassInterface }}</span> · 链路正常</span>
+              <span class="settings-readonly"
+                ><span class="status-dot success"></span><span class="mono">{{ bypassInterface }}</span> ·
+                链路正常</span
+              >
             </a-form-item>
             <a-form-item label="每分钟注入上限">
               <a-input-number v-model:value="bypassDraft.limit" :min="1" :max="1000" class="settings-number">
@@ -324,13 +420,33 @@ watch(
             <h3>阻断策略</h3>
             <a-button size="small" @click="createPolicy"><PlusOutlined />新建策略</a-button>
           </div>
-          <StatePanel v-if="!policyRows.length" state="empty" title="还没有阻断策略" description="新建并启用策略后，命中的连接才会被阻断。" action="新建策略" @action="createPolicy" />
-          <a-table v-else :columns="policyColumns" :data-source="policyRows" row-key="id" size="small" :scroll="{x: 930}" :pagination="tablePagination()">
-            <template #bodyCell="{column, record, text}">
+          <StatePanel
+            v-if="!policyRows.length"
+            state="empty"
+            title="还没有阻断策略"
+            description="新建并启用策略后，命中的连接才会被阻断。"
+            action="新建策略"
+            @action="createPolicy"
+          />
+          <a-table
+            v-else
+            :columns="policyColumns"
+            :data-source="policyRows"
+            row-key="id"
+            size="small"
+            :scroll="{ x: 930 }"
+            :pagination="tablePagination()"
+          >
+            <template #bodyCell="{ column, record, text }">
               <span v-if="column.key === 'id'" class="mono">{{ text }}</span>
               <span v-else-if="column.key === 'expires'" class="tabular">{{ text }}</span>
               <StatusTag v-else-if="column.key === 'status'" :value="text" />
-              <a-button v-else-if="column.key === 'actions'" type="link" size="small" @click="togglePolicy(record as {status: string; name: string})">
+              <a-button
+                v-else-if="column.key === 'actions'"
+                type="link"
+                size="small"
+                @click="togglePolicy(record as { status: string; name: string })"
+              >
                 {{ record.status === '启用' ? '停用' : '启用' }}
               </a-button>
             </template>
@@ -350,7 +466,12 @@ watch(
           <template v-if="trafficDraft.policy === '智能留存'">
             <div class="settings-grid">
               <a-form-item label="加密流握手后保留">
-                <a-input-number v-model:value="trafficDraft.params.encryptedKB" :min="4" :max="1024" class="settings-number">
+                <a-input-number
+                  v-model:value="trafficDraft.params.encryptedKB"
+                  :min="4"
+                  :max="1024"
+                  class="settings-number"
+                >
                   <template #addonAfter>KB</template>
                 </a-input-number>
               </a-form-item>
@@ -360,7 +481,12 @@ watch(
                 </a-input-number>
               </a-form-item>
               <a-form-item label="封段间隔">
-                <a-input-number v-model:value="trafficDraft.params.sealMinutes" :min="1" :max="30" class="settings-number">
+                <a-input-number
+                  v-model:value="trafficDraft.params.sealMinutes"
+                  :min="1"
+                  :max="30"
+                  class="settings-number"
+                >
                   <template #addonAfter>分钟</template>
                 </a-input-number>
               </a-form-item>
@@ -370,18 +496,28 @@ watch(
                 </a-input-number>
               </a-form-item>
               <a-form-item label="镜像去重" extra="多个镜像口的同一数据包只存一份。">
-                <a-switch v-model:checked="trafficDraft.params.dedupe" checked-children="开启" un-checked-children="关闭" />
+                <a-switch
+                  v-model:checked="trafficDraft.params.dedupe"
+                  checked-children="开启"
+                  un-checked-children="关闭"
+                />
               </a-form-item>
             </div>
             <a-form-item label="始终完整保留" extra="这些范围不受截断影响。">
-              <a-select v-model:value="trafficDraft.params.alwaysFull" mode="multiple" :options="fullRetentionScopes.map(value => ({value, label: value}))" />
+              <a-select
+                v-model:value="trafficDraft.params.alwaysFull"
+                mode="multiple"
+                :options="fullRetentionScopes.map(value => ({ value, label: value }))"
+              />
             </a-form-item>
           </template>
         </a-form>
         <h3 class="settings-subhead">存储用量</h3>
         <div class="settings-tiers">
           <div v-for="tier in storageTiers" :key="tier.name">
-            <span>{{ tier.name }}<small>{{ tier.span }} · {{ tier.size }}</small></span>
+            <span
+              >{{ tier.name }}<small>{{ tier.span }} · {{ tier.size }}</small></span
+            >
             <a-progress :percent="tier.percent" size="small" />
           </div>
         </div>
@@ -390,7 +526,14 @@ watch(
       <div v-else-if="section === 'sensor-health'" class="settings-body">
         <a-form layout="vertical" class="settings-grid">
           <a-form-item v-for="field in thresholdFields" :key="field.key" :label="field.label">
-            <a-input-number v-model:value="thresholdDraft[field.key]" :aria-label="field.label" :min="field.min" :max="field.max" :step="field.step" class="settings-number">
+            <a-input-number
+              v-model:value="thresholdDraft[field.key]"
+              :aria-label="field.label"
+              :min="field.min"
+              :max="field.max"
+              :step="field.step"
+              class="settings-number"
+            >
               <template #addonAfter>{{ field.suffix }}</template>
             </a-input-number>
           </a-form-item>
@@ -408,15 +551,33 @@ watch(
     </section>
   </div>
 
-  <RecordForm :open="userFormOpen" :page="userFormPage" :record="editingUser" @close="closeDialogs" @save="submitUser" />
+  <RecordForm
+    :open="userFormOpen"
+    :page="userFormPage"
+    :record="editingUser"
+    @close="closeDialogs"
+    @save="submitUser"
+  />
 
-  <a-modal :open="policyOpen" title="新建阻断策略" :width="640" ok-text="保存并启用" cancel-text="取消" :ok-button-props="{disabled: !policyDraft.confirmed}" @ok="savePolicy" @cancel="closeDialogs">
+  <a-modal
+    :open="policyOpen"
+    title="新建阻断策略"
+    :width="640"
+    ok-text="保存并启用"
+    cancel-text="取消"
+    :ok-button-props="{ disabled: !policyDraft.confirmed }"
+    @ok="savePolicy"
+    @cancel="closeDialogs"
+  >
     <a-form layout="vertical">
       <a-form-item label="策略名称" required>
         <a-input v-model:value="policyDraft.name" placeholder="例如：C2 外联即时断开" />
       </a-form-item>
       <a-form-item label="触发条件" required>
-        <a-select v-model:value="policyDraft.trigger" :options="policyTriggers.map(value => ({value, label: value}))" />
+        <a-select
+          v-model:value="policyDraft.trigger"
+          :options="policyTriggers.map(value => ({ value, label: value }))"
+        />
       </a-form-item>
       <a-form-item label="目标范围" required extra="保护名单里的地址不会被阻断。">
         <a-input v-model:value="policyDraft.scope" placeholder="例如：外部 → 核心业务资产组" />
@@ -429,7 +590,9 @@ watch(
           <template #addonAfter>天</template>
         </a-input-number>
       </a-form-item>
-      <a-checkbox v-model:checked="policyDraft.confirmed">我了解旁路阻断不保证断开连接，也不能代替防火墙封禁。</a-checkbox>
+      <a-checkbox v-model:checked="policyDraft.confirmed"
+        >我了解旁路阻断不保证断开连接，也不能代替防火墙封禁。</a-checkbox
+      >
     </a-form>
   </a-modal>
 </template>

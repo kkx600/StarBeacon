@@ -1,5 +1,5 @@
-import {theme} from 'ant-design-vue'
-import type {ThemeConfig} from 'ant-design-vue/es/config-provider/context'
+import { theme } from 'ant-design-vue';
+import type { ThemeConfig } from 'ant-design-vue/es/config-provider/context';
 
 // 浅色取值。深色主题落地时在同一结构下再提供一组取值，变量名不带明暗含义。
 // 基础色交给组件库算法派生悬停、按下等交互状态。
@@ -9,8 +9,8 @@ export const componentSeeds = {
   colorWarning: '#e08a00',
   colorError: '#e5484d',
   colorInfo: '#2f54eb',
-} as const
-export const componentColors = theme.defaultAlgorithm({...theme.defaultSeed, ...componentSeeds})
+} as const;
+export const componentColors = theme.defaultAlgorithm({ ...theme.defaultSeed, ...componentSeeds });
 
 // 提示类表面不取算法派生值：信息提示是纯灰表面，成功、警示、危险与业务标签共用同一组浅底。
 export const componentSurfaces = {
@@ -22,7 +22,7 @@ export const componentSurfaces = {
   colorWarningBorder: '#f5d48a',
   colorErrorBg: '#fdeceb',
   colorErrorBorder: '#f5c2c0',
-} as const
+} as const;
 
 // 业务语义文字显式指定，保证在白底和对应浅底上的对比度不低于 4.5:1。
 export const palette = {
@@ -96,15 +96,18 @@ export const palette = {
   syntaxNumber: '#b42340',
   syntaxKeyword: componentColors.colorPrimaryTextActive,
   syntaxString: '#087a43',
-} as const
+} as const;
 
-export const chartPalette = [palette.primary, palette.teal, palette.violet, palette.chartOrange, palette.chartNeutral]
-export const screenChartPalette = [palette.screenBlue, palette.screenTeal, palette.screenViolet, palette.screenAmber]
+export const chartPalette = [palette.primary, palette.teal, palette.violet, palette.chartOrange, palette.chartNeutral];
+export const screenChartPalette = [palette.screenBlue, palette.screenTeal, palette.screenViolet, palette.screenAmber];
 
 // 根级变量同样覆盖挂载到 body 的弹窗与通知，避免浮层脱离配色体系。
 export function applyPalette() {
   for (const [key, value] of Object.entries(palette)) {
-    document.documentElement.style.setProperty('--' + key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()), value)
+    document.documentElement.style.setProperty(
+      '--' + key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
+      value,
+    );
   }
 }
 
@@ -144,8 +147,8 @@ export const appTheme = {
       colorItemBgActive: palette.tabSelected,
       colorSubItemBg: palette.surface,
     },
-    Table: {colorFillAlter: palette.tableHeader, colorTextHeading: palette.fieldLabel},
-    Form: {marginLG: 16, paddingXS: 6},
-    Modal: {borderRadiusLG: 12},
+    Table: { colorFillAlter: palette.tableHeader, colorTextHeading: palette.fieldLabel },
+    Form: { marginLG: 16, paddingXS: 6 },
+    Modal: { borderRadiusLG: 12 },
   },
-} satisfies ThemeConfig
+} satisfies ThemeConfig;

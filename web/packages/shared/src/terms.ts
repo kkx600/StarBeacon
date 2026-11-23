@@ -1,6 +1,6 @@
 // 界面状态用语标准：同一个意思只用一个词。页面不自造说法，新增状态先在这里登记。
 // 完整的对照表见仓库根目录 DESIGN.md 的“用语”一节。
-export type StatusTone = 'critical' | 'danger' | 'warning' | 'success' | 'info' | 'neutral'
+export type StatusTone = 'critical' | 'danger' | 'warning' | 'success' | 'info' | 'neutral';
 
 export const statusTerms = {
   // 严重级别
@@ -64,12 +64,12 @@ export const statusTerms = {
   未启用: 'neutral',
   未配置: 'warning',
   不支持: 'neutral',
-} as const satisfies Record<string, StatusTone>
+} as const satisfies Record<string, StatusTone>;
 
-export type StatusTerm = keyof typeof statusTerms
+export type StatusTerm = keyof typeof statusTerms;
 
 // 返回标准用语对应的色调；不是标准用语时返回 undefined。
 // 只认自有键，避免 constructor、toString 这类原型属性被当成标准用语。
 export function toneOf(value: string): StatusTone | undefined {
-  return Object.hasOwn(statusTerms, value) ? (statusTerms as Record<string, StatusTone>)[value] : undefined
+  return Object.hasOwn(statusTerms, value) ? (statusTerms as Record<string, StatusTone>)[value] : undefined;
 }

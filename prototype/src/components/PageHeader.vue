@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {computed} from 'vue'
-import {QuestionCircleOutlined} from '@ant-design/icons-vue'
-import {helpEntries} from '../composables/pageHelp'
+import { computed } from 'vue';
+import { QuestionCircleOutlined } from '@ant-design/icons-vue';
+import { helpEntries } from '../composables/pageHelp';
 
 // 页面标题一行：标题、说明入口、页面动作。页面说明和静态提示只在“说明”里出现，不常驻。
-const props = defineProps<{title: string; description?: string; notice?: string}>()
-const hasHelp = computed(() => Boolean(props.description || props.notice || helpEntries.value.length))
+const props = defineProps<{ title: string; description?: string; notice?: string }>();
+const hasHelp = computed(() => Boolean(props.description || props.notice || helpEntries.value.length));
 </script>
 
 <template>

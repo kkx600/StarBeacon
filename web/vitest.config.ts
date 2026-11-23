@@ -1,10 +1,17 @@
-import { defineConfig } from 'vitest/config'
-import vue from '@vitejs/plugin-vue'
-import {fileURLToPath} from 'node:url'
+import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   plugins: [vue()],
-  resolve: {dedupe: ['vue', 'vue-router', 'ant-design-vue'], alias: {'@ant-design/icons-vue':fileURLToPath(new URL('./packages/shared/node_modules/@ant-design/icons-vue',import.meta.url))}},
+  resolve: {
+    dedupe: ['vue', 'vue-router', 'ant-design-vue'],
+    alias: {
+      '@ant-design/icons-vue': fileURLToPath(
+        new URL('./packages/shared/node_modules/@ant-design/icons-vue', import.meta.url),
+      ),
+    },
+  },
   test: {
     environment: 'jsdom',
     // DOM 与覆盖插桩共享计算资源；限制进程并发，避免负载争用影响真实超时断言。
@@ -22,4 +29,4 @@ export default defineConfig({
       thresholds: { statements: 90, branches: 90, functions: 90, lines: 90 },
     },
   },
-})
+});

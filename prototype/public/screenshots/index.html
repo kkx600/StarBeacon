@@ -1,232 +1,350 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>星烽 StarBeacon 原型图库</title>
-  <style>
-    :root {
-      --primary:#2f54eb;--action:#2f54eb;--link:#2f54eb;--workspace:#f4f4f4;
-      --text:#29343d;--muted:#6b6b6b;--line:#e5e5e5;--control-border:#d9d9d9;
-      --info-surface:#fafafa;--selection-surface:#f0f5ff;--selection-text:#1d39c4;
-      --section-gap:12px;--panel-inset:16px;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    body {
-      margin: 0;
-      background: var(--workspace);
-      color: var(--text);
-      font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    }
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: white;
-      border-bottom: 1px solid var(--line);
-      padding: var(--panel-inset) 4%;
-    }
-    h1, h2, h3 { font-weight: 600; }
-    h1 { margin: 0; color: var(--link); font-size: 24px; }
-    h2 { margin: 0 0 var(--section-gap); font-size: 20px; }
-    h3 { margin: 0; font-size: 16px; }
-    #summary { margin: 4px 0 var(--section-gap); color: var(--muted); font-size: 13px; }
-    .tools, .states, .card-links { display: flex; align-items: center; flex-wrap: wrap; gap: var(--section-gap); }
-    select, input, button {
-      font: inherit;
-      color: var(--text);
-      background: white;
-      border: 1px solid var(--control-border);
-      border-radius: 6px;
-      padding: 5px 12px;
-    }
-    input { min-width: 230px; flex: 0 1 300px; }
-    input::placeholder { color: var(--muted); }
-    button { cursor: pointer; }
-    a { color: var(--link); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    ::selection { background: var(--selection-surface); color: var(--selection-text); }
-    #catalog { margin-left: auto; }
-    main { padding: var(--panel-inset) 4% 24px; }
-    main > section + section { margin-top: 24px; }
-    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--section-gap); }
-    .card { background: white; border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
-    .thumbnail {
-      display: block;
-      aspect-ratio: 8 / 5;
-      background: var(--info-surface);
-      border-radius: 8px 8px 0 0;
-      border-bottom: 1px solid var(--line);
-      overflow: hidden;
-    }
-    .thumbnail img { display: block; width: 100%; height: 100%; object-fit: contain; }
-    .card-body { padding: 12px var(--panel-inset); }
-    .description, .requirements { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-    .requirements { font-size: 12px; }
-    .states { gap: 6px; margin-top: 10px; }
-    .states button { font-size: 12px; padding: 2px 8px; }
-    .states button[aria-pressed="true"] {
-      background: var(--selection-surface);
-      color: var(--selection-text);
-      border-color: var(--primary);
-    }
-    .card-links { margin-top: 10px; font-size: 13px; }
-    @media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 650px) {
-      header { position: static; }
-      .cards { grid-template-columns: 1fr; }
-      #catalog { margin-left: 0; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>星烽 StarBeacon 原型图库</h1>
-    <p id="summary">界面截图使用合成示例。</p>
-    <div class="tools">
-      <input type="search" id="keyword" placeholder="搜索页面、需求编号或功能" aria-label="搜索原型图">
-      <select id="group" aria-label="筛选模块"><option value="">全部模块</option></select>
-      <select id="state" aria-label="筛选状态">
-        <option value="">全部状态</option>
-        <option value="data">有数据</option>
-        <option value="empty">无数据</option>
-        <option value="loading">加载中</option>
-        <option value="error">加载失败</option>
-        <option value="detail">查看详情</option>
-        <option value="action">操作表单</option>
-        <option value="boundary">登录与访问边界</option>
-      </select>
-      <a id="catalog">打开交互原型</a>
-    </div>
-  </header>
-  <main id="gallery">
-    <p id="empty" role="status" hidden>未找到符合筛选条件的原型图。</p>
-  </main>
-  <template id="gallery-card">
-    <article class="card">
-      <a class="thumbnail" target="_blank" rel="noopener"><img loading="lazy" decoding="async"></a>
-      <div class="card-body">
-        <h3></h3>
-        <p class="description"></p>
-        <p class="requirements"></p>
-        <div class="states" role="group" aria-label="选择卡片截图状态"></div>
-        <div class="card-links"><a class="prototype" target="_blank" rel="noopener">打开原型</a></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>星烽 StarBeacon 原型图库</title>
+    <style>
+      :root {
+        --primary: #2f54eb;
+        --action: #2f54eb;
+        --link: #2f54eb;
+        --workspace: #f4f4f4;
+        --text: #29343d;
+        --muted: #6b6b6b;
+        --line: #e5e5e5;
+        --control-border: #d9d9d9;
+        --info-surface: #fafafa;
+        --selection-surface: #f0f5ff;
+        --selection-text: #1d39c4;
+        --section-gap: 12px;
+        --panel-inset: 16px;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+        background: var(--workspace);
+        color: var(--text);
+        font:
+          14px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          'PingFang SC',
+          'Microsoft YaHei',
+          sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: white;
+        border-bottom: 1px solid var(--line);
+        padding: var(--panel-inset) 4%;
+      }
+      h1,
+      h2,
+      h3 {
+        font-weight: 600;
+      }
+      h1 {
+        margin: 0;
+        color: var(--link);
+        font-size: 24px;
+      }
+      h2 {
+        margin: 0 0 var(--section-gap);
+        font-size: 20px;
+      }
+      h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      #summary {
+        margin: 4px 0 var(--section-gap);
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tools,
+      .states,
+      .card-links {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--section-gap);
+      }
+      select,
+      input,
+      button {
+        font: inherit;
+        color: var(--text);
+        background: white;
+        border: 1px solid var(--control-border);
+        border-radius: 6px;
+        padding: 5px 12px;
+      }
+      input {
+        min-width: 230px;
+        flex: 0 1 300px;
+      }
+      input::placeholder {
+        color: var(--muted);
+      }
+      button {
+        cursor: pointer;
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      :focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+      ::selection {
+        background: var(--selection-surface);
+        color: var(--selection-text);
+      }
+      #catalog {
+        margin-left: auto;
+      }
+      main {
+        padding: var(--panel-inset) 4% 24px;
+      }
+      main > section + section {
+        margin-top: 24px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--section-gap);
+      }
+      .card {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        min-width: 0;
+      }
+      .thumbnail {
+        display: block;
+        aspect-ratio: 8 / 5;
+        background: var(--info-surface);
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--line);
+        overflow: hidden;
+      }
+      .thumbnail img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .card-body {
+        padding: 12px var(--panel-inset);
+      }
+      .description,
+      .requirements {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .requirements {
+        font-size: 12px;
+      }
+      .states {
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .states button {
+        font-size: 12px;
+        padding: 2px 8px;
+      }
+      .states button[aria-pressed='true'] {
+        background: var(--selection-surface);
+        color: var(--selection-text);
+        border-color: var(--primary);
+      }
+      .card-links {
+        margin-top: 10px;
+        font-size: 13px;
+      }
+      @media (max-width: 1100px) {
+        .cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 650px) {
+        header {
+          position: static;
+        }
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        #catalog {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>星烽 StarBeacon 原型图库</h1>
+      <p id="summary">界面截图使用合成示例。</p>
+      <div class="tools">
+        <input type="search" id="keyword" placeholder="搜索页面、需求编号或功能" aria-label="搜索原型图" />
+        <select id="group" aria-label="筛选模块">
+          <option value="">全部模块</option>
+        </select>
+        <select id="state" aria-label="筛选状态">
+          <option value="">全部状态</option>
+          <option value="data">有数据</option>
+          <option value="empty">无数据</option>
+          <option value="loading">加载中</option>
+          <option value="error">加载失败</option>
+          <option value="detail">查看详情</option>
+          <option value="action">操作表单</option>
+          <option value="boundary">登录与访问边界</option>
+        </select>
+        <a id="catalog">打开交互原型</a>
       </div>
-    </article>
-  </template>
-  <script src="./manifest.js"></script>
-  <script>
-    const gallery = document.getElementById('gallery')
-    const empty = document.getElementById('empty')
-    const keyword = document.getElementById('keyword')
-    const groupControl = document.getElementById('group')
-    const stateControl = document.getElementById('state')
-    const template = document.getElementById('gallery-card')
-    const root = location.protocol === 'file:' ? 'http://127.0.0.1:4173/' : new URL('../', location.href)
-    const prototypeUrl = path => new URL(path.slice(1), root).href
+    </header>
+    <main id="gallery">
+      <p id="empty" role="status" hidden>未找到符合筛选条件的原型图。</p>
+    </main>
+    <template id="gallery-card">
+      <article class="card">
+        <a class="thumbnail" target="_blank" rel="noopener"><img loading="lazy" decoding="async" /></a>
+        <div class="card-body">
+          <h3></h3>
+          <p class="description"></p>
+          <p class="requirements"></p>
+          <div class="states" role="group" aria-label="选择卡片截图状态"></div>
+          <div class="card-links"><a class="prototype" target="_blank" rel="noopener">打开原型</a></div>
+        </div>
+      </article>
+    </template>
+    <script src="./manifest.js"></script>
+    <script>
+      const gallery = document.getElementById('gallery');
+      const empty = document.getElementById('empty');
+      const keyword = document.getElementById('keyword');
+      const groupControl = document.getElementById('group');
+      const stateControl = document.getElementById('state');
+      const template = document.getElementById('gallery-card');
+      const root = location.protocol === 'file:' ? 'http://127.0.0.1:4173/' : new URL('../', location.href);
+      const prototypeUrl = path => new URL(path.slice(1), root).href;
 
-    function createCard(page, viewport) {
-      const card = template.content.firstElementChild.cloneNode(true)
-      const thumbnail = card.querySelector('.thumbnail')
-      const image = thumbnail.querySelector('img')
-      const prototype = card.querySelector('.prototype')
-      const states = card.querySelector('.states')
-      const description = card.querySelector('.description')
-      const requirements = card.querySelector('.requirements')
-      card.querySelector('h3').textContent = page.title
-      description.textContent = page.description ?? ''
-      description.hidden = !page.description
-      requirements.textContent = (page.requirements ?? []).join(' / ')
-      requirements.hidden = !requirements.textContent
-      image.width = viewport.width
-      image.height = viewport.height
-      states.hidden = page.states.length < 2
+      function createCard(page, viewport) {
+        const card = template.content.firstElementChild.cloneNode(true);
+        const thumbnail = card.querySelector('.thumbnail');
+        const image = thumbnail.querySelector('img');
+        const prototype = card.querySelector('.prototype');
+        const states = card.querySelector('.states');
+        const description = card.querySelector('.description');
+        const requirements = card.querySelector('.requirements');
+        card.querySelector('h3').textContent = page.title;
+        description.textContent = page.description ?? '';
+        description.hidden = !page.description;
+        requirements.textContent = (page.requirements ?? []).join(' / ');
+        requirements.hidden = !requirements.textContent;
+        image.width = viewport.width;
+        image.height = viewport.height;
+        states.hidden = page.states.length < 2;
 
-      function show(state, filtered = false) {
-        states.hidden = filtered || page.states.length < 2
-        thumbnail.href = state.image
-        image.src = state.image
-        image.alt = page.group === 'boundary' ? page.title : `${page.title} · ${state.title}`
-        prototype.href = prototypeUrl(state.url)
-        prototype.setAttribute('aria-label', `打开${image.alt}原型`)
-        for (const button of states.children) {
-          button.setAttribute('aria-pressed', String(button.value === state.state))
-        }
-      }
-
-      if (!states.hidden) {
-        for (const state of page.states) {
-          const button = document.createElement('button')
-          button.type = 'button'
-          button.value = state.state
-          button.textContent = state.title
-          button.addEventListener('click', () => show(state))
-          states.append(button)
-        }
-      }
-
-      return {
-        card,
-        show,
-        states: page.states,
-        initial: page.states.find(state => state.state === 'data') ?? page.states[0],
-        search: [page.title, page.description, ...(page.requirements ?? [])].join(' ').toLowerCase(),
-      }
-    }
-
-    function start(manifest) {
-      const total = manifest.pages.reduce((count, page) => count + page.states.length, 0)
-      document.getElementById('summary').textContent =
-        `${total} 张 ${manifest.viewport.width}×${manifest.viewport.height} 截图 · 全部使用合成示例`
-      document.getElementById('catalog').href = prototypeUrl('/catalog')
-      const sections = manifest.groups.map(group => {
-        const section = document.createElement('section')
-        const heading = document.createElement('h2')
-        heading.textContent = group.title
-        const grid = document.createElement('div')
-        grid.className = 'cards'
-        const cards = manifest.pages.filter(page => page.group === group.id).map(page => createCard(page, manifest.viewport))
-        for (const card of cards) grid.append(card.card)
-        section.append(heading, grid)
-        gallery.append(section)
-        if (cards.length) groupControl.add(new Option(group.title, group.id))
-        return { id: group.id, section, cards }
-      })
-
-      function update() {
-        const query = keyword.value.trim().toLowerCase()
-        const state = stateControl.value
-        let found = false
-        for (const group of sections) {
-          const inGroup = !groupControl.value || groupControl.value === group.id
-          let shown = 0
-          for (const item of group.cards) {
-            const image = state ? item.states.find(candidate => candidate.state === state) : item.initial
-            item.card.hidden = !inGroup || !image || !item.search.includes(query)
-            if (!item.card.hidden) {
-              item.show(image, Boolean(state))
-              shown++
-            }
+        function show(state, filtered = false) {
+          states.hidden = filtered || page.states.length < 2;
+          thumbnail.href = state.image;
+          image.src = state.image;
+          image.alt = page.group === 'boundary' ? page.title : `${page.title} · ${state.title}`;
+          prototype.href = prototypeUrl(state.url);
+          prototype.setAttribute('aria-label', `打开${image.alt}原型`);
+          for (const button of states.children) {
+            button.setAttribute('aria-pressed', String(button.value === state.state));
           }
-          group.section.hidden = shown === 0
-          found ||= shown > 0
         }
-        empty.hidden = found
-      }
-      keyword.addEventListener('input', update)
-      groupControl.addEventListener('change', update)
-      stateControl.addEventListener('change', update)
-      update()
-    }
 
-    if (window.StarBeaconScreenshotManifest) {
-      start(window.StarBeaconScreenshotManifest)
-    } else {
-      empty.textContent = '截图清单加载失败。请检查图库中的 manifest.js。'
-      empty.hidden = false
-    }
-  </script>
-</body>
+        if (!states.hidden) {
+          for (const state of page.states) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.value = state.state;
+            button.textContent = state.title;
+            button.addEventListener('click', () => show(state));
+            states.append(button);
+          }
+        }
+
+        return {
+          card,
+          show,
+          states: page.states,
+          initial: page.states.find(state => state.state === 'data') ?? page.states[0],
+          search: [page.title, page.description, ...(page.requirements ?? [])].join(' ').toLowerCase(),
+        };
+      }
+
+      function start(manifest) {
+        const total = manifest.pages.reduce((count, page) => count + page.states.length, 0);
+        document.getElementById('summary').textContent =
+          `${total} 张 ${manifest.viewport.width}×${manifest.viewport.height} 截图 · 全部使用合成示例`;
+        document.getElementById('catalog').href = prototypeUrl('/catalog');
+        const sections = manifest.groups.map(group => {
+          const section = document.createElement('section');
+          const heading = document.createElement('h2');
+          heading.textContent = group.title;
+          const grid = document.createElement('div');
+          grid.className = 'cards';
+          const cards = manifest.pages
+            .filter(page => page.group === group.id)
+            .map(page => createCard(page, manifest.viewport));
+          for (const card of cards) grid.append(card.card);
+          section.append(heading, grid);
+          gallery.append(section);
+          if (cards.length) groupControl.add(new Option(group.title, group.id));
+          return { id: group.id, section, cards };
+        });
+
+        function update() {
+          const query = keyword.value.trim().toLowerCase();
+          const state = stateControl.value;
+          let found = false;
+          for (const group of sections) {
+            const inGroup = !groupControl.value || groupControl.value === group.id;
+            let shown = 0;
+            for (const item of group.cards) {
+              const image = state ? item.states.find(candidate => candidate.state === state) : item.initial;
+              item.card.hidden = !inGroup || !image || !item.search.includes(query);
+              if (!item.card.hidden) {
+                item.show(image, Boolean(state));
+                shown++;
+              }
+            }
+            group.section.hidden = shown === 0;
+            found ||= shown > 0;
+          }
+          empty.hidden = found;
+        }
+        keyword.addEventListener('input', update);
+        groupControl.addEventListener('change', update);
+        stateControl.addEventListener('change', update);
+        update();
+      }
+
+      if (window.StarBeaconScreenshotManifest) {
+        start(window.StarBeaconScreenshotManifest);
+      } else {
+        empty.textContent = '截图清单加载失败。请检查图库中的 manifest.js。';
+        empty.hidden = false;
+      }
+    </script>
+  </body>
 </html>
