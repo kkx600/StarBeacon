@@ -9,7 +9,8 @@ import {
 import type { ApiClient } from '../api';
 import { packetCapture, type PacketRecord } from '../packetArchives';
 import { inspectionStates, verifyPacketInspection, type PacketInspection } from '../packetInspection';
-import { formatBytes } from '../utils/format';
+import { formatTime } from '../types';
+import { formatBytes, formatNumber } from '../utils/format';
 import StatePanel from './StatePanel.vue';
 import ByteViewer from './ByteViewer.vue';
 const ADescriptionsItem = ADescriptions.Item,
@@ -127,7 +128,7 @@ onScopeDispose(stop);
       层。捕获时间不等于双向入站／出站时间，未重组应用正文、校验报文校验和或解密 TLS。
     </p>
     <form class="inspector-toolbar" @submit.prevent="number !== undefined && read(number)">
-      <span>共 {{ total.toLocaleString('zh-CN') }} 包</span><label :for="numberID">包序号</label
+      <span>共 {{ formatNumber(total) }} 包</span><label :for="numberID">包序号</label
       ><a-input-number
         :id="numberID"
         :value="number ?? ''"
@@ -159,10 +160,11 @@ onScopeDispose(stop);
         />
         <a-descriptions bordered :column="1" size="small"
           ><a-descriptions-item label="归档 / 包序号"
-            ><span class="technical">{{ data.archive_id }}</span> /
-            {{ data.number.toLocaleString('zh-CN') }}</a-descriptions-item
+            ><span class="technical">{{ data.archive_id }}</span> / {{ formatNumber(data.number) }}</a-descriptions-item
           ><a-descriptions-item label="网卡捕获时间（UTC）"
-            ><time class="technical" :datetime="data.captured_at">{{ data.captured_at }}</time></a-descriptions-item
+            ><time class="technical" :datetime="data.captured_at">{{
+              formatTime(data.captured_at, { timeZone: 'UTC', fraction: 'source' })
+            }}</time></a-descriptions-item
           ><a-descriptions-item label="实际捕获 / 原始帧长度"
             >{{ formatBytes(data.captured_length) }} / {{ formatBytes(data.original_length) }} ·
             {{ inspectionStates[data.decode_status] }}</a-descriptions-item

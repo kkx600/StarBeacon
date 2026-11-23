@@ -149,7 +149,9 @@ describe('原包协议查看交互', () => {
       wrapper = await show({ request } as unknown as ApiClient);
     expect(document.querySelectorAll('[role=dialog]').length).toBe(1);
     expect(document.querySelectorAll('.ant-table-wrapper').length).toBe(0);
-    expect(scope().text()).toContain(stamp);
+    const capturedTime = scope().get('time');
+    expect(capturedTime.text()).toBe('2026-10-03 01:00:00.123456789');
+    expect(capturedTime.attributes('datetime')).toBe(stamp);
     expect(scope().text()).toContain('实际捕获字节');
     expect(scope().text()).not.toContain('EVE 导出副本');
     expect(request.mock.calls[0]![0]).toBe('/packet-archives/packet_owned/packets/1');

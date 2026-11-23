@@ -11,7 +11,7 @@ describe('共享指标条', () => {
           { label: '高危告警', value: '0.0%', tone: 'danger' },
           { label: '净变动', value: -1, tone: 'danger' },
           { label: '在线探针', value: 8, tone: 'success' },
-          { label: '需关注', value: '1,248', tone: 'warning' },
+          { label: '需关注', value: 1248, tone: 'warning' },
           { label: '严重告警', value: 2, tone: 'danger' },
         ],
       },

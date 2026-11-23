@@ -1,3 +1,4 @@
+import { formatNumber } from './utils/format.ts';
 import { instant } from './utils/instant';
 
 export interface DiscoveryQuery {
@@ -163,7 +164,7 @@ export function readDiscovery(value: unknown, q: DiscoveryQuery): DiscoveryResul
     throw new Error('分区状态与观测结果不一致。');
   return structuredClone(value) as unknown as DiscoveryResult;
 }
-export const discoveryCount = (value: string) => BigInt(value).toLocaleString('zh-CN');
+export const discoveryCount = (value: string) => formatNumber(BigInt(value));
 export function discoveryEndpoint(value: DiscoveryWitness['source']) {
   return `${value.ip?.includes(':') ? '[' + value.ip + ']' : value.ip || '未记录'}:${value.port ?? '未记录'}`;
 }

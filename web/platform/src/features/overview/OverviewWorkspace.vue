@@ -38,11 +38,11 @@ const trend = computed<EChartsCoreOption>(() => ({
   grid: { left: 50, right: 12, top: 18, bottom: 45 },
   xAxis: {
     type: 'category',
-    data:
-      data.value?.events.trend.map(b =>
-        new Date(b.key).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', timeZone: 'UTC' }),
-      ) ?? [],
-    axisLabel: { hideOverlap: true },
+    data: data.value?.events.trend.map(b => formatTime(b.key, { timeZone: 'UTC' })) ?? [],
+    axisLabel: {
+      hideOverlap: true,
+      formatter: (value: string) => (value.length >= 19 ? `${value.slice(5, 13)}时` : value),
+    },
   },
   yAxis: { type: 'value', min: 0, minInterval: 1, name: '告警数' },
   series: [

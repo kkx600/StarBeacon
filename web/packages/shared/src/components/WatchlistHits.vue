@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { computed, reactive, watch } from 'vue';
 import { Table as ATable } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
@@ -33,7 +34,7 @@ const columns = [
   { title: '命中修订', key: 'revision', width: 90 },
 ];
 const cappedDays = computed(() => props.page.capped_days.map(day => day.day).join('、'));
-const cappedCount = computed(() => watchlistDailyHitCap.toLocaleString('en-US'));
+const cappedCount = computed(() => formatNumber(watchlistDailyHitCap));
 function query() {
   emit('query', form.start, form.end);
 }

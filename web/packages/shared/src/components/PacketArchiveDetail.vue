@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import StatePanel from './StatePanel.vue';
 import { packetCapture, packetUnsealed, packetStates, packetCodes, type PacketRecord } from '../packetArchives';
 import { formatTime } from '../types';
-import { formatBytes } from '../utils/format';
+import { formatNumber, formatBytes } from '../utils/format';
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{ record: PacketRecord | null; pending: boolean; error: string; local?: boolean }>();
 const emit = defineEmits<{ close: []; retry: [] }>();
@@ -69,14 +69,14 @@ const unsealed = computed(() => (props.record ? packetUnsealed(props.record) : f
           <a-descriptions-item label="包数 / 载荷字节"
             ><template v-if="unsealed">尚未冻结</template
             ><template v-else
-              >{{ capture.packets.toLocaleString('zh-CN') }} 包 / {{ formatBytes(capture.packet_bytes) }}</template
+              >{{ formatNumber(capture.packets) }} 包 / {{ formatBytes(capture.packet_bytes) }}</template
             ></a-descriptions-item
           >
           <a-descriptions-item label="截断 / VLAN 卸载"
             ><template v-if="unsealed">尚未冻结</template
             ><template v-else
-              >{{ capture.truncated_packets.toLocaleString('zh-CN') }} 包 /
-              {{ capture.vlan_offload_packets.toLocaleString('zh-CN') }} 包</template
+              >{{ formatNumber(capture.truncated_packets) }} 包 /
+              {{ formatNumber(capture.vlan_offload_packets) }} 包</template
             ></a-descriptions-item
           >
           <a-descriptions-item label="内核丢包"

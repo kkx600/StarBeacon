@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { computed, reactive, watch } from 'vue';
 import { Table as ATable, InputNumber as AInputNumber } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
@@ -49,7 +50,7 @@ const fieldLabels = computed(() =>
 );
 const metrics = computed(() =>
   props.result
-    ? [{ label: '命中告警总数', value: props.result.total.toLocaleString('en-US'), note: '当次核对的已索引告警条数' }]
+    ? [{ label: '命中告警总数', value: formatNumber(props.result.total), note: '当次核对的已索引告警条数' }]
     : [],
 );
 function run() {
@@ -144,7 +145,7 @@ watch(
             ><template #bodyCell="{ column, record }">
               <span v-if="column.key === 'value'" class="technical watchlist-impact-value">{{ record.value }}</span>
               <span v-else-if="column.key === 'count'" class="technical watchlist-impact-count">{{
-                record.count.toLocaleString('en-US')
+                formatNumber(record.count)
               }}</span>
             </template></a-table
           >

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Table as ATable, type TablePaginationConfig } from 'ant-design-vue';
-import { formatBytes } from '@starbeacon/shared/utils/format.ts';
+import { formatNumber, formatBytes } from '@starbeacon/shared/utils/format.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { endpoint, packetCountLabel, trafficKinds, type TrafficRecord, type TrafficResult } from './traffic';
 import { applicationStatuses } from '@starbeacon/shared/application.ts';
@@ -43,7 +43,7 @@ function view(id: string) {
         total: Math.min(result.total, 10000),
         showSizeChanger: true,
         pageSizeOptions: ['20', '50', '100'],
-        showTotal: () => `共 ${result.total.toLocaleString('zh-CN')} 条`,
+        showTotal: () => `共 ${formatNumber(result.total)} 条`,
       }"
       @change="page"
       ><template #bodyCell="{ column, record }">

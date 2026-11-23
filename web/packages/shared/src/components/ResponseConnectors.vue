@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue';
 import {
   Table as ATable,
@@ -121,7 +122,7 @@ function status(id: string) {
           selected.observed_at === '0001-01-01T00:00:00Z' ? '尚未核验' : formatTime(selected.observed_at)
         }}</a-descriptions-item
         ><a-descriptions-item label="最长封禁"
-          >{{ selected.max_ttl_seconds.toLocaleString() }} 秒</a-descriptions-item
+          >{{ formatNumber(selected.max_ttl_seconds) }} 秒</a-descriptions-item
         ></a-descriptions
       >
       <p class="page-description section-gap">

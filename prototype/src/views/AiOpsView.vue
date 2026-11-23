@@ -166,7 +166,7 @@ const verdictTones = { 真实攻击: 'danger', 误报: 'neutral', 可疑: 'warni
 const view = ref<'待确认' | '处置流水'>('待确认');
 
 const metrics = computed<MetricSpec[]>(() => [
-  { label: '今日 AI 研判', value: props.state === 'empty' ? '0' : '1,248', note: '平均 8.4 秒' },
+  { label: '今日 AI 研判', value: props.state === 'empty' ? 0 : 1248, note: '平均 8.4 秒' },
   { label: '待确认', value: String(pending.value.length), tone: 'warning' },
   { label: '已执行处置', value: props.state === 'empty' ? '0' : '14' },
   { label: '误判纠正', value: props.state === 'empty' ? '0' : '2' },

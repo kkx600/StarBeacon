@@ -1,8 +1,12 @@
 import type { BusinessRecord, MetricSpec, PageSpec } from '../models';
 import { statusesFor } from './statuses.ts';
 import { examplePermissionCounts, expiryFromDuration } from '../composables/formValues.ts';
+import { formatTime } from '../../../web/packages/shared/src/types.ts';
 
 const owners = ['陈宁', '林悦', '值班分析组'];
+const packetWindow = ['2026-09-30T01:42:00.128456789Z', '2026-09-30T01:42:29.998765432Z']
+  .map(at => `${formatTime(at, { timeZone: 'UTC', fraction: 'source' })} UTC`)
+  .join(' — ');
 const names: Record<string, string[]> = {
   alert: [
     'HTTP 可疑管理路径访问',
@@ -555,7 +559,7 @@ export function createFixtures(page: PageSpec): BusinessRecord[] {
       record.snapLength = 262144;
       record.registration = 'registration-demo-hq';
       record.run = 'packet-run-demo-hq';
-      record.packetWindow = unsealed ? '尚未冻结' : '2026-09-30T01:42:00.128456789Z — 2026-09-30T01:42:29.998765432Z';
+      record.packetWindow = unsealed ? '尚未冻结' : packetWindow;
       record.kernelDrops = unsealed ? '尚未冻结' : i % 3 === 1 ? '无数据' : '0（示例计数）';
       record.truncatedPackets = unsealed ? '尚未冻结' : i % 3 === 2 ? 1 : 0;
       record.vlanOffload = unsealed ? '尚未冻结' : i % 4 === 0 ? 8 : 0;
@@ -825,7 +829,7 @@ export function metricsFor(page: PageSpec, empty = false): MetricSpec[] {
   const zero = empty ? '0' : undefined;
   if (page.family === 'alert')
     return [
-      { label: '当前告警', value: zero ?? '1,248' },
+      { label: '当前告警', value: zero ?? 1248 },
       { label: '待研判', value: zero ?? '38', tone: 'warning' },
       { label: '高危与严重', value: zero ?? '12', tone: 'danger' },
       { label: '已关联事件', value: zero ?? '9' },
@@ -840,7 +844,7 @@ export function metricsFor(page: PageSpec, empty = false): MetricSpec[] {
   if (page.family === 'application')
     return [
       { label: '观测流量', value: zero ?? '21.8', suffix: 'GiB' },
-      { label: '活跃会话', value: zero ?? '4,216' },
+      { label: '活跃会话', value: zero ?? 4216 },
       { label: '规则识别覆盖', value: empty ? null : '74.6%', missingReason: '当前范围没有可统计的应用记录' },
       {
         label: '未知应用',
@@ -854,7 +858,7 @@ export function metricsFor(page: PageSpec, empty = false): MetricSpec[] {
       { label: '在线服务', value: zero ?? '10' },
       { label: '异常组件', value: zero ?? '1', tone: 'warning' },
       { label: '接入事件', value: zero ?? '3.2', suffix: 'k EPS' },
-      { label: '持久缓冲积压', value: zero ?? '3,820' },
+      { label: '持久缓冲积压', value: zero ?? 3820 },
     ];
   return [];
 }

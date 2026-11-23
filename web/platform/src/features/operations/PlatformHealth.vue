@@ -10,7 +10,7 @@ import {
   type MetricSpec,
   type PlatformHealth,
 } from '@starbeacon/shared/types.ts';
-import { formatBytes } from '@starbeacon/shared/utils/format.ts';
+import { formatNumber, formatBytes } from '@starbeacon/shared/utils/format.ts';
 import { session } from '../../session';
 const ADescriptionsItem = ADescriptions.Item;
 const result = shallowRef<PlatformHealth | null>(null),
@@ -29,7 +29,10 @@ const unavailable = computed(
 // 原包存储由全部租户共享：容量来自部署存储，原包数量与可回溯时间只统计当前租户。
 const storage = computed(() => result.value?.packet_storage);
 const amount = (value: string) => (/^\d{1,20}$/.test(value) ? BigInt(value) : null);
-const count = (value: string) => amount(value)?.toLocaleString('zh-CN') ?? '未获取';
+const count = (value: string) => {
+  const parsed = amount(value);
+  return parsed === null ? '未获取' : formatNumber(parsed);
+};
 const pressure = computed(() => {
   const value = storage.value;
   if (!value?.measured) return false;
@@ -193,7 +196,7 @@ onScopeDispose(() => controller?.abort());
             ><a-descriptions-item label="提交标识"
               ><span class="technical">{{ result.runtime.commit }}</span></a-descriptions-item
             ><a-descriptions-item label="运行协程">{{
-              result.runtime.goroutines.toLocaleString('zh-CN')
+              formatNumber(result.runtime.goroutines)
             }}</a-descriptions-item></a-descriptions
           >
           <p class="page-description">依赖可用性不代表采集质量、队列容量或整体性能已经符合要求。</p>

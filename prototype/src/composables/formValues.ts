@@ -1,4 +1,5 @@
 import type { BusinessRecord, FieldSpec } from '../models';
+import { formatTime } from '../../../web/packages/shared/src/types.ts';
 
 export const examplePermissionCounts: Record<string, number> = {
   安全分析员: 28,
@@ -10,10 +11,8 @@ export const examplePermissionCounts: Record<string, number> = {
 export function expiryFromDuration(value: string, reference: string): string | undefined {
   const duration = value.match(/^(\d+)\s*(天|小时)$/);
   if (!duration) return undefined;
-  return new Date(Date.parse(reference) + Number(duration[1]) * (duration[2] === '天' ? 86400000 : 3600000))
-    .toISOString()
-    .slice(0, 19)
-    .replace('T', ' ');
+  const expires = new Date(Date.parse(reference) + Number(duration[1]) * (duration[2] === '天' ? 86400000 : 3600000));
+  return Number.isFinite(expires.getTime()) ? formatTime(expires, { timeZone: 'UTC' }) : undefined;
 }
 
 // 展示值可带单位；编辑控件只接收所属字段的值域，保留身份与统计字段的独立含义。

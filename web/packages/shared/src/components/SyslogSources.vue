@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { computed, shallowRef, watch, onScopeDispose } from 'vue';
 import {
   Table as ATable,
@@ -93,8 +94,7 @@ function label(v: SyslogSource) {
         }}</a-tag
         ><template v-else-if="column.key === 'count'"
           ><span class="technical"
-            >{{ BigInt(record.persisted).toLocaleString('zh-CN') }} /
-            {{ BigInt(record.received).toLocaleString('zh-CN') }}</span
+            >{{ formatNumber(BigInt(record.persisted)) }} / {{ formatNumber(BigInt(record.received)) }}</span
           ></template
         ><template v-else-if="column.key === 'time'">{{
           record.last_persisted_at ? formatTime(record.last_persisted_at) : '尚无保存记录'
@@ -124,7 +124,7 @@ function label(v: SyslogSource) {
             ? selected.timezone + ' · 按接收时间选择最近年份'
             : '使用原文时区，缺失时间单独标记'
         }}</a-descriptions-item
-        ><a-descriptions-item label="消息上限">{{ selected.max_message_bytes.toLocaleString() }} B</a-descriptions-item
+        ><a-descriptions-item label="消息上限">{{ formatNumber(selected.max_message_bytes) }} B</a-descriptions-item
         ><a-descriptions-item label="本次运行计数"
           >接收 {{ selected.received }} · 持久保存 {{ selected.persisted }} · 接收后未保存 {{ selected.dropped }} · 拒绝
           {{ selected.rejected }} · 分帧错误 {{ selected.framing_errors }}</a-descriptions-item

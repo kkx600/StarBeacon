@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { onScopeDispose, shallowRef } from 'vue';
 import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import { deviceState, usableDevice, type ResponseDevice } from '../responseDevices';
@@ -32,7 +33,7 @@ onScopeDispose(() => clearInterval(timer));
         ><a-descriptions-item label="接口版本">{{ device.version }}</a-descriptions-item
         ><a-descriptions-item label="配置 SHA-256"
           ><span class="technical device-hash">{{ device.config_sha256 }}</span></a-descriptions-item
-        ><a-descriptions-item label="最长封禁">{{ device.max_ttl_seconds.toLocaleString() }} 秒</a-descriptions-item
+        ><a-descriptions-item label="最长封禁">{{ formatNumber(device.max_ttl_seconds) }} 秒</a-descriptions-item
         ><a-descriptions-item label="设备核验时间">{{
           device.observation === 'pending' ? '尚未核验' : formatTime(device.observed_at)
         }}</a-descriptions-item

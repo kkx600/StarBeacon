@@ -327,7 +327,8 @@ components:
   - 实现在 `web/packages/shared/src/pagination.ts` 和 `web/packages/shared/src/components/ListPager.vue`；表格内置分页用 `tablePagination()`。
   - 固定条目的配置表（例如系统设置）不分页。
 - **操作列**固定在右侧，最多三个文字按钮，更多的收进“更多”。
-- **时间**统一为 `YYYY-MM-DD HH:mm:ss`，时间列不折行。
+- **时间**按浏览器本地时区显示为 `YYYY-MM-DD HH:mm:ss`，时间列保持单行。回放捕获时间保留三位毫秒，证据详情可保留回执的小数位。标为 UTC 的时间按 UTC 显示。
+- **数字**用共享格式函数显示千分位，有效整数字符串经 `BigInt` 处理时保留精度。
 
 ### 页面说明
 

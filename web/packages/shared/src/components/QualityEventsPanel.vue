@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { shallowRef, watch } from 'vue';
 import { Modal as AModal, Table as ATable, Tag as ATag } from 'ant-design-vue';
 import { qualityCounters } from '../detectionQuality';
 import { qualityEventNames, type QualityEvent, type QualityPage } from '../qualityEvents';
+import { formatTime } from '../types';
 import StatePanel from './StatePanel.vue';
 import DetectionQuality from './DetectionQuality.vue';
 const props = defineProps<{
@@ -45,7 +47,7 @@ const reason = (key: string) =>
   <section v-if="!selected" class="panel quality-history">
     <div class="panel-header">
       <h2>质量事件</h2>
-      <span v-if="result">共 {{ BigInt(result.total).toLocaleString('zh-CN') }} 条</span>
+      <span v-if="result">共 {{ formatNumber(BigInt(result.total)) }} 条</span>
     </div>
     <StatePanel
       :loading="pending"
@@ -65,7 +67,7 @@ const reason = (key: string) =>
         :pagination="false"
         :scroll="{ x: 1075 }"
         ><template #bodyCell="{ column, record }">
-          <code v-if="column.key === 'created'">{{ record.created_at }}</code>
+          <time v-if="column.key === 'created'" :datetime="record.created_at">{{ formatTime(record.created_at) }}</time>
           <template v-else-if="column.key === 'sensor'"
             ><strong>{{ record.sensor_id }}</strong
             ><small>{{ record.sensor_registration_id }}</small></template
@@ -121,11 +123,11 @@ const reason = (key: string) =>
       <dd>{{ selected.sensor_id }} / {{ selected.sensor_registration_id }}</dd>
       <dt>平台记录时间</dt>
       <dd>
-        <code>{{ selected.created_at }}</code>
+        <time :datetime="selected.created_at">{{ formatTime(selected.created_at) }}</time>
       </dd>
       <dt>平台接收时的观测时间</dt>
       <dd>
-        <code>{{ selected.report.evaluated_at }}</code>
+        <time :datetime="selected.report.evaluated_at">{{ formatTime(selected.report.evaluated_at) }}</time>
       </dd>
       <dt v-if="selected.signal.prior_event_id">关联先前事件</dt>
       <dd v-if="selected.signal.prior_event_id">

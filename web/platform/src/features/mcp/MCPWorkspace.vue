@@ -5,6 +5,7 @@ import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { shallowRef } from 'vue';
 import { Table, Modal, Popconfirm, Tabs } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import { formatTime } from '@starbeacon/shared/types.ts';
 import { useMCP } from './useMCP';
 import { bindingState, scopeNames, type Scope, type Binding, type BindingChange } from './mcp';
 import BindingForm from './BindingForm.vue';
@@ -39,10 +40,6 @@ async function save(change: BindingChange) {
 }
 async function remove(record: Binding) {
   if (await state.remove(record)) message.success('服务身份已删除');
-}
-function date(value: string) {
-  const at = new Date(value);
-  return Number.isFinite(at.getTime()) ? at.toLocaleString('zh-CN', { hour12: false }) : '时间无效';
 }
 function openDirectory() {
   directoryTab.value = 'tools';
@@ -113,7 +110,7 @@ function openDirectory() {
                 :class="['status', bindingState(record as Binding) === '启用' ? 'status-online' : 'status-disabled']"
                 >{{ bindingState(record as Binding) }}</span
               ></template
-            ><template v-else-if="column.key === 'expiry'">{{ date(record.expires_at) }}</template
+            ><template v-else-if="column.key === 'expiry'">{{ formatTime(record.expires_at) }}</template
             ><template v-else-if="column.key === 'budget'">{{ record.requests_per_minute }} 次 / 分钟</template
             ><template v-else-if="column.key === 'actions'"
               ><div class="filter-actions">

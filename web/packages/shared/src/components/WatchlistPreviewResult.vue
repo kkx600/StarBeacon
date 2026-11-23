@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
+import { formatTime } from '../types';
 import { watchlistReasons, type WatchlistPreviewRequest, type WatchlistPreviewResult } from '../watchlists';
 const props = defineProps<{ result: WatchlistPreviewResult; input?: WatchlistPreviewRequest }>();
 </script>
@@ -21,7 +22,9 @@ const props = defineProps<{ result: WatchlistPreviewResult; input?: WatchlistPre
     </ul>
     <a-descriptions bordered :column="1" size="small"
       ><a-descriptions-item label="核验时间（UTC）"
-        ><time :datetime="result.checked_at">{{ result.checked_at }}</time></a-descriptions-item
+        ><time :datetime="result.checked_at">{{
+          formatTime(result.checked_at, { timeZone: 'UTC' })
+        }}</time></a-descriptions-item
       ><a-descriptions-item label="范围"
         >{{ result.scope_sensor_count }} 个探针、{{ result.value_count }} 项匹配值</a-descriptions-item
       ><a-descriptions-item label="定义 SHA-256"

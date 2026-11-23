@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { MetricSpec } from '../types';
-import { formatQuantity } from '../utils/format';
+import { formatNumber, formatQuantity } from '../utils/format';
 
 const props = defineProps<{ items: readonly MetricSpec[]; embedded?: boolean; dark?: boolean }>();
 
@@ -21,9 +21,10 @@ const displayed = computed(() =>
     const normalized =
       item.suffix && /(?:B|bit\/s)$/.test(item.suffix) ? formatQuantity(`${value} ${item.suffix}`) : '';
     const separator = normalized.lastIndexOf(' ');
+    const display = typeof item.value === 'number' ? formatNumber(item.value) : value;
     return {
       label: item.label,
-      value: separator < 0 ? value : normalized.slice(0, separator),
+      value: separator < 0 ? display : normalized.slice(0, separator),
       suffix: separator < 0 ? item.suffix : normalized.slice(separator + 1),
       note: item.note,
       tone,

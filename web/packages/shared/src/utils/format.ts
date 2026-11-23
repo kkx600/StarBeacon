@@ -1,4 +1,7 @@
 type Quantity = number | string | bigint | null | undefined;
+const groupedNumbers = new Intl.NumberFormat('zh-CN');
+export const formatNumber = (value: number | bigint): string => groupedNumbers.format(value);
+
 const decimal = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
 const binary = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB'];
 const rates = ['bit/s', 'Kbit/s', 'Mbit/s', 'Gbit/s', 'Tbit/s', 'Pbit/s', 'Ebit/s'];

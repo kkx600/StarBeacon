@@ -13,7 +13,7 @@ import {
   type PacketRecord,
 } from '../packetArchives';
 import { usePacketArchives } from '../usePacketArchives';
-import { formatBytes } from '../utils/format';
+import { formatNumber, formatBytes } from '../utils/format';
 import { formatTime } from '../types';
 import StatePanel from './StatePanel.vue';
 import PacketArchiveDetail from './PacketArchiveDetail.vue';
@@ -211,8 +211,8 @@ function inspect(row: PacketRecord) {
               ><template v-if="packetUnsealed(record as PacketRecord)"
                 >待封存<small class="packet-sub">包数与完整性尚未冻结</small></template
               ><template v-else
-                >{{ packetCapture(record as PacketRecord).packets.toLocaleString('zh-CN') }} 包<small class="packet-sub"
-                  >截断 {{ packetCapture(record as PacketRecord).truncated_packets.toLocaleString('zh-CN') }} 包</small
+                >{{ formatNumber(packetCapture(record as PacketRecord).packets) }} 包<small class="packet-sub"
+                  >截断 {{ formatNumber(packetCapture(record as PacketRecord).truncated_packets) }} 包</small
                 ></template
               ></template
             >

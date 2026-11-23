@@ -3,6 +3,7 @@ import { shallowRef, watch } from 'vue';
 import { Modal as AModal, Table as ATable } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
 import { discoveryCount, discoveryEndpoint, type DiscoveryResult, type DiscoveryAddress } from '../discovery';
+import { formatTime } from '../types';
 const props = defineProps<{
   result: DiscoveryResult | null;
   pending: boolean;
@@ -38,7 +39,8 @@ const columns = [
     <div v-if="result && !pending && !error" class="discovery-summary">
       <strong>{{ result.scope.network_name }} · {{ result.scope.network_domain }}</strong
       ><span>{{ result.scope.sensor_name }} · {{ result.query.prefix }}</span
-      ><span>查询窗口：{{ result.query.start }} 至 {{ result.query.end }}（结束时刻不包含）</span
+      ><span
+        >查询窗口：{{ formatTime(result.query.start) }} 至 {{ formatTime(result.query.end) }}（结束时刻不包含）</span
       ><span
         >排除的组播、未指定及全局广播方向记录：源 {{ discoveryCount(result.source_excluded) }} / 目的
         {{ discoveryCount(result.destination_excluded) }}</span
@@ -77,8 +79,12 @@ const columns = [
           ><span v-else-if="column.key === 'destination'" class="discovery-count">{{
             discoveryCount(record.destination_records)
           }}</span
-          ><code v-else-if="column.key === 'first'">{{ record.first.timestamp }}</code
-          ><code v-else-if="column.key === 'last'">{{ record.last.timestamp }}</code>
+          ><time v-else-if="column.key === 'first'" :datetime="record.first.timestamp">{{
+            formatTime(record.first.timestamp)
+          }}</time
+          ><time v-else-if="column.key === 'last'" :datetime="record.last.timestamp">{{
+            formatTime(record.last.timestamp)
+          }}</time>
           <div v-else-if="column.key === 'actions'" class="filter-actions">
             <a-button type="link" @click="selected = record as DiscoveryAddress">证据</a-button
             ><a-button
@@ -112,11 +118,11 @@ const columns = [
       <dl class="discovery-facts">
         <dt>事件时间</dt>
         <dd>
-          <code>{{ sample.timestamp }}</code>
+          <time :datetime="sample.timestamp">{{ formatTime(sample.timestamp, { fraction: 'source' }) }}</time>
         </dd>
         <dt>采集器读取时间</dt>
         <dd>
-          <code>{{ sample.observed_at }}</code>
+          <time :datetime="sample.observed_at">{{ formatTime(sample.observed_at, { fraction: 'source' }) }}</time>
         </dd>
         <dt>源端点</dt>
         <dd>{{ discoveryEndpoint(sample.source) }} · MAC {{ sample.source.mac || '未记录' }}</dd>

@@ -264,7 +264,7 @@ describe('执行回执与自动更新', () => {
           duration_ms: 50,
           rule_mode: 'registered',
           sample_metadata: {
-            first_packet_at: '2026-10-01T00:00:00Z',
+            first_packet_at: new Date(2026, 9, 1, 0, 0, 0, 321).toISOString(),
             last_packet_at: null,
             truncated_packets: 0,
             link_type: 1,
@@ -290,6 +290,7 @@ describe('执行回执与自动更新', () => {
     expect(wrapper.text()).toContain('检测到规则命中');
     expect(wrapper.text()).toContain('登记规则快照');
     expect(wrapper.text()).toContain('02:00:00:00:00:01');
+    expect(wrapper.text()).toContain('2026-10-01 00:00:00.321');
     expect(wrapper.text()).toContain('未获取');
     await wrapper.setProps({
       result: { replay: 'completed', match_status: 'unmatched', rule_mode: 'package', alerts: 'invalid' },

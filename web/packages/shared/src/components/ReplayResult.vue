@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Descriptions as ADescriptions, Table as ATable } from 'ant-design-vue';
 import { sampleOrigin } from '../utils/sample';
 import { formatBytes } from '../utils/format';
+import { formatTime } from '../types';
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{ result: Record<string, unknown>; local?: boolean }>();
 const completed = computed(() => props.result.replay === 'completed');
@@ -32,18 +33,7 @@ const alerts = computed(() =>
   Array.isArray(props.result.alerts) ? props.result.alerts.map((row, index) => ({ ...row, key: index })) : [],
 );
 const packetTime = (value: unknown) =>
-  typeof value === 'string'
-    ? new Date(value).toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        fractionalSecondDigits: 3,
-      })
-    : '未获取';
+  formatTime(typeof value === 'string' ? value : null, { fraction: 'milliseconds' });
 const columns = [
   { title: 'SID / 修订', key: 'rule', width: 120 },
   { title: '规则名称', dataIndex: 'signature', width: 230 },

@@ -9,7 +9,7 @@ import {
   type SessionExportRequest,
   type SessionExportReport,
 } from '../packetArchives';
-import { formatBytes } from '../utils/format';
+import { formatNumber, formatBytes } from '../utils/format';
 const ARadioGroup = ARadio.Group;
 const props = defineProps<{ api: ApiClient; archives: PacketRecord[]; open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
@@ -150,8 +150,7 @@ onScopeDispose(() => {
         </li>
       </ul>
       <p>
-        匹配 {{ report.packets.toLocaleString('zh-CN') }} 包 ·
-        {{ formatBytes(report.packet_bytes) }}。严格模式不会自动改为快照。
+        匹配 {{ formatNumber(report.packets) }} 包 · {{ formatBytes(report.packet_bytes) }}。严格模式不会自动改为快照。
       </p>
     </div>
     <a-alert v-if="success" type="success" show-icon class="section-gap" :message="success" />

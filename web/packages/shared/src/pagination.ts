@@ -1,9 +1,10 @@
+import { formatNumber } from './utils/format.ts';
 // 全部列表共用的分页标准：每页条数、默认值和总数文案只在这里定义。
 export const pageSizeOptions = [10, 20, 50, 100] as const;
 export const defaultPageSize = 20;
 
 export function totalText(total: number | bigint | string): string {
-  return `共 ${BigInt(total).toLocaleString('zh-CN')} 条`;
+  return `共 ${formatNumber(BigInt(total))} 条`;
 }
 
 // 取出当前页的记录；页码超出范围时回到最后一页。

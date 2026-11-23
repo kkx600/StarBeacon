@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { onScopeDispose, shallowRef } from 'vue';
 import { Table as ATable, Tag as ATag } from 'ant-design-vue';
 import type { ResponseDevice } from '../responseDevices';
@@ -49,7 +50,7 @@ const columns = [
               : undefined
         "
         >{{ deviceState(record as ResponseDevice, now) }}</a-tag
-      ><template v-else-if="column.key === 'ttl'">{{ record.max_ttl_seconds.toLocaleString() }} 秒</template
+      ><template v-else-if="column.key === 'ttl'">{{ formatNumber(record.max_ttl_seconds) }} 秒</template
       ><template v-else-if="column.key === 'observed'">{{
         record.observation === 'pending' ? '尚未核验' : formatTime(record.observed_at)
       }}</template>

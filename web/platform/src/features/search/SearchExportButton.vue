@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '@starbeacon/shared/utils/format.ts';
 import { computed, onScopeDispose, shallowRef, watch } from 'vue';
 import { Modal as AModal } from 'ant-design-vue';
 import type { SearchRequest } from '@starbeacon/shared/types.ts';
@@ -90,7 +91,7 @@ async function submit() {
     link.click();
     link.remove();
     timer = setTimeout(revoke, 1000);
-    success.value = `导出文件已准备，包含 ${result.rows.toLocaleString('zh-CN')} 条记录。`;
+    success.value = `导出文件已准备，包含 ${formatNumber(result.rows)} 条记录。`;
   } catch (value) {
     if (!active.signal.aborted) error.value = value instanceof Error ? value.message : '检索导出未完成，请稍后重试';
   } finally {

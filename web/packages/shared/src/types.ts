@@ -209,8 +209,24 @@ export interface AuditResult {
   items: AuditRecord[];
   next_cursor: string;
 }
-export const formatTime = (value?: string | null) =>
-  value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '未获取';
+export function formatTime(
+  value?: string | Date | null,
+  options: { fraction?: 'milliseconds' | 'source'; timeZone?: 'UTC' } = {},
+): string {
+  if (!value) return '未获取';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (!Number.isFinite(date.getTime())) return '时间无效';
+
+  const offset = options.timeZone === 'UTC' ? 0 : date.getTimezoneOffset() * 60_000;
+  const display = new Date(date.getTime() - offset);
+  if (!Number.isFinite(display.getTime())) return '时间无效';
+  const [day, time = ''] = display.toISOString().split('T');
+  if (options.fraction === 'source' && typeof value === 'string') {
+    const fraction = value.match(/\.(\d{1,9})(?:Z|[+-]\d{2}:\d{2})$/)?.[1];
+    if (fraction) return `${day} ${time.slice(0, 8)}.${fraction}`;
+  }
+  return `${day} ${time.slice(0, options.fraction === 'milliseconds' ? 12 : 8)}`;
+}
 export const formatPercent = (value?: number | null) => (value == null ? '未获取' : `${value.toFixed(1)}%`);
 export interface TaskReceipt {
   command_id: string;

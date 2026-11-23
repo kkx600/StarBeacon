@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '@starbeacon/shared/utils/format.ts';
 import { shallowRef, watch } from 'vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
@@ -55,7 +56,7 @@ watch(
   <section class="panel">
     <div class="panel-header">
       <h2>流量记录</h2>
-      <span>{{ result.total.toLocaleString('zh-CN') }} 条</span>
+      <span>{{ formatNumber(result.total) }} 条</span>
     </div>
     <p v-if="range" class="muted traffic-window">
       {{ formatTime(range.start) }} — {{ formatTime(range.end) }} · 记录数不等于独立会话数或数据包数

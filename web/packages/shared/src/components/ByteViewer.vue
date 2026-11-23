@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/format';
 import { useFeedback } from '../composables/useFeedback';
 import { computed, shallowRef, useId, watch } from 'vue';
 import { Radio, Pagination as APagination } from 'ant-design-vue';
@@ -88,7 +89,7 @@ async function copy() {
     <template v-if="evidence.state === 'available'">
       <p class="page-description">
         {{ source === 'syslog' ? 'Syslog 原始消息字节' : evidence.kind === 'packet' ? '数据包字节' : '应用载荷字节' }} ·
-        {{ bytes.length.toLocaleString('zh-CN') }} B。{{
+        {{ formatNumber(bytes.length) }} B。{{
           source === 'syslog'
             ? '内容为接收器持久保存的消息原文，不含 TCP/TLS 分帧或网络包头。'
             : source === 'frame'
@@ -118,7 +119,7 @@ async function copy() {
       <div v-if="search" class="byte-matches" role="status" aria-live="polite">
         <template v-if="search.offsets.length"
           ><span
-            >{{ search.limited ? '前 ' : '' }}{{ search.offsets.length.toLocaleString('zh-CN') }} 处匹配 · 第
+            >{{ search.limited ? '前 ' : '' }}{{ formatNumber(search.offsets.length) }} 处匹配 · 第
             {{ matchIndex + 1 }} 处 · 字节偏移 0x{{ activeOffset!.toString(16).padStart(8, '0') }}（{{
               activeOffset
             }}
@@ -149,7 +150,7 @@ async function copy() {
         :page-size="256"
         :show-size-changer="false"
         size="small"
-        :show-total="(total: number) => `${total.toLocaleString('zh-CN')} B · 每页 256 B`"
+        :show-total="(total: number) => `${formatNumber(total)} B · 每页 256 B`"
       />
     </template>
     <a-empty v-else-if="evidence.state === 'missing'" :description="evidence.message" :image="false" />

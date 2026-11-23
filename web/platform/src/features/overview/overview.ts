@@ -1,3 +1,4 @@
+import { formatNumber } from '@starbeacon/shared/utils/format.ts';
 export interface Bucket {
   key: string;
   count: string;
@@ -86,7 +87,7 @@ export function countText(value: string): string {
       return `${whole}.${fraction.toString().padStart(2, '0').replace(/0+$/, '') || '0'} ${unit}`;
     }
   }
-  return count.toLocaleString('zh-CN');
+  return formatNumber(count);
 }
 export const severityName: Record<string, string> = { high: '高危', medium: '中危', low: '低危', unknown: '未知' };
 export function percentage(count: string, total: string): number {
