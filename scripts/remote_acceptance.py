@@ -368,9 +368,8 @@ def stage(host, path, step_ca_image=STEP_CA_IMAGE):
         with tarfile.open(archive, "w:gz") as output:
             for name, data in files.items():
                 archive_bytes(output, name, data)
-            report = work / "source.json"
-            report.write_text(json.dumps({"commit": commit, "workspace_sha256": digest, "clean_commit": clean, "project": project}, indent=2) + "\n")
-            output.add(report, arcname="reports/source.json")
+            report = {"commit": commit, "workspace_sha256": digest, "clean_commit": clean, "project": project}
+            archive_bytes(output, "reports/source.json", (json.dumps(report, indent=2) + "\n").encode())
             environment = work / "dependencies.env"
             environment.write_text("\n".join(f"{key}={value}" for key, value in dependency_secrets().items()) + "\n")
             environment.chmod(0o600)
@@ -433,9 +432,7 @@ def sync(path):
             for name, data in files.items():
                 archive_bytes(output, context + "/" + name, data)
             for name, contents in (("compose.json", definition), ("reports/source.json", state)):
-                metadata = work / pathlib.Path(name).name
-                metadata.write_text(json.dumps(contents, indent=2) + "\n")
-                output.add(metadata, arcname=name)
+                archive_bytes(output, name, (json.dumps(contents, indent=2) + "\n").encode())
         with archive.open("rb") as file:
             ssh(state["host"], ["tar", "-xzf", "-", "--no-same-owner", "-C", state["directory"]], stdin=file)
     path.write_text(json.dumps(state, indent=2) + "\n")
@@ -449,7 +446,10 @@ def main():
     parser.add_argument("--download-modules", action="store_true", help="缓存构建时下载锁定模块，并验证 Go 模块摘要")
     parser.add_argument("--step-ca-image",default=STEP_CA_IMAGE,help="独立 CA 镜像；验收可指定已校验上游发行文件构建的预载镜像，并记录实际镜像身份")
     parser.add_argument("--state", type=pathlib.Path, default=ROOT / ".local/acceptance/remote.json")
+    parser.add_argument("--report-output", type=pathlib.Path, help="回传目录，默认使用状态文件所在目录下的项目目录")
     args = parser.parse_args()
+    if args.report_output is not None and args.action != "fetch":
+        parser.error("--report-output 只适用于 fetch")
     if args.action == "stage":
         stage(args.host, args.state,args.step_ca_image)
         return
@@ -478,7 +478,7 @@ def main():
     elif args.action == "status":
         compose(state, ["ps", "--all", "--format", "json"])
     else:
-        output = args.state.parent / state["project"]
+        output = args.report_output or args.state.parent / state["project"]
         result = ssh(state["host"], ["tar", "-czf", "-", "-C", state["directory"], "reports"], stdout=subprocess.PIPE)
         reports = store_report_bundle(result.stdout, output, state["workspace_sha256"])
         from cleanup_acceptance import cleanup_local
