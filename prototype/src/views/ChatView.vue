@@ -14,7 +14,7 @@ import {
 import type { PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import RecordForm from '../components/RecordForm.vue';
 const message = useFeedback();
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
@@ -129,7 +129,7 @@ function close() {
         <span>{{ name }}</span><small>总部网络域 · 合成示例</small>
       </button>
       <div class="conversation-footer">
-        <StatusTag value="只读分析授权" />
+        <StatusTag value="只读分析授权" tone="neutral" />
         <p>数据外发遵循租户与脱敏策略。</p>
       </div>
     </aside>

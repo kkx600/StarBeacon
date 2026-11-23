@@ -7,7 +7,8 @@ import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
 import MetricBar from '../components/MetricBar.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import StatePanel from '../components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 import { retentionPolicy } from '../composables/systemSettings';
@@ -119,7 +120,7 @@ const metrics = computed<MetricSpec[]>(() => [
   { label: '预计可回溯', value: empty.value ? '—' : '180', suffix: '天' },
   { label: '分段索引占原包', value: empty.value ? '—' : '0.3%' },
 ]);
-const retentionTone = (value: string) => (value === '完整' ? 'success' : value === '仅元数据' ? 'neutral' : 'warning');
+const retentionTones = { 完整: 'success', 仅元数据: 'neutral', 按策略截断: 'warning' } as const;
 
 const query = ref({ window: '最近 24 小时', source: '', destination: '', retention: undefined as string | undefined });
 const settingsLink = { path: '/page/system-settings', query: { section: 'traffic' } };
@@ -211,7 +212,11 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
           <span v-else-if="['start', 'observed', 'stored'].includes(String(column.key))" class="tabular">{{
             text
           }}</span>
-          <StatusTag v-else-if="column.key === 'retention'" :value="text" :tone="retentionTone(String(text))" />
+          <StatusTag
+            v-else-if="column.key === 'retention'"
+            :value="text"
+            :tone="statusTone(retentionTones, record.retention)"
+          />
           <span v-else-if="column.key === 'actions'" class="row-actions">
             <a-button
               type="link"

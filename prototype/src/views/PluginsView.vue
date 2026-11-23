@@ -5,7 +5,9 @@ import { useFeedback } from '../../../web/packages/shared/src/composables/useFee
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { configurationTones } from '../data/statuses';
 import StatePanel from '../components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 
@@ -258,7 +260,7 @@ watch(
         <StatusTag
           v-else-if="column.key === 'status'"
           :value="text"
-          :tone="text === '启用' ? 'success' : text === '验证失败' ? 'danger' : 'neutral'"
+          :tone="statusTone(configurationTones, record.status)"
         />
         <span v-else-if="column.key === 'lastRun'" class="tabular">{{ text }}</span>
         <span v-else-if="column.key === 'actions'" class="row-actions">

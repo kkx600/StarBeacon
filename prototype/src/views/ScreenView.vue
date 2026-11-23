@@ -13,7 +13,9 @@ import { healthFor, sensorMetrics } from '../data/sensorHealth';
 import ChartPanel from '../components/ChartPanel.vue';
 import MetricBar from '../components/MetricBar.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { healthTones, severityTones } from '../data/statuses';
 import RecordDetail from '../components/RecordDetail.vue';
 import RecordForm from '../components/RecordForm.vue';
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
@@ -33,7 +35,11 @@ const observedSensors = computed(() =>
     : sensors.value.filter(record => scope.value === '全部网络域' || record.scope === scope.value),
 );
 const sensorSummary = computed(() => sensorMetrics(observedSensors.value, thresholds));
-const healthRecords = computed(() => observedSensors.value.filter(record => healthFor(record, thresholds) !== '正常'));
+const healthRecords = computed(() =>
+  observedSensors.value
+    .map(record => ({ id: record.id, name: record.name, health: healthFor(record, thresholds) }))
+    .filter(record => record.health !== '正常'),
+);
 const metrics = computed(() => [
   { label: '安全事件', value: props.state === 'empty' ? '0' : '9' },
   { label: '高危告警', value: props.state === 'empty' ? '0' : '12', tone: 'danger' as const },
@@ -181,7 +187,7 @@ function fullscreen() {
             重点告警 <button @click="router.push('/page/alerts')">查看全部<ArrowRightOutlined /></button>
           </h2>
           <div v-for="alert in alerts" :key="alert.id" class="screen-alert">
-            <StatusTag :value="alert.level" /><button
+            <StatusTag :value="alert.level" :tone="statusTone(severityTones, alert.level)" dark /><button
               @click="
                 selectedAlert = alert;
                 detail = true;
@@ -195,9 +201,15 @@ function fullscreen() {
           <h2>探针与数据质量</h2>
           <div class="screen-health">
             <div v-for="sensor in healthRecords" :key="sensor.id">
-              <span>{{ sensor.name }}</span><StatusTag :value="healthFor(sensor, thresholds)" />
+              <span>{{ sensor.name }}</span><StatusTag
+                :value="sensor.health"
+                :tone="statusTone(healthTones, sensor.health)"
+                dark
+              />
             </div>
-            <div v-if="!healthRecords.length"><span>当前范围探针</span><StatusTag value="正常" /></div>
+            <div v-if="!healthRecords.length">
+              <span>当前范围探针</span><StatusTag value="正常" tone="success" dark />
+            </div>
           </div>
         </section>
         <section class="screen-panel">
@@ -212,7 +224,7 @@ function fullscreen() {
           </div>
           <div class="screen-health">
             <div v-for="item in aiFeed" :key="item.text">
-              <span>{{ item.text }}</span><StatusTag :value="item.result" :tone="item.tone" />
+              <span>{{ item.text }}</span><StatusTag :value="item.result" :tone="item.tone" dark />
             </div>
           </div>
         </section></div

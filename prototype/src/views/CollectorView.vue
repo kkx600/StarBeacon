@@ -18,7 +18,9 @@ import { usePreview } from '../composables/usePreview';
 import PageHeader from '../components/PageHeader.vue';
 import MetricBar from '../components/MetricBar.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { taskTones } from '../data/statuses';
 import ReplayPreview from '../components/ReplayPreview.vue';
 import TableWorkspace from '../components/TableWorkspace.vue';
 import { pageById } from '../data/catalog';
@@ -55,6 +57,8 @@ const action = ref<CollectorAction>('network');
 const localTab = ref('interfaces');
 const keyword = ref('');
 const statusFilter = ref('全部状态');
+const interfaceTones = { 链路正常: 'success', 链路断开: 'neutral', 本机回环: 'neutral' } as const;
+const serviceTones = { 运行中: 'info', 未授权: 'neutral' } as const;
 const archivePage = { ...pageById.get('packet-archives')!, readOnly: true, primary: '刷新归档' };
 const pageTabs: Record<string, string[]> = {
   network: ['interfaces', 'capture', 'archives', 'replay-samples', 'replay-tasks', 'responses', 'syslog'],
@@ -360,7 +364,7 @@ function clearFilters() {
         <section class="panel collector-section">
           <div class="panel-heading">
             <h2>采集与上报链路</h2>
-            <StatusTag value="在线（示例）" />
+            <StatusTag value="在线（示例）" tone="success" />
           </div>
           <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
             ><a-descriptions-item label="采集模式">旁路镜像 · {{ collector.capture.backend }}</a-descriptions-item
@@ -397,11 +401,11 @@ function clearFilters() {
               ><template v-if="column.key === 'identity'"
                 ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
                 ><small class="row-id">{{ record.id }}</small></template
-              ><StatusTag v-else-if="column.key === 'status'" :value="record.status" /><a-button
-                v-else-if="column.key === 'action'"
-                type="link"
-                size="small"
-                @click="showDetail(record)"
+              ><StatusTag
+                v-else-if="column.key === 'status'"
+                :value="record.status"
+                :tone="statusTone(taskTones, record.status)"
+              /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
                 >查看</a-button
               ></template
             ></a-table
@@ -463,8 +467,11 @@ function clearFilters() {
                 ><template v-if="column.key === 'identity'"
                   ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
                   ><small class="row-id">{{ record.mac }}</small></template
-                ><StatusTag v-else-if="column.key === 'status'" :value="record.status" /><template
-                  v-else-if="column.key === 'address'"
+                ><StatusTag
+                  v-else-if="column.key === 'status'"
+                  :value="record.status"
+                  :tone="statusTone(interfaceTones, record.status)"
+                /><template v-else-if="column.key === 'address'"
                   >{{ record.ipv4 }}<small class="row-id">IPv6：{{ record.ipv6 }}</small></template
                 ><template v-else-if="column.key === 'speed'"
                   >{{ formatQuantity(record.speed) }}<small class="row-id">MTU {{ record.mtu }}</small></template
@@ -518,7 +525,7 @@ function clearFilters() {
         <section class="panel collector-section">
           <div class="panel-heading">
             <h2>主控平台连接</h2>
-            <StatusTag value="在线（示例）" />
+            <StatusTag value="在线（示例）" tone="success" />
           </div>
           <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
             ><a-descriptions-item label="上报地址"
@@ -568,7 +575,8 @@ function clearFilters() {
               ><a-descriptions-item label="实际生效规则包">{{ collector.ruleActive }}</a-descriptions-item
               ><a-descriptions-item label="实际规则数 / 引擎"
                 >12840 条 / {{ collector.engineActive }}</a-descriptions-item
-              ><a-descriptions-item label="同步状态"><StatusTag value="存在待同步版本" /></a-descriptions-item
+              ><a-descriptions-item label="同步状态"
+                ><StatusTag value="存在待同步版本" tone="warning" /></a-descriptions-item
               ><a-descriptions-item label="规则来源">平台签名制品 · 不允许本地覆盖已发布包</a-descriptions-item
               ><a-descriptions-item label="同步方式"
                 >{{ collector.syncMode }} · 每 {{ collector.syncMinutes }} 分钟核对版本</a-descriptions-item
@@ -633,11 +641,11 @@ function clearFilters() {
               ><template v-if="column.key === 'identity'"
                 ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
                 ><small class="row-id">{{ record.id }}</small></template
-              ><StatusTag v-else-if="column.key === 'status'" :value="record.status" /><a-button
-                v-else-if="column.key === 'action'"
-                type="link"
-                size="small"
-                @click="showDetail(record)"
+              ><StatusTag
+                v-else-if="column.key === 'status'"
+                :value="record.status"
+                :tone="statusTone(taskTones, record.status)"
+              /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
                 >查看</a-button
               ></template
             ><template #emptyText
@@ -685,7 +693,11 @@ function clearFilters() {
               :scroll="{ x: 915 }"
               size="middle"
               ><template #bodyCell="{ column, record }"
-                ><StatusTag v-if="column.key === 'status'" :value="record.status" /><a-button
+                ><StatusTag
+                  v-if="column.key === 'status'"
+                  :value="record.status"
+                  :tone="statusTone(serviceTones, record.status)"
+                /><a-button
                   v-else-if="column.key === 'action'"
                   type="link"
                   size="small"
@@ -771,7 +783,10 @@ function clearFilters() {
       <template v-else-if="selectedTask"
         ><a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
           ><a-descriptions-item label="任务类型">{{ selectedTask.type }}</a-descriptions-item
-          ><a-descriptions-item label="状态"><StatusTag :value="selectedTask.status" /></a-descriptions-item
+          ><a-descriptions-item label="状态"
+            ><StatusTag
+              :value="selectedTask.status"
+              :tone="statusTone(taskTones, selectedTask.status)" /></a-descriptions-item
           ><a-descriptions-item label="来源">{{ selectedTask.source }}</a-descriptions-item
           ><a-descriptions-item label="目标 / 对象">{{ selectedTask.target }}</a-descriptions-item
           ><a-descriptions-item label="创建时间">{{ selectedTask.time }}</a-descriptions-item

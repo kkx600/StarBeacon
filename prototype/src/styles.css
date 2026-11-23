@@ -528,34 +528,6 @@ p {
   font-size: 12px;
   padding-inline: 4px;
 }
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 7px;
-  border-radius: 4px;
-  white-space: nowrap;
-  background: var(--status-surface);
-  color: var(--status-text);
-  font-size: 12px;
-  line-height: 1.5;
-}
-.status-tag.success {
-  background: var(--success-surface);
-  color: var(--success) !important;
-}
-.status-tag.warning {
-  background: var(--warning-surface);
-  color: var(--warning) !important;
-}
-.status-tag.danger {
-  background: var(--danger-surface);
-  color: var(--danger) !important;
-}
-.status-tag.info {
-  background: var(--info-surface);
-  color: var(--info-text) !important;
-}
 .status-dot {
   display: inline-block;
   flex-shrink: 0;
@@ -574,7 +546,7 @@ p {
   background: var(--danger-dot);
 }
 .status-dot.info {
-  background: var(--info-dot);
+  background: var(--progress-text);
 }
 .column-selector {
   display: grid;

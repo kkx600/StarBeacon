@@ -35,7 +35,9 @@ import {
 } from '../composables/systemSettings';
 import PageHeader from '../components/PageHeader.vue';
 import HelpNote from '../components/HelpNote.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { configurationTones } from '../data/statuses';
 import StatePanel from '../components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
 
@@ -346,7 +348,11 @@ watch(
           <template #bodyCell="{ column, record, text }">
             <span v-if="column.key === 'id'" class="mono">{{ text }}</span>
             <span v-else-if="column.key === 'time' || column.key === 'updated'" class="tabular">{{ text }}</span>
-            <StatusTag v-else-if="column.key === 'status'" :value="text" />
+            <StatusTag
+              v-else-if="column.key === 'status'"
+              :value="text"
+              :tone="statusTone(configurationTones, record.status)"
+            />
             <a-button
               v-else-if="column.key === 'actions'"
               type="link"
@@ -440,7 +446,11 @@ watch(
             <template #bodyCell="{ column, record, text }">
               <span v-if="column.key === 'id'" class="mono">{{ text }}</span>
               <span v-else-if="column.key === 'expires'" class="tabular">{{ text }}</span>
-              <StatusTag v-else-if="column.key === 'status'" :value="text" />
+              <StatusTag
+                v-else-if="column.key === 'status'"
+                :value="text"
+                :tone="statusTone(configurationTones, record.status)"
+              />
               <a-button
                 v-else-if="column.key === 'actions'"
                 type="link"

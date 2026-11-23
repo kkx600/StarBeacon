@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons-vue';
 import type { PacketRecord } from '../data/fixtures';
 import { exportJson } from '../composables/useRecords';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 const message = useFeedback();
 const props = defineProps<{ packets: PacketRecord[]; compact?: boolean }>();
 const selectedId = ref('4');
@@ -103,8 +103,9 @@ async function copy() {
   <div class="packet-workbench">
     <div class="packet-summary">
       <a-space
-        ><StatusTag value="真实握手示例" /><StatusTag value="双向连续性示例" /><StatusTag
-          value="FIN / ACK 示例" /></a-space
+        ><StatusTag value="真实握手示例" tone="neutral" /><StatusTag value="双向连续性示例" tone="neutral" /><StatusTag
+          value="FIN / ACK 示例"
+          tone="neutral" /></a-space
       ><span class="muted">FLOW-20260930-0142 · 8 帧合成示例</span>
     </div>
     <a-table

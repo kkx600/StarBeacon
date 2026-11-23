@@ -155,52 +155,6 @@
   line-height: 22px;
 }
 
-/* 状态标签：进行中用主色浅底；“严重”用实底，与“高危”分开。 */
-.status-tag {
-  padding: 1px 7px;
-  font-size: 12px;
-  line-height: 18px;
-}
-.status-dot {
-  margin-top: 0;
-}
-.status-tag.info {
-  background: var(--progress-surface);
-  color: var(--progress-text) !important;
-}
-.status-dot.info {
-  background: var(--progress-text);
-}
-.status-tag.critical {
-  background: var(--critical);
-  color: var(--critical-text) !important;
-}
-.status-dot.critical {
-  background: var(--critical-text);
-}
-
-/* 深色大屏上的标签：半透明色底加浅色字，不直接套用浅色标签。 */
-.situation-screen .status-tag {
-  background: color-mix(in srgb, currentColor 16%, transparent);
-  color: var(--screen-muted) !important;
-}
-.situation-screen .status-tag.critical,
-.situation-screen .status-tag.danger {
-  color: var(--screen-danger) !important;
-}
-.situation-screen .status-tag.warning {
-  color: var(--screen-amber) !important;
-}
-.situation-screen .status-tag.success {
-  color: var(--screen-teal) !important;
-}
-.situation-screen .status-tag.info {
-  color: var(--screen-blue) !important;
-}
-.situation-screen .status-dot {
-  background: currentColor;
-}
-
 /* 顶栏在 1024px 宽度下不折行。 */
 .topbar-left {
   flex: 1;

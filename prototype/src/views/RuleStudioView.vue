@@ -11,7 +11,7 @@ import { exampleRule } from '../data/fixtures';
 import PageHeader from '../components/PageHeader.vue';
 import StatePanel from '../components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 const message = useFeedback();
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
 const emit = defineEmits<{ state: [value: PreviewState] }>();
@@ -153,7 +153,10 @@ function close() {
     <section class="panel rule-result">
       <div class="panel-heading">
         <h2>候选与验证</h2>
-        <StatusTag :value="generated ? (tested ? '示例测试完成' : '待验证') : '尚未生成'" />
+        <StatusTag
+          :value="generated ? (tested ? '示例测试完成' : '待验证') : '尚未生成'"
+          :tone="generated ? (tested ? 'success' : 'warning') : 'neutral'"
+        />
       </div>
       <StatePanel
         v-if="!generated"

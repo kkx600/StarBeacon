@@ -12,7 +12,8 @@ import { exportJson } from '../composables/useRecords';
 import PageHeader from '../components/PageHeader.vue';
 import ChartPanel from '../components/ChartPanel.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { recordStatusTone } from '../data/statuses';
 import RecordForm from '../components/RecordForm.vue';
 import RecordDetail from '../components/RecordDetail.vue';
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
@@ -119,7 +120,7 @@ function close() {
     <aside class="panel topology-details">
       <div class="panel-heading">
         <h2>节点信息</h2>
-        <StatusTag :value="record.status" />
+        <StatusTag :value="record.status" :tone="recordStatusTone(assetPage, record.status)" />
       </div>
       <h3>{{ selected }}</h3>
       <a-descriptions :column="1" size="small"
@@ -132,7 +133,11 @@ function close() {
       ><a-divider />
       <h3>依据与待办</h3>
       <p>观测到异常请求。利用成功仍需应用与终端侧证据。</p>
-      <StatusTag value="结论待复核" /><a-button type="primary" block style="margin-top: 20px" @click="detail = true"
+      <StatusTag value="结论待复核" tone="warning" /><a-button
+        type="primary"
+        block
+        style="margin-top: 20px"
+        @click="detail = true"
         >查看资产详情</a-button
       ><a-button block style="margin-top: 8px" @click="router.push('/page/incidents?state=action')"
         >创建调查事件</a-button

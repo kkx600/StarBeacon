@@ -14,7 +14,8 @@ import type { PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
 import StatePanel from '../components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import HelpNote from '../components/HelpNote.vue';
 
 // 自动化编排：一条编排由若干步骤顺序组成，每种步骤有自己的配置项。
@@ -188,6 +189,7 @@ const nodes = ref<StepNode[]>([
 ]);
 const selected = ref('approval');
 const status = ref('草稿');
+const playbookTones = { 草稿: 'neutral', 校验通过: 'success' } as const;
 const detail = ref(false);
 const formOpen = ref(false);
 
@@ -298,7 +300,7 @@ watch(
           <h2>高危访问响应</h2>
           <small class="muted">PB-DEMO-001 · 版本 1 · 合成示例</small>
         </div>
-        <StatusTag :value="status" :tone="status === '校验通过' ? 'success' : 'neutral'" />
+        <StatusTag :value="status" :tone="statusTone(playbookTones, status)" />
       </div>
       <div class="workflow-flow">
         <template v-for="(node, index) in nodes" :key="node.id">

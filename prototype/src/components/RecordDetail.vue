@@ -7,7 +7,8 @@ import type { BusinessRecord, PageSpec } from '../models';
 import { evidenceFor, exampleRule, packetRows, hasPacketEvidence, responseFor } from '../data/fixtures';
 import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.vue';
 import { formatCell } from '../composables/formatRecord';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { evidenceStatusTone, recordStatusTone } from '../data/statuses';
 import PacketWorkbench from './PacketWorkbench.vue';
 import StatePanel from './StatePanel.vue';
 import SensorDetail from './SensorDetail.vue';
@@ -27,7 +28,15 @@ const tabs = computed(() => {
 const evidence = computed(() => evidenceFor(props.page, props.record));
 const response = computed(() => responseFor(props.page, props.record));
 const summary = computed(() =>
-  props.page.columns.map(c => ({ label: c.title, value: formatCell(props.record?.[c.key], c) })),
+  props.page.columns.map(column => {
+    const value = props.record?.[column.key];
+    return {
+      label: column.title,
+      value: formatCell(value, column),
+      tone:
+        column.kind === 'status' || column.kind === 'level' ? recordStatusTone(props.page, value, column) : undefined,
+    };
+  }),
 );
 const archiveFields = [
   ['sensor', '捕获探针'],
@@ -86,7 +95,7 @@ function addNote() {
           <div class="detail-id">{{ record.id }}</div>
           <h2>{{ record.name }}</h2>
         </div>
-        <StatusTag :value="record.status" />
+        <StatusTag :value="record.status" :tone="recordStatusTone(page, record.status)" />
       </div>
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane v-for="(tab, index) in tabs" :key="String(index)" :tab="tab">
@@ -163,10 +172,9 @@ function addNote() {
           <template v-else-if="index === 0">
             <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
               ><a-descriptions-item v-for="item in summary" :key="item.label" :label="item.label"
-                ><StatusTag v-if="item.label.includes('状态') || item.label === '判定'" :value="item.value" /><span
-                  v-else
-                  >{{ item.value }}</span
-                ></a-descriptions-item
+                ><StatusTag v-if="item.tone" :value="item.value" :tone="item.tone" /><span v-else>{{
+                  item.value
+                }}</span></a-descriptions-item
               ><a-descriptions-item label="所属租户">{{ record.tenant ?? '当前租户' }}</a-descriptions-item
               ><a-descriptions-item label="观测网络域">{{
                 record.scope ?? record.zone ?? '未提供'
@@ -186,7 +194,7 @@ function addNote() {
                     <b>{{ item.title }}</b>
                     <p>{{ item.value }}</p>
                   </div>
-                  <StatusTag v-if="item.status" :value="item.status" />
+                  <StatusTag v-if="item.status" :value="item.status" :tone="evidenceStatusTone(page, item.status)" />
                 </div>
               </div>
             </div>
@@ -304,7 +312,7 @@ function addNote() {
                     <b>{{ fact.title }}</b>
                     <p>{{ fact.value }}</p>
                   </div>
-                  <StatusTag :value="fact.status" />
+                  <StatusTag :value="fact.status" :tone="evidenceStatusTone(page, fact.status)" />
                 </div>
               </div>
             </div>
@@ -335,7 +343,7 @@ function addNote() {
                   <b>{{ item.title }}</b>
                   <p>{{ item.value }}</p>
                 </div>
-                <StatusTag v-if="item.status" :value="item.status" />
+                <StatusTag v-if="item.status" :value="item.status" :tone="evidenceStatusTone(page, item.status)" />
               </div>
             </div>
             <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small" style="margin-top: 20px"

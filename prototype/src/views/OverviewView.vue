@@ -13,7 +13,9 @@ import PageHeader from '../components/PageHeader.vue';
 import MetricBar from '../components/MetricBar.vue';
 import ChartPanel from '../components/ChartPanel.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { alertTones, severityTones } from '../data/statuses';
 import RecordForm from '../components/RecordForm.vue';
 import RecordDetail from '../components/RecordDetail.vue';
 import { pageById } from '../data/catalog';
@@ -197,7 +199,7 @@ function close() {
           /></a-button>
         </div>
         <div class="overview-alert" v-for="alert in alerts" :key="alert.id">
-          <StatusTag :value="alert.level" />
+          <StatusTag :value="alert.level" :tone="statusTone(severityTones, alert.level)" />
           <div>
             <button
               class="record-link"
@@ -208,7 +210,7 @@ function close() {
             >
               {{ alert.name }}</button><small>{{ alert.source }} → {{ alert.destination }} · {{ alert.time }}</small>
           </div>
-          <StatusTag :value="alert.status" />
+          <StatusTag :value="alert.status" :tone="statusTone(alertTones, alert.status)" />
         </div>
       </section>
       <section class="panel">

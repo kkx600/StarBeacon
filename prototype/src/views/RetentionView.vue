@@ -9,7 +9,9 @@ import type { PageSpec, PreviewState } from '../models';
 import { useRecords, exportCsv } from '../composables/useRecords';
 import PageHeader from '../components/PageHeader.vue';
 import StatePanel from '../components/StatePanel.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { configurationTones } from '../data/statuses';
 const message = useFeedback();
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
 const emit = defineEmits<{ state: [value: PreviewState] }>();
@@ -125,7 +127,11 @@ function submit() {
           ><template #bodyCell="{ column, record, text }"
             ><b v-if="column.key === 'name'">{{ text }}</b
             ><span v-else-if="column.key === 'retention'" class="tabular">{{ text }} 天</span
-            ><StatusTag v-else-if="column.key === 'status'" :value="text" /><a-space v-else-if="column.key === 'action'"
+            ><StatusTag
+              v-else-if="column.key === 'status'"
+              :value="text"
+              :tone="statusTone(configurationTones, record.status)"
+            /><a-space v-else-if="column.key === 'action'"
               ><a-button
                 type="link"
                 size="small"

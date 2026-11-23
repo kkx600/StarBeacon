@@ -1,4 +1,13 @@
-import type { PageSpec } from '../models';
+import {
+  alertSeverityTones,
+  alertWorkflowTones,
+  sensorConnectionTones,
+  sensorHealthTones,
+  statusTone,
+  taskStateTones,
+  type StatusToneMap,
+} from '../../../web/packages/shared/src/statusTones.ts';
+import type { ColumnSpec, PageSpec } from '../models';
 
 const byFamily: Record<string, string[]> = {
   alert: ['待研判', '研判中', '已关联事件', '误报'],
@@ -96,4 +105,183 @@ export function initialStatusFor(page: PageSpec): string {
     report: '待审核',
   };
   return initial[page.family] ?? (page.actionMode === 'task' ? '排队中' : '待验证');
+}
+
+// 原型沿用合成记录的状态键。色调从所属业务的表中读取，标签文字可以独立格式化。
+export const severityTones = {
+  严重: alertSeverityTones.critical,
+  高危: alertSeverityTones.high,
+  中危: alertSeverityTones.medium,
+  低危: alertSeverityTones.low,
+  未知: alertSeverityTones.unknown,
+} as const satisfies StatusToneMap;
+
+export const alertTones = {
+  待研判: alertWorkflowTones.open,
+  研判中: alertWorkflowTones.investigating,
+  已关联事件: alertWorkflowTones.linked,
+  误报: alertWorkflowTones.false_positive,
+  已关闭: alertWorkflowTones.closed,
+} as const satisfies StatusToneMap;
+
+export const connectionTones = {
+  在线: sensorConnectionTones.online,
+  离线: sensorConnectionTones.offline,
+  停用: sensorConnectionTones.disabled,
+  未注册: 'neutral',
+} as const satisfies StatusToneMap;
+
+export const healthTones = {
+  正常: sensorHealthTones.healthy,
+  需关注: sensorHealthTones.degraded,
+  异常: sensorHealthTones.abnormal,
+  无数据: sensorHealthTones.missing,
+  磁盘空间不足: sensorHealthTones.degraded,
+  'CPU 占用高': sensorHealthTones.degraded,
+  内存占用高: sensorHealthTones.degraded,
+  丢包率高: sensorHealthTones.degraded,
+  指标不全: sensorHealthTones.degraded,
+} as const satisfies StatusToneMap;
+
+export const taskTones = {
+  排队中: taskStateTones.queued,
+  等待执行回执: taskStateTones.queued,
+  运行中: taskStateTones.running,
+  重试中: taskStateTones.retrying,
+  已完成: taskStateTones.succeeded,
+  失败: taskStateTones.failed,
+  结果未知: taskStateTones.unknown,
+  已过期: taskStateTones.expired,
+  已取消: taskStateTones.cancelled,
+  '已生效（示例）': taskStateTones.succeeded,
+  原生执行未配置: 'warning',
+  待验证: 'warning',
+  证据不足: 'warning',
+  不完整: 'warning',
+} as const satisfies StatusToneMap;
+
+export const configurationTones = {
+  默认: 'neutral',
+  草稿: 'neutral',
+  启用: 'success',
+  停用: 'neutral',
+  未启用: 'neutral',
+  未配置: 'warning',
+  待验证: 'warning',
+  已验证: 'success',
+  验证失败: 'danger',
+  灰度中: 'info',
+  已发布: 'neutral',
+  已回滚: 'neutral',
+} as const satisfies StatusToneMap;
+
+const reviewTones = {
+  ...taskTones,
+  待处理: 'warning',
+  处理中: 'info',
+  待复核: 'warning',
+  已关闭: 'neutral',
+  待审核: 'warning',
+  待训练: 'warning',
+  待研判: alertWorkflowTones.open,
+} as const satisfies StatusToneMap;
+
+export const responseTones = {
+  ...taskTones,
+  待确认: 'warning',
+  已确认: 'success',
+  已驳回: 'neutral',
+  已生效: 'success',
+  已撤销: 'neutral',
+  未执行: 'neutral',
+  尚未核验: 'neutral',
+} as const satisfies StatusToneMap;
+
+const integrityTones = {
+  完整: 'success',
+  完整会话: 'success',
+  缺少握手: 'danger',
+  单向观测: 'warning',
+  字节缺口: 'danger',
+  不完整: 'warning',
+  等待上传: 'warning',
+  原件待核查: 'warning',
+  确认待回收: 'warning',
+  条件能力: 'warning',
+  仅元数据: 'warning',
+  部分支持: 'warning',
+  支持: 'success',
+  不支持: 'neutral',
+  证据不足: 'warning',
+} as const satisfies StatusToneMap;
+
+const auditTones = { 成功: 'success', 拒绝: 'danger', 'MFA 失败': 'danger', 凭据错误: 'danger' } as const;
+const deliveryTones = { ...taskTones, 已发送: 'success', 已送达: 'success', 无回执: 'neutral' } as const;
+const inventoryTones = { ...connectionTones, 待确认: 'warning', 待复核: 'warning', 证据不足: 'warning' } as const;
+const qualityTones = { ...healthTones, 证据不足: 'warning' } as const;
+const familyTones = new Map<string, StatusToneMap>([
+  ['alert', alertTones],
+  ['sensor', connectionTones],
+  ['platform', healthTones],
+  ['quality', qualityTones],
+  ['data-quality', qualityTones],
+  ['packet-time', { ...healthTones, 待复核: 'warning' }],
+  ['action', responseTones],
+  ['playbook-run', responseTones],
+  ['device', { ...connectionTones, ...responseTones, ...configurationTones }],
+  ['assessment', reviewTones],
+  ['incident', reviewTones],
+  ['case', reviewTones],
+  ['review', reviewTones],
+  ['timeline', reviewTones],
+  ['vulnerability', reviewTones],
+  ['remediation', reviewTones],
+  ['risk', reviewTones],
+  ['priority', reviewTones],
+  ['hunt', { ...configurationTones, ...reviewTones }],
+  ['intel-hit', reviewTones],
+  ['indicator', reviewTones],
+  ['intel-life', reviewTones],
+  ['behavior', reviewTones],
+  ['behavior-model', reviewTones],
+  ['file-report', reviewTones],
+  ['metric', reviewTones],
+  ['log', reviewTones],
+  ['task', taskTones],
+  ['pcap', taskTones],
+  ['sandbox', taskTones],
+  ['sample', taskTones],
+  ['file', taskTones],
+  ['static', taskTones],
+  ['ticket', taskTones],
+  ['backup', taskTones],
+  ['report', reviewTones],
+  ['packet-archive', integrityTones],
+  ['integrity', integrityTones],
+  ['tls', integrityTones],
+  ['protocol', integrityTones],
+  ['session', integrityTones],
+  ['delivery', deliveryTones],
+  ['audit', auditTones],
+  ['login-log', auditTones],
+  ['asset', inventoryTones],
+  ['interface', inventoryTones],
+  ['address', inventoryTones],
+  ['identity', inventoryTones],
+]);
+
+export function recordStatusTone(page: PageSpec, state: unknown, column?: ColumnSpec) {
+  if (column?.kind === 'level') return statusTone(severityTones, state);
+  if (page.family === 'sensor' && column?.key === 'health') return statusTone(healthTones, state);
+  return statusTone(
+    familyTones.get(page.family) ?? (page.actionMode === 'task' ? taskTones : configurationTones),
+    state,
+  );
+}
+
+export function evidenceStatusTone(page: PageSpec, state: unknown) {
+  if (typeof state !== 'string') return 'neutral';
+  if (Object.hasOwn(integrityTones, state)) return statusTone(integrityTones, state);
+  if (Object.hasOwn(responseTones, state)) return statusTone(responseTones, state);
+  return recordStatusTone(page, state);
 }

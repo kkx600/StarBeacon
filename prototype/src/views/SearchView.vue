@@ -18,7 +18,9 @@ import { compilePreviewFilter } from '../composables/previewFilter';
 import PageHeader from '../components/PageHeader.vue';
 import StatePanel from '../components/StatePanel.vue';
 import PacketWorkbench from '../components/PacketWorkbench.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { severityTones } from '../data/statuses';
 import SavedQueries from '../components/SavedQueries.vue';
 import type { QuerySnapshot } from '../components/SavedQueries.vue';
 const message = useFeedback();
@@ -306,11 +308,11 @@ function close() {
       size="middle"
       ><template #bodyCell="{ column, record, text }"
         ><button v-if="column.key === 'name'" class="record-link" @click="showDetail(record)">{{ text }}</button
-        ><StatusTag v-else-if="column.key === 'level'" :value="text" /><a-button
-          v-else-if="column.key === 'action'"
-          type="link"
-          size="small"
-          @click="showDetail(record)"
+        ><StatusTag
+          v-else-if="column.key === 'level'"
+          :value="text"
+          :tone="statusTone(severityTones, record.level)"
+        /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
           >查看</a-button
         ><span v-else :class="{ mono: ['source', 'destination', 'path', 'method'].includes(column.dataIndex) }">{{
           text
@@ -324,7 +326,7 @@ function close() {
         <div class="detail-id">{{ selectedRecord.session ?? '未关联会话' }} · 合成示例</div>
         <h2>{{ selectedRecord.name }}</h2>
       </div>
-      <StatusTag value="证据不足" />
+      <StatusTag value="证据不足" tone="warning" />
     </div>
     <PacketWorkbench v-if="hasPacketEvidence(selectedRecord)" :packets="packetRows" /><StatePanel
       v-else

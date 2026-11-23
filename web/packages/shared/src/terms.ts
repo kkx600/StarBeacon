@@ -32,7 +32,7 @@ export const statusTerms = {
   待复核: 'warning',
   已关闭: 'neutral',
   // 告警
-  待研判: 'warning',
+  待研判: 'neutral',
   研判中: 'info',
   已关联事件: 'neutral',
   误报: 'neutral',

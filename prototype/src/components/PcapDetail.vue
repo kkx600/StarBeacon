@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { BusinessRecord } from '../models';
 import { exportJson } from '../composables/useRecords';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { taskTones } from '../data/statuses';
 defineProps<{ record: BusinessRecord; tab: string }>();
 </script>
 <template>
   <a-descriptions v-if="tab === '任务信息'" bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small">
     <a-descriptions-item label="任务 ID">{{ record.id }}</a-descriptions-item><a-descriptions-item label="任务状态"
-      ><StatusTag :value="record.status"
+      ><StatusTag :value="record.status" :tone="statusTone(taskTones, record.status)"
     /></a-descriptions-item>
     <a-descriptions-item label="会话 ID">{{ record.session ?? '未关联' }}</a-descriptions-item><a-descriptions-item
       label="导出模式"

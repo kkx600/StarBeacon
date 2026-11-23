@@ -11,7 +11,9 @@ import { formatBytes } from '../../../web/packages/shared/src/utils/format';
 import { exampleRule } from '../data/fixtures';
 import PageHeader from './PageHeader.vue';
 import StatePanel from './StatePanel.vue';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { taskTones } from '../data/statuses';
 const message = useFeedback();
 const props = defineProps<{ state: PreviewState; tasks?: boolean; local?: boolean; embedded?: boolean }>();
 const emit = defineEmits<{ state: [value: PreviewState]; view: [value: string] }>();
@@ -229,7 +231,11 @@ function goSamples() {
             {{ record.name }}</button
           ><small class="row-id">{{ record.id }}</small></template
         ><template v-else-if="column.key === 'size'">{{ record.format }} · {{ formatBytes(record.size) }}</template
-        ><StatusTag v-else-if="column.key === 'status'" :value="record.status" /><a-button
+        ><StatusTag
+          v-else-if="column.key === 'status'"
+          :value="record.status"
+          :tone="statusTone(taskTones, record.status)"
+        /><a-button
           v-else-if="column.key === 'action'"
           type="link"
           size="small"

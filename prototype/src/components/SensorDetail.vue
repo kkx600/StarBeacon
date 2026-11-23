@@ -4,7 +4,9 @@ import { computed, shallowRef, watch } from 'vue';
 import type { BusinessRecord } from '../models';
 import { healthFor } from '../data/sensorHealth';
 import { sensorThresholds } from '../composables/useSensorHealth';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
+import { connectionTones, healthTones } from '../data/statuses';
 import { collectorDevice } from '../data/collector';
 import DetectionQualityPreview from './DetectionQualityPreview.vue';
 import EngineHealthSummary from '../../../web/packages/shared/src/components/EngineHealthSummary.vue';
@@ -32,7 +34,7 @@ function metric(key: string, suffix = '') {
   <template v-if="tab === '基本信息'">
     <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small">
       <a-descriptions-item label="探针 ID">{{ record.id }}</a-descriptions-item><a-descriptions-item label="连接状态"
-        ><StatusTag :value="record.status"
+        ><StatusTag :value="record.status" :tone="statusTone(connectionTones, record.status)"
       /></a-descriptions-item>
       <a-descriptions-item label="所属租户">{{ record.tenant }}</a-descriptions-item><a-descriptions-item
         label="站点"
@@ -54,7 +56,9 @@ function metric(key: string, suffix = '') {
       }}</a-descriptions-item>
     </a-descriptions>
     <div class="sensor-health-summary">
-      <StatusTag :value="health" /><span>资源、丢包和心跳按当前健康阈值判断。查看“运行状态”了解对应指标。</span>
+      <StatusTag :value="health" :tone="statusTone(healthTones, health)" /><span
+        >资源、丢包和心跳按当前健康阈值判断。查看“运行状态”了解对应指标。</span
+      >
     </div>
     <p class="field-hint">
       HTTP 联动由主控平台显式授权，设备目录与状态在采集器“网络与采集 →
@@ -65,7 +69,7 @@ function metric(key: string, suffix = '') {
   <template v-else-if="tab === '运行状态'">
     <div class="sensor-runtime-heading">
       <h3>资源与采集质量</h3>
-      <StatusTag :value="health" />
+      <StatusTag :value="health" :tone="statusTone(healthTones, health)" />
     </div>
     <p class="snapshot-note">
       遥测快照：{{ record.snapshotAt ?? '尚未上报' }} · 最近心跳：{{ record.lastSeen ?? '尚未上报' }}

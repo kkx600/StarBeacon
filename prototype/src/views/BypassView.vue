@@ -5,7 +5,8 @@ import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
 import MetricBar from '../components/MetricBar.vue';
-import StatusTag from '../components/StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import StatePanel from '../components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 import { bypassEnabled, bypassInterface } from '../composables/systemSettings';
@@ -91,8 +92,7 @@ const metrics = computed<MetricSpec[]>(() => [
   { label: '结果未知', value: empty.value ? '0' : '2', tone: 'warning' },
   { label: '保护名单拦截', value: empty.value ? '0' : '5' },
 ]);
-const effectTone = (value: string) =>
-  value === '已终止' ? 'success' : value === '保护名单拦截' ? 'neutral' : 'warning';
+const effectTones = { 已终止: 'success', 仍有流量: 'warning', 结果未知: 'warning', 保护名单拦截: 'neutral' } as const;
 
 const settingsLink = { path: '/page/system-settings', query: { section: 'bypass' } };
 function openSettings() {
@@ -148,10 +148,10 @@ function openSettings() {
         :scroll="{ x: 1170 }"
         :pagination="tablePagination()"
       >
-        <template #bodyCell="{ column, text }">
+        <template #bodyCell="{ column, record, text }">
           <span v-if="['id', 'session', 'alert'].includes(String(column.key))" class="mono">{{ text }}</span>
           <span v-else-if="column.key === 'time'" class="tabular">{{ text }}</span>
-          <StatusTag v-else-if="column.key === 'effect'" :value="text" :tone="effectTone(String(text))" />
+          <StatusTag v-else-if="column.key === 'effect'" :value="text" :tone="statusTone(effectTones, record.effect)" />
         </template>
       </a-table>
     </section>

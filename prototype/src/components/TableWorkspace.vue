@@ -18,7 +18,8 @@ import { compareCells, formatCell } from '../composables/formatRecord';
 import { useRecords, exportCsv, exportJson } from '../composables/useRecords';
 import MetricBar from './MetricBar.vue';
 import PageHeader from './PageHeader.vue';
-import StatusTag from './StatusTag.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { recordStatusTone } from '../data/statuses';
 import StatePanel from './StatePanel.vue';
 import RecordDetail from './RecordDetail.vue';
 import DecisionResponseDialog from './DecisionResponseDialog.vue';
@@ -597,7 +598,11 @@ function batch() {
             class="muted"
             >{{ record.role === '执行采集器' ? '不适用' : '无数据' }}</span
           >
-          <StatusTag v-else-if="column.kind === 'status' || column.kind === 'level'" :value="text" />
+          <StatusTag
+            v-else-if="column.kind === 'status' || column.kind === 'level'"
+            :value="text"
+            :tone="recordStatusTone(page, record[column.key], column)"
+          />
           <a-progress
             v-else-if="column.kind === 'progress'"
             :percent="Number(text)"

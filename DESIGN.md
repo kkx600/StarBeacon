@@ -183,7 +183,7 @@ components:
     textColor: "{colors.status-text}"
     typography: "{typography.status-label}"
     rounded: "{rounded.tag}"
-    padding: "3px 7px"
+    padding: "1px 7px"
   status-tag-warning:
     backgroundColor: "{colors.warning-surface}"
     textColor: "{colors.warning}"
@@ -194,8 +194,11 @@ components:
     backgroundColor: "{colors.danger-surface}"
     textColor: "{colors.danger}"
   status-tag-info:
-    backgroundColor: "{colors.info-surface}"
-    textColor: "{colors.info-text}"
+    backgroundColor: "{colors.progress-surface}"
+    textColor: "{colors.progress-text}"
+  status-tag-critical:
+    backgroundColor: "{colors.critical}"
+    textColor: "{colors.critical-text}"
   metric:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.link}"
@@ -273,7 +276,7 @@ components:
 | 紧凑布局、页面头部、指标条 | 已落地 | 未落地 |
 | 列表：编号独立成列、一行一条、统一分页 | 已落地（通用列表页与新页面） | 未落地 |
 | 页面说明收进“?” | 已落地 | 未落地 |
-| 状态标签六种色调、严重度四级 | 已落地 | 未落地 |
+| 状态标签六种色调、严重度四级 | 已采用共享组件 | 共享组件已就绪，页面迁移见 T16–T19 |
 | 系统级配置集中到系统设置 | 已落地 | 未落地 |
 | 状态用语统一 | 已落地（原型自有页面） | 未落地 |
 | 字号、字重、圆角档位收敛 | 已落地 | 已落地 |
@@ -300,9 +303,9 @@ components:
 | 工作区／分隔线 | `#f4f4f4`／`#e5e5e5` | 纯灰 |
 
 - 指标数字默认用正文色。只有表示风险且数值大于 0 时才用警示或危险色；没有数据时显示“无数据”或“—”。
-- 严重度四级各自独立：严重（实底）、高危（危险色）、中危（警示色）、低危（中性）。
-- 状态的色调由数据显式给出，不从显示文案推断。
-- 深色面板上的状态标签用深色变体（半透明色底加浅色字），不直接套用浅色标签。
+- 严重度四级依次使用实底、危险色、警示色和中性色。告警处理状态单独映射，待研判使用中性色，研判中使用信息色。
+- 调用方根据业务状态键赋予标签色调，并独立传入展示文字。未知状态使用中性色。
+- 深色面板上的状态标签使用半透明色底和浅色字。严重标签使用实底与白字。
 - 图表系列一取主色，青、紫、橙保留，“其他”用中性灰。
 - 主题变量按“浅色一组取值、深色一组取值”的结构组织，本轮只提供浅色；变量名不带明暗含义。
 
@@ -572,7 +575,7 @@ PC 宽度区间的布局行为如下。1024px 是最小支持宽度，不再设�
 
 ### Chips
 
-状态标签由短文字与 6px 圆点组成，间隔 5px。组件预设标签沿用库默认色板；业务标签的背景、活动文字与基础色圆点按同一语义配对，中性、成功、警示、危险与信息状态的含义由对应业务对象决定。标签本身不暗示点击能力。
+共享状态标签由短文字与 6px 圆点组成，间隔 5px。中性、信息、成功、警示、危险和严重六种色调分别定义背景、文字和圆点。告警严重度、告警处理、探针连接、探针健康与任务执行各有自己的状态映射。[共享状态标签](web/packages/shared/src/components/StatusTag.vue) · [业务色调映射](web/packages/shared/src/statusTones.ts)
 
 租户使用启用／停用；决策策略使用启用／待验证／停用。严重级别、处理阶段与运行模式各自使用对应名称。结果未知、不完整与无数据保留原因，不通过颜色暗示确定成功。
 
