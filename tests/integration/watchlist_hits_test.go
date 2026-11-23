@@ -19,10 +19,11 @@ import (
 )
 
 // observeWatchlist 保存一份启用的观察名单；命中只关联修订保存之后接收的告警，调用方据返回的 CreatedAt 构造材料。
-func observeWatchlist(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal, id string, values ...string) watchlist.Record {
+func observeWatchlist(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal, id, registrationID string, values ...string) watchlist.Record {
 	t.Helper()
 	c := watchlistInput(id)
 	c.Definition.Kind = "observe"
+	c.Definition.Sensors[0].RegistrationID = registrationID
 	c.Definition.Values = values
 	record, e := f.Runtime.SaveWatchlist(ctx, u, id+"_create", c)
 	require(t, e)
@@ -35,7 +36,7 @@ func observeWatchlist(t *testing.T, ctx context.Context, f *isolatedDatabase, u 
 // hitAlert 构造符合索引映射与登记前置条件的告警；原始 EVE 只用于域名字段解析，不携带运行环境数据。
 func hitAlert(tenant, event string, observed, received time.Time, source, destination string) model.Alert {
 	raw := fmt.Sprintf(`{"event_type":"alert","src_ip":%q,"dest_ip":%q,"alert":{"signature_id":1000777,"signature":"观察名单命中验收"}}`, source, destination)
-	a := model.Alert{SchemaVersion: "1.0", TenantID: tenant, EventID: event, SensorID: "watchlist_probe", RegistrationID: "watchlist_registration", SourceGenerationID: "generation_watchlist_hits", RawSHA256: store.Hash(event + "/" + raw), Timestamp: observed, ObservedAt: observed, ReceivedAt: received, Severity: "high"}
+	a := model.Alert{SchemaVersion: "1.0", TenantID: tenant, EventID: event, SensorID: "watchlist_probe", RegistrationID: watchlistRegistrationID, SourceGenerationID: "generation_watchlist_hits", RawSHA256: store.Hash(event + "/" + raw), Timestamp: observed, ObservedAt: observed, ReceivedAt: received, Severity: "high"}
 	a.Event.Kind, a.Event.Original = "alert", raw
 	a.Source.IP, a.Destination.IP = source, destination
 	a.Rule.ID, a.Rule.Name = "1000777", "观察名单命中验收规则"
@@ -58,13 +59,14 @@ func TestWatchlistHitsRecordDeduplicationDailyCapAndTenantIsolation(t *testing.T
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	f, u, other, password := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
-	watchlistProbe(t, ctx, f, other)
+	const otherRegistrationID = "watchlist_other_registration"
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
+	watchlistProbe(t, ctx, f, other, otherRegistrationID)
 	a := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime}, u.Username, password)
 	b := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime}, other.Username, password)
-	record := observeWatchlist(t, ctx, f, u, "whits_dedup", "198.18.0.1", "198.18.0.2")
+	record := observeWatchlist(t, ctx, f, u, "whits_dedup", watchlistRegistrationID, "198.18.0.1", "198.18.0.2")
 	// 两个租户使用相同名单标识，跨租户读取只能被行级安全隔离，而不是靠名单不存在。
-	observeWatchlist(t, ctx, f, other, "whits_dedup", "198.18.0.1", "198.18.0.2")
+	observeWatchlist(t, ctx, f, other, "whits_dedup", otherRegistrationID, "198.18.0.1", "198.18.0.2")
 	base := record.CreatedAt.UTC()
 	received := base.Add(time.Second)
 	alerts := []model.Alert{
@@ -161,7 +163,7 @@ func TestWatchlistHitsRecordDeduplicationDailyCapAndTenantIsolation(t *testing.T
 		t.Fatal("告警命中跨租户可见", alertHits)
 	}
 	// 日上限只截断逐条登记并记录截断时刻，不中断告警流。
-	capRecord := observeWatchlist(t, ctx, f, u, "whits_capped", "198.18.0.3")
+	capRecord := observeWatchlist(t, ctx, f, u, "whits_capped", watchlistRegistrationID, "198.18.0.3")
 	capBase := capRecord.CreatedAt.UTC()
 	require(t, f.Runtime.RecordWatchlistHits(ctx, u.TenantID, []model.Alert{hitAlert(u.TenantID, "event_whits_cap_seed", capBase.Add(-30*time.Second), capBase.Add(time.Second), "198.18.0.3", "203.0.113.70")}))
 	if n := hitCount(t, ctx, f, u.TenantID, capRecord.ID); n != 1 {
@@ -196,7 +198,9 @@ func TestWatchlistHitsRecordDeduplicationDailyCapAndTenantIsolation(t *testing.T
 		t.Fatal("停用后仍登记新命中或删除了既有命中", n)
 	}
 	// 异租户材料与超量批次都属确定性错误，由索引器分类处理，存储层必须明确拒绝。
-	if e = f.Runtime.RecordWatchlistHits(ctx, u.TenantID, []model.Alert{hitAlert(other.TenantID, "event_whits_foreign", base.Add(-10*time.Second), received, "198.18.0.1", "203.0.113.80")}); e == nil {
+	foreignAlert := hitAlert(other.TenantID, "event_whits_foreign", base.Add(-10*time.Second), received, "198.18.0.1", "203.0.113.80")
+	foreignAlert.RegistrationID = otherRegistrationID
+	if e = f.Runtime.RecordWatchlistHits(ctx, u.TenantID, []model.Alert{foreignAlert}); e == nil {
 		t.Fatal("跨租户告警材料被登记")
 	}
 	if e = f.Runtime.RecordWatchlistHits(ctx, "/", alerts); e == nil {
@@ -209,8 +213,8 @@ func TestWatchlistHitsRuntimeRoleAndReferencedRevisionRetention(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	f, u, _, _ := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
-	record := observeWatchlist(t, ctx, f, u, "whits_retention", "198.18.0.4")
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
+	record := observeWatchlist(t, ctx, f, u, "whits_retention", watchlistRegistrationID, "198.18.0.4")
 	base := record.CreatedAt.UTC()
 	require(t, f.Runtime.RecordWatchlistHits(ctx, u.TenantID, []model.Alert{hitAlert(u.TenantID, "event_whits_retained", base.Add(-30*time.Second), base.Add(time.Second), "198.18.0.4", "203.0.113.90")}))
 	if n := hitCount(t, ctx, f, u.TenantID, record.ID); n != 1 {
@@ -317,7 +321,7 @@ func TestWatchlistImpactHistoricalPreviewOverIndexedAlerts(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	f, u, other, password := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
 	active := true
 	viewer, e := f.Runtime.CreateUser(ctx, u, "whits_impact_viewer_create", accounts.Create{Username: "watchlist_impact_viewer", Password: password, Role: "viewer", Active: &active})
 	require(t, e)
@@ -326,7 +330,7 @@ func TestWatchlistImpactHistoricalPreviewOverIndexedAlerts(t *testing.T) {
 	// 每个客户端使用独立的接口实例；共享实例会让后一次登录覆盖前一个客户端的来源校验。
 	a := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, u.Username, password)
 	v := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, viewer.Username, password)
-	record := observeWatchlist(t, ctx, f, u, "whits_impact", "198.18.0.1", "198.18.0.2")
+	record := observeWatchlist(t, ctx, f, u, "whits_impact", watchlistRegistrationID, "198.18.0.1", "198.18.0.2")
 	// 预览早于名单保存的告警，正是实时关联覆盖不到的历史数据。
 	observed := record.CreatedAt.UTC().Add(-10 * time.Minute)
 	partition := observed.Format("2006-01-02")
@@ -384,7 +388,7 @@ func TestWatchlistImpactHistoricalPreviewOverIndexedAlerts(t *testing.T) {
 		t.Fatal("样本数量与总数不一致", len(result.Samples))
 	}
 	for i, sample := range result.Samples {
-		if sample.SensorID != "watchlist_probe" || sample.RegistrationID != "watchlist_registration" || len(sample.Matches) == 0 || sample.Timestamp.Before(request.Start) || !sample.Timestamp.Before(request.End) {
+		if sample.SensorID != "watchlist_probe" || sample.RegistrationID != watchlistRegistrationID || len(sample.Matches) == 0 || sample.Timestamp.Before(request.Start) || !sample.Timestamp.Before(request.End) {
 			t.Fatal("样本范围、时间或匹配值不一致", i, sample)
 		}
 		if i > 0 && !result.Samples[i-1].Timestamp.After(sample.Timestamp) {

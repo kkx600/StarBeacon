@@ -17,14 +17,16 @@ import (
 	"github.com/kkx600/StarBeacon/internal/watchlist"
 )
 
+const watchlistRegistrationID = "watchlist_registration"
+
 func watchlistInput(id string) watchlist.Change {
 	active := true
 	start := time.Now().UTC().Truncate(time.Second).Add(-time.Hour)
-	return watchlist.Change{ID: id, Name: "业务管理地址保护", Description: "保护限定探针的业务管理链路", Active: &active, Definition: watchlist.Definition{SchemaVersion: watchlist.Schema, Kind: "protect", MatchType: "ip", Values: []string{"192.0.2.1"}, Sensors: []watchlist.Sensor{{SensorID: "watchlist_probe", RegistrationID: "watchlist_registration"}}, ValidFrom: start, ValidUntil: start.Add(180 * 24 * time.Hour)}}
+	return watchlist.Change{ID: id, Name: "业务管理地址保护", Description: "保护限定探针的业务管理链路", Active: &active, Definition: watchlist.Definition{SchemaVersion: watchlist.Schema, Kind: "protect", MatchType: "ip", Values: []string{"192.0.2.1"}, Sensors: []watchlist.Sensor{{SensorID: "watchlist_probe", RegistrationID: watchlistRegistrationID}}, ValidFrom: start, ValidUntil: start.Add(180 * 24 * time.Hour)}}
 }
-func watchlistProbe(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal) {
+func watchlistProbe(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal, registrationID string) {
 	t.Helper()
-	_, e := f.Owner.Pool.Exec(ctx, `INSERT INTO sensors(tenant_id,id,name,registration_id,active) VALUES($1,'watchlist_probe','名单范围探针','watchlist_registration',true)`, u.TenantID)
+	_, e := f.Owner.Pool.Exec(ctx, `INSERT INTO sensors(tenant_id,id,name,registration_id,active) VALUES($1,'watchlist_probe','名单范围探针',$2,true)`, u.TenantID, registrationID)
 	require(t, e)
 }
 
@@ -32,7 +34,7 @@ func TestWatchlistsHTTPVersionsScopeMaterialPreviewAndAudit(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 80*time.Second)
 	defer cancel()
 	f, u, other, password := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
 	active := true
 	viewer, e := f.Runtime.CreateUser(ctx, u, "watchlist_viewer_create", accounts.Create{Username: "watchlist_viewer", Password: password, Role: "viewer", Active: &active})
 	require(t, e)
@@ -131,7 +133,7 @@ func TestWatchlistsResponseProtectionExpiryAndLinearizedDisable(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 80*time.Second)
 	defer cancel()
 	f, u, _, _ := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
 	c := watchlistInput("watchlist_guard")
 	record, e := f.Runtime.SaveWatchlist(ctx, u, "watchlist_guard_create", c)
 	require(t, e)
@@ -254,7 +256,7 @@ func TestWatchlistsDirectoryQuotaHistoryRetentionAndCorruption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	f, u, foreign, password := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
 	a := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime}, u.Username, password)
 	var record watchlist.Record
 	first := watchlistInput("watchlist_000")
@@ -339,7 +341,7 @@ func TestWatchlistsProtectionReadPrecedesConcurrentConfigurationChange(t *testin
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	f, u, other, _ := accountFixture(t, ctx)
-	watchlistProbe(t, ctx, f, u)
+	watchlistProbe(t, ctx, f, u, watchlistRegistrationID)
 	c := watchlistInput("watchlist_ordered")
 	_, e := f.Runtime.SaveWatchlist(ctx, u, "watchlist_ordered_create", c)
 	require(t, e)

@@ -294,7 +294,12 @@ def docker_inventory(command=docker_command):
     containers = docker_containers(command)
     ids = sorted(set(command(["image", "ls", "-aq", "--no-trunc"]).split()))
     images = []
-    template = '{"Id":{{json .Id}},"Parent":{{json .Parent}},"RepoTags":{{json .RepoTags}},"Created":{{json .Created}},"Size":{{json .Size}},"Labels":{{json .Config.Labels}},"Os":{{json .Os}},"Architecture":{{json .Architecture}}}'
+    # containerd 镜像存储可能省略父镜像和标签字段。
+    template = (
+        '{"Id":{{json .Id}},"Parent":{{json (index . "Parent")}},"RepoTags":{{json .RepoTags}},'
+        '"Created":{{json .Created}},"Size":{{json .Size}},"Labels":{{json (index .Config "Labels")}},'
+        '"Os":{{json .Os}},"Architecture":{{json .Architecture}}}'
+    )
     for identity in ids:
         images.append(json.loads(command(["image", "inspect", "--format", template, identity])))
     return containers, images

@@ -158,7 +158,9 @@ describe('采集器规范视图',()=>{
  })
  it.each(collectorPrototypeScreens)('$path 对应的示例可加载，工作区不发真实请求',async screen=>{
   const router=await routing(screen.path),wrapper=mount(CollectorView,{attachTo:document.body,global:{plugins:[Antd,router]}});await flushPromises()
-  expect(wrapper.find('h1').text()).toBe(screen.title);expect(scope().text()).toContain('采集器合成示例');expect(fetch).not.toHaveBeenCalled();wrapper.unmount()
+  expect(wrapper.find('h1').text()).toBe(screen.title)
+  expect(helpText()).toContain('采集器合成示例')
+  expect(fetch).not.toHaveBeenCalled();wrapper.unmount()
  })
  it('规范9路由复用原工作区组件与同一页签，不提供未交付写动作',async()=>{
   const router=createRouter({history:createMemoryHistory(),routes:collectorPrototypeScreens.map(screen=>({path:screen.path,component:CollectorView,meta:{collectorPage:screen.page}}))});await router.push('/collector/network/interfaces?source=site-a#network');await router.isReady()
@@ -177,10 +179,14 @@ describe('MCP 接入说明',()=>{
  })
  it('资源说明关闭再打开默认回到工具目录，仍不进行身份发现',async()=>{
   mount(MCPAccessPreview,{attachTo:document.body,global:{plugins:[Antd]}});await click('工具与资源');await click('元数据资源');expect(document.querySelector('.ant-modal [role="tab"][aria-selected="true"]')?.textContent).toBe('元数据资源')
-  await new DOMWrapper(document.querySelector('.ant-modal-close')!).trigger('click');await flushPromises();await click('工具与资源');expect(document.querySelector('.ant-modal [role="tab"][aria-selected="true"]')?.textContent).toBe('工具目录');expect(scope().text()).toContain('不代表当前身份已发现');expect(fetch).not.toHaveBeenCalled()
+  await new DOMWrapper(document.querySelector('.ant-modal-close')!).trigger('click');await flushPromises();await click('工具与资源');expect(document.querySelector('.ant-modal [role="tab"][aria-selected="true"]')?.textContent).toBe('工具目录')
+  expect(helpText()).toContain('不代表当前身份已发现')
+  expect(fetch).not.toHaveBeenCalled()
  })
  it('9工具与元数据资源互斥展示，不伪装当前身份的实际发现',async()=>{
-  mount(MCPAccessPreview,{attachTo:document.body,global:{plugins:[Antd]}});await click('工具与资源');expect(scope().text()).toContain('不代表当前身份已发现');expect(document.querySelectorAll('.ant-modal .ant-table-row')).toHaveLength(9)
+  mount(MCPAccessPreview,{attachTo:document.body,global:{plugins:[Antd]}});await click('工具与资源')
+  expect(helpText()).toContain('不代表当前身份已发现')
+  expect(document.querySelectorAll('.ant-modal .ant-table-row')).toHaveLength(9)
   const tab=Array.from(document.querySelectorAll<HTMLElement>('[role=tab]')).find(e=>e.textContent==='元数据资源')!;tab.click();await flushPromises();expect(scope().text()).toContain('starbeacon://catalog/capabilities');expect(fetch).not.toHaveBeenCalled()
  })
 })

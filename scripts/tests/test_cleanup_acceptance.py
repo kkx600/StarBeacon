@@ -202,6 +202,16 @@ def image(number, tag, *, parent="", architecture="amd64", created="2020-01-01T0
 
 
 class DockerCleanupTests(unittest.TestCase):
+    def test_inventory_accepts_images_without_parent_or_labels(self):
+        metadata = image(1, "library/example:1.0.0", parent=None)
+        metadata["Labels"] = None
+        command = mock.Mock(side_effect=["29.7.2", "", metadata["Id"], json.dumps(metadata)])
+
+        self.assertEqual(cleanup.docker_inventory(command), ([], [metadata]))
+        template = command.call_args.args[0][3]
+        self.assertIn('"Parent":{{json (index . "Parent")}}', template)
+        self.assertIn('"Labels":{{json (index .Config "Labels")}}', template)
+
     def test_remote_transport_failure_is_recorded_without_exposing_stderr(self):
         for code, text, status in [(127, "", "unavailable"), (0, "not-json", "unverified")]:
             with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:

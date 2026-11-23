@@ -1,6 +1,6 @@
 {
   "source": {
-    "renderTreeSha256": "cc1964b3c79d68a2c4f62fe49f7161afcf4b9ef9d877498886c1eea5c1084ac7"
+    "renderTreeSha256": "5a05fc697b8acd0faf3629e109f66cb93a2364028c81616aac0c29367c0fb67d"
   },
   "product": "星烽 StarBeacon",
   "synthetic": true,
@@ -148,6 +148,7 @@
       "title": "会话与 PCAP",
       "group": "traffic",
       "pages": [
+        "full-traffic",
         "sessions",
         "session-integrity",
         "pcap-tasks",
@@ -265,6 +266,7 @@
       "group": "response",
       "pages": [
         "actions",
+        "bypass-blocking",
         "emergency"
       ]
     },
@@ -287,6 +289,14 @@
         "notification-templates",
         "delivery-logs",
         "syslog-output"
+      ]
+    },
+    {
+      "id": "ai-ops",
+      "title": "AI 值守",
+      "group": "ai",
+      "pages": [
+        "ai-ops"
       ]
     },
     {
@@ -4309,10 +4319,10 @@
     {
       "id": "auth-plugins",
       "workspace": "联动设备",
-      "title": "认证插件",
+      "title": "联动插件",
       "group": "response",
-      "kind": "table",
-      "description": "管理控制台认证、会话缓存、续期与设备版本兼容性。",
+      "kind": "plugins",
+      "description": "由采集器访问内网的防火墙、EDR 等设备，拉取告警并执行封禁、解封与核验；简单设备填模板，复杂设备写脚本。",
       "requirements": [
         "SB-RSP-003"
       ],
@@ -5489,7 +5499,7 @@
       "title": "平台运行状态",
       "group": "system",
       "kind": "table",
-      "description": "查看依赖健康、资源和数据影响，按业务链路定位故障。",
+      "description": "查看依赖健康、资源和数据影响，按业务链路定位异常。",
       "requirements": [
         "SB-OPS-004"
       ],
@@ -5881,7 +5891,7 @@
       "title": "留存与证据保全",
       "group": "system",
       "kind": "retention",
-      "description": "所有已启用业务数据默认保留 180 天，变更前预览影响与保全。",
+      "description": "所有启用的业务数据默认保留 180 天，变更前预览影响与保全。",
       "requirements": [
         "SB-GOV-006"
       ],
@@ -6945,7 +6955,7 @@
       "title": "系统设置",
       "group": "system",
       "kind": "table",
-      "description": "统一查找账号、运行状态、留存与审计配置，核对当前版本的功能范围。",
+      "description": "系统级配置集中在这里：用户、自动处置、旁路阻断、全流量存储和探针健康。",
       "requirements": [],
       "states": [
         {
@@ -7029,6 +7039,155 @@
           "title": "加载失败",
           "url": "/page/my-account?state=error",
           "image": "my-account/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ai-ops",
+      "workspace": "AI 值守",
+      "title": "AI 值守",
+      "group": "ai",
+      "kind": "ai-ops",
+      "description": "集中查看 AI 的研判结论、处置方案和执行流水，确认或驳回方案，并可一键暂停自动处置。",
+      "requirements": [
+        "SB-AI-002",
+        "SB-RSP-001"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/ai-ops?state=data",
+          "image": "ai-ops/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/ai-ops?state=empty",
+          "image": "ai-ops/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/ai-ops?state=detail",
+          "image": "ai-ops/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/ai-ops?state=action",
+          "image": "ai-ops/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/ai-ops?state=loading",
+          "image": "ai-ops/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/ai-ops?state=error",
+          "image": "ai-ops/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "bypass-blocking",
+      "workspace": "响应动作",
+      "title": "旁路阻断",
+      "group": "response",
+      "kind": "bypass",
+      "description": "由采集器向命中的连接注入 TCP RST 或 ICMP 不可达，先断开连接，再由联动插件完成持久封禁。",
+      "requirements": [
+        "SB-RSP-004"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/bypass-blocking?state=data",
+          "image": "bypass-blocking/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/bypass-blocking?state=empty",
+          "image": "bypass-blocking/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/bypass-blocking?state=detail",
+          "image": "bypass-blocking/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/bypass-blocking?state=action",
+          "image": "bypass-blocking/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/bypass-blocking?state=loading",
+          "image": "bypass-blocking/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/bypass-blocking?state=error",
+          "image": "bypass-blocking/error.jpg"
+        }
+      ]
+    },
+    {
+      "id": "full-traffic",
+      "workspace": "会话与 PCAP",
+      "title": "全流量回溯",
+      "group": "traffic",
+      "kind": "full-traffic",
+      "description": "按时间和五元组查找任意会话，查看原包留存情况并下载；原包按留存策略保存。",
+      "requirements": [
+        "SB-NET-001",
+        "SB-SRH-007"
+      ],
+      "states": [
+        {
+          "state": "data",
+          "title": "有数据",
+          "url": "/page/full-traffic?state=data",
+          "image": "full-traffic/data.jpg"
+        },
+        {
+          "state": "empty",
+          "title": "无数据",
+          "url": "/page/full-traffic?state=empty",
+          "image": "full-traffic/empty.jpg"
+        },
+        {
+          "state": "detail",
+          "title": "查看详情",
+          "url": "/page/full-traffic?state=detail",
+          "image": "full-traffic/detail.jpg"
+        },
+        {
+          "state": "action",
+          "title": "操作表单",
+          "url": "/page/full-traffic?state=action",
+          "image": "full-traffic/action.jpg"
+        },
+        {
+          "state": "loading",
+          "title": "加载中",
+          "url": "/page/full-traffic?state=loading",
+          "image": "full-traffic/loading.jpg"
+        },
+        {
+          "state": "error",
+          "title": "加载失败",
+          "url": "/page/full-traffic?state=error",
+          "image": "full-traffic/error.jpg"
         }
       ]
     }
