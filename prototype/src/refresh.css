@@ -30,7 +30,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 16px;
 }
 .page-help-trigger:hover {
   color: var(--link);

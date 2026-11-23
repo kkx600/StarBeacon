@@ -1,4 +1,8 @@
 /* 三个入口共用控件层次；边界、焦点、错误和禁用由组件主题分别表达。 */
+b,
+strong {
+  font-weight: 600;
+}
 .ant-btn {
   font-weight: 400;
 }
@@ -34,7 +38,7 @@
   line-height: 1.7;
 }
 .ant-modal .ant-modal-title {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.5;
   font-weight: 600;
 }

@@ -8,7 +8,7 @@
   font-size: 13px;
 }
 .collector-identity small {
-  font-size: 11px;
+  font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
 }
@@ -97,7 +97,7 @@
   margin: 14px 2px 0;
 }
 .collector-detail-heading {
-  font-size: 15px;
+  font-size: 16px;
   margin: var(--panel-inset) 0 var(--related-gap);
 }
 .collector-detail-footer {
@@ -150,7 +150,7 @@
   border-top: 1px solid var(--line);
 }
 .collector-modal-footer > .muted {
-  font-size: 11px;
+  font-size: 12px;
 }
 .collector-shell .ant-table-cell {
   overflow-wrap: anywhere;

@@ -20,7 +20,7 @@ const option = computed<EChartsCoreOption>(() =>
             type: 'bar',
             data: [3.82, 2.41, 0.86, 0.74, 0.64, 4.25],
             barWidth: 28,
-            itemStyle: { borderRadius: [3, 3, 0, 0] },
+            itemStyle: { borderRadius: [4, 4, 0, 0] },
           },
         ],
       }

@@ -63,7 +63,7 @@ textarea {
   color: var(--muted);
 }
 .brand-symbol {
-  font-size: 28px;
+  font-size: 24px;
   color: var(--primary);
 }
 .app-header.ant-layout-header {
@@ -103,7 +103,7 @@ h1 {
   margin: 0 0 var(--label-gap);
   font-size: 24px;
   line-height: 1.4;
-  font-weight: 650;
+  font-weight: 600;
 }
 h2 {
   margin: 0;
@@ -171,7 +171,7 @@ h2 {
 .record-id {
   display: block;
   margin-top: var(--label-gap);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .technical {
@@ -289,7 +289,7 @@ h2 {
 }
 .metric-grid small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .login-page {
   min-height: 100vh;

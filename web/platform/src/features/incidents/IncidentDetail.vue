@@ -177,7 +177,7 @@ function changeTab(value: unknown) {
   white-space: pre-wrap;
 }
 .incident-title {
-  font-size: 18px;
+  font-size: 20px;
   margin: 8px 0;
 }
 .incident-source {

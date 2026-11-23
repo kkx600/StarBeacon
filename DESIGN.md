@@ -74,7 +74,7 @@ typography:
   page-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
     fontSize: "24px"
-    fontWeight: 650
+    fontWeight: 600
     lineHeight: 1.35
     letterSpacing: "-0.2px"
   detail-title:
@@ -87,7 +87,7 @@ typography:
     lineHeight: 1.5
   panel-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-    fontSize: "15px"
+    fontSize: "16px"
     fontWeight: 600
     lineHeight: 1.5
   body:
@@ -107,10 +107,10 @@ typography:
     fontSize: "12px"
   caption:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-    fontSize: "11px"
+    fontSize: "12px"
   status-label:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-    fontSize: "11px"
+    fontSize: "12px"
     lineHeight: 1.5
   technical:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
@@ -121,14 +121,16 @@ typography:
     lineHeight: 1.65
   metric:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-    fontSize: "25px"
-    fontWeight: 650
+    fontSize: "24px"
+    fontWeight: 600
     lineHeight: 1.25
 rounded:
   control: "8px"
   panel: "8px"
   tag: "4px"
-  nested: "5px"
+  nested: "6px"
+  modal: "12px"
+  selected-byte: "2px"
 spacing:
   page-inset: "16px"
   section-gap: "12px"
@@ -170,7 +172,7 @@ components:
   workspace-tab:
     backgroundColor: "transparent"
     textColor: "{colors.muted}"
-    rounded: "5px 5px 0px 0px"
+    rounded: "6px 6px 0px 0px"
     padding: "0px 15px"
     height: "36px"
   workspace-tab-active:
@@ -221,7 +223,7 @@ components:
   packet-byte-selected:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.surface}"
-    rounded: "2px"
+    rounded: "{rounded.selected-byte}"
     padding: "1px 1px"
   execution-receipt:
     backgroundColor: "{colors.table-header}"
@@ -274,7 +276,7 @@ components:
 | 状态标签六种色调、严重度四级 | 已落地 | 未落地 |
 | 系统级配置集中到系统设置 | 已落地 | 未落地 |
 | 状态用语统一 | 已落地（原型自有页面） | 未落地 |
-| 字号、字重、圆角档位收敛 | 未落地 | 未落地 |
+| 字号、字重、圆角档位收敛 | 已落地 | 已落地 |
 | 当前版本未提供的工作区从侧栏隐藏 | 不涉及 | 未落地 |
 
 原型里直接嵌入工程组件的页面（名单、关联规则、通知、Syslog、探针证书、被动发现、质量事件等）跟随工程端，工程端迁移后才会一致。
@@ -365,9 +367,9 @@ components:
 - 1024px 宽度下顶栏不折行：面包屑只留当前页名称，用户名单行省略。
 - 弹窗正文的左右边缘与标题、底部按钮对齐。
 
-### 档位（尚未落地）
+### 档位
 
-字号只用 12、13、14、16、20、24；字重只用 400、500、600；圆角只用 4、6、8。例外只有弹窗圆角 12px、数据包字节选中 2px 和登录页展示标题。
+界面字号使用 12、13、14、16、20、24px，字重使用 400、500、600，圆角使用 4、6、8px。弹窗圆角为 12px，数据包字节选中圆角为 2px。原型登录页的展示标题使用独立字号。
 
 ### 一套组件（尚未落地）
 
@@ -456,13 +458,13 @@ components:
 | record-link | 可进入详情的记录名称。 |
 | field-label / caption | 字段、表头、业务说明与辅助元数据。 |
 | status-label | 小状态标签，文字与圆点同时出现。 |
-| technical | 查询、代码和原始证据；数据包字节与偏移在局部取证视图中使用更紧凑的字号。 |
+| technical | 查询、代码、数据包字节与偏移等原始证据统一用 12px 等宽字体。 |
 | rule-editor | Suricata 规则编辑内容；13px 等宽字体、1.65 行高，不改变通用技术内容字号。 |
-| metric | 普通指标数值；较宽和紧凑视口的调整见 Layout。 |
+| metric | 普通指标数值为 24px，原型紧凑单行指标为 20px。 |
 
 普通表格正文是局部规则（13px），不是 App 主题正文（14px）的替代值。详情名称继承所在标题的字重与行高，不为未显式设置的属性补造 token。
 
-登录入口的介绍文字使用局部字号（45px，较紧凑桌面为 39px）、字重（600）、行高（1.45）和字距（-1px）；登录卡片标题为 22px。该入口沿用用户指定的系统字体，不设独立展示字体规范。报告正文使用 13px、1.9 行高，以正文结构承载解释。
+原型主控登录页的介绍标题为 45px，较紧凑桌面为 39px，使用 600 字重、1.45 行高和 -1px 字距。原型采集器登录页的介绍标题为 32px，使用 600 字重、1.4 行高和 -0.2px 字距。登录卡片标题为 24px。报告正文使用 13px 和 1.9 行高。
 
 **The 正文与取证 Rule.** 业务文字使用声明的系统字体栈；原始查询、协议字节和技术标识使用等宽字体，连续数值使用等宽数字。
 
@@ -495,7 +497,7 @@ PC 宽度区间的布局行为如下。1024px 是最小支持宽度，不再设�
 
 | 视口规则 | 已实现的布局行为 |
 | --- | --- |
-| ≥1650px | 内容外沿、面板内边距与区块间隔沿用默认变量；普通指标放大为 29px，大屏图表高度相应调整。 |
+| ≥1650px | 内容外沿、面板内边距与区块间隔沿用默认变量；大屏图表高度相应调整。 |
 | 1200–1649px | 默认布局：普通筛选三列加动作列，概览双栏，大屏三列图表。 |
 | 1181–1199px | 探针筛选转为两列，动作独占一行；其余区块沿用默认布局。 |
 | 1024–1180px | 在上一档基础上，普通筛选动作独占一行，字段间隔保持 12px；协议与载荷改为上下区域；大屏变为两列。 |
@@ -532,15 +534,15 @@ PC 宽度区间的布局行为如下。1024px 是最小支持宽度，不再设�
 
 ## Shapes
 
-控件采用轻度圆角，面板和弹窗比控件略柔和；精确半径以 frontmatter 中的 control、panel、tag、nested 为准。标签以小矩形、紧凑内边距和状态圆点构成；圆点与字节选择不替代可读内容。
+常规控件和面板使用 8px 圆角，嵌套容器使用 6px，标签使用 4px。弹窗外壳使用 12px，数据包字节选中使用 2px。状态标签同时保留圆点和文字。
 
-结构边框通常为 1px。表格面板裁切自身边缘，表格与字节内容的横向滚动保留在内部。证据摘要、代码块和嵌套内容使用控件级或局部圆角，避免层层增加装饰外壳。登录卡片的 10px 圆角只属于登录入口，不改变工作区面板标准。
+结构边框通常为 1px。表格面板裁切自身边缘，表格与字节内容的横向滚动保留在内部。证据摘要、代码块和嵌套内容沿用相应容器圆角。
 
 ## Components
 
 主控平台、采集器和交互原型共用 `web/packages/shared/src/theme.ts` 与 `controls.css`；原型主题仅重新导出共享定义。工作区、导航、面板和表头沿用现有白灰值，控件选中项使用组件默认派生色。主动作采用 `#2f54eb`，正文使用中性深灰 `#29343d`；说明文字与禁用内容各自使用独立语义色。输入框、数字输入、选择器、日期和密码控件由 Ant Design Vue 统一派生状态，不使用常态边框覆盖错误、悬停或焦点。
 
-表单标签使用 14px 常规字重，帮助与校验文字使用 12px、1.65 行高。弹窗标题 18px，底部操作区以细分隔线与内容区区分；长表单在内容区滚动，决策策略的关闭、校验与保存保持可见。决策表单按基本信息、判断条件、模型与执行范围、表达式与保护范围组织；授权字段与业务限制原意不变。
+表单标签使用 14px 常规字重，帮助与校验文字使用 12px、1.65 行高。弹窗标题为 20px，底部操作区以细分隔线与内容区区分。长表单在内容区滚动，决策策略的关闭、校验与保存保持可见。决策表单按基本信息、判断条件、模型与执行范围、表达式与保护范围组织。
 
 ### Buttons
 
@@ -584,7 +586,7 @@ PC 宽度区间的布局行为如下。1024px 是最小支持宽度，不再设�
 
 ### 认证入口
 
-认证页面使用工作区浅灰背景（workspace）。白色卡片使用分隔线浅灰边框（line）、局部 10px 圆角，不使用独立投影；介绍标题取链接蓝。卡片布局、字号与操作沿用认证入口的局部结构。
+认证页面使用工作区浅灰背景（workspace）。白色卡片使用分隔线浅灰边框（line）和 8px 圆角。介绍标题取链接蓝。
 
 ### Navigation
 

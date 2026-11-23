@@ -133,6 +133,8 @@ export const appTheme = {
     colorFillAlter: palette.tableHeader,
     colorTextHeading: palette.text,
     borderRadius: 8,
+    borderRadiusLG: 8,
+    borderRadiusXS: 4,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
     fontSize: 14,
     controlHeight: 34,

@@ -153,7 +153,7 @@ watch(() => props.listId, query, { immediate: true });
 .watchlist-hit-sub {
   display: block;
   margin-top: var(--label-gap);
-  font-size: 11px;
+  font-size: 12px;
 }
 .watchlist-hit-matches {
   list-style: none;

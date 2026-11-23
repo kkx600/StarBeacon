@@ -126,7 +126,7 @@ const risk: EChartsCoreOption = {
     axisLine: { show: false },
     axisLabel: { color: palette.muted },
   },
-  series: [{ type: 'bar', data: [32, 48, 76, 86], barWidth: 14, itemStyle: { borderRadius: [0, 3, 3, 0] } }],
+  series: [{ type: 'bar', data: [32, 48, 76, 86], barWidth: 14, itemStyle: { borderRadius: [0, 4, 4, 0] } }],
 };
 function close() {
   formOpen.value = false;

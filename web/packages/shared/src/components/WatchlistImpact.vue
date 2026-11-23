@@ -208,11 +208,11 @@ watch(
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .watchlist-impact-metrics strong {
-  font-size: 25px;
-  font-weight: 650;
+  font-size: 24px;
+  font-weight: 600;
 }
 .watchlist-impact-time {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 .watchlist-impact-tags {
@@ -250,7 +250,7 @@ watch(
 .watchlist-impact-sub {
   display: block;
   margin-top: var(--label-gap);
-  font-size: 11px;
+  font-size: 12px;
 }
 .watchlist-impact-footnote {
   margin-top: var(--section-gap);

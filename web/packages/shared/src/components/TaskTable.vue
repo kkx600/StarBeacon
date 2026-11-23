@@ -325,7 +325,7 @@ const statusClass = (state: string) =>
 .record-id {
   display: block;
   margin-top: var(--label-gap);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .technical {

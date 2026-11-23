@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
-import { Alert, App, Button, ConfigProvider, message, theme } from 'ant-design-vue';
+import { Alert, App, Button, ConfigProvider, message, Modal, Table, theme } from 'ant-design-vue';
 import { appTheme, componentSeeds, palette } from '../packages/shared/src/theme';
 import { useFeedback } from '../packages/shared/src/composables/useFeedback';
 
@@ -78,6 +78,25 @@ describe('共享组件配色', () => {
     expect(icon).not.toBeNull();
     expect(getComputedStyle(icon).color).toBe('rgb(58, 158, 80)');
     expect(document.querySelector('.ant-message-notice-content')?.textContent).toContain('主题消息');
+    wrapper.unmount();
+  });
+});
+
+describe('共享组件圆角', () => {
+  it('表头用 8px，弹窗外壳用 12px', async () => {
+    const wrapper = mount(ConfigProvider, {
+      props: { theme: appTheme },
+      slots: {
+        default: () => [
+          h(Table, { columns: [{ title: '名称', dataIndex: 'name' }], pagination: false }),
+          h(Modal, { open: true, getContainer: false, title: '示例弹窗' }),
+        ],
+      },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(getComputedStyle(wrapper.get('.ant-table').element).borderRadius).toMatch(/^8px(?:\s|$)/);
+    expect(getComputedStyle(wrapper.get('.ant-modal-content').element).borderRadius).toBe('12px');
     wrapper.unmount();
   });
 });

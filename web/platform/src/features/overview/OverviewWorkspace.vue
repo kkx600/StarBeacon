@@ -70,7 +70,7 @@ function rankOption(buckets: readonly Bucket[], color: string): EChartsCoreOptio
       {
         type: 'bar',
         data: buckets.map(b => Number(b.count)),
-        itemStyle: { color, borderRadius: [0, 3, 3, 0] },
+        itemStyle: { color, borderRadius: [0, 4, 4, 0] },
         barMaxWidth: 22,
       },
     ],
@@ -318,7 +318,7 @@ function alerts() {
   background: var(--surface);
 }
 .overview-metric strong {
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
