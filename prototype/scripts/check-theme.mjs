@@ -1,20 +1,62 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { theme } from 'ant-design-vue';
-import { appTheme, componentColors, componentSeeds, componentSurfaces, palette } from '../src/theme.ts';
+import {
+  appTheme,
+  componentColors,
+  componentSeeds,
+  componentSurfaces,
+  palette,
+  screenChartColorKeys,
+  screenChartPalette,
+} from '../src/theme.ts';
 
 // 文字类颜色（含按钮白字、链接、语义标签）按 4.5:1 强制核对；控件轮廓与占位提示只记录实测值。
-function luminance(hex) {
+function linearRgb(hex) {
   const channels = hex
     .slice(1)
     .match(/../g)
     .map(value => parseInt(value, 16) / 255);
-  const linear = channels.map(value => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+  return channels.map(value => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+}
+function luminance(hex) {
+  const linear = linearRgb(hex);
   return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
 }
 function contrast(foreground, background) {
   const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
   return (values[0] + 0.05) / (values[1] + 0.05);
 }
+
+// Machado 学位论文表 A.1 的 1.0 强度矩阵，输入为线性 sRGB。
+const visionMatrices = {
+  红色觉缺失: [
+    [0.152, 1.053, -0.205],
+    [0.115, 0.786, 0.099],
+    [-0.004, -0.048, 1.052],
+  ],
+  绿色觉缺失: [
+    [0.367, 0.861, -0.228],
+    [0.28, 0.673, 0.047],
+    [-0.012, 0.043, 0.969],
+  ],
+};
+const linearToLms = [
+  [0.4122214708, 0.5363325363, 0.0514459929],
+  [0.2119034982, 0.6806995451, 0.1073969566],
+  [0.0883024619, 0.2817188376, 0.6299787005],
+];
+const lmsToOklab = [
+  [0.2104542553, 0.793617785, -0.0040720468],
+  [1.9779984951, -2.428592205, 0.4505937099],
+  [0.0259040371, 0.7827717662, -0.808675766],
+];
+function multiply(matrix, channels) {
+  return matrix.map(row => row.reduce((sum, coefficient, index) => sum + coefficient * channels[index], 0));
+}
+function oklab(channels) {
+  return multiply(lmsToOklab, multiply(linearToLms, channels).map(Math.cbrt));
+}
+
 const failures = [];
 const derived = { ...theme.defaultAlgorithm({ ...theme.defaultSeed, ...appTheme.token }), ...appTheme.token };
 const expectedSeeds = {
@@ -127,7 +169,7 @@ const textPairs = [
 ];
 const graphicPairs = [
   ...['primary', 'teal', 'violet', 'chartOrange', 'chartNeutral'].map(foreground => [foreground, 'surface']),
-  ...['screenBlue', 'screenTeal', 'screenViolet', 'screenAmber'].map(foreground => [foreground, 'screenPanel']),
+  ...screenChartColorKeys.map(foreground => [foreground, 'screenPanel']),
 ];
 for (const [pairs, minimum] of [
   [textPairs, 4.5],
@@ -138,6 +180,22 @@ for (const [pairs, minimum] of [
     if (ratio < minimum) failures.push(`${foreground} / ${background}: ${ratio.toFixed(2)} < ${minimum}`);
   }
 }
+
+const minimumDistance = 0.08;
+const seriesRgb = screenChartPalette.map(linearRgb);
+const visionDistances = Object.entries(visionMatrices).map(([label, matrix]) => {
+  const colors = seriesRgb.map(rgb => oklab(multiply(matrix, rgb).map(value => Math.max(0, Math.min(1, value)))));
+  const distances = colors.map((color, index) => {
+    const next = (index + 1) % colors.length;
+    const distance = Math.hypot(...color.map((channel, component) => channel - colors[next][component]));
+    if (distance < minimumDistance)
+      failures.push(
+        `${label} ${screenChartColorKeys[index]} / ${screenChartColorKeys[next]}：色差 ${distance.toFixed(3)} < ${minimumDistance}`,
+      );
+    return distance;
+  });
+  return [label, Math.min(...distances)];
+});
 
 // 同时扫描三个入口，防止局部样式遮蔽提示底色或使用不存在的语义变量。
 const root = new URL('../../', import.meta.url);
@@ -192,6 +250,11 @@ console.log(
   `配色核对通过：${files.length} 个源码文件、5 项基础色、提示表面、控件默认状态、根级变量、消息主题与图库配色一致。`,
 );
 console.log(`正文与业务文字 ${textPairs.length} 组 ≥ 4.5:1，图表 ${graphicPairs.length} 组 ≥ 3:1。`);
+console.log(`大屏系列明度：${seriesRgb.map(rgb => oklab(rgb)[0].toFixed(3)).join('／')}（Oklab L）。`);
+const screenContrast = Math.min(...screenChartPalette.map(color => contrast(color, palette.screenPanel)));
+console.log(`大屏系列与面板的最小对比度 ${screenContrast.toFixed(2)}:1。`);
+for (const [label, distance] of visionDistances)
+  console.log(`${label}模拟相邻系列最小 Oklab 色差 ${distance.toFixed(3)} ≥ ${minimumDistance}。`);
 for (const [label, foreground, background] of [
   ['占位提示', 'textPlaceholder', 'surface'],
   ['输入框轮廓', 'controlBorder', 'surface'],

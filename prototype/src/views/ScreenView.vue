@@ -48,7 +48,7 @@ const metrics = computed(() => [
   { label: '生效中的封禁', value: props.state === 'empty' ? '0' : '18' },
 ]);
 const trend: EChartsCoreOption = {
-  color: [palette.screenBlue, palette.screenAmber],
+  color: [palette.screenChartBlue, palette.screenChartAmber],
   tooltip: { trigger: 'axis' },
   grid: { left: 40, right: 15, top: 20, bottom: 56 },
   legend: { bottom: 0, textStyle: { color: palette.screenMuted }, itemWidth: 12, itemHeight: 3 },
@@ -85,7 +85,7 @@ const trend: EChartsCoreOption = {
   ],
 };
 const apps: EChartsCoreOption = {
-  color: [palette.screenBlue],
+  color: [palette.screenChartBlue],
   tooltip: { trigger: 'axis' },
   grid: { left: 80, right: 25, top: 10, bottom: 25 },
   xAxis: {

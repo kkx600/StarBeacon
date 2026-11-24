@@ -2,6 +2,7 @@
 export {
   palette,
   chartPalette,
+  screenChartColorKeys,
   screenChartPalette,
   applyPalette,
   appTheme,

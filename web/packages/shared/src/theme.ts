@@ -88,9 +88,12 @@ export const palette = {
   screenLink: '#70d0ff',
   screenBlue: '#4cbcff',
   screenTeal: '#3ee0ba',
-  screenViolet: '#b298ff',
   screenAmber: '#ffd174',
   screenDanger: '#ffa0b2',
+  screenChartBlue: '#56a9df',
+  screenChartTeal: '#36ad94',
+  screenChartViolet: '#906acb',
+  screenChartAmber: '#d9a652',
   syntaxVariable: '#7434bb',
   syntaxOption: '#8a4700',
   syntaxNumber: '#b42340',
@@ -99,7 +102,13 @@ export const palette = {
 } as const;
 
 export const chartPalette = [palette.primary, palette.teal, palette.violet, palette.chartOrange, palette.chartNeutral];
-export const screenChartPalette = [palette.screenBlue, palette.screenTeal, palette.screenViolet, palette.screenAmber];
+export const screenChartColorKeys = [
+  'screenChartBlue',
+  'screenChartTeal',
+  'screenChartViolet',
+  'screenChartAmber',
+] as const;
+export const screenChartPalette = screenChartColorKeys.map(key => palette[key]);
 
 // 根级变量同样覆盖挂载到 body 的弹窗与通知，避免浮层脱离配色体系。
 export function applyPalette() {

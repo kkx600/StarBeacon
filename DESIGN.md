@@ -62,9 +62,12 @@ colors:
   screen-link: "#70d0ff"
   screen-blue: "#4cbcff"
   screen-teal: "#3ee0ba"
-  screen-violet: "#b298ff"
   screen-amber: "#ffd174"
   screen-danger: "#ffa0b2"
+  screen-chart-blue: "#56a9df"
+  screen-chart-teal: "#36ad94"
+  screen-chart-violet: "#906acb"
+  screen-chart-amber: "#d9a652"
   syntax-variable: "#7434bb"
   syntax-option: "#8a4700"
   syntax-number: "#b42340"
@@ -447,7 +450,9 @@ components:
 
 态势大屏使用 screen 系列：**大屏深色工作区**（screen-workspace）、**大屏内容面板**（screen-panel）、**大屏指标背景**（screen-metric）形成三层无色相深灰底；**大屏分隔线**（screen-line）划分区域。**大屏正文**（screen-text）和**大屏说明**（screen-muted）保持浅色可读层级，**大屏数值**（screen-number）使用高亮蓝青色，**大屏入口**（screen-link）提供文字链接。
 
-**大屏亮蓝**（screen-blue）、**大屏亮青**（screen-teal）、**大屏亮紫**（screen-violet）和**大屏琥珀**（screen-amber）组成 screenChartPalette。高危指标独立取**大屏风险玫红**（screen-danger），关注指标使用大屏琥珀。状态标签继续使用文字、圆点和浅底配对；数据、说明和状态遵循相同的证据规则，深色背景不代表数据实时性或完整性。
+大屏图表依次使用**图表蓝**（screen-chart-blue）、**图表青**（screen-chart-teal）、**图表紫**（screen-chart-violet）与**图表琥珀**（screen-chart-amber），由 `screenChartPalette` 统一提供。高危指标用大屏风险玫红（screen-danger），关注指标用大屏琥珀（screen-amber）。状态标签保留文字、圆点和浅底。
+
+大屏图表背景对比度至少为 3:1。色弱回归将线性 sRGB 分别投影到 Machado 模型表 A.1 中强度 1.0 的红、绿色觉缺失模拟，再计算相邻系列的 Oklab 欧氏距离。环形图核对首尾相邻扇区，项目色差门槛为 0.08。 [Machado 模型表 A.1](https://www.inf.ufrgs.br/~oliveira/students_dissertations/Masters/Gustavo_Machado_Masters_thesis_UFRGS_2010.pdf) [Oklab 转换](https://bottosson.github.io/posts/oklab/)
 
 **The 色源一致 Rule.** 业务色从主题文件取用；共享样式使用根级 CSS 变量，图表使用同一调色板，挂载到 body 的浮层与静态截图目录保持角色颜色一致。派生色带只用于设计面板，不进入界面色源。
 
