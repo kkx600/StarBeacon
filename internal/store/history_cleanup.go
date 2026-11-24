@@ -63,6 +63,7 @@ var historyCategories = []historyCategory{
 	{"response_watchlist_checks", "expires_at", `EXISTS(SELECT 1 FROM sensor_tasks t WHERE t.tenant_id=h.tenant_id AND t.id=h.task_id AND t.retain_until<=now() AND (t.state IN('succeeded','failed','expired','cancelled','unknown') OR (t.state='queued' AND t.delivery_count=0 AND t.expires_at<=now())))`},
 	{"watchlist_hits", "expires_at", "true"},
 	{"watchlist_hit_days", "expires_at", "true"},
+	{"packet_session_outbox", "expires_at", "true"},
 }
 
 type HistorySweep struct {

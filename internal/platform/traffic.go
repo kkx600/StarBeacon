@@ -60,6 +60,13 @@ func (a *API) SearchTraffic(ctx context.Context, user model.Principal, q model.T
 	result := traffic.Result{Items: []traffic.Record{}, Total: stored.Total, Page: stored.Page, PageSize: stored.PageSize}
 	for _, item := range stored.Items {
 		details := traffic.Parse(item.Event.Original)
+		if item.Event.Kind == traffic.PacketSessionKind {
+			details.Segment, err = traffic.ParsePacketSession(item)
+			if err != nil {
+				return traffic.Result{}, err
+			}
+			details.State = "available"
+		}
 		if user.Role != "admin" {
 			item.Event.Original = ""
 		}

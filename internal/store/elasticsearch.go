@@ -21,6 +21,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/searchfilter"
+	"github.com/kkx600/StarBeacon/internal/traffic"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -97,7 +98,7 @@ func response(res *esapi.Response, err error, target any) error {
 
 // EnsurePolicy 确认共享事件与日志模板；生命周期策略随索引按「保留天数+分区跨度」建立。
 func (s *Elasticsearch) EnsurePolicy(ctx context.Context) error {
-	for _, template := range []sharedTemplate{sharedEventTemplate, sharedLogTemplate} {
+	for _, template := range []sharedTemplate{sharedEventTemplate, sharedLogTemplate, contextLogsDBTemplate, logsLogsDBTemplate} {
 		if err := s.ensureSharedTemplate(ctx, template); err != nil {
 			return err
 		}
@@ -175,22 +176,30 @@ func (s *Elasticsearch) EnsureIndex(ctx context.Context, index, partition string
 	}
 	// 共享索引从分区起点计时，并额外等待一个分区跨度，使分区内每条记录至少保留设定天数。
 	policyDays, shards := target.Days+target.Period.SpanDays(), s.Layout.For(target.Stream).Shards
-	indexMapping := mapping
-	if target.Stream == "logs" {
-		indexMapping = logMapping
-	}
+	template := templateForIndex(target)
 	_, err, _ = s.indexFlight.Do("index/"+index, func() (any, error) {
 		if s.IndexKnown(index) {
 			return nil, nil
 		}
-		if err := s.ensureIndexTemplate(ctx, target); err != nil {
+		if err := s.ensureSharedTemplate(ctx, template); err != nil {
 			return nil, err
 		}
 		if err := s.ensureRetentionPolicy(ctx, policyDays); err != nil {
 			return nil, err
 		}
-		body := fmt.Sprintf(`{"settings":{"number_of_shards":%d,"number_of_replicas":%d,"index.lifecycle.name":%q,"index.lifecycle.origination_date":%d},"mappings":%s}`, shards, s.Layout.Replicas, retentionPolicyName(policyDays), target.Start.UnixMilli(), indexMapping)
-		res, e := s.API.Indices.Create(index, s.API.Indices.Create.WithBody(strings.NewReader(body)), s.API.Indices.Create.WithContext(ctx))
+		settings := map[string]any{"number_of_shards": shards, "number_of_replicas": s.Layout.Replicas,
+			"index.lifecycle.name": retentionPolicyName(policyDays), "index.lifecycle.origination_date": target.Start.UnixMilli()}
+		for name, value := range template.settings() {
+			settings[name] = value
+		}
+		body, e := json.Marshal(struct {
+			Settings map[string]any  `json:"settings"`
+			Mappings json.RawMessage `json:"mappings"`
+		}{settings, json.RawMessage(template.mapping)})
+		if e != nil {
+			return nil, e
+		}
+		res, e := s.API.Indices.Create(index, s.API.Indices.Create.WithBody(bytes.NewReader(body)), s.API.Indices.Create.WithContext(ctx))
 		if e != nil {
 			return nil, e
 		}
@@ -208,7 +217,9 @@ func (s *Elasticsearch) EnsureIndex(ctx context.Context, index, partition string
 				limited := failure.Error.Type == "validation_exception" && strings.Contains(failure.Error.Reason, "maximum") && strings.Contains(failure.Error.Reason, "shards")
 				return nil, &IndexCreateError{Status: res.StatusCode, CapacityLimited: limited}
 			}
-			if err := s.verifyIndex(ctx, index, indexMapping, target.Start, policyDays); err != nil {
+		}
+		if res.IsError() || target.LogsDB {
+			if err := s.verifyIndex(ctx, index, template, target.Start, policyDays); err != nil {
 				return nil, err
 			}
 		}
@@ -364,7 +375,7 @@ func ValidateTrafficSearch(q *model.TrafficSearchRequest) error {
 	if q.Keyword != "" || q.Severity != "" {
 		return fmt.Errorf("流量检索不支持告警名称或告警级别条件")
 	}
-	if q.EventKind != "" {
+	if q.EventKind != "" && q.EventKind != traffic.PacketSessionKind {
 		found := false
 		for _, kind := range trafficKinds {
 			found = found || kind == q.EventKind
@@ -404,6 +415,9 @@ func trafficScope(q model.TrafficSearchRequest) ([]string, []any) {
 		kinds = []string{q.EventKind}
 	}
 	filters := []any{}
+	if q.EventKind == traffic.PacketSessionKind {
+		filters = append(filters, map[string]any{"term": map[string]string{"event.dataset": traffic.PacketSessionDataset}})
+	}
 	for _, pair := range []struct{ field, value string }{{"sensor_id", q.SensorID}, {"sensor_registration_id", q.RegistrationID}, {"source_generation_id", q.GenerationID}, {"suricata.flow_id", q.FlowID}} {
 		if pair.value != "" {
 			filters = append(filters, map[string]any{"term": map[string]string{pair.field: pair.value}})

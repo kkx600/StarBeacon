@@ -14,15 +14,16 @@ func TestSharedIndexNamesUseFrozenRetentionAndPeriodStart(t *testing.T) {
 		{"alerts", 180, PeriodWeek, "2026-11-02", "sb-v2-alerts-r180-w2026.11.02"},
 		{"alerts", 180, PeriodWeek, "2026-11-08", "sb-v2-alerts-r180-w2026.11.02"},
 		{"alerts", 180, PeriodWeek, "2027-01-01", "sb-v2-alerts-r180-w2026.12.28"},
-		{"context", 30, PeriodDay, "2026-11-05", "sb-v2-context-r30-d2026.11.05"},
-		{"logs", 3650, PeriodMonth, "2026-02-28", "sb-v2-logs-r3650-m2026.02.01"},
+		{"context", 30, PeriodDay, "2026-11-05", "sb-v2-context-logsdb-r30-d2026.11.05"},
+		{"logs", 3650, PeriodMonth, "2026-02-28", "sb-v2-logs-logsdb-r3650-m2026.02.01"},
 	} {
 		got, err := EventIndexName(tc.stream, tc.days, tc.period, tc.day)
 		if err != nil || got != tc.want {
 			t.Fatalf("%v：得到 %q，%v", tc, got, err)
 		}
 		parsed, err := ParseEventIndex(got)
-		if err != nil || parsed.Name != got || parsed.Stream != tc.stream || parsed.Days != tc.days || parsed.Period != tc.period || !parsed.Covers(tc.day) {
+		if err != nil || parsed.Name != got || parsed.Stream != tc.stream || parsed.LogsDB != (tc.stream != "alerts") ||
+			parsed.Days != tc.days || parsed.Period != tc.period || !parsed.Covers(tc.day) {
 			t.Fatalf("共享索引无法还原：%+v，%v", parsed, err)
 		}
 	}
@@ -31,11 +32,11 @@ func TestSharedIndexNamesUseFrozenRetentionAndPeriodStart(t *testing.T) {
 		t.Fatal("周分区覆盖范围错误")
 	}
 	day, _ := ParseEventIndex("sb-v2-context-r30-d2026.11.05")
-	if !day.Covers("2026-11-05") || day.Covers("2026-11-04") || day.Covers("2026-11-06") {
+	if day.LogsDB || !day.Covers("2026-11-05") || day.Covers("2026-11-04") || day.Covers("2026-11-06") {
 		t.Fatal("日分区覆盖范围错误")
 	}
 	month, _ := ParseEventIndex("sb-v2-logs-r3650-m2026.02.01")
-	if !month.Covers("2026-02-01") || !month.Covers("2026-02-28") || month.Covers("2026-01-31") || month.Covers("2026-03-01") {
+	if month.LogsDB || !month.Covers("2026-02-01") || !month.Covers("2026-02-28") || month.Covers("2026-01-31") || month.Covers("2026-03-01") {
 		t.Fatal("月分区覆盖范围错误")
 	}
 	for _, args := range []struct {
@@ -64,6 +65,9 @@ func TestEventIndexParsingRejectsForeignAndNonCanonicalNames(t *testing.T) {
 		{"sb-v2-alerts-r180-w2026.11.02", "alerts", true},
 		{"sb-v2-context-r30-d2026.11.05", "context", true},
 		{"sb-v2-logs-r3650-m2026.02.01", "logs", true},
+		{"sb-v2-context-logsdb-r30-d2026.11.05", "context", true},
+		{"sb-v2-logs-logsdb-r3650-m2026.02.01", "logs", true},
+		{"sb-v2-alerts-logsdb-r30-d2026.11.05", "alerts", false},
 		{"sb-v2-alerts-r180-w2026.11.02", "context", false},
 		{"sb-v2-logs-r3650-m2026.02.01", "alerts", false},
 		{"sb-v2-alerts-r180-w2026.11.03", "alerts", false},

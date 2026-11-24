@@ -18,6 +18,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/notify"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
+	"github.com/kkx600/StarBeacon/internal/traffic"
 	"github.com/kkx600/StarBeacon/internal/watchlist"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
@@ -99,7 +100,7 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 			quarantined++
 			continue
 		}
-		if (v.Event.Kind == "alert") != (batch.StreamId == "alerts") {
+		if (v.Event.Kind == "alert") != (batch.StreamId == "alerts") || v.Event.Kind == traffic.PacketSessionKind {
 			q := map[string]any{"tenant_id": envelope.TenantID, "event_id": r.EventId, "reason": "stream_type_mismatch", "record": r, "received_at": envelope.ReceivedAt}
 			if e = w.Bus.Publish(ctx, "sb.quarantine", r.EventId, q); e != nil {
 				return e
@@ -190,6 +191,7 @@ func (w *Indexer) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 	if w.DB != nil {
 		group.Go(func() error { return w.qualityLoop(ctx) })
+		group.Go(func() error { return w.packetSessionsLoop(ctx) })
 	}
 	for i, name := range []string{bus.Alerts, bus.Context, bus.Logs} {
 		consumer := consumers[i]

@@ -147,13 +147,16 @@ func (s *Server) receivePacketArchive(ctx context.Context, stream grpc.ClientStr
 			return status.Error(codes.Unavailable, "原包既有对象版本无法确认")
 		}
 	} else {
-		var indexes []packetarchive.IndexRecord
+		var observed store.PacketArchiveObservations
 		if manifest.Encoding.Schema == packetarchive.PackedSchema {
-			index, e := packetarchive.BuildSegmentIndex(ctx, decoded, manifest)
-			if e != nil {
+			observed.Index, err = packetarchive.BuildSegmentIndex(ctx, decoded, manifest)
+			if err != nil {
 				return status.Error(codes.DataLoss, "原包分段帧与会话目录不一致")
 			}
-			indexes = append(indexes, index)
+		}
+		observed.Flows, observed.Limited, err = packetarchive.ObserveSegmentFlows(ctx, decoded, manifest, observed.Index)
+		if err != nil {
+			return status.Error(codes.Unavailable, "原包会话分段尚未核验")
 		}
 		if _, err = file.Seek(0, io.SeekStart); err != nil {
 			return status.Error(codes.Unavailable, "原包制品读取不可用")
@@ -165,7 +168,7 @@ func (s *Server) receivePacketArchive(ctx context.Context, stream grpc.ClientStr
 		if err = s.DB.RegisterPacketObject(ctx, id, row, version); err != nil {
 			return status.Error(codes.Unavailable, "原包对象版本目录未持久确认")
 		}
-		row, err = s.DB.CompletePacketArchive(ctx, id, row, indexes...)
+		row, err = s.DB.CompletePacketArchive(ctx, id, row, observed)
 		if err != nil {
 			return status.Error(codes.Unavailable, "原包目录提交结果尚未确认")
 		}

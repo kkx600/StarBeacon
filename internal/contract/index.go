@@ -154,7 +154,7 @@ func periodEnd(period IndexPeriod, start time.Time) time.Time {
 }
 
 // EventIndexName 返回路由日所在的共享索引：同一数据流、保留期和时间分区的全部租户写入同一索引。
-// 格式为 sb-v2-{数据流}-r{保留天数}-{d|w|m}{分区起点}，分区起点为 UTC 日、ISO 周一或月初。
+// 协议记录和日志的新分区在数据流后带 logsdb，既有冻结路由沿用原索引名。
 func EventIndexName(stream string, days int, period IndexPeriod, day string) (string, error) {
 	code, ok := periodCodes[period]
 	if !ValidStream(stream) || days < 1 || days > 3650 || !ok {
@@ -164,12 +164,17 @@ func EventIndexName(stream string, days int, period IndexPeriod, day string) (st
 	if err != nil {
 		return "", err
 	}
-	return SharedIndexPrefix + stream + "-r" + strconv.Itoa(days) + "-" + code + periodStart(period, parsed).Format("2006.01.02"), nil
+	name := SharedIndexPrefix + stream
+	if stream != "alerts" {
+		name += "-logsdb"
+	}
+	return name + "-r" + strconv.Itoa(days) + "-" + code + periodStart(period, parsed).Format("2006.01.02"), nil
 }
 
 // EventIndex 是解析后的共享索引身份；索引同时承载多个租户，隔离依赖文档 tenant_id。
 type EventIndex struct {
 	Name, Stream string
+	LogsDB       bool
 	Days         int
 	Period       IndexPeriod
 	Start, End   time.Time
@@ -181,22 +186,23 @@ func (v EventIndex) Covers(day string) bool {
 	return err == nil && !parsed.Before(v.Start) && parsed.Before(v.End)
 }
 
-var sharedIndex = regexp.MustCompile(`^sb-v2-(alerts|context|logs)-r([1-9][0-9]{0,3})-([dwm])([0-9]{4}\.[0-9]{2}\.[0-9]{2})$`)
+var sharedIndex = regexp.MustCompile(`^sb-v2-(alerts|context|logs)(-logsdb)?-r([1-9][0-9]{0,3})-([dwm])([0-9]{4}\.[0-9]{2}\.[0-9]{2})$`)
 
 func ParseEventIndex(name string) (EventIndex, error) {
 	if match := sharedIndex.FindStringSubmatch(name); match != nil {
-		days, _ := strconv.Atoi(match[2])
+		logsDB := match[2] != ""
+		days, _ := strconv.Atoi(match[3])
 		var period IndexPeriod
 		for candidate, code := range periodCodes {
-			if code == match[3] {
+			if code == match[4] {
 				period = candidate
 			}
 		}
-		start, err := time.Parse("2006.01.02", match[4])
-		if err != nil || days > 3650 || !periodStart(period, start).Equal(start) {
+		start, err := time.Parse("2006.01.02", match[5])
+		if err != nil || days > 3650 || logsDB && match[1] == "alerts" || !periodStart(period, start).Equal(start) {
 			return EventIndex{}, fmt.Errorf("共享索引分区无效")
 		}
-		return EventIndex{Name: name, Stream: match[1], Days: days, Period: period, Start: start, End: periodEnd(period, start)}, nil
+		return EventIndex{Name: name, Stream: match[1], LogsDB: logsDB, Days: days, Period: period, Start: start, End: periodEnd(period, start)}, nil
 	}
 	return EventIndex{}, fmt.Errorf("索引名称不属于事件数据流")
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -21,10 +22,12 @@ import (
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/admin"
 	"github.com/kkx600/StarBeacon/internal/ingest"
+	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/platform"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/testpcap"
+	"github.com/kkx600/StarBeacon/internal/traffic"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
@@ -223,4 +226,117 @@ func TestPackedPacketArchiveWarmHTTPRangeLatencyAndIndexRecovery(t *testing.T) {
 	if len(files) != 0 {
 		t.Fatal("归档上传或索引恢复遗留暂存文件", files)
 	}
+
+	t.Run("定稿窗口会话追加与未知提交恢复", func(t *testing.T) {
+		es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
+		require(t, err)
+		t.Cleanup(func() { deleteTenantEvents(t, es, tenant) })
+		begin := time.Now().UTC().Add(-time.Minute).Truncate(time.Second)
+		archiveIDs := []string{"warm_window_1", "warm_window_2"}
+		expectedBytes := make([]uint64, len(archiveIDs))
+		for at, part := range [][]testpcap.SegmentFrame{selected[:4], selected[4:]} {
+			start := begin.Add(time.Duration(at) * 3 * time.Second)
+			var raw, stored bytes.Buffer
+			// 同一 TCP 样本的连续报文放在相邻采集窗口，使用常规旧版原包格式。
+			header := packetarchive.Capture{ID: archiveIDs[at], TenantID: tenant, SensorID: id.SensorID,
+				RegistrationID: id.RegistrationID, RunID: "run_adjacent", Interface: "eth0", InterfaceMAC: "02:00:00:00:00:01",
+				SettingsSHA256: packetarchive.Digest([]byte("same-capture-settings")), StartedAt: start}
+			recorder, err := packetarchive.NewRecorder(&raw, header, 1<<20)
+			require(t, err)
+			for packet, frame := range part {
+				info := frame.Info
+				info.Timestamp = start.Add(time.Duration(packet) * time.Millisecond)
+				require(t, recorder.Write(info, frame.Raw, nil))
+				expectedBytes[at] += uint64(len(frame.Raw))
+			}
+			drops := uint64(0)
+			header, err = recorder.Seal(start.Add(3*time.Second), "rotation", &drops)
+			require(t, err)
+			encoding, err := packetarchive.EncodeFrames(ctx, &stored, bytes.NewReader(raw.Bytes()), "zstd", packetarchive.DefaultFrameBytes)
+			require(t, err)
+			m := packetarchive.Manifest{Capture: header, Encoding: encoding}
+			message, sha, err := m.JSON()
+			require(t, err)
+			accepted, err := sendPacket(t, ctx, client, message, stored.Bytes(), 0)
+			require(t, err)
+			if accepted.ManifestSha256 != sha {
+				t.Fatal("相邻窗口没有实际持久确认")
+			}
+		}
+		pending := func() int {
+			t.Helper()
+			var n int
+			require(t, f.Owner.Pool.QueryRow(ctx, "SELECT count(*) FROM packet_session_outbox WHERE tenant_id=$1", tenant).Scan(&n))
+			return n
+		}
+		if pending() != 3 {
+			t.Fatal("持久确认与三份分段待办未原子登记")
+		}
+		require(t, f.Runtime.ProjectPacketSessions(ctx, other, func(store.PacketSessionBatch) error {
+			t.Fatal("其他租户领取了会话分段")
+			return nil
+		}))
+		var index string
+		write := func(batch store.PacketSessionBatch) error {
+			index = batch.Index
+			if err := es.EnsureIndex(ctx, batch.Index, batch.Partition); err != nil {
+				return err
+			}
+			return errors.Join(es.Bulk(ctx, batch.Index, batch.Documents)...)
+		}
+		lost := errors.New("写入已完成但调用端未收到结果")
+		if err = f.Runtime.ProjectPacketSessions(ctx, tenant, func(batch store.PacketSessionBatch) error {
+			if err := write(batch); err != nil {
+				return err
+			}
+			return lost
+		}); !errors.Is(err, lost) || pending() != 3 {
+			t.Fatal("未知写入结果没有保留待办", err)
+		}
+		updated, err := f.Owner.Pool.Exec(ctx, "UPDATE packet_session_outbox SET next_at=now() WHERE tenant_id=$1 AND attempts=1", tenant)
+		require(t, err)
+		if updated.RowsAffected() != 1 {
+			t.Fatal("未知结果没有登记重试")
+		}
+		for range 3 {
+			require(t, f.Runtime.ProjectPacketSessions(ctx, tenant, write))
+		}
+		if pending() != 0 {
+			t.Fatal("成功投影没有回收已处理待办")
+		}
+		logsDBRequest(t, ctx, os.Getenv("SB_ES_URL"), "POST", "/"+index+"/_refresh", nil, 200)
+		h := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, username, password)
+		hOther := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, other, password)
+		const viewer = "warm_viewer"
+		require(t, admin.Bootstrap(ctx, f.Owner, tenant, "分段只读验收", viewer, password, "viewer"))
+		hViewer := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime, ES: es}, viewer, password)
+		request := model.TrafficSearchRequest{SearchRequest: model.SearchRequest{Start: begin.Add(-time.Second), End: begin.Add(8 * time.Second),
+			SourceIP: "192.0.2.10"}, SensorID: id.SensorID, RegistrationID: id.RegistrationID, EventKind: traffic.PacketSessionKind}
+		for _, httpClient := range []*liveHTTP{h, hViewer} {
+			var list traffic.Result
+			httpClient.request("POST", "/traffic/search", "", request, &list, 200)
+			if list.Total != 2 || len(list.Items) != 2 || list.Items[0].EventID == list.Items[1].EventID {
+				t.Fatalf("同一连接的两个窗口没有独立追加，搜索得到 %d 条", list.Total)
+			}
+			for at, item := range list.Items {
+				want := 1 - at
+				data := item.Details.Segment
+				if data == nil || data.ArchiveID != archiveIDs[want] || data.RunID != "run_adjacent" || data.OriginalBytes != expectedBytes[want] ||
+					data.RetainedBytes != expectedBytes[want] || !data.WindowStart.Equal(begin.Add(time.Duration(want)*3*time.Second)) ||
+					(item.Event.Original == "") != (httpClient == hViewer) {
+					t.Fatal("分段来源、实际计数、窗口或原文权限有误", want)
+				}
+			}
+		}
+		var empty traffic.Result
+		hOther.request("POST", "/traffic/search", "", request, &empty, 200)
+		if empty.Total != 0 {
+			t.Fatal("跨租户检索返回了会话分段")
+		}
+		request.EventKind = ""
+		h.request("POST", "/traffic/search", "", request, &empty, 200)
+		if empty.Total != 0 {
+			t.Fatal("旧协议查询混入派生会话分段")
+		}
+	})
 }

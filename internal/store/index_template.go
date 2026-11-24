@@ -22,6 +22,7 @@ type indexTemplate struct {
 	} `json:"_meta"`
 	Template struct {
 		Mappings json.RawMessage `json:"mappings"`
+		Settings map[string]any  `json:"settings"`
 	} `json:"template"`
 }
 
@@ -31,19 +32,27 @@ type sharedTemplate struct {
 	patterns []string
 	priority int
 	mapping  string
+	sortTime string
 }
 
-var sharedEventTemplate = sharedTemplate{"sb-v2-events", []string{"sb-v2-alerts-*", "sb-v2-context-*"}, 161, mapping}
-var sharedLogTemplate = sharedTemplate{"sb-v2-logs", []string{"sb-v2-logs-*"}, 162, logMapping}
+var sharedEventTemplate = sharedTemplate{name: "sb-v2-events", patterns: []string{"sb-v2-alerts-*", "sb-v2-context-*"}, priority: 161, mapping: mapping}
+var sharedLogTemplate = sharedTemplate{name: "sb-v2-logs", patterns: []string{"sb-v2-logs-*"}, priority: 162, mapping: logMapping}
+var contextLogsDBTemplate = sharedTemplate{name: "sb-v2-context-logsdb", patterns: []string{"sb-v2-context-logsdb-*"}, priority: 163, mapping: contextLogsDBMapping, sortTime: "@timestamp"}
+var logsLogsDBTemplate = sharedTemplate{name: "sb-v2-logs-logsdb", patterns: []string{"sb-v2-logs-logsdb-*"}, priority: 164, mapping: logsLogsDBMapping, sortTime: "received_at"}
 
 func (t sharedTemplate) body() string {
 	patterns, _ := json.Marshal(t.patterns)
-	return fmt.Sprintf(`{"index_patterns":%s,"allow_auto_create":false,"priority":%d,"version":1,"_meta":{"owner":"starbeacon","schema":1},"template":{"mappings":%s}}`, patterns, t.priority, t.mapping)
+	settings := ""
+	if t.sortTime != "" {
+		raw, _ := json.Marshal(t.settings())
+		settings = `,"settings":` + string(raw)
+	}
+	return fmt.Sprintf(`{"index_patterns":%s,"allow_auto_create":false,"priority":%d,"version":1,"_meta":{"owner":"starbeacon","schema":1},"template":{"mappings":%s%s}}`, patterns, t.priority, t.mapping, settings)
 }
 
 // sharedTemplateExists 只接受本项目的固定契约；内容不一致时拒绝继续写入，不自动覆盖。
 func (s *Elasticsearch) sharedTemplateExists(ctx context.Context, t sharedTemplate) (bool, error) {
-	res, err := s.API.Indices.GetIndexTemplate(s.API.Indices.GetIndexTemplate.WithName(t.name), s.API.Indices.GetIndexTemplate.WithContext(ctx))
+	res, err := s.API.Indices.GetIndexTemplate(s.API.Indices.GetIndexTemplate.WithName(t.name), s.API.Indices.GetIndexTemplate.WithFlatSettings(true), s.API.Indices.GetIndexTemplate.WithContext(ctx))
 	if err != nil {
 		return false, err
 	}
@@ -67,6 +76,9 @@ func (s *Elasticsearch) sharedTemplateExists(ctx context.Context, t sharedTempla
 	var actual, expected any
 	if json.Unmarshal(c.Template.Mappings, &actual) != nil || json.Unmarshal([]byte(t.mapping), &expected) != nil || c.Version != 1 || c.Meta.Schema != 1 || c.Meta.Owner != "starbeacon" || c.Priority != t.priority || c.AllowAutoCreate == nil || *c.AllowAutoCreate || !reflect.DeepEqual(c.Patterns, t.patterns) || !reflect.DeepEqual(actual, expected) {
 		return false, fmt.Errorf("共享索引模板契约不一致；需要管理流程核对")
+	}
+	if !sameIndexSettings(c.Template.Settings, t.settings(), true) {
+		return false, fmt.Errorf("共享索引模板静态设置不一致")
 	}
 	return true, nil
 }
@@ -104,9 +116,15 @@ func (s *Elasticsearch) ensureSharedTemplate(ctx context.Context, t sharedTempla
 	return err
 }
 
-func (s *Elasticsearch) ensureIndexTemplate(ctx context.Context, target contract.EventIndex) error {
-	if target.Stream == "logs" {
-		return s.ensureSharedTemplate(ctx, sharedLogTemplate)
+func templateForIndex(target contract.EventIndex) sharedTemplate {
+	if target.LogsDB {
+		if target.Stream == "logs" {
+			return logsLogsDBTemplate
+		}
+		return contextLogsDBTemplate
 	}
-	return s.ensureSharedTemplate(ctx, sharedEventTemplate)
+	if target.Stream == "logs" {
+		return sharedLogTemplate
+	}
+	return sharedEventTemplate
 }

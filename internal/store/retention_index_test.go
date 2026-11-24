@@ -293,8 +293,13 @@ func TestEnsurePolicyPublishesOnlySharedTemplates(t *testing.T) {
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	if len(other) != 0 || len(writes) != 2 || writes[sharedEventTemplate.name] != 1 || writes[sharedLogTemplate.name] != 1 || string(templates[sharedEventTemplate.name]) != sharedEventTemplate.body() || string(templates[sharedLogTemplate.name]) != sharedLogTemplate.body() {
-		t.Fatal("启动时创建了生命周期、旧版模板或重复发布", other, writes)
+	if len(other) != 0 || len(writes) != 4 {
+		t.Fatal("启动时创建了非预期模板或生命周期", other, writes)
+	}
+	for _, template := range []sharedTemplate{sharedEventTemplate, sharedLogTemplate, contextLogsDBTemplate, logsLogsDBTemplate} {
+		if writes[template.name] != 1 || string(templates[template.name]) != template.body() {
+			t.Fatal("启动时未按固定契约发布模板", template.name)
+		}
 	}
 }
 

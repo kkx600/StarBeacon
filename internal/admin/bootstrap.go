@@ -163,6 +163,7 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE,DELETE ON packet_archives TO starbeacon_app;
 		GRANT SELECT,INSERT,UPDATE ON packet_archive_flow_indexes TO starbeacon_app;
+		GRANT SELECT,INSERT,UPDATE,DELETE ON packet_session_outbox TO starbeacon_app;
 		GRANT EXECUTE ON FUNCTION public.lock_packet_sensor(text,text) TO starbeacon_app`); e != nil {
 		return e
 	}

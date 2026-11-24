@@ -21,9 +21,11 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	"github.com/kkx600/StarBeacon/internal/agent"
+	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
+	"github.com/kkx600/StarBeacon/internal/traffic"
 	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
@@ -159,6 +161,29 @@ func verifyNativeIndexedSnapshot(t *testing.T, ctx context.Context, platformHTTP
 		t.Fatalf("隔离网络会话与保存的捕获内容不一致，导出 %d／留存 %d 字节", report.PacketBytes, flow.RetainedBytes)
 	}
 	t.Logf("分段取回实测 隔离 Docker 网络的实际 HTTP 会话 %d 包、%d 字节，PCAPNG 摘要与对象版本已核验", report.Packets, report.PacketBytes)
+	source := archive.Manifest.Capture
+	querySegment := model.TrafficSearchRequest{
+		SearchRequest: model.SearchRequest{Start: flow.StartedAt.Add(-time.Second), End: flow.EndedAt.Add(time.Second), SourceIP: flow.A.Addr().String(), DestinationIP: flow.B.Addr().String()},
+		EventKind:     traffic.PacketSessionKind, SensorID: source.SensorID, RegistrationID: source.RegistrationID, GenerationID: archive.ID,
+	}
+	eventually(t, ctx, "真实 HTTP 采集窗口由索引工作进程追加", func() bool {
+		var list traffic.Result
+		platformHTTP.request("POST", "/traffic/search", "", querySegment, &list, 200)
+		for _, hit := range list.Items {
+			if hit.Source.Port != flow.A.Port() || hit.Destination.Port != flow.B.Port() {
+				continue
+			}
+			detail := hit.Details.Segment
+			if detail == nil || detail.ArchiveID != archive.ID || detail.OriginalBytes != flow.OriginalBytes || detail.RetainedBytes != flow.RetainedBytes ||
+				detail.ManifestSHA256 != archive.ManifestSHA256 || !detail.WindowStart.Equal(source.StartedAt) || !detail.WindowEnd.Equal(source.EndedAt) {
+				t.Fatal("真实会话索引未保留原包窗口和实际字节")
+			}
+			t.Logf("会话分段实测 隔离 Docker 网络的实际 HTTP 连接已追加到 LogsDB，窗口 %s，观测 %d 字节",
+				detail.WindowEnd.Sub(detail.WindowStart).Round(time.Millisecond), detail.OriginalBytes)
+			return true
+		}
+		return false
+	})
 }
 
 func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, platformHTTP *liveHTTP, sensor, policy string) {

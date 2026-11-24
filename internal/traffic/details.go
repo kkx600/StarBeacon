@@ -43,16 +43,17 @@ type TLS struct {
 	Fingerprint string `json:"fingerprint"`
 }
 type Details struct {
-	State           string   `json:"state"`
-	Truncated       bool     `json:"truncated"`
-	Flow            *Flow    `json:"flow"`
-	TLS             *TLS     `json:"tls"`
-	DNS             *DNS     `json:"dns"`
-	SourceMACs      []string `json:"source_macs"`
-	DestinationMACs []string `json:"destination_macs"`
-	CommunityID     string   `json:"community_id"`
-	PacketSource    string   `json:"packet_source"`
-	Direction       string   `json:"direction"`
+	State           string                `json:"state"`
+	Truncated       bool                  `json:"truncated"`
+	Flow            *Flow                 `json:"flow"`
+	TLS             *TLS                  `json:"tls"`
+	DNS             *DNS                  `json:"dns"`
+	SourceMACs      []string              `json:"source_macs"`
+	DestinationMACs []string              `json:"destination_macs"`
+	CommunityID     string                `json:"community_id"`
+	PacketSource    string                `json:"packet_source"`
+	Direction       string                `json:"direction"`
+	Segment         *PacketSessionSegment `json:"segment,omitempty"`
 }
 type Record struct {
 	model.Alert

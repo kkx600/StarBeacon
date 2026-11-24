@@ -22441,6 +22441,7 @@
             "enum": [
               "",
               "flow",
+              "flow_segment",
               "http",
               "http2",
               "dns",
@@ -22456,7 +22457,7 @@
               "anomaly",
               "fileinfo"
             ],
-            "description": "空字符串检索所有支持的协议记录；页面默认选择 flow。"
+            "description": "空字符串检索既有协议记录。显式指定 flow_segment 查询原包采集窗口的会话分段。页面默认选择 flow。"
           },
           "sensor_id": {
             "type": "string",
@@ -22624,6 +22625,116 @@
         ],
         "additionalProperties": false
       },
+      "TrafficSessionSegment": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "starbeacon.packet-flow.v1"
+          },
+          "archive_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "run_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "archive_raw_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "interface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "first_observed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_observed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vlan": {
+            "type": "string",
+            "description": "以逗号分隔的规范 VLAN 栈。空字符串表示没有观察到 VLAN。"
+          },
+          "retention": {
+            "type": "string",
+            "enum": [
+              "retained",
+              "policy_truncated",
+              "metadata_only"
+            ]
+          },
+          "original_bytes": {
+            "type": "string",
+            "pattern": "^(?:0|[1-9][0-9]{0,19})$"
+          },
+          "retained_bytes": {
+            "type": "string",
+            "pattern": "^(?:0|[1-9][0-9]{0,19})$"
+          },
+          "retained_packets": {
+            "type": "string",
+            "pattern": "^(?:0|[1-9][0-9]{0,19})$"
+          },
+          "kernel_drops": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^(?:0|[1-9][0-9]{0,19})$",
+            "description": "内核丢包数。null 表示没有可用计数。"
+          },
+          "limited": {
+            "type": "boolean",
+            "description": "该采集窗口的流目录达到处理预算。"
+          }
+        },
+        "required": [
+          "schema",
+          "archive_id",
+          "run_id",
+          "manifest_sha256",
+          "archive_raw_sha256",
+          "interface",
+          "window_start",
+          "window_end",
+          "first_observed",
+          "last_observed",
+          "vlan",
+          "retention",
+          "original_bytes",
+          "retained_bytes",
+          "retained_packets",
+          "kernel_drops",
+          "limited"
+        ],
+        "additionalProperties": false
+      },
       "TrafficDetails": {
         "type": "object",
         "properties": {
@@ -22694,6 +22805,9 @@
           "direction": {
             "type": "string",
             "maxLength": 32
+          },
+          "segment": {
+            "$ref": "#/components/schemas/TrafficSessionSegment"
           }
         },
         "required": [
@@ -22759,6 +22873,7 @@
                 "type": "string",
                 "enum": [
                   "flow",
+                  "flow_segment",
                   "http",
                   "http2",
                   "dns",
@@ -22774,14 +22889,14 @@
                   "anomaly",
                   "fileinfo"
                 ],
-                "description": "空字符串检索所有支持的协议记录；页面默认选择 flow。"
+                "description": "协议记录类型或原包观察分段。"
               },
               "dataset": {
                 "type": "string"
               },
               "original": {
                 "type": "string",
-                "description": "原始 EVE JSON。非管理员返回空字符串。"
+                "description": "原始 EVE 或原包观察来源描述。非管理员返回空字符串。"
               }
             },
             "required": [

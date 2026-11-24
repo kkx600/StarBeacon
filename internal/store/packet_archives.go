@@ -129,8 +129,22 @@ func (p *Postgres) RegisterPacketObject(ctx context.Context, id transport.Sensor
 		return nil
 	})
 }
-func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.SensorIdentity, row PacketArchive, index ...packetarchive.IndexRecord) (v PacketArchive, err error) {
-	if len(index) > 1 || (row.Manifest.Encoding.Schema == packetarchive.PackedSchema) != (len(index) == 1) {
+
+type PacketArchiveObservations struct {
+	Index   packetarchive.IndexRecord
+	Flows   []packetarchive.IndexedFlow
+	Limited bool
+}
+
+func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.SensorIdentity, row PacketArchive, observations ...PacketArchiveObservations) (v PacketArchive, err error) {
+	if len(observations) > 1 {
+		return v, packetarchive.ErrIntegrity
+	}
+	var material PacketArchiveObservations
+	if len(observations) == 1 {
+		material = observations[0]
+	}
+	if (row.Manifest.Encoding.Schema == packetarchive.PackedSchema) != (len(material.Index.Data) != 0) {
 		return v, packetarchive.ErrIntegrity
 	}
 	err = p.TenantTx(ctx, id.TenantID, func(tx pgx.Tx) error {
@@ -145,10 +159,13 @@ func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.Senso
 			return ErrConflict
 		}
 		v, e = scanPacketArchive(tx.QueryRow(ctx, `SELECT `+packetArchiveColumns+` FROM packet_archives WHERE tenant_id=$1 AND id=$2`, id.TenantID, row.ID))
-		if e == nil && len(index) == 1 {
-			e = setPacketFlowIndex(ctx, tx, v, index[0])
+		if e == nil && len(material.Index.Data) != 0 {
+			e = setPacketFlowIndex(ctx, tx, v, material.Index)
 		}
-		return e
+		if e != nil || len(material.Flows) == 0 {
+			return e
+		}
+		return enqueuePacketSessions(ctx, tx, v, p.IndexLayout.For("context").Period, material)
 	})
 	return v, err
 }
