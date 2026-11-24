@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, ref, watch } from 'vue';
-import { Checkbox, InputNumber, Modal, Table } from 'ant-design-vue';
+import { Checkbox, InputNumber, Modal } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { scopeNames, type RetentionPolicy } from './retention';
 import { useRetention } from './useRetention';
@@ -23,11 +26,12 @@ const rows = computed(
 const validDays = computed(() => Number.isInteger(days.value) && Number(days.value) >= 1 && Number(days.value) <= 3650);
 const label = computed(() => data.value?.catalog.find(c => c.id === selected.value?.category)?.name ?? '留存策略');
 const columns = [
+  { title: '类别编号', dataIndex: 'category', width: 156, className: 'technical', ellipsis: true },
   { title: '数据类别', dataIndex: 'name', width: 160 },
   { title: '保留期', key: 'days', width: 110 },
   { title: '生效范围', key: 'scope', width: 160 },
   { title: '策略修订', dataIndex: 'revision', width: 100 },
-  { title: '业务边界', dataIndex: 'boundary', width: 380 },
+  { title: '业务边界', dataIndex: 'boundary', width: 310, ellipsis: true },
   { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
 ];
 function choose(category: string) {
@@ -75,23 +79,14 @@ async function publish() {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>数据留存</h1>
-      <p class="page-description">默认保留 180 天，按数据类别设置未来对象的保留期并复核生效范围。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button v-if="unconfirmed && !open" @click="open = true">确认原提交</a-button
-      ><a-button :loading="pending" @click="state.refresh">刷新</a-button>
-    </div>
-  </header>
-  <a-alert
-    type="info"
-    show-icon
-    message="策略发布不改变存量对象的期限"
-    description="延长不能恢复已删除的数据；当前未开放存量重算、全域保全或备份销毁。活动配置与传输缓存使用独立生命周期。"
-    class="section-gap"
-  />
+  <PageHeader
+    title="数据留存"
+    description="默认保留 180 天，按数据类别设置未来对象的保留期并复核生效范围。"
+    notice="策略只适用于未来对象。已删除的数据无法恢复，现有对象维持原期限。活动配置和传输缓存使用独立生命周期。"
+  >
+    <a-button v-if="unconfirmed && !open" @click="open = true">确认原提交</a-button
+    ><a-button :loading="pending" @click="state.refresh">刷新</a-button>
+  </PageHeader>
   <a-alert v-if="actionError && !open" type="warning" :message="actionError" class="section-gap" />
   <section class="panel section-gap">
     <div class="panel-header">
@@ -104,26 +99,25 @@ async function publish() {
       :empty="!!data && !rows.length"
       description="暂无分类留存策略。"
       @retry="state.refresh"
-      ><div class="table-wrap">
-        <Table :data-source="rows" :columns="columns" row-key="category" :pagination="false" :scroll="{ x: 1060 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'days'">{{ record.days }} 天</template
-            ><template v-else-if="column.key === 'scope'"
-              ><span :class="record.scope === 'pending_pipeline' ? 'status-unknown' : 'muted'">{{
-                scopeNames[record.scope as keyof typeof scopeNames]
-              }}</span></template
-            ><a-button
-              v-else-if="column.key === 'action'"
-              type="link"
-              size="small"
-              :disabled="busy || unconfirmed"
-              @click="choose(record.category)"
-              >配置</a-button
-            ></template
-          ></Table
-        >
-      </div></StatePanel
-    >
+      ><ListTable :data-source="rows" :columns="columns" row-key="category" :scroll="{ x: 1096 }"
+        ><template #bodyCell="{ column, record }"
+          ><template v-if="column.key === 'days'">{{ record.days }} 天</template
+          ><StatusTag
+            v-else-if="column.key === 'scope'"
+            :value="record.scope ? scopeNames[record.scope] : '未提供'"
+            :tone="record.scope === 'pending_pipeline' ? 'warning' : 'info'"
+          />
+          <a-button
+            v-else-if="column.key === 'action'"
+            type="link"
+            size="small"
+            :disabled="busy || unconfirmed"
+            @click="choose(record.category)"
+            >配置</a-button
+          ></template
+        ></ListTable
+      >
+    </StatePanel>
   </section>
   <Modal
     :open="open"

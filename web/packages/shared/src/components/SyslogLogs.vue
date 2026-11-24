@@ -5,6 +5,11 @@ import type { ApiClient } from '../api';
 import type { Principal } from '../types';
 import { emptyLogQuery, logQuery, readLogDetail, readLogPage, type LogDocument, type LogQuery } from '../syslog';
 import StatePanel from './StatePanel.vue';
+import PageHeader from './PageHeader.vue';
+import ListFilters from './ListFilters.vue';
+import ListPager from './ListPager.vue';
+import TimeRangeField from './TimeRangeField.vue';
+import { useCursorPageSize } from '../composables/useCursorPageSize';
 import SyslogLogTable from './SyslogLogTable.vue';
 import SyslogLogDetail from './SyslogLogDetail.vue';
 const props = defineProps<{
@@ -27,6 +32,7 @@ const filters = reactive(emptyLogQuery()),
   detailPending = shallowRef(false),
   detailError = shallowRef(''),
   target = shallowRef<LogDocument | null>(null);
+const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, reloadPage);
 let controller: AbortController | undefined,
   detailController: AbortController | undefined,
   stopped = false;
@@ -47,7 +53,7 @@ async function refresh() {
   controller = current;
   pending.value = true;
   try {
-    const q = { ...applied.value, cursor: cursors.value.at(-1) ?? '' },
+    const q = { ...applied.value, cursor: cursors.value.at(-1) ?? '', limit: pageSize.value },
       result = readLogPage(
         await props.api.request('/logs/search', { method: 'POST', body: q, signal: current.signal }),
         q,
@@ -72,11 +78,8 @@ function search() {
       cursor: '',
     });
     filterError.value = '';
-    items.value = [];
     cursors.value = [''];
-    nextCursor.value = '';
-    close();
-    void refresh();
+    reloadPage();
   } catch (cause) {
     filterError.value = cause instanceof RangeError ? '请选择有效的开始与结束时间。' : (cause as Error).message;
   }
@@ -88,9 +91,12 @@ function reset() {
   search();
 }
 function page(next: boolean) {
-  if (pending.value || (next && !nextCursor.value) || (!next && cursors.value.length <= 1)) return;
-  close();
+  if (pending.value || (next && (!nextCursor.value || error.value)) || (!next && cursors.value.length <= 1)) return;
   cursors.value = next ? [...cursors.value, nextCursor.value] : cursors.value.slice(0, -1);
+  reloadPage();
+}
+function reloadPage() {
+  close();
   items.value = [];
   nextCursor.value = '';
   void refresh();
@@ -177,81 +183,75 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>日志检索</h1>
-      <p class="page-description">检索已接入的 Syslog 原始消息与解析字段，按平台接收时间筛选，原文查看单独登记审计。</p>
-    </div>
+  <PageHeader
+    title="日志检索"
+    description="检索 Syslog 消息与解析字段。按平台接收时间筛选，原文查看单独登记审计。"
+    notice="检索时间按浏览器本地时区输入。按接收时间和事件标识续页，重新查询可核对最新记录。"
+  >
     <a-button :loading="pending" @click="refresh">刷新结果</a-button>
-  </header>
-  <form class="panel log-filters" aria-label="日志检索条件" @submit.prevent="search">
-    <label
-      >接收开始时间<a-input
-        type="datetime-local"
-        step="1"
-        v-model:value="window.start"
-        aria-label="日志接收开始时间" /></label
-    ><label
-      >接收结束时间<a-input
-        type="datetime-local"
-        step="1"
-        v-model:value="window.end"
-        aria-label="日志接收结束时间" /></label
-    ><label
-      >接入探针<a-input v-model:value="filters.sensor_id" aria-label="日志探针" :maxlength="64" allow-clear /></label
-    ><label
-      >来源标识<a-input v-model:value="filters.source_id" aria-label="日志来源" :maxlength="64" allow-clear /></label
-    ><label
-      >网络域<a-input
-        v-model:value="filters.network_domain"
-        aria-label="日志网络域"
-        :maxlength="64"
-        allow-clear /></label
-    ><label
-      >传输对端 IP<a-input
-        v-model:value="filters.peer_ip"
-        aria-label="日志传输对端 IP"
-        :maxlength="45"
-        allow-clear /></label
-    ><label
-      >原文声明主机<a-input
-        v-model:value="filters.hostname"
-        aria-label="日志声明主机"
-        :maxlength="256"
-        allow-clear /></label
-    ><label
-      >应用名<a-input v-model:value="filters.application" aria-label="日志应用" :maxlength="256" allow-clear /></label
-    ><label
-      >解析状态<a-select v-model:value="filters.state" aria-label="日志解析状态"
-        ><a-select-option value="">全部状态</a-select-option><a-select-option value="parsed">解析成功</a-select-option
-        ><a-select-option value="quarantined">解析隔离</a-select-option></a-select
-      ></label
-    ><label
-      >Syslog 严重级别<a-select
-        :value="filters.severity ?? ''"
-        @change="(value: unknown) => (filters.severity = typeof value === 'number' ? value : null)"
-        aria-label="Syslog 严重级别"
-        ><a-select-option value="">全部级别</a-select-option
-        ><a-select-option
-          v-for="(label, i) in ['紧急', '警戒', '严重', '错误', '警告', '通知', '信息', '调试']"
-          :key="i"
-          :value="i"
-          >{{ i }} · {{ label }}</a-select-option
-        ></a-select
-      ></label
-    ><label class="log-keyword"
-      >正文关键词<a-input v-model:value="filters.keyword" aria-label="日志正文关键词" :maxlength="256" allow-clear
-    /></label>
-    <div class="filter-actions">
-      <a-button type="primary" html-type="submit" :disabled="pending">查询</a-button
-      ><a-button :disabled="pending" @click="reset">重置</a-button>
-    </div>
-  </form>
+  </PageHeader>
+  <a-form :model="window" layout="horizontal" @finish="search">
+    <ListFilters label="日志检索条件" :columns="4">
+      <TimeRangeField
+        id-prefix="syslog-received"
+        v-model:start="window.start"
+        v-model:end="window.end"
+        start-label="接收开始"
+        end-label="接收结束"
+        required
+      />
+      <label
+        ><span>接入探针</span
+        ><a-input v-model:value="filters.sensor_id" aria-label="日志探针" :maxlength="64" allow-clear /></label
+      ><label
+        ><span>来源标识</span
+        ><a-input v-model:value="filters.source_id" aria-label="日志来源" :maxlength="64" allow-clear /></label
+      ><label
+        ><span>网络域</span
+        ><a-input v-model:value="filters.network_domain" aria-label="日志网络域" :maxlength="64" allow-clear /></label
+      ><label
+        ><span>传输对端 IP</span
+        ><a-input v-model:value="filters.peer_ip" aria-label="日志传输对端 IP" :maxlength="45" allow-clear /></label
+      ><label
+        ><span>原文声明主机</span
+        ><a-input v-model:value="filters.hostname" aria-label="日志声明主机" :maxlength="256" allow-clear /></label
+      ><label
+        ><span>应用名</span
+        ><a-input v-model:value="filters.application" aria-label="日志应用" :maxlength="256" allow-clear /></label
+      ><label
+        ><span>解析状态</span
+        ><a-select v-model:value="filters.state" aria-label="日志解析状态"
+          ><a-select-option value="">全部状态</a-select-option><a-select-option value="parsed">解析成功</a-select-option
+          ><a-select-option value="quarantined">解析隔离</a-select-option></a-select
+        ></label
+      ><label
+        ><span>Syslog 严重级别</span
+        ><a-select
+          :value="filters.severity ?? ''"
+          @change="(value: unknown) => (filters.severity = typeof value === 'number' ? value : null)"
+          aria-label="Syslog 严重级别"
+          ><a-select-option value="">全部级别</a-select-option
+          ><a-select-option
+            v-for="(label, i) in ['紧急', '警戒', '严重', '错误', '警告', '通知', '信息', '调试']"
+            :key="i"
+            :value="i"
+            >{{ i }} · {{ label }}</a-select-option
+          ></a-select
+        ></label
+      ><label
+        ><span>正文关键词</span
+        ><a-input v-model:value="filters.keyword" aria-label="日志正文关键词" :maxlength="256" allow-clear
+      /></label>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :disabled="pending">查询</a-button
+        ><a-button :disabled="pending" @click="reset">重置</a-button>
+      </template>
+    </ListFilters>
+  </a-form>
   <a-alert v-if="filterError" show-icon type="error" :message="filterError" class="section-gap" />
   <section class="panel">
     <div class="panel-header">
       <h2>日志记录</h2>
-      <span>当前 {{ items.length }} 项</span>
     </div>
     <div v-if="error && items.length" class="panel-body">
       <a-alert type="warning" show-icon message="日志更新失败，当前保留上次结果" :description="error" />
@@ -264,12 +264,18 @@ onScopeDispose(() => {
       @retry="refresh"
       ><SyslogLogTable :items="items" @view="view"
     /></StatePanel>
-    <div class="log-pagination">
-      <span class="page-description">按接收时间和事件标识续页；持续写入时，请重新查询核对最新记录。</span
-      ><a-button :disabled="pending || cursors.length <= 1" @click="page(false)">上一页</a-button
-      ><span>第 {{ cursors.length }} 页</span
-      ><a-button :disabled="pending || !nextCursor || !!error" @click="page(true)">下一页</a-button>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="error && !items.length ? undefined : items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!nextCursor"
+      :disabled="pending"
+      @previous="page(false)"
+      @next="page(true)"
+      @update:page-size="changePageSize"
+    />
   </section>
   <SyslogLogDetail
     :open="detailOpen"
@@ -280,44 +286,3 @@ onScopeDispose(() => {
     @retry="target && view(target)"
   />
 </template>
-<style scoped>
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--field-gap);
-  padding: var(--section-gap) var(--panel-inset);
-}
-.panel-header h2 {
-  margin: 0;
-  font-size: 16px;
-}
-.log-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  align-items: end;
-  gap: var(--field-gap);
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.log-filters label {
-  display: grid;
-  gap: var(--related-gap);
-  min-width: 0;
-  color: var(--muted);
-}
-.log-keyword {
-  grid-column: span 2;
-}
-.log-pagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-.log-pagination .page-description {
-  flex: 1 1 280px;
-}
-</style>

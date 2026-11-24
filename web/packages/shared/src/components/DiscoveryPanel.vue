@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue';
-import { Modal as AModal, Table as ATable } from 'ant-design-vue';
+import { Modal as AModal } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
+import PageHelp from './PageHelp.vue';
+import ListTable from './ListTable.vue';
+import MetricBar from './MetricBar.vue';
+import { tablePagination } from '../pagination';
 import { discoveryCount, discoveryEndpoint, type DiscoveryResult, type DiscoveryAddress } from '../discovery';
 import { formatTime } from '../types';
 const props = defineProps<{
@@ -22,30 +26,41 @@ watch(
   { immediate: true },
 );
 const columns = [
-  { title: '观测 IP', key: 'ip', width: 190, fixed: 'left' as const },
-  { title: '源方向流记录', key: 'source', width: 145 },
-  { title: '目的方向流记录', key: 'destination', width: 150 },
-  { title: '首次记录时间', key: 'first', width: 260 },
-  { title: '末次记录时间', key: 'last', width: 260 },
-  { title: '操作', key: 'actions', width: 200, fixed: 'right' as const },
+  { title: '观测 IP', key: 'ip', width: 190, className: 'technical', fixed: 'left' as const },
+  { title: '源方向流记录', key: 'source', width: 194, ellipsis: true },
+  { title: '目的方向流记录', key: 'destination', width: 194, ellipsis: true },
+  { title: '首次记录时间', key: 'first', width: 170 },
+  { title: '末次记录时间', key: 'last', width: 170 },
+  { title: '操作', key: 'actions', width: 150, fixed: 'right' as const },
 ];
 </script>
 <template>
   <section class="panel discovery-panel">
-    <div class="panel-header">
-      <h2>地址观测</h2>
-      <span v-if="result">{{ result.addresses.length }} 个地址</span>
+    <div class="table-toolbar">
+      <div>
+        <h2>地址观测</h2>
+        <PageHelp title="地址观测">
+          <p>按已有流记录发现地址，源、目的方向分别计数。单次查询最多返回 512 个地址。</p>
+          <p>查询窗口不包含结束时刻。组播、未指定及全局广播方向单独计数。</p>
+        </PageHelp>
+      </div>
     </div>
     <div v-if="result && !pending && !error" class="discovery-summary">
       <strong>{{ result.scope.network_name }} · {{ result.scope.network_domain }}</strong
       ><span>{{ result.scope.sensor_name }} · {{ result.query.prefix }}</span
       ><span
         >查询窗口：{{ formatTime(result.query.start) }} 至 {{ formatTime(result.query.end) }}（结束时刻不包含）</span
-      ><span
-        >排除的组播、未指定及全局广播方向记录：源 {{ discoveryCount(result.source_excluded) }} / 目的
-        {{ discoveryCount(result.destination_excluded) }}</span
       >
     </div>
+    <MetricBar
+      v-if="result && !pending && !error"
+      embedded
+      :items="[
+        { label: '观测地址', value: result.addresses.length },
+        { label: '排除源方向', value: discoveryCount(result.source_excluded) },
+        { label: '排除目的方向', value: discoveryCount(result.destination_excluded) },
+      ]"
+    />
     <StatePanel
       :loading="pending"
       :error="error"
@@ -59,24 +74,26 @@ const columns = [
       "
       @retry="emit('retry')"
     >
-      <a-table
+      <ListTable
         :columns="columns"
         :data-source="result?.addresses ?? []"
         row-key="ip"
-        :pagination="{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }"
-        :scroll="{ x: 1205 }"
+        :pagination="tablePagination()"
+        :scroll="{ x: 1068 }"
       >
         <template #bodyCell="{ column, record }"
-          ><a-button
+          ><button
             v-if="column.key === 'ip'"
-            class="discovery-address"
-            type="link"
-            @click="selected = record as DiscoveryAddress"
-            >{{ record.ip }}</a-button
-          ><span v-else-if="column.key === 'source'" class="discovery-count">{{
+            class="record-link technical"
+            type="button"
+            :title="record.ip"
+            @click="selected = record"
+          >
+            {{ record.ip }}</button
+          ><span v-else-if="column.key === 'source'" :title="discoveryCount(record.source_records)">{{
             discoveryCount(record.source_records)
           }}</span
-          ><span v-else-if="column.key === 'destination'" class="discovery-count">{{
+          ><span v-else-if="column.key === 'destination'" :title="discoveryCount(record.destination_records)">{{
             discoveryCount(record.destination_records)
           }}</span
           ><time v-else-if="column.key === 'first'" :datetime="record.first.timestamp">{{
@@ -85,17 +102,14 @@ const columns = [
           ><time v-else-if="column.key === 'last'" :datetime="record.last.timestamp">{{
             formatTime(record.last.timestamp)
           }}</time>
-          <div v-else-if="column.key === 'actions'" class="filter-actions">
-            <a-button type="link" @click="selected = record as DiscoveryAddress">证据</a-button
-            ><a-button
-              v-if="canRegister && result"
-              type="link"
-              @click="emit('register', record as DiscoveryAddress, result)"
+          <div v-else-if="column.key === 'actions'" class="table-row-actions">
+            <a-button size="small" type="link" @click="selected = record">证据</a-button
+            ><a-button v-if="canRegister && result" size="small" type="link" @click="emit('register', record, result)"
               >登记资产</a-button
             >
           </div></template
         >
-      </a-table>
+      </ListTable>
     </StatePanel>
   </section>
   <a-modal v-if="selected && result" open title="地址观测证据" :width="860" :footer="null" @cancel="selected = null">
@@ -152,17 +166,6 @@ const columns = [
   </a-modal>
 </template>
 <style scoped>
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: var(--panel-inset);
-}
-.panel-header h2 {
-  margin: 0;
-  font-size: 16px;
-}
 .filter-actions {
   display: flex;
   align-items: center;
@@ -183,24 +186,6 @@ const columns = [
 .discovery-panel {
   min-width: 0;
   overflow: hidden;
-}
-.discovery-count {
-  display: block;
-  overflow-wrap: anywhere;
-  white-space: normal;
-  font-variant-numeric: tabular-nums;
-}
-.discovery-address {
-  height: auto;
-  text-align: left;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-}
-.discovery-panel code {
-  font-size: 12px;
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 .discovery-facts {
   display: grid;

@@ -57,6 +57,7 @@ function change(value: string) {
         v-else
         :items="items"
         :local="local"
+        paginate
         :detailID="['detail', 'action'].includes(state) ? 'firewall_syslog' : undefined"
         @close="['detail', 'action'].includes(state) && emit('state', 'data')"
       /></section

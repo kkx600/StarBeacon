@@ -1,4 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { ApiError } from '@starbeacon/shared/api.ts';
 import { session } from '../../session';
 import { validUserPage, validUserRecord, type UserInput, type UserPage, type UserRecord } from './user';
@@ -14,6 +16,7 @@ export function useUsers() {
     busy = shallowRef(false),
     unconfirmed = shallowRef(false),
     actionError = shallowRef('');
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   let stopped = false,
     listEpoch = 0,
     detailEpoch = 0,
@@ -32,13 +35,13 @@ export function useUsers() {
     listRead = controller;
     pending.value = true;
     error.value = '';
+    const limit = pageSize.value;
     try {
-      const result = await session.api.request<unknown>(
-        '/users?' + new URLSearchParams({ role, active, before: cursors.value.at(-1) ?? '' }),
-        { signal: controller.signal },
-      );
+      const query = new URLSearchParams({ role, active, before: cursors.value.at(-1) ?? '' });
+      if (limit !== defaultPageSize) query.set('limit', String(limit));
+      const result = await session.api.request<unknown>('/users?' + query, { signal: controller.signal });
       if (stopped || epoch !== listEpoch) return;
-      if (!validUserPage(result)) throw new Error('用户列表未能完整返回');
+      if (!validUserPage(result, limit)) throw new Error('用户列表未能完整返回');
       page.value = result;
     } catch (e) {
       if (!stopped && epoch === listEpoch && !controller.signal.aborted)
@@ -55,7 +58,7 @@ export function useUsers() {
     void refresh();
   }
   function next() {
-    if (!pending.value && page.value.next_cursor) {
+    if (!pending.value && !error.value && page.value.next_cursor) {
       cursors.value = [...cursors.value, page.value.next_cursor];
       void refresh();
     }
@@ -199,6 +202,8 @@ export function useUsers() {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     selected: shallowReadonly(selected),
     detailPending: shallowReadonly(detailPending),
     detailError: shallowReadonly(detailError),

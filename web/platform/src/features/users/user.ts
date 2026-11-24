@@ -1,3 +1,5 @@
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
+
 export const userRoles = { admin: '管理员', viewer: '只读用户' } as const;
 export interface UserRecord {
   id: string;
@@ -75,11 +77,11 @@ export function validUserRecord(v: unknown): v is UserRecord {
     !('new_password' in v)
   );
 }
-export function validUserPage(v: unknown): v is UserPage {
+export function validUserPage(v: unknown, limit = defaultPageSize): v is UserPage {
   if (
     !object(v) ||
     !Array.isArray(v.items) ||
-    v.items.length > 20 ||
+    v.items.length > limit ||
     !v.items.every(validUserRecord) ||
     typeof v.next_cursor !== 'string'
   )
@@ -87,6 +89,6 @@ export function validUserPage(v: unknown): v is UserPage {
   const rows = v.items as UserRecord[];
   return (
     rows.every((r, i) => i === 0 || r.id < rows[i - 1]!.id) &&
-    (v.next_cursor === '' || (rows.length === 20 && v.next_cursor === rows[19]!.id))
+    (v.next_cursor === '' || (rows.length === limit && v.next_cursor === rows.at(-1)?.id))
   );
 }

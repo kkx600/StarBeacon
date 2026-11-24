@@ -166,6 +166,7 @@ watch(() => [props.state, props.backtest], applyState, { immediate: true });
       @action="emit('state', 'data')"
     /><CorrelationRuleTable
       v-else
+      paginate
       :items="items"
       :can-edit="true"
       @inspect="inspect"

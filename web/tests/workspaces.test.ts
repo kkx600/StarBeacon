@@ -346,7 +346,7 @@ describe('资产工作区', () => {
     await click('下一页');
     expect(request.mock.lastCall?.[0]).toContain('cursor=group_1');
     await click('上一页');
-    await wrapper.get('.inventory-search input').setValue('办公区');
+    await wrapper.get('#inventory-keyword').setValue('办公区');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
     await vi.waitFor(() => expect(request.mock.lastCall?.[0]).toContain('keyword=%E5%8A%9E%E5%85%AC%E5%8C%BA'));

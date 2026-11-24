@@ -3,6 +3,9 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('资产管理');
 import { computed, shallowRef, watch } from 'vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
 import { session } from '../../session';
 import InventoryTable from './InventoryTable.vue';
 import InventoryForm from './InventoryForm.vue';
@@ -18,8 +21,22 @@ import { useInventory } from './useInventory';
 const props = defineProps<{ kind: InventoryKind }>();
 const kind = computed(() => props.kind),
   editable = computed(() => session.current.value?.role === 'admin');
-const { result, pending, error, saving, saveError, save, cursors, next, previous, search, refresh, clearSaveError } =
-  useInventory(kind);
+const {
+  result,
+  pending,
+  error,
+  saving,
+  saveError,
+  save,
+  cursors,
+  pageSize,
+  changePageSize,
+  next,
+  previous,
+  search,
+  refresh,
+  clearSaveError,
+} = useInventory(kind);
 const keyword = shallowRef(''),
   editing = shallowRef<InventoryRecord | null>(null),
   editorOpen = shallowRef(false),
@@ -44,35 +61,33 @@ async function saveRecord(data: InventoryData, id: string) {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">维护资产通信地址、责任范围与网络域，按历史修订核对调查时的配置。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button :loading="pending" @click="refresh">刷新</a-button
-      ><a-button v-if="editable" type="primary" :disabled="saving" @click="openEditor(null)"
-        >创建{{ inventoryObjectNames[kind] }}</a-button
-      >
-    </div>
-  </header>
-  <a-form :model="{ keyword }" class="panel inventory-search" layout="inline" @finish="search(keyword)"
-    ><a-form-item label="名称"
-      ><a-input v-model:value="keyword" :maxlength="128" placeholder="按名称查找" allow-clear /></a-form-item
-    ><a-button type="primary" html-type="submit" :loading="pending">查询</a-button
-    ><a-button
-      :disabled="pending"
-      @click="
-        keyword = '';
-        search('');
-      "
-      >重置</a-button
-    ></a-form
-  >
+  <PageHeader :title="pageTitle" description="维护资产通信地址、责任范围与网络域，按历史修订核对调查时的配置。">
+    <a-button :loading="pending" @click="refresh">刷新</a-button>
+    <a-button v-if="editable" type="primary" :disabled="saving" @click="openEditor(null)"
+      >创建{{ inventoryObjectNames[kind] }}</a-button
+    >
+  </PageHeader>
+  <a-form :model="{ keyword }" layout="horizontal" @finish="search(keyword)">
+    <ListFilters :columns="2" label="资产目录筛选">
+      <a-form-item label="名称" html-for="inventory-keyword">
+        <a-input id="inventory-keyword" v-model:value="keyword" :maxlength="128" placeholder="按名称查找" allow-clear />
+      </a-form-item>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="pending">查询</a-button>
+        <a-button
+          :disabled="pending"
+          @click="
+            keyword = '';
+            search('');
+          "
+          >重置</a-button
+        >
+      </template>
+    </ListFilters>
+  </a-form>
   <section class="panel">
     <div class="panel-header">
       <h2>{{ inventoryNames[kind] }}</h2>
-      <span>当前页 {{ result.items.length }} 条</span>
     </div>
     <StatePanel
       :loading="pending"
@@ -87,11 +102,18 @@ async function saveRecord(data: InventoryData, id: string) {
         @edit="openEditor"
         @view="selected = $event"
     /></StatePanel>
-    <div class="inventory-pagination">
-      <a-button :disabled="pending || cursors.length <= 1" @click="previous">上一页</a-button
-      ><span>第 {{ cursors.length }} 页</span
-      ><a-button :disabled="pending || !result.next_cursor" @click="next">下一页</a-button>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="error ? undefined : result.items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!result.next_cursor"
+      :disabled="pending"
+      @previous="previous"
+      @next="next"
+      @update:page-size="changePageSize"
+    />
   </section>
   <InventoryForm
     v-if="editorOpen"
@@ -104,24 +126,3 @@ async function saveRecord(data: InventoryData, id: string) {
   />
   <InventoryDetail :record="selected" @close="selected = null" />
 </template>
-<style scoped>
-.inventory-search {
-  display: flex;
-  gap: var(--related-gap);
-  flex-wrap: wrap;
-  align-items: center;
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.inventory-search .ant-form-item {
-  margin: 0;
-}
-.inventory-pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  flex-wrap: wrap;
-}
-</style>

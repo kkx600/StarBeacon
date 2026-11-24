@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Dropdown as ADropdown, Menu as AMenu } from 'ant-design-vue';
 import ListTable from './ListTable.vue';
+import { tablePagination } from '../pagination';
 import StatusTag from './StatusTag.vue';
 import type { StatusTone } from '../terms';
 import {
@@ -12,7 +13,13 @@ import {
   type WatchlistRecord,
 } from '../watchlists';
 import { formatTime } from '../types';
-const props = defineProps<{ items: readonly WatchlistRecord[]; canEdit: boolean; disabled?: boolean; now?: number }>();
+const props = defineProps<{
+  items: readonly WatchlistRecord[];
+  canEdit: boolean;
+  disabled?: boolean;
+  now?: number;
+  paginate?: boolean;
+}>();
 const emit = defineEmits<{
   inspect: [record: WatchlistRecord];
   edit: [record: WatchlistRecord];
@@ -50,7 +57,11 @@ function matchValues(row: WatchlistRecord) {
 }
 </script>
 <template>
-  <ListTable :columns="columns" :data-source="rows" :scroll="{ x: 1494 }"
+  <ListTable
+    :columns="columns"
+    :data-source="rows"
+    :scroll="{ x: 1494 }"
+    :pagination="paginate ? tablePagination() : false"
     ><template #bodyCell="{ column, record }"
       ><button
         v-if="column.key === 'name'"

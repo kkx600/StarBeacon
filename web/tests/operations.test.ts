@@ -103,10 +103,17 @@ describe('运行状态', () => {
       '2.4 天',
       '保留期上限 180 天',
       '共享存储剩余空间低于回收阈值',
-      '不设租户额度',
     ])
       expect(panel).toContain(text);
     expect(wrapper.text()).toContain('原包存储');
+    const help = wrapper.get('button[aria-label="原包存储的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() =>
+      expect(document.getElementById(help.attributes('aria-controls') ?? '')?.textContent).toContain(
+        '跳过正在下载或导出的原包',
+      ),
+    );
+    await help.trigger('keydown', { key: 'Escape' });
     request.mockResolvedValue({
       ...health,
       packet_storage: {
@@ -175,6 +182,12 @@ describe('审计筛选和游标', () => {
     const next = new URL('https://test' + request.mock.lastCall?.[0]);
     expect(next.searchParams.get('end')).toBe(initial.searchParams.get('end'));
     expect(next.searchParams.get('cursor')).toBe(record.id);
+    state.changePageSize(10);
+    await flushPromises();
+    const resized = new URL('https://test' + request.mock.lastCall?.[0]);
+    expect(resized.searchParams.get('limit')).toBe('10');
+    expect(resized.searchParams.get('cursor')).toBe('');
+    expect(resized.searchParams.get('end')).toBe(initial.searchParams.get('end'));
     state.previous();
     await flushPromises();
     state.previous();

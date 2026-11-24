@@ -120,7 +120,7 @@ describe('资产类型与记录摘要', () => {
     expect(wrapper.findAll('button').some(button => button.text() === '编辑')).toBe(false);
     await wrapper.setProps({ kind: 'networks', records: [network] });
     expect(wrapper.text()).toContain('192.0.2.0/24');
-    expect(wrapper.text()).toContain('已停用');
+    expect(wrapper.get('.status-tag').text()).toBe('停用');
     await wrapper.setProps({
       kind: 'assets',
       records: [{ ...asset, data: { ...asset.data, criticality: 'future', interfaces: [] } }],

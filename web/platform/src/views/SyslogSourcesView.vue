@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onScopeDispose, reactive, shallowRef, watch } from 'vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
 import SyslogSourceFilters from '@starbeacon/shared/components/SyslogSourceFilters.vue';
 import SyslogSources from '@starbeacon/shared/components/SyslogSources.vue';
 import { emptySourceQuery, sourceQuery, readSourcePage, type SyslogSource } from '@starbeacon/shared/syslog.ts';
@@ -13,6 +16,7 @@ const filters = reactive(emptySourceQuery()),
   filterError = shallowRef(''),
   cursors = shallowRef(['']),
   nextCursor = shallowRef('');
+const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, reloadPage);
 let controller: AbortController | undefined,
   stopped = false;
 async function refresh() {
@@ -22,7 +26,7 @@ async function refresh() {
   controller = current;
   pending.value = true;
   try {
-    const q = { ...applied.value, cursor: cursors.value.at(-1) ?? '' },
+    const q = { ...applied.value, cursor: cursors.value.at(-1) ?? '', limit: pageSize.value },
       result = readSourcePage(
         await session.api.request(
           '/syslog/sources?' + new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)])),
@@ -44,10 +48,8 @@ function search() {
   try {
     applied.value = sourceQuery(filters);
     filterError.value = '';
-    items.value = [];
-    nextCursor.value = '';
     cursors.value = [''];
-    void refresh();
+    reloadPage();
   } catch (cause) {
     filterError.value = (cause as Error).message;
   }
@@ -57,8 +59,11 @@ function reset() {
   search();
 }
 function page(next: boolean) {
-  if (pending.value || (next && !nextCursor.value) || (!next && cursors.value.length <= 1)) return;
+  if (pending.value || (next && (!nextCursor.value || error.value)) || (!next && cursors.value.length <= 1)) return;
   cursors.value = next ? [...cursors.value, nextCursor.value] : cursors.value.slice(0, -1);
+  reloadPage();
+}
+function reloadPage() {
   items.value = [];
   nextCursor.value = '';
   void refresh();
@@ -84,29 +89,23 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>Syslog 接收</h1>
-      <p class="page-description">核对采集器的固定日志来源、接收状态与持久缓冲，不以日志正文声明设备或租户身份。</p>
-    </div>
+  <PageHeader
+    title="Syslog 接收"
+    description="核对采集器的固定日志来源、接收状态与持久缓冲。设备及租户身份以接入绑定为准。"
+    notice="TLS 来源校验客户端证书与指纹。TCP、UDP 来源使用授权网段。配置和监听地址由采集器私有文件管理。"
+  >
     <a-button :loading="pending" @click="refresh">刷新来源</a-button>
-  </header>
+  </PageHeader>
   <SyslogSourceFilters :model="filters" :pending="pending" @search="search" @reset="reset" /><a-alert
     v-if="filterError"
     type="error"
     show-icon
     :message="filterError"
     class="section-gap"
-  /><a-alert
-    type="info"
-    show-icon
-    message="TLS 来源校验客户端证书与指纹；TCP、UDP 来源使用明确授权的网段限制。来源配置由采集器私有文件管理，配置内容与监听地址不通过心跳公开。"
-    class="section-gap"
   />
   <section class="panel">
     <div class="panel-header">
       <h2>日志来源</h2>
-      <span>当前 {{ items.length }} 项</span>
     </div>
     <div v-if="error && items.length" class="panel-body">
       <a-alert type="warning" show-icon message="来源更新失败，当前显示上次成功读取的目录" :description="error" />
@@ -119,20 +118,17 @@ onScopeDispose(() => {
       @retry="refresh"
       ><SyslogSources :items="items"
     /></StatePanel>
-    <div class="source-pagination">
-      <a-button :disabled="pending || cursors.length <= 1" @click="page(false)">上一页</a-button
-      ><span>第 {{ cursors.length }} 页</span
-      ><a-button :disabled="pending || !nextCursor || !!error" @click="page(true)">下一页</a-button>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="error && !items.length ? undefined : items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!nextCursor"
+      :disabled="pending"
+      @previous="page(false)"
+      @next="page(true)"
+      @update:page-size="changePageSize"
+    />
   </section>
 </template>
-<style scoped>
-.source-pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-</style>

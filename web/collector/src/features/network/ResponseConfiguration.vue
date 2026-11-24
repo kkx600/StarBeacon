@@ -34,8 +34,7 @@ onScopeDispose(() => controller?.abort());
 </script>
 <template>
   <div class="configuration-check">
-    <span class="page-description">核对本机文件与运行配置是否一致。</span
-    ><a-button @click="check">核对本地配置</a-button>
+    <a-button @click="check">核对本地配置</a-button>
   </div>
   <ResponseConfigCheckDialog
     :open="open"

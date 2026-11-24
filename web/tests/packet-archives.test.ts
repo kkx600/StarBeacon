@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { registerAnt } from '../packages/shared/src/ant';
 import { ApiClient, SessionExportError } from '../packages/shared/src/api';
+import ListPager from '../packages/shared/src/components/ListPager.vue';
 import {
   packetCapture,
   packetUnsealed,
@@ -440,6 +441,10 @@ describe('原包目录工作区', () => {
     expect(request.mock.lastCall?.[0]).toBe('/packet-archives?sensor_id=probe_other');
     await click('下一页');
     expect(request.mock.lastCall?.[0]).toContain('cursor=cursor-owned');
+    await wrapper.getComponent(ListPager).vm.$emit('update:pageSize', 10);
+    await flushPromises();
+    expect(request.mock.lastCall?.[0]).toBe('/packet-archives?sensor_id=probe_other&limit=10');
+    await click('下一页');
     await click('上一页');
     expect(request.mock.lastCall?.[0]).not.toContain('cursor=');
     await click('重置');
@@ -505,7 +510,12 @@ describe('原包目录工作区', () => {
     expect(wrapper.find('form').exists()).toBe(false);
     expect(wrapper.text()).toContain('原包暂存额度已用尽');
     expect(button('下载').disabled).toBe(true);
-    expect(wrapper.text()).toContain('最近 200 条');
+    const help = wrapper.get('button[aria-label="归档记录的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() =>
+      expect(document.getElementById(help.attributes('aria-controls') ?? '')?.textContent).toContain('最近 200 条'),
+    );
+    await help.trigger('keydown', { key: 'Escape' });
     expect(wrapper.text()).toContain('1 MB');
     request.mockResolvedValueOnce({
       ...record,
@@ -526,7 +536,7 @@ describe('原包目录工作区', () => {
     });
     await click('查看');
     expect(document.body.textContent).toContain('version_owned');
-    expect(document.body.textContent).toContain('已归档数据请在主平台查询');
+    expect(document.body.textContent).toContain('完整压缩清单与原件请在主平台查看');
     const modal = document.querySelector('.ant-modal')!;
     expect(modal.textContent).not.toContain('制品尚未编码');
     expect(modal.textContent).toContain('本机只保留确认摘要和捕获目录');
@@ -688,7 +698,7 @@ describe('流量与采集器页签', () => {
     const wrapper = mount(CollectorWorkspace, { global: { plugins: [registerAnt, router] }, attachTo: document.body });
     await flushPromises();
     await vi.waitFor(() => expect(wrapper.findAll('.ant-table')).toHaveLength(1));
-    expect(wrapper.text()).toContain('最近 200 条');
+    expect(wrapper.find('button[aria-label="归档记录的说明"]').exists()).toBe(true);
     expect(collectorRequest.mock.calls.some(c => c[0] === '/replay/samples')).toBe(false);
   });
 });

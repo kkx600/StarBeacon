@@ -244,6 +244,7 @@ describe('被动发现列表和证据', () => {
       });
     expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1);
     expect(wrapper.text()).toContain('9,007,199,254,740,993');
+    expect(wrapper.find('[title="9,007,199,254,740,993"]').exists()).toBe(true);
     expect(wrapper.emitted('register')).toBeUndefined();
     await wrapper
       .findAll('button')
@@ -263,7 +264,10 @@ describe('被动发现列表和证据', () => {
     expect(wrapper.text()).toContain('选择探针');
     await wrapper.setProps({ error: '分片失败', attempted: true });
     expect(wrapper.text()).toContain('分片失败');
-    await wrapper.get('button').trigger('click');
+    await wrapper
+      .findAll('button')
+      .find(button => button.text().replace(/\s/g, '') === '重试')!
+      .trigger('click');
     expect(wrapper.emitted('retry')).toHaveLength(1);
     await wrapper.setProps({ error: '', result: { ...result, addresses: [], partition_status: 'absent' } });
     expect(wrapper.text()).toContain('尚无可查询的流量索引');
@@ -301,7 +305,10 @@ describe('发现查询与资产登记', () => {
     );
     const wrapper = mount(DiscoveryWorkspace, { global, attachTo: document.body });
     await selectScope(wrapper);
-    expect(wrapper.text()).toContain('2 个使用中网段');
+    expect(wrapper.findAllComponents(Select)[1]!.props('options')).toEqual([
+      { value: network.id, label: '办公网段 · 192.0.2.0/24 · office' },
+      { value: second.id, label: '其他网段 · 192.0.2.0/24 · office' },
+    ]);
     await submit(wrapper);
     expect(wrapper.findComponent(DiscoveryPanel).props('result')?.addresses).toHaveLength(1);
     await wrapper.get('#discovery-prefix').setValue('192.0.2.0/25');

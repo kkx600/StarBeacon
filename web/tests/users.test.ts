@@ -163,6 +163,8 @@ describe('租户用户数据与凭据边界', () => {
     const rows = Array.from({ length: 20 }, (_, i) => ({ ...record, id: 'user_' + String(99 - i).padStart(2, '0') }));
     expect(validUserPage({ items: rows, next_cursor: rows[19]!.id })).toBe(true);
     expect(validUserPage({ items: [...rows, record], next_cursor: '' })).toBe(false);
+    expect(validUserPage({ items: rows, next_cursor: rows[19]!.id }, 10)).toBe(false);
+    expect(validUserPage({ items: rows.slice(0, 10), next_cursor: rows[9]!.id }, 10)).toBe(true);
   });
 });
 
@@ -186,6 +188,9 @@ describe('用户管理请求与结果确认', () => {
     state.search('admin', 'false');
     await flushPromises();
     expect(request.mock.lastCall?.[0]).toContain('role=admin&active=false');
+    state.changePageSize(10);
+    await flushPromises();
+    expect(request.mock.lastCall?.[0]).toBe('/users?role=admin&active=false&before=&limit=10');
     const old = deferred<unknown>();
     request.mockReturnValueOnce(old.promise);
     const reading = state.refresh();

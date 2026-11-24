@@ -1,3 +1,6 @@
+import { defaultPageSize } from './pagination';
+import type { StatusToneMap } from './statusTones';
+
 export interface PacketCapture {
   id: string;
   tenant_id: string;
@@ -149,6 +152,20 @@ export const packetStates: Record<string, string> = {
   waiting: '等待采集配置',
   stopped: '已停止',
   failed: '捕获异常',
+};
+export const packetTones: StatusToneMap = {
+  capturing: 'info',
+  sealed: 'info',
+  ready: 'success',
+  acknowledged: 'success',
+  confirmed: 'success',
+  quarantined: 'warning',
+  uploading: 'info',
+  stored: 'info',
+  deleting: 'info',
+  waiting: 'neutral',
+  stopped: 'neutral',
+  failed: 'danger',
 };
 export const packetCodes: Record<string, string> = {
   packet_spool_full: '原包暂存额度已用尽，捕获已停止；未确认原件继续保留',
@@ -369,13 +386,14 @@ export function validPacketRecord(value: unknown, local = false, detail = false)
     return false;
   return true;
 }
-export function validPacketPage(value: unknown, local = false): value is PacketPage {
+export function validPacketPage(value: unknown, local = false, limit = defaultPageSize): value is PacketPage {
   if (!value || typeof value !== 'object') return false;
   const page = value as PacketPage;
   return (
     typeof page.available === 'boolean' &&
     Array.isArray(page.items) &&
-    page.items.length <= (local ? 200 : 50) &&
+    page.items.length <= (local ? 200 : limit) &&
+    (local || page.limit === undefined || page.limit === limit) &&
     page.items.every(row => validPacketRecord(row, local)) &&
     new Set(page.items.map(row => row.id)).size === page.items.length &&
     (page.next === undefined || (typeof page.next === 'string' && page.next.length <= 1024)) &&

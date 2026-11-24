@@ -1,5 +1,6 @@
 import { instant } from './utils/instant';
 import { goJSONDigest } from './utils/goJSONDigest';
+import { defaultPageSize } from './pagination';
 export interface LogBinding {
   source_id: string;
   source_name: string;
@@ -208,7 +209,7 @@ export function readSourcePage(v: unknown, q: SourceQuery): SourcePage {
   return v as unknown as SourcePage;
 }
 export function emptySourceQuery(): SourceQuery {
-  return { sensor_id: '', source_id: '', cursor: '', limit: 20 };
+  return { sensor_id: '', source_id: '', cursor: '', limit: defaultPageSize };
 }
 export function emptyLogQuery(): LogQuery {
   const end = new Date();
@@ -225,7 +226,7 @@ export function emptyLogQuery(): LogQuery {
     severity: null,
     keyword: '',
     cursor: '',
-    limit: 20,
+    limit: defaultPageSize,
   };
 }
 export function logQuery(q: LogQuery): LogQuery {

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useFeedback } from '../composables/useFeedback';
-import { Table as ATable } from 'ant-design-vue';
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue';
 import type { TableRowSelection } from 'ant-design-vue/es/table/interface';
 import type { ApiClient } from '../api';
-import { defaultPageSize } from '../pagination';
+import { tablePagination } from '../pagination';
+import { statusTone } from '../statusTones';
 import {
   packetCapture,
   packetUnsealed,
   packetStates,
+  packetTones,
   packetCodes,
   canDownloadPacket,
   type PacketRecord,
@@ -17,6 +18,12 @@ import { usePacketArchives } from '../usePacketArchives';
 import { formatNumber, formatBytes } from '../utils/format';
 import { formatTime } from '../types';
 import StatePanel from './StatePanel.vue';
+import PageHelp from './PageHelp.vue';
+import ListFilters from './ListFilters.vue';
+import ListTable from './ListTable.vue';
+import ListPager from './ListPager.vue';
+import StatusTag from './StatusTag.vue';
+import MetricBar from './MetricBar.vue';
 import PacketArchiveDetail from './PacketArchiveDetail.vue';
 import SessionExportDialog from './SessionExportDialog.vue';
 import PacketInspector from './PacketInspector.vue';
@@ -29,7 +36,9 @@ const {
   selected,
   detailPending,
   detailError,
-  history,
+  cursors,
+  pageSize,
+  changePageSize,
   view,
   close,
   refresh,
@@ -107,17 +116,17 @@ onScopeDispose(() => {
   revoke();
 });
 const columns = [
-  { title: '归档 / 状态', key: 'identity', width: 220 },
-  { title: '探针 / 网卡', key: 'source', width: 190 },
-  { title: '包数 / 截断', key: 'packets', width: 140 },
-  { title: props.local ? '暂存预留' : '原始 / 存储大小', key: 'size', width: 180 },
-  { title: '捕获开始', key: 'time', width: 185 },
-  { title: '操作', key: 'actions', width: 230 },
+  { title: '归档编号', dataIndex: 'id', width: 145, className: 'technical', ellipsis: true },
+  { title: '归档状态', key: 'state', width: 127 },
+  { title: '探针编号', key: 'sensor', width: 140, className: 'technical', ellipsis: true },
+  { title: '网卡', key: 'interface', width: 125, ellipsis: true },
+  { title: '捕获开始', key: 'time', width: 170 },
+  { title: '包数', key: 'packets', width: 103, ellipsis: true },
+  { title: '截断包数', key: 'truncated', width: 108, ellipsis: true },
+  { title: props.local ? '暂存预留' : '原始大小', key: 'size', width: 106 },
+  ...(!props.local ? [{ title: '存储大小', key: 'stored', width: 140, ellipsis: true }] : []),
+  { title: '操作', key: 'actions', width: 200, fixed: 'right' as const },
 ];
-function choose(id: string) {
-  const row = page.value.items.find(row => row.id === id);
-  if (row) void view(row);
-}
 function inspect(row: PacketRecord) {
   if (canDownloadPacket(row) && packetCapture(row).packets) {
     close();
@@ -127,29 +136,31 @@ function inspect(row: PacketRecord) {
 }
 </script>
 <template>
-  <div class="packet-toolbar">
-    <form v-if="!local" @submit.prevent="filter(sensor)">
-      <a-input
-        v-model:value="sensor"
-        placeholder="按探针标识筛选"
-        aria-label="原包探针标识"
-        :maxlength="64"
-        :disabled="pending"
-        allow-clear
-      /><a-button html-type="submit" :disabled="pending">筛选</a-button
-      ><a-button
-        :disabled="pending"
-        @click="
-          sensor = '';
-          filter('');
-        "
-        >重置</a-button
-      >
-    </form>
-    <a-button v-if="!local" :disabled="pending || !!error || !exportArchives.length" @click="exportOpen = true"
-      >会话导出{{ exportArchives.length ? `（${exportArchives.length}）` : '' }}</a-button
-    ><a-button :loading="pending" @click="refresh">刷新原包</a-button>
-  </div>
+  <form v-if="!local" @submit.prevent="filter(sensor)">
+    <ListFilters label="原包筛选" :columns="2">
+      <label
+        ><span>接入探针</span
+        ><a-input
+          v-model:value="sensor"
+          placeholder="按探针标识筛选"
+          aria-label="原包探针标识"
+          :maxlength="64"
+          :disabled="pending"
+          allow-clear
+      /></label>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :disabled="pending">筛选</a-button
+        ><a-button
+          :disabled="pending"
+          @click="
+            sensor = '';
+            filter('');
+          "
+          >重置</a-button
+        >
+      </template>
+    </ListFilters>
+  </form>
   <a-alert v-if="downloadError" type="error" show-icon :message="downloadError" class="section-gap" />
   <a-alert
     v-if="!pending && !error && !page.available"
@@ -166,21 +177,35 @@ function inspect(row: PacketRecord) {
     class="section-gap"
   />
   <section class="panel">
-    <div class="panel-header">
-      <h2>原包归档</h2>
-      <span v-if="local && page.health"
-        >{{ packetStates[page.health.state] ?? '状态待核查' }} · {{ formatBytes(page.health.reserved_bytes) }} /
-        {{ formatBytes(page.health.quota_bytes) }}</span
-      >
+    <div class="table-toolbar">
+      <div>
+        <h2>归档记录</h2>
+        <PageHelp title="归档记录">
+          <p v-if="local">本机展示最近 200 条捕获与确认记录。平台持久确认后本机回收原件，已归档数据可在主平台查询。</p>
+          <p v-else>默认留存 180 天，具体到期时间按归档时生效的留存策略确定。</p>
+          <p>单个切片只覆盖实际捕获的时间段，完整连接可能跨多个切片。</p>
+        </PageHelp>
+        <StatusTag
+          v-if="local && page.health"
+          :value="packetStates[page.health.state] ?? '状态待核查'"
+          :tone="statusTone(packetTones, page.health.state)"
+        />
+      </div>
+      <div class="table-row-actions">
+        <a-button v-if="!local" :disabled="pending || !!error || !exportArchives.length" @click="exportOpen = true"
+          >会话导出{{ exportArchives.length ? `（${exportArchives.length}）` : '' }}</a-button
+        >
+        <a-button :loading="pending" @click="refresh">刷新原包</a-button>
+      </div>
     </div>
-    <p class="muted packet-note">
-      {{
-        local
-          ? '本机展示最近 200 条捕获与确认记录。平台持久确认后本机回收原件；已归档数据请在主平台查询。'
-          : `每页展示 ${defaultPageSize} 条原包切片。默认留存 180 天，具体到期时间按归档时生效的留存策略确定。`
-      }}
-      单个切片不保证包含完整连接。
-    </p>
+    <MetricBar
+      v-if="local && page.health"
+      embedded
+      :items="[
+        { label: '已预留', value: formatBytes(page.health.reserved_bytes) },
+        { label: '暂存额度', value: formatBytes(page.health.quota_bytes) },
+      ]"
+    />
     <StatePanel
       :loading="pending"
       :error="error"
@@ -188,68 +213,70 @@ function inspect(row: PacketRecord) {
       description="暂无原包归档。请核对网卡、捕获过滤器、暂存额度和平台连接状态。"
       @retry="refresh"
     >
-      <div class="table-wrap">
-        <a-table
-          :columns="columns"
-          :data-source="page.items"
-          :row-selection="rowSelection"
-          row-key="id"
-          :pagination="local ? { pageSize: 20, showSizeChanger: false } : false"
-          :scroll="{ x: 1145 }"
-          ><template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'identity'"
-              ><span class="technical">{{ record.id }}</span
-              ><small class="packet-sub">{{ packetStates[record.state] }}</small></template
+      <ListTable
+        :columns="columns"
+        :data-source="page.items"
+        :row-selection="rowSelection"
+        row-key="id"
+        :pagination="local ? tablePagination() : false"
+        :scroll="{ x: local ? 1224 : 1400 }"
+        ><template #bodyCell="{ column, record }">
+          <StatusTag
+            v-if="column.key === 'state'"
+            :value="packetStates[record.state]"
+            :tone="statusTone(packetTones, record.state)"
+          />
+          <template v-else-if="column.key === 'sensor'">{{ packetCapture(record).sensor_id }}</template>
+          <span v-else-if="column.key === 'interface'" :title="packetCapture(record).interface_mac">
+            {{ packetCapture(record).interface }}
+          </span>
+          <template v-else-if="column.key === 'packets'"
+            ><span v-if="packetUnsealed(record)" title="包数与完整性尚未冻结">待封存 · 包数与完整性尚未冻结</span>
+            <template v-else>{{ formatNumber(packetCapture(record).packets) }} 包</template>
+          </template>
+          <template v-else-if="column.key === 'truncated'">{{
+            packetUnsealed(record) ? '—' : formatNumber(packetCapture(record).truncated_packets)
+          }}</template>
+          <template v-else-if="column.key === 'size'">{{
+            formatBytes(local ? record.reserved_bytes : record.raw_bytes)
+          }}</template>
+          <template v-else-if="column.key === 'stored'"
+            >{{ formatBytes(record.stored_bytes) }} · {{ record.codec }}</template
+          >
+          <template v-else-if="column.key === 'time'">{{ formatTime(packetCapture(record).started_at) }}</template>
+          <div v-else-if="column.key === 'actions'" class="table-row-actions">
+            <a-button type="link" size="small" @click="view(record)">查看</a-button
+            ><a-button
+              type="link"
+              size="small"
+              :disabled="!canDownloadPacket(record) || !packetCapture(record).packets"
+              @click="inspect(record)"
+              >协议查看</a-button
+            ><a-button
+              type="link"
+              size="small"
+              :disabled="!canDownloadPacket(record) || !!downloading"
+              :loading="downloading === record.id"
+              @click="download(record)"
+              >下载</a-button
             >
-            <template v-else-if="column.key === 'source'"
-              ><span class="technical">{{ packetCapture(record as PacketRecord).sensor_id }}</span
-              ><small class="packet-sub"
-                >{{ packetCapture(record as PacketRecord).interface }} ·
-                {{ packetCapture(record as PacketRecord).interface_mac }}</small
-              ></template
-            >
-            <template v-else-if="column.key === 'packets'"
-              ><template v-if="packetUnsealed(record as PacketRecord)"
-                >待封存<small class="packet-sub">包数与完整性尚未冻结</small></template
-              ><template v-else
-                >{{ formatNumber(packetCapture(record as PacketRecord).packets) }} 包<small class="packet-sub"
-                  >截断 {{ formatNumber(packetCapture(record as PacketRecord).truncated_packets) }} 包</small
-                ></template
-              ></template
-            >
-            <template v-else-if="column.key === 'size'"
-              >{{ formatBytes(local ? record.reserved_bytes : record.raw_bytes)
-              }}<small v-if="!local" class="packet-sub"
-                >{{ formatBytes(record.stored_bytes) }} · {{ record.codec }}</small
-              ></template
-            >
-            <template v-else-if="column.key === 'time'">{{
-              formatTime(packetCapture(record as PacketRecord).started_at)
-            }}</template>
-            <template v-else-if="column.key === 'actions'"
-              ><a-button type="link" @click="choose(record.id)">查看</a-button
-              ><a-button
-                type="link"
-                :disabled="!canDownloadPacket(record as PacketRecord) || !packetCapture(record as PacketRecord).packets"
-                @click="inspect(record as PacketRecord)"
-                >协议查看</a-button
-              ><a-button
-                type="link"
-                :disabled="!canDownloadPacket(record as PacketRecord) || !!downloading"
-                :loading="downloading === record.id"
-                @click="download(record as PacketRecord)"
-                >下载</a-button
-              ></template
-            >
-          </template></a-table
-        >
-      </div>
+          </div>
+        </template></ListTable
+      >
     </StatePanel>
-    <div v-if="!local && !pending && !error" class="packet-pagination">
-      <span class="muted">第 {{ history.length + 1 }} 页 · {{ page.items.length }} 条</span
-      ><a-button :disabled="!history.length" @click="previous">上一页</a-button
-      ><a-button :disabled="!page.next" @click="next">下一页</a-button>
-    </div>
+    <ListPager
+      v-if="!local"
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="error ? undefined : page.items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!page.next"
+      :disabled="pending"
+      @previous="previous"
+      @next="next"
+      @update:page-size="changePageSize"
+    />
   </section>
   <PacketArchiveDetail
     :record="selected"
@@ -268,42 +295,3 @@ function inspect(row: PacketRecord) {
   />
   <PacketInspector :api="api" :record="inspecting" @close="inspecting = null" />
 </template>
-<style scoped>
-.packet-toolbar,
-.packet-toolbar form,
-.packet-pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.packet-toolbar {
-  justify-content: space-between;
-  margin-bottom: var(--section-gap);
-}
-.packet-toolbar form {
-  min-width: 0;
-  flex: 1;
-}
-.packet-toolbar form .ant-input-affix-wrapper {
-  width: 260px;
-  max-width: 100%;
-}
-.packet-sub {
-  display: block;
-  color: var(--muted);
-  margin-top: 4px;
-  overflow-wrap: anywhere;
-}
-.technical {
-  overflow-wrap: anywhere;
-}
-.packet-note {
-  font-size: 12px;
-  margin: 0 0 8px;
-}
-.packet-pagination {
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-</style>

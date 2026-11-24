@@ -14,6 +14,7 @@ import ResponseConfiguration from './ResponseConfiguration.vue';
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue';
 import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceState.vue';
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
 import { useWorkspaceView } from '@starbeacon/shared/utils/useWorkspaceView.ts';
 import { session } from '../../session';
 import { collectorScreens, collectorScreen, collectorWorkspaces } from '../../navigation';
@@ -98,18 +99,12 @@ async function submit(settings: CaptureSettings) {
 </script>
 <template>
   <template v-if="administrator && currentPath">
-    <header class="page-header">
-      <div>
-        <h1>{{ screen.title }}</h1>
-        <p class="page-description">{{ screen.description }}</p>
-      </div>
-      <div class="filter-actions">
-        <a-button :disabled="saving" @click="qualityOpen = true">检测质量</a-button
-        ><a-button :disabled="saving" @click="protocolsOpen = true">协议能力</a-button
-        ><a-button v-if="observed" :loading="pending" :disabled="saving" @click="refresh">刷新</a-button>
-      </div>
-    </header>
     <WorkspaceTabs :active="view" :items="views" :label="workspaceTitle + '功能'" @change="change" />
+    <PageHeader :title="screen.title" :description="screen.description">
+      <a-button :disabled="saving" @click="qualityOpen = true">检测质量</a-button
+      ><a-button :disabled="saving" @click="protocolsOpen = true">协议能力</a-button
+      ><a-button v-if="observed" :loading="pending" :disabled="saving" @click="refresh">刷新</a-button>
+    </PageHeader>
     <StatePanel
       v-if="observed"
       :loading="pending"

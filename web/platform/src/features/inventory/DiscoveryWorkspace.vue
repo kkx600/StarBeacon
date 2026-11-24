@@ -10,6 +10,8 @@ import {
   type DiscoveryAddress,
 } from '@starbeacon/shared/discovery.ts';
 import DiscoveryPanel from '@starbeacon/shared/components/DiscoveryPanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import TimeRangeField from '@starbeacon/shared/components/TimeRangeField.vue';
 import { session } from '../../session';
 import InventoryForm from './InventoryForm.vue';
 import { createDraft, type InventoryRecord, type InventoryData, type InventoryPage } from './inventory';
@@ -240,20 +242,21 @@ onScopeDispose(() => {
 void loadDirectory();
 </script>
 <template>
-  <a-alert
-    type="info"
-    show-icon
-    message="按已有流记录发现地址，源、目的方向分别计数；不等于设备数或独立会话数，也不证明该网段已被完整捕获。"
-    class="section-gap"
-  />
   <a-alert v-if="saved" type="success" show-icon :message="saved" class="section-gap" />
   <a-alert v-if="directoryError" type="error" show-icon :message="directoryError" class="section-gap"
     ><template #action
       ><a-button size="small" :loading="directoryPending" @click="loadDirectory">刷新目录</a-button></template
     ></a-alert
   >
-  <a-form :model="form" layout="vertical" class="panel discovery-form" @finish="discover">
-    <div class="discovery-query-fields">
+  <a-form :model="form" layout="horizontal" @finish="discover">
+    <ListFilters label="被动发现筛选" :columns="3">
+      <TimeRangeField
+        id-prefix="discovery"
+        v-model:start="form.start"
+        v-model:end="form.end"
+        required
+        end-hint="结束时刻不包含在查询内，窗口最多 24 小时。"
+      />
       <a-form-item label="探针" html-for="discovery-sensor" required
         ><a-select
           id="discovery-sensor"
@@ -290,26 +293,13 @@ void loadDirectory();
         extra="可缩小到已选网段的子网段，使用标准 CIDR。"
         ><a-input id="discovery-prefix" v-model:value="form.prefix" :maxlength="49" placeholder="192.0.2.0/24"
       /></a-form-item>
-      <a-form-item label="开始时间（本地时间）" html-for="discovery-start" required
-        ><a-input id="discovery-start" v-model:value="form.start" type="datetime-local" step="1"
-      /></a-form-item>
-      <a-form-item
-        label="结束时间（本地时间）"
-        html-for="discovery-end"
-        required
-        extra="结束时刻不包含在查询内，窗口最多 24 小时。"
-        ><a-input id="discovery-end" v-model:value="form.end" type="datetime-local" step="1"
-      /></a-form-item>
-    </div>
-    <div class="filter-actions">
-      <a-button type="primary" html-type="submit" :loading="pending" :disabled="directoryPending || !!directoryError"
-        >执行发现</a-button
-      ><a-button v-if="pending" @click="cancel">取消查询</a-button
-      ><a-button :loading="directoryPending" :disabled="pending || saving" @click="loadDirectory">刷新目录</a-button
-      ><span v-if="!directoryPending && !directoryError" class="page-description"
-        >{{ sensors.length }} 个探针 / {{ networks.length }} 个使用中网段 · 每次最多 512 个地址</span
-      >
-    </div>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="pending" :disabled="directoryPending || !!directoryError"
+          >执行发现</a-button
+        ><a-button v-if="pending" @click="cancel">取消查询</a-button
+        ><a-button :loading="directoryPending" :disabled="pending || saving" @click="loadDirectory">刷新目录</a-button>
+      </template>
+    </ListFilters>
   </a-form>
   <DiscoveryPanel
     :result="result"
@@ -331,25 +321,3 @@ void loadDirectory();
     @save="save"
   />
 </template>
-<style scoped>
-.discovery-form {
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.discovery-query-fields {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 var(--field-gap);
-}
-.discovery-query-fields .ant-form-item {
-  min-width: 0;
-}
-.discovery-query-fields .ant-select {
-  width: 100%;
-}
-@media (max-width: 1200px) {
-  .discovery-query-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-</style>

@@ -106,6 +106,7 @@ function revokeExample() {
       @action="emit('state', 'data')"
     /><PKITable
       v-else
+      paginate
       :mode="mode"
       :enrollments="[enrollment]"
       :certificates="[certificate]"

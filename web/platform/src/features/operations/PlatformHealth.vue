@@ -3,6 +3,9 @@ import { computed, onMounted, onScopeDispose, shallowRef } from 'vue';
 import { Descriptions as ADescriptions } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import {
   formatPercent,
   formatTime,
@@ -162,34 +165,40 @@ onScopeDispose(() => controller?.abort());
         <div class="panel-header"><h2>依赖服务</h2></div>
         <div class="platform-services">
           <div v-for="(state, name) in result.services" :key="name">
-            <span>{{ serviceNames[String(name)] ?? name }}</span><span
-              :class="['status', state === 'ready' ? 'status-online' : 'status-high']"
-              >{{ state === 'ready' ? '可用' : '不可用' }}</span
-            >
+            <span>{{ serviceNames[String(name)] ?? name }}</span>
+            <StatusTag
+              :value="state === 'ready' ? '可用' : '不可用'"
+              :tone="state === 'ready' ? statusTerms.正常 : statusTerms.异常"
+            />
           </div>
         </div>
       </section>
       <section v-if="storage" class="panel packet-storage" aria-labelledby="packet-storage-title">
         <div class="panel-header">
           <h2 id="packet-storage-title">原包存储</h2>
+          <PageHelp title="原包存储">
+            <p>原包存储由全部租户共享。可回溯范围由部署存储容量和实际流量决定。</p>
+            <p>空间不足时先回收最早归档的原包，跳过正在下载或导出的原包。每个原包最多保留到其期限。</p>
+          </PageHelp>
           <span class="page-description">{{ backendNames[storage.backend] ?? storage.backend }}，全部租户共享</span>
         </div>
         <MetricBar :items="storageMetrics" embedded />
-        <div class="panel-body">
+        <div v-if="pressure" class="panel-body">
           <a-alert
-            v-if="pressure"
             type="warning"
             show-icon
             class="section-gap"
             message="共享存储剩余空间低于回收阈值，平台正在按全部租户最早归档的顺序回收原包；需要更长回溯时请扩容存储。"
           />
-          <p class="page-description">
-            原包存储不设租户额度，可回溯范围由部署存储容量和流量决定。空间不足时先回收全部租户中最早归档的原包，正在下载或导出的原包会跳过；保留期是每个原包的最长期限。
-          </p>
         </div>
       </section>
       <section class="panel">
-        <div class="panel-header"><h2>运行信息</h2></div>
+        <div class="panel-header">
+          <h2>运行信息</h2>
+          <PageHelp title="运行信息"
+            ><p>此处展示平台运行环境与依赖观测，采集质量和队列容量需在对应工作区核对。</p></PageHelp
+          >
+        </div>
         <div class="panel-body">
           <a-descriptions size="small" :column="1"
             ><a-descriptions-item label="版本">{{ result.runtime.version }}</a-descriptions-item
@@ -199,7 +208,6 @@ onScopeDispose(() => controller?.abort());
               formatNumber(result.runtime.goroutines)
             }}</a-descriptions-item></a-descriptions
           >
-          <p class="page-description">依赖可用性不代表采集质量、队列容量或整体性能已经符合要求。</p>
         </div>
       </section>
     </template></StatePanel

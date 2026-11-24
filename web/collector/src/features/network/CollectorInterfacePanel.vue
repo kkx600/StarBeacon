@@ -7,7 +7,6 @@ defineProps<{ interfaces: NetworkInterface[] }>();
   <section class="panel">
     <div class="panel-header">
       <h2>网卡列表</h2>
-      <span>{{ interfaces.length }} 个接口</span>
     </div>
     <InterfaceTable :items="interfaces" />
   </section>

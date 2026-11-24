@@ -22,16 +22,3 @@
   margin: 0 0 var(--section-gap);
   border-radius: 8px;
 }
-
-/* 仍在使用工程端旧分页条的页面：先对齐位置并收起分页条里的长说明，等工程端迁移到统一分页组件后删除本段。 */
-[class$='-pagination']:not([class*='ant-']) {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--related-gap);
-  padding: var(--related-gap) var(--panel-inset);
-  font-size: 13px;
-}
-[class$='-pagination']:not([class*='ant-']) .page-description {
-  display: none;
-}

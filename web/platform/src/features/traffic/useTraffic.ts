@@ -1,4 +1,5 @@
 import { computed, onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
+import { defaultPageSize, pageSizeOptions } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   defaultTrafficFilters,
@@ -15,9 +16,9 @@ export function useTraffic() {
       start: new Date(now.getTime() - 86400000).toISOString(),
       end: now.toISOString(),
       page: 1,
-      page_size: 20,
+      page_size: defaultPageSize,
     });
-  const result = shallowRef<TrafficResult>({ items: [], total: 0, page: 1, page_size: 20 }),
+  const result = shallowRef<TrafficResult>({ items: [], total: 0, page: 1, page_size: defaultPageSize }),
     pending = shallowRef(true),
     error = shallowRef(''),
     lastWindow = shallowRef<{ start: string; end: string } | null>(null);
@@ -59,20 +60,20 @@ export function useTraffic() {
       start: hours.value === 0 ? fixed.value!.start : new Date(end.getTime() - hours.value * 3600000).toISOString(),
       end: hours.value === 0 ? fixed.value!.end : end.toISOString(),
       page: 1,
-      page_size: 20,
+      page_size: defaultPageSize,
     };
   }
   function applyQuery(value: TrafficQuery, windowHours: number) {
     hours.value = windowHours;
     fixed.value = windowHours === 0 ? { start: value.start, end: value.end } : null;
-    query.value = { ...value, page: 1, page_size: 20 };
+    query.value = { ...value, page: 1, page_size: defaultPageSize };
   }
   function page(value: number, size: number) {
     if (
       !Number.isSafeInteger(value) ||
       !Number.isSafeInteger(size) ||
       value < 1 ||
-      ![20, 50, 100].includes(size) ||
+      !pageSizeOptions.some(option => option === size) ||
       value * size > 10000
     )
       return;
@@ -90,7 +91,7 @@ export function useTraffic() {
   watch(
     () => [session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/'),
     () => {
-      result.value = { items: [], total: 0, page: 1, page_size: 20 };
+      result.value = { items: [], total: 0, page: 1, page_size: defaultPageSize };
       lastWindow.value = null;
       fixed.value = null;
       search(defaultTrafficFilters(), 24);

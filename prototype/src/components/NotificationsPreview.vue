@@ -158,7 +158,11 @@ function save(_change: ChannelChange) {
       :empty="state === 'empty' || (page !== 'delivery-logs' && !channelRows.length)"
       description="当前条件下没有记录，请调整查询或配置通知渠道。"
       @retry="emit('state', 'data')"
-      ><DeliveryTable v-if="page === 'delivery-logs'" :items="[delivery]" @view="deliveryOpen = true" /><ChannelTable
+      ><DeliveryTable
+        v-if="page === 'delivery-logs'"
+        :items="[delivery]"
+        paginate
+        @view="deliveryOpen = true" /><ChannelTable
         v-else
         :items="channelRows"
         :busy="false"

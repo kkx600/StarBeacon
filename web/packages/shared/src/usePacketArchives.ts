@@ -1,5 +1,7 @@
 import { onScopeDispose, shallowRef, watch } from 'vue';
 import type { ApiClient } from './api';
+import { defaultPageSize } from './pagination';
+import { useCursorPageSize } from './composables/useCursorPageSize';
 import { validPacketPage, validPacketRecord, type PacketPage, type PacketRecord } from './packetArchives';
 
 export function usePacketArchives(api: ApiClient, local = false) {
@@ -7,7 +9,8 @@ export function usePacketArchives(api: ApiClient, local = false) {
     pending = shallowRef(true),
     error = shallowRef(''),
     query = shallowRef({ sensor: '', cursor: '', generation: 0 }),
-    history = shallowRef<string[]>([]);
+    cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const selected = shallowRef<PacketRecord | null>(null),
     detailPending = shallowRef(false),
     detailError = shallowRef('');
@@ -19,15 +22,17 @@ export function usePacketArchives(api: ApiClient, local = false) {
       onCleanup(() => controller.abort());
       pending.value = true;
       error.value = '';
+      const limit = pageSize.value;
       const params = new URLSearchParams();
       if (!local && requested.sensor) params.set('sensor_id', requested.sensor);
       if (!local && requested.cursor) params.set('cursor', requested.cursor);
+      if (!local && limit !== defaultPageSize) params.set('limit', String(limit));
       try {
         const value = await api.request<unknown>('/packet-archives' + (params.size ? '?' + params.toString() : ''), {
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
-        if (!validPacketPage(value, local)) throw new Error('原包目录响应不完整，请重新读取');
+        if (!validPacketPage(value, local, limit)) throw new Error('原包目录响应不完整，请重新读取');
         page.value = value;
       } catch (e) {
         if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '原包目录读取失败';
@@ -65,27 +70,25 @@ export function usePacketArchives(api: ApiClient, local = false) {
   }
   function refresh() {
     close();
-    history.value = [];
+    cursors.value = [''];
     query.value = { ...query.value, cursor: '', generation: query.value.generation + 1 };
   }
   function filter(sensor: string) {
     close();
-    history.value = [];
+    cursors.value = [''];
     query.value = { sensor: sensor.trim(), cursor: '', generation: query.value.generation + 1 };
   }
   function next() {
-    if (pending.value || !page.value.next) return;
+    if (local || pending.value || error.value || !page.value.next) return;
     close();
-    history.value = [...history.value, query.value.cursor];
+    cursors.value = [...cursors.value, page.value.next];
     query.value = { ...query.value, cursor: page.value.next };
   }
   function previous() {
-    if (pending.value || !history.value.length) return;
+    if (local || pending.value || cursors.value.length <= 1) return;
     close();
-    const stack = [...history.value],
-      cursor = stack.pop()!;
-    history.value = stack;
-    query.value = { ...query.value, cursor };
+    cursors.value = cursors.value.slice(0, -1);
+    query.value = { ...query.value, cursor: cursors.value.at(-1) ?? '' };
   }
   onScopeDispose(() => {
     stop();
@@ -98,7 +101,9 @@ export function usePacketArchives(api: ApiClient, local = false) {
     selected,
     detailPending,
     detailError,
-    history,
+    cursors,
+    pageSize,
+    changePageSize,
     view,
     close,
     refresh,

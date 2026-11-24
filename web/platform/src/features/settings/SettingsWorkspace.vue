@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
-import { Table as ATable, Select as ASelect, Tag as ATag } from 'ant-design-vue';
+import { Select as ASelect } from 'ant-design-vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import {
   navigationGroups,
   navigationWorkspaces,
@@ -27,98 +32,52 @@ const rows = computed(() =>
     })),
 );
 const columns = [
+  { title: '功能编号', dataIndex: 'id', width: 150, className: 'technical', ellipsis: true },
   { title: '功能分组', dataIndex: 'groupTitle', width: 160 },
   { title: '功能名称', dataIndex: 'title', width: 180 },
   { title: '可用范围', key: 'scope' },
-  { title: '操作', key: 'action', width: 120 },
+  { title: '操作', key: 'action', width: 110, fixed: 'right' as const },
 ];
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>系统设置</h1>
-      <p class="page-description">统一查找账号、运行状态、留存与审计配置，核对当前版本的功能范围。</p>
-    </div>
-  </header>
-  <a-form class="panel settings-filters" layout="inline" :model="{ keyword, scope }" @finish="() => {}"
-    ><a-form-item label="功能名称"><a-input v-model:value="keyword" placeholder="查找设置项" allow-clear /></a-form-item
-    ><a-form-item label="目录范围"
-      ><a-select
-        v-model:value="scope"
-        :options="[
-          { value: 'system', label: '系统管理' },
-          { value: 'all', label: '全部功能' },
-        ]"
-        class="settings-scope" /></a-form-item
-  ></a-form>
+  <PageHeader
+    title="系统设置"
+    description="统一查找账号、运行状态、留存与审计配置。具体权限与可用状态以功能页面为准。"
+  />
+  <a-form layout="horizontal" :model="{ keyword, scope }">
+    <ListFilters :columns="2" label="功能目录筛选">
+      <a-form-item label="功能名称" html-for="settings-keyword">
+        <a-input id="settings-keyword" v-model:value="keyword" placeholder="查找设置项" allow-clear />
+      </a-form-item>
+      <a-form-item label="目录范围" html-for="settings-scope"
+        ><a-select
+          id="settings-scope"
+          v-model:value="scope"
+          :options="[
+            { value: 'system', label: '系统管理' },
+            { value: 'all', label: '全部功能' },
+          ]"
+      /></a-form-item>
+    </ListFilters>
+  </a-form>
   <section class="panel">
     <div class="panel-header">
       <h2>设置目录</h2>
-      <span>当前 {{ rows.length }} 项</span>
     </div>
-    <ATable
-      :columns="columns"
-      :data-source="rows"
-      row-key="id"
-      :pagination="false"
-      :scroll="{ x: 700 }"
-      :locale="{ emptyText: '没有匹配的设置项，请调整查找条件。' }"
+    <ListTable :columns="columns" :data-source="rows" :scroll="{ x: 792 }"
       ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'scope'"
-          ><a-tag :color="record.available ? 'blue' : undefined">{{
-            record.available ? '提供功能入口' : '当前版本未提供'
-          }}</a-tag
-          ><span>{{
-            record.available ? '具体权限与可用状态以功能页面为准' : '不提供配置保存与执行操作'
-          }}</span></template
-        ><template v-else-if="column.key === 'action'"
-          ><a-button type="link" :disabled="!record.available" @click="router.push(record.path)"
+        ><StatusTag
+          v-if="column.key === 'scope'"
+          :value="record.available ? '提供功能入口' : '当前版本未提供'"
+          :tone="record.available ? 'info' : statusTerms.未提供"
+        />
+        <template v-else-if="column.key === 'action'"
+          ><a-button type="link" size="small" :disabled="!record.available" @click="router.push(record.path)"
             >进入管理</a-button
           ></template
         ></template
-      ></ATable
-    >
+      >
+      <template #emptyText>没有匹配的设置项，请调整查找条件。</template>
+    </ListTable>
   </section>
 </template>
-<style scoped>
-.page-header {
-  display: flex;
-  gap: var(--section-gap);
-  margin-bottom: var(--section-gap);
-}
-.page-header h1 {
-  font-size: 20px;
-  line-height: 1.4;
-  margin: 0;
-}
-.page-description {
-  color: var(--muted);
-  font-size: 14px;
-  margin: 6px 0 0;
-}
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-.panel-header h2 {
-  font-size: 14px;
-  margin: 0;
-}
-.settings-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.settings-filters .ant-form-item {
-  margin: 0;
-}
-.settings-scope {
-  min-width: 160px;
-}
-</style>

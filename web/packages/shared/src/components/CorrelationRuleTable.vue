@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ListTable from './ListTable.vue';
+import { tablePagination } from '../pagination';
 import StatusTag from './StatusTag.vue';
 import { correlationFields, type CorrelationRule } from '../correlation';
 import { formatTime } from '../types';
-const props = defineProps<{ items: readonly CorrelationRule[]; canEdit: boolean; disabled?: boolean }>();
+const props = defineProps<{
+  items: readonly CorrelationRule[];
+  canEdit: boolean;
+  disabled?: boolean;
+  paginate?: boolean;
+}>();
 const emit = defineEmits<{
   inspect: [rule: CorrelationRule];
   edit: [rule: CorrelationRule];
@@ -24,7 +30,11 @@ const columns = [
 ];
 </script>
 <template>
-  <ListTable :columns="columns" :data-source="rows" :scroll="{ x: 1322 }"
+  <ListTable
+    :columns="columns"
+    :data-source="rows"
+    :scroll="{ x: 1322 }"
+    :pagination="paginate ? tablePagination() : false"
     ><template #bodyCell="{ column, record }"
       ><button
         v-if="column.key === 'name'"

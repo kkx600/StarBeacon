@@ -202,8 +202,10 @@ strong {
   align-items: center;
   gap: var(--label-gap);
 }
-.list-table .table-row-actions .ant-btn-sm {
+.list-table .table-row-actions .ant-btn-sm,
+.list-table .ant-table-cell .ant-btn-sm.ant-btn-link {
   height: 24px;
+  vertical-align: top;
 }
 :is(.list-table.ant-table-wrapper, .table-panel .ant-table-wrapper) .ant-table-pagination {
   margin: var(--section-gap) var(--panel-inset);

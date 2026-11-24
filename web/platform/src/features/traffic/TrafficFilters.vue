@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import TimeRangeField from '@starbeacon/shared/components/TimeRangeField.vue';
 import AdvancedFilter from '../alerts/AdvancedFilter.vue';
 import { session } from '../../session';
 import { defaultTrafficFilters, trafficKinds, type TrafficFilters } from './traffic';
@@ -12,6 +14,12 @@ const form = reactive({ ...defaultTrafficFilters(), hours: 24 }),
   checking = shallowRef(false),
   error = shallowRef('');
 const disabled = computed(() => props.pending || checking.value),
+  timeOptions = computed(() => [
+    ...(props.fixed ? [{ label: '固定时间范围', value: 0 }] : []),
+    { label: '最近 24 小时', value: 24 },
+    { label: '最近 7 天', value: 168 },
+    { label: '最近 30 天', value: 720 },
+  ]),
   kindOptions = [
     { label: '全部协议记录', value: '' },
     ...Object.entries(trafficKinds).map(([value, label]) => ({ value, label })),
@@ -67,105 +75,97 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <section class="panel section-gap">
-    <a-form :model="form" layout="vertical" @finish="submit"
-      ><div class="traffic-filters">
-        <a-form-item label="记录类型"
-          ><a-select v-model:value="form.event_kind" aria-label="记录类型" :disabled="disabled" :options="kindOptions"
-        /></a-form-item>
-        <a-form-item label="时间范围"
-          ><a-select
-            v-model:value="form.hours"
-            aria-label="时间范围"
-            :disabled="disabled"
-            :options="[
-              ...(props.fixed ? [{ label: '固定时间范围', value: 0 }] : []),
-              { label: '最近 24 小时', value: 24 },
-              { label: '最近 7 天', value: 168 },
-              { label: '最近 30 天', value: 720 },
-            ]"
-        /></a-form-item>
-        <a-form-item label="源 IP"
-          ><a-input v-model:value="form.source_ip" aria-label="源 IP" :disabled="disabled" :maxlength="64" allow-clear
-        /></a-form-item>
-        <a-form-item label="目的 IP"
-          ><a-input
-            v-model:value="form.destination_ip"
-            aria-label="目的 IP"
-            :disabled="disabled"
-            :maxlength="64"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="协议"
-          ><a-input
-            v-model:value="form.protocol"
-            aria-label="协议"
-            :disabled="disabled"
-            :maxlength="32"
-            placeholder="http、tls、tcp 等"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="探针标识"
-          ><a-input
-            v-model:value="form.sensor_id"
-            aria-label="探针标识"
-            :disabled="disabled"
-            :maxlength="64"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="探针注册标识"
-          ><a-input
-            v-model:value="form.sensor_registration_id"
-            aria-label="探针注册标识"
-            :disabled="disabled"
-            :maxlength="64"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="采集实例标识"
-          ><a-input
-            v-model:value="form.source_generation_id"
-            aria-label="采集实例标识"
-            :disabled="disabled"
-            :maxlength="64"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="流标识"
-          ><a-input v-model:value="form.flow_id" aria-label="流标识" :disabled="disabled" :maxlength="20" allow-clear
-        /></a-form-item>
-        <a-form-item label="HTTP 方法"
-          ><a-input
-            v-model:value="form.method"
-            aria-label="HTTP 方法"
-            :disabled="disabled"
-            :maxlength="16"
-            placeholder="GET、POST 等"
-            allow-clear
-        /></a-form-item>
-        <a-form-item label="HTTP 路径前缀"
-          ><a-input
-            v-model:value="form.path"
-            aria-label="HTTP 路径前缀"
-            :disabled="disabled"
-            :maxlength="1024"
-            allow-clear
-        /></a-form-item>
-      </div>
-      <AdvancedFilter v-if="advanced" v-model="form.filter" dataset="context" :disabled="disabled" />
-      <a-alert v-if="error" type="error" :message="error" show-icon class="section-gap" />
-      <div class="filter-actions">
+  <a-form :model="form" layout="horizontal" @finish="submit">
+    <ListFilters :columns="4" label="流量检索条件">
+      <a-form-item label="记录类型"
+        ><a-select v-model:value="form.event_kind" aria-label="记录类型" :disabled="disabled" :options="kindOptions"
+      /></a-form-item>
+      <TimeRangeField
+        id-prefix="traffic-hours"
+        v-model:preset="form.hours"
+        :preset-options="timeOptions"
+        :disabled="disabled"
+      />
+      <a-form-item label="源 IP"
+        ><a-input v-model:value="form.source_ip" aria-label="源 IP" :disabled="disabled" :maxlength="64" allow-clear
+      /></a-form-item>
+      <a-form-item label="目的 IP"
+        ><a-input
+          v-model:value="form.destination_ip"
+          aria-label="目的 IP"
+          :disabled="disabled"
+          :maxlength="64"
+          allow-clear
+      /></a-form-item>
+      <a-form-item label="协议"
+        ><a-input
+          v-model:value="form.protocol"
+          aria-label="协议"
+          :disabled="disabled"
+          :maxlength="32"
+          placeholder="http、tls、tcp 等"
+          allow-clear
+      /></a-form-item>
+      <a-form-item label="探针标识"
+        ><a-input v-model:value="form.sensor_id" aria-label="探针标识" :disabled="disabled" :maxlength="64" allow-clear
+      /></a-form-item>
+      <a-form-item label="探针注册标识"
+        ><a-input
+          v-model:value="form.sensor_registration_id"
+          aria-label="探针注册标识"
+          :disabled="disabled"
+          :maxlength="64"
+          allow-clear
+      /></a-form-item>
+      <a-form-item label="采集实例标识"
+        ><a-input
+          v-model:value="form.source_generation_id"
+          aria-label="采集实例标识"
+          :disabled="disabled"
+          :maxlength="64"
+          allow-clear
+      /></a-form-item>
+      <a-form-item label="流标识"
+        ><a-input v-model:value="form.flow_id" aria-label="流标识" :disabled="disabled" :maxlength="20" allow-clear
+      /></a-form-item>
+      <a-form-item label="HTTP 方法"
+        ><a-input
+          v-model:value="form.method"
+          aria-label="HTTP 方法"
+          :disabled="disabled"
+          :maxlength="16"
+          placeholder="GET、POST 等"
+          allow-clear
+      /></a-form-item>
+      <a-form-item label="HTTP 路径前缀"
+        ><a-input
+          v-model:value="form.path"
+          aria-label="HTTP 路径前缀"
+          :disabled="disabled"
+          :maxlength="1024"
+          allow-clear
+      /></a-form-item>
+      <AdvancedFilter
+        v-if="advanced"
+        v-model="form.filter"
+        dataset="context"
+        :disabled="disabled"
+        class="filter-detail"
+      />
+      <a-alert v-if="error" type="error" :message="error" show-icon class="filter-detail" />
+      <template #actions>
         <a-button type="primary" html-type="submit" :disabled="props.pending" :loading="checking">检索</a-button
         ><a-button :disabled="disabled" @click="reset">重置</a-button
         ><a-button :disabled="disabled" @click="advanced = !advanced">{{
           advanced ? '收起高级检索' : '高级检索'
         }}</a-button>
-      </div>
-    </a-form>
-  </section>
+      </template>
+    </ListFilters>
+  </a-form>
 </template>
 <style scoped>
-.traffic-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0 12px;
+.filter-detail {
+  grid-column: 1/-1;
+  min-width: 0;
 }
 </style>

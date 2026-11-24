@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { formatNumber } from '@starbeacon/shared/utils/format.ts';
 import { shallowRef, watch } from 'vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import TrafficFilters from './TrafficFilters.vue';
 import TrafficTable from './TrafficTable.vue';
@@ -12,6 +15,7 @@ import { session } from '../../session';
 import SavedSearchTools from '../search/SavedSearchTools.vue';
 import SearchExportButton from '../search/SearchExportButton.vue';
 import type { SavedDefinition, SavedResolution } from '../search/savedSearch';
+const title = usePageTitle('协议流量');
 const { result, pending, error, appliedQuery, range, definition, fixed, search, page, refresh, applyQuery } =
     useTraffic(),
   selected = shallowRef<TrafficRecord | null>(null),
@@ -32,13 +36,20 @@ watch(
 );
 </script>
 <template>
-  <div class="traffic-toolbar">
+  <PageHeader :title="title" description="检索协议事件与会话摘要。记录数不等于独立会话数或数据包数。">
     <SavedSearchTools dataset="context" :current="definition" :disabled="pending" @apply="apply" /><SearchExportButton
       dataset="context"
       :query="appliedQuery"
       :disabled="pending || !!error"
     /><a-button :loading="pending" @click="refresh">刷新</a-button>
-  </div>
+  </PageHeader>
+  <MetricBar
+    v-if="range && !error"
+    :items="[
+      { label: '匹配记录', value: result.total },
+      { label: '检索窗口', value: `${formatTime(range.start)} — ${formatTime(range.end)}` },
+    ]"
+  />
   <TrafficFilters
     :key="[session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/')"
     :pending="pending"
@@ -56,33 +67,22 @@ watch(
   <section class="panel">
     <div class="panel-header">
       <h2>流量记录</h2>
-      <span>{{ formatNumber(result.total) }} 条</span>
     </div>
-    <p v-if="range" class="muted traffic-window">
-      {{ formatTime(range.start) }} — {{ formatTime(range.end) }} · 记录数不等于独立会话数或数据包数
-    </p>
     <StatePanel
       :loading="pending"
       :error="error"
       :empty="!result.items.length"
       description="当前条件下没有协议记录。请核对探针采集状态、协议日志配置、时间范围和检索条件。"
       @retry="refresh"
-      ><TrafficTable :result="result" @view="selected = $event" @page="page"
+      ><TrafficTable :result="result" @view="selected = $event"
     /></StatePanel>
+    <ListPager
+      :page="result.page"
+      :page-size="result.page_size"
+      :total="error ? 0 : Math.min(result.total, 10000)"
+      :disabled="pending || !!error"
+      @change="page"
+    />
   </section>
   <TrafficDetail :record="selected" @close="selected = null" />
 </template>
-<style scoped>
-.traffic-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: var(--section-gap);
-}
-.traffic-window {
-  font-size: 12px;
-  margin: 0 0 8px;
-  overflow-wrap: anywhere;
-}
-</style>

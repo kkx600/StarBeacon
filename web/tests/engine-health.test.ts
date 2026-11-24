@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { registerAnt } from '../packages/shared/src/ant';
 import { readEngineHealth, engineHealthReason, type EngineHealth } from '../packages/shared/src/engineHealth';
@@ -74,7 +74,7 @@ describe('原生进程与规则装载观测', () => {
     expect(engineHealthReason('unknown')).toContain('无法识别');
   });
   it('缺报和格式错误不显示成功；最新失败不保留旧进程及计数', async () => {
-    const wrapper = mount(EngineHealthSummary, { global: { plugins: [registerAnt] } });
+    const wrapper = mount(EngineHealthSummary, { global: { plugins: [registerAnt] }, attachTo: document.body });
     expect(wrapper.text()).toContain('尚无原生观测');
     expect(wrapper.text()).toContain('不能代替');
     expect(wrapper.find('.ant-descriptions').exists()).toBe(false);
@@ -86,15 +86,22 @@ describe('原生进程与规则装载观测', () => {
     expect(wrapper.text()).toContain('托管检测进程');
     expect(wrapper.text()).toContain('PID 125');
     expect(wrapper.text()).toContain('已装载 12 条 / 文件 12 条');
-    expect(wrapper.text()).toContain('不证明引擎内存中的规则内容相同');
-    expect(wrapper.find('.ant-tag-success').exists()).toBe(true);
+    expect(wrapper.get('.status-tag').attributes('data-tone')).toBe('success');
+    const help = wrapper.get('button[aria-label="检测引擎观测的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() =>
+      expect(document.getElementById(help.attributes('aria-controls') ?? '')?.textContent).toContain(
+        '引擎内存中的规则内容、持续吞吐和检测效果需分别验收',
+      ),
+    );
+    await help.trigger('keydown', { key: 'Escape' });
     await wrapper.setProps({ report: { ...report, source: 'registered_process' } });
     expect(wrapper.text()).toContain('登记检测进程');
     await wrapper.setProps({ report: { ...report, state: 'unavailable', code: 'engine_process_unverified' } });
     expect(wrapper.text()).toContain('无法核实登记进程');
     expect(wrapper.text()).not.toContain('PID 125');
     expect(wrapper.find('.ant-descriptions').exists()).toBe(false);
-    expect(wrapper.find('.ant-tag-error').exists()).toBe(true);
+    expect(wrapper.get('.status-tag').attributes('data-tone')).toBe('danger');
     await wrapper.setProps({ report: { ...report, state: 'pending', code: 'rule_operation_in_progress' } });
     expect(wrapper.text()).toContain('等待原生观测');
     expect(wrapper.text()).toContain('重新核对');

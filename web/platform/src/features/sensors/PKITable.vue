@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
 import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { statusTone } from '@starbeacon/shared/statusTones.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
@@ -13,6 +14,7 @@ import {
   type ProbeCertificate,
 } from './pki';
 const props = defineProps<{
+  paginate?: boolean;
   mode: 'enrollments' | 'certificates';
   enrollments: Enrollment[];
   certificates: ProbeCertificate[];
@@ -63,7 +65,12 @@ function canRevoke(id: string) {
 }
 </script>
 <template>
-  <ListTable :columns="columns" :data-source="rows" :scroll="{ x: mode === 'enrollments' ? 980 : 1095 }">
+  <ListTable
+    :columns="columns"
+    :data-source="rows"
+    :scroll="{ x: mode === 'enrollments' ? 980 : 1095 }"
+    :pagination="paginate ? tablePagination() : false"
+  >
     <template #bodyCell="{ column, record }">
       <div v-if="column.key === 'action'" class="table-row-actions">
         <a-button type="link" size="small" @click="action('view', record.id)">查看</a-button

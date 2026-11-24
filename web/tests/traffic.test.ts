@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h, type ShallowRef } from 'vue';
 import { Select, Modal } from 'ant-design-vue';
 import { registerAnt } from '../packages/shared/src/ant';
+import ListPager from '../packages/shared/src/components/ListPager.vue';
 import type { Principal } from '../packages/shared/src/types';
 import TrafficWorkspace from '../platform/src/features/traffic/TrafficEvents.vue';
 import TrafficFilters from '../platform/src/features/traffic/TrafficFilters.vue';
@@ -267,7 +268,14 @@ describe('流量检索页面', () => {
     expect(wrapper.text()).toContain('[2001:db8::1]:443');
     expect(wrapper.text()).toContain('18.45 EB');
     expect(wrapper.text()).toContain('0 B');
-    expect(wrapper.text()).toContain('记录数不等于独立会话数');
+    const help = wrapper.get('button[aria-label="协议流量的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() =>
+      expect(document.getElementById(help.attributes('aria-controls') ?? '')?.textContent).toContain(
+        '记录数不等于独立会话数',
+      ),
+    );
+    await help.trigger('keydown', { key: 'Escape' });
     await click('查看');
     expect(document.body.textContent).toContain('流量记录详情');
     expect(document.body.textContent).toContain('事件时间不是网络出站时间');
@@ -321,6 +329,15 @@ describe('流量检索页面', () => {
     expect(next.start).toBe(first.start);
     expect(next.end).toBe(first.end);
     expect(wrapper.findAll('.ant-table-row')).toHaveLength(20);
+    await wrapper.getComponent(ListPager).vm.$emit('change', 1, 10);
+    await flushPromises();
+    expect(request.mock.lastCall?.[1].body).toMatchObject({
+      page: 1,
+      page_size: 10,
+      start: first.start,
+      end: first.end,
+    });
+    expect(wrapper.findAll('.ant-table-row')).toHaveLength(10);
   });
   it('TLS、DNS、缺测和展示截断均保留明确业务解释', async () => {
     const value = record();

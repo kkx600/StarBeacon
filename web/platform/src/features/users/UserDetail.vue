@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import {
-  Modal as AModal,
-  Descriptions as ADescriptions,
-  DescriptionsItem as ADescriptionsItem,
-  Tag as ATag,
-} from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { userRoles, type UserRecord } from './user';
 defineProps<{ record: UserRecord | null; pending: boolean; error: string; selfId: string }>();
 const emit = defineEmits<{ close: []; reload: []; edit: []; password: [] }>();
@@ -27,9 +24,9 @@ const emit = defineEmits<{ close: []; reload: []; edit: []; password: [] }>();
             ><span class="user-id">{{ record.id }}</span></a-descriptions-item
           ><a-descriptions-item label="用户角色">{{ userRoles[record.role] }}</a-descriptions-item
           ><a-descriptions-item label="账号状态"
-            ><a-tag :color="record.active ? 'green' : 'default'">{{
-              record.active ? '启用' : '停用'
-            }}</a-tag></a-descriptions-item
+            ><StatusTag
+              :value="record.active ? '启用' : '停用'"
+              :tone="record.active ? statusTerms.启用 : statusTerms.停用" /></a-descriptions-item
           ><a-descriptions-item label="当前修订">{{ record.revision }}</a-descriptions-item
           ><a-descriptions-item label="创建时间">{{ formatTime(record.created_at) }}</a-descriptions-item
           ><a-descriptions-item label="变更时间">{{

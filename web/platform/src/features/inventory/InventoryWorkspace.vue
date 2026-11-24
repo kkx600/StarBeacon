@@ -3,6 +3,7 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('资产管理');
 import { computed } from 'vue';
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
 import { useWorkspaceView } from '@starbeacon/shared/utils/useWorkspaceView.ts';
 import { session } from '../../session';
 import InventoryCatalog from './InventoryCatalog.vue';
@@ -21,13 +22,11 @@ const items = computed(() => [
 </script>
 <template>
   <WorkspaceTabs :active="view" :items="items" label="资产管理视图" @change="change" />
-  <template v-if="view === 'discovery'"
-    ><header class="page-header">
-      <div>
-        <h1>{{ pageTitle }}</h1>
-        <p class="page-description">按探针与网段核对流量地址观测，确认身份后登记资产。</p>
-      </div>
-    </header>
+  <template v-if="view === 'discovery'">
+    <PageHeader
+      :title="pageTitle"
+      description="按探针与网段核对流量地址观测，确认身份后登记资产。"
+      notice="按已有流记录发现地址，源、目的方向分别计数。结果仅覆盖可检索的流记录，不代表设备数或独立会话数。" />
     <DiscoveryWorkspace v-if="editable" :key="identity" /><a-alert
       v-else
       type="warning"

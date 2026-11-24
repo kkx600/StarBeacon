@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { registerAnt } from '../packages/shared/src/ant';
 import ProtocolCapabilities from '../packages/shared/src/components/ProtocolCapabilities.vue';
@@ -61,7 +61,14 @@ const mountReport = (report: unknown = sample()) =>
 describe('协议能力的来源、边界和交互', () => {
   it('分别呈现六层状态和实际摘要，不把 TLS 或规则目录视为效果资格', async () => {
     const wrapper = mountReport();
-    expect(wrapper.text()).toContain('可见握手不代表解密');
+    const help = wrapper.get('button[aria-label="协议能力的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() =>
+      expect(document.getElementById(help.attributes('aria-controls') ?? '')?.textContent).toContain(
+        '可见握手不代表解密',
+      ),
+    );
+    await help.trigger('keydown', { key: 'Escape' });
     expect(wrapper.text()).toContain('需规则样本验证');
     expect(wrapper.text()).toContain('仅识别');
     expect(wrapper.text()).toContain('有界包头解析');
@@ -76,7 +83,7 @@ describe('协议能力的来源、边界和交互', () => {
     await flushPromises();
     expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1);
     await wrapper.get('input[aria-label="筛选协议"]').setValue('IMAP');
-    expect(wrapper.text()).toContain('1 / 4 项');
+    expect(wrapper.text()).toContain('共 1 条');
     expect(wrapper.findAll('tbody tr[data-row-key]')).toHaveLength(1);
     await wrapper.get('button[aria-label="查看 IMAP 协议能力"]').trigger('click');
     await flushPromises();

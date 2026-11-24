@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem, Tag as ATag } from 'ant-design-vue';
+import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
+import PageHelp from './PageHelp.vue';
+import StatusTag from './StatusTag.vue';
+import { statusTone, type StatusToneMap } from '../statusTones';
 import { engineHealthReason, engineHealthStates, readEngineHealth } from '../engineHealth';
 import { formatTime } from '../types';
 const props = defineProps<{ report?: unknown }>();
@@ -8,19 +11,18 @@ const observation = computed(() => readEngineHealth(props.report));
 const title = computed(() =>
   observation.value ? engineHealthStates[observation.value.state] : props.report ? '观测数据无法核对' : '尚无原生观测',
 );
-const color = computed(() =>
-  observation.value?.state === 'observed'
-    ? 'success'
-    : observation.value?.state === 'unavailable'
-      ? 'error'
-      : 'default',
-);
+const tones: StatusToneMap = { observed: 'success', unavailable: 'danger' };
 </script>
 <template>
   <section class="panel section-gap engine-observation" aria-label="检测引擎观测">
     <header class="panel-header">
-      <h3>检测引擎观测</h3>
-      <a-tag :color="color">{{ title }}</a-tag>
+      <div class="table-row-actions">
+        <h3>检测引擎观测</h3>
+        <PageHelp title="检测引擎观测">
+          <p>文件摘要及装载数量来自本次原生观测。引擎内存中的规则内容、持续吞吐和检测效果需分别验收。</p>
+        </PageHelp>
+      </div>
+      <StatusTag :value="title" :tone="statusTone(tones, observation?.state)" />
     </header>
     <div class="panel-body">
       <p v-if="!observation" class="page-description">
@@ -52,9 +54,6 @@ const color = computed(() =>
           >
         </a-descriptions>
       </template>
-      <p class="field-hint">
-        原生状态只反映本次观测。规则文件摘要和装载数量不证明引擎内存中的规则内容相同，也不代表持续吞吐或检测效果通过验收。
-      </p>
     </div>
   </section>
 </template>
@@ -75,9 +74,6 @@ const color = computed(() =>
   margin: 0;
   font-size: 14px;
 }
-.panel-header .ant-tag {
-  margin: 0;
-}
 .panel-body {
   padding: 12px 14px;
 }
@@ -87,8 +83,5 @@ const color = computed(() =>
 }
 .page-description {
   margin: 0 0 10px;
-}
-.field-hint {
-  margin: 10px 0 0;
 }
 </style>

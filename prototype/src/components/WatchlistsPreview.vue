@@ -366,6 +366,7 @@ onScopeDispose(() => {
       @action="create"
     /><WatchlistTable
       v-else
+      paginate
       :items="filtered"
       :now="watchlistExampleClock"
       :can-edit="!forbidden"

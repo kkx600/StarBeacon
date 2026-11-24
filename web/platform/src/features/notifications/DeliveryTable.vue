@@ -3,9 +3,10 @@ import { formatTime } from '@starbeacon/shared/types.ts';
 import { formatNumber } from '@starbeacon/shared/utils/format.ts';
 import { statusTone } from '@starbeacon/shared/statusTones.ts';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
 import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { channelNames, deliveryNames, deliveryTones, streamNames, type Delivery } from './notifications';
-defineProps<{ items: readonly Delivery[] }>();
+defineProps<{ items: readonly Delivery[]; paginate?: boolean }>();
 const emit = defineEmits<{ view: [record: Delivery] }>();
 const columns = [
   { title: '投递编号', dataIndex: 'id', width: 148, className: 'technical', ellipsis: true },
@@ -24,7 +25,12 @@ const columns = [
 </script>
 
 <template>
-  <ListTable :columns="columns" :data-source="[...items]" :scroll="{ x: 1415 }">
+  <ListTable
+    :columns="columns"
+    :data-source="[...items]"
+    :scroll="{ x: 1415 }"
+    :pagination="paginate ? tablePagination() : false"
+  >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>
       <template v-else-if="column.key === 'kind'">{{ channelNames[record.kind] }}</template>

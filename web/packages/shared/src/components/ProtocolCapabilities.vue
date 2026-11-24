@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
-import { Descriptions as ADescriptions, Modal as AModal, Table as ATable } from 'ant-design-vue';
+import { Descriptions as ADescriptions, Modal as AModal } from 'ant-design-vue';
 import type { CaptureConfig } from '../types';
 import ProtocolCapabilityDetails from './ProtocolCapabilityDetails.vue';
 import { formatTime } from '../types';
-import type { ProtocolStatus } from '../protocols';
+import type { ProtocolEntry, ProtocolStatus } from '../protocols';
 import { isProtocolReport, protocolErrors, protocolLimitNames, protocolStatus } from '../protocols';
+import { defaultPageSize, pageOf } from '../pagination';
+import { statusTone, type StatusToneMap } from '../statusTones';
+import PageHelp from './PageHelp.vue';
+import ListFilters from './ListFilters.vue';
+import ListPager from './ListPager.vue';
+import ListTable from './ListTable.vue';
+import StatusTag from './StatusTag.vue';
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{ report?: unknown; capture?: CaptureConfig }>();
 const query = shallowRef(''),
+  page = shallowRef(1),
+  pageSize = shallowRef(defaultPageSize),
   selected = shallowRef(''),
   sourceOpen = shallowRef(false);
 const report = computed(() => (isProtocolReport(props.report) ? props.report : null));
@@ -24,27 +33,27 @@ const changed = computed(
     report.value.config_sha256 !== props.capture.config_sha256,
 );
 const statusText = (value: unknown) => protocolStatus[value as ProtocolStatus] ?? '尚未核实';
-const cellStatus = (row: Record<string, unknown>, key: unknown) =>
-  statusText(typeof key === 'string' ? row[key] : undefined);
-const cellClass = (row: Record<string, unknown>, key: unknown) => {
-  const value = typeof key === 'string' ? row[key] : undefined;
-  return value === 'configured'
-    ? 'status status-online'
-    : ['detection_only', 'partial', 'requires_validation'].includes(String(value))
-      ? 'status status-medium'
-      : ['native_listed', 'packet_headers_only'].includes(String(value))
-        ? 'status protocol-native'
-        : 'status status-unknown';
+const tones: StatusToneMap = {
+  configured: 'success',
+  detection_only: 'warning',
+  partial: 'warning',
+  requires_validation: 'warning',
+  native_listed: 'info',
+  packet_headers_only: 'info',
 };
-const columns = [
-  { title: '协议', key: 'name', width: 160, fixed: 'left' as const },
+const capabilities: { title: string; dataIndex: keyof ProtocolEntry; width: number }[] = [
   { title: '识别', dataIndex: 'recognition', width: 150 },
   { title: '事务与日志', dataIndex: 'transactions', width: 150 },
   { title: '在线规则', dataIndex: 'online_rules', width: 165 },
   { title: '文件提取', dataIndex: 'file_extraction', width: 125 },
   { title: '报文取证', dataIndex: 'packet_forensics', width: 150 },
   { title: '外部补充', dataIndex: 'external_logs', width: 125 },
-  { title: '操作', key: 'actions', width: 80, fixed: 'right' as const },
+];
+const columns = [
+  { title: '协议标识', dataIndex: 'protocol' as const, width: 112, className: 'technical', ellipsis: true },
+  { title: '协议名称', dataIndex: 'name' as const, width: 130, ellipsis: true },
+  ...capabilities,
+  { title: '操作', key: 'actions', width: 68, fixed: 'right' as const },
 ];
 watch(
   () => props.report,
@@ -53,6 +62,7 @@ watch(
     sourceOpen.value = false;
   },
 );
+watch([query, report], () => (page.value = 1));
 </script>
 <template>
   <a-alert
@@ -68,12 +78,6 @@ watch(
     :message="protocolErrors[report.error_code ?? ''] ?? '协议能力尚未核实，请刷新后核对。'"
   />
   <template v-else>
-    <a-alert
-      type="info"
-      show-icon
-      class="section-gap"
-      message="配置状态不等于检测效果。TLS、QUIC 的可见握手不代表解密；规则命中、完整事务、文件提取和真实效果需分别验收。"
-    />
     <a-alert
       v-if="changed"
       type="warning"
@@ -96,45 +100,34 @@ watch(
       <span
         >Suricata {{ report.engine_version }} ·
         {{ report.source === 'managed_configuration' ? '托管检测配置' : '离线配置模板' }}</span
+      ><PageHelp title="协议能力">
+        <p>TLS、QUIC 的可见握手不代表解密。</p>
+        <p>配置观测、规则命中、完整事务、文件提取和检测效果需分别验收。</p> </PageHelp
       ><span class="page-description">观测 {{ formatTime(report.observed_at) }}</span
       ><a-button type="link" @click="sourceOpen = true">查看来源</a-button>
     </div>
-    <div class="protocol-toolbar section-gap">
-      <a-input
-        v-model:value="query"
-        aria-label="筛选协议"
-        placeholder="协议名称或标识"
-        allow-clear
-        :maxlength="128"
-        class="protocol-search"
-      /><span class="page-description">{{ rows.length }} / {{ report.protocols.length }} 项 · 效果均待独立验证</span>
-    </div>
-    <a-table
-      class="protocol-table"
-      row-key="protocol"
-      table-layout="fixed"
-      :columns="columns"
-      :data-source="rows"
-      :scroll="{ x: 1205 }"
-      :pagination="{ pageSize: 10, showSizeChanger: false, showTotal: (total: number) => `共 ${total} 项` }"
-      size="small"
-      :locale="{ emptyText: '没有匹配的协议' }"
-    >
+    <ListFilters :columns="1" label="协议能力筛选">
+      <a-input v-model:value="query" aria-label="筛选协议" placeholder="协议名称或标识" allow-clear :maxlength="128" />
+    </ListFilters>
+    <ListTable row-key="protocol" :columns="columns" :data-source="pageOf(rows, page, pageSize)" :scroll="{ x: 1275 }">
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'name'"
-          ><strong>{{ record.name }}</strong>
-          <div class="technical page-description">{{ record.protocol }}</div></template
-        >
         <a-button
-          v-else-if="column.key === 'actions'"
+          v-if="'key' in column && column.key === 'actions'"
           type="link"
+          size="small"
           :aria-label="`查看 ${record.name} 协议能力`"
           @click="selected = record.protocol"
           >查看</a-button
         >
-        <span v-else :class="cellClass(record, column.dataIndex)">{{ cellStatus(record, column.dataIndex) }}</span>
+        <StatusTag
+          v-else-if="column.dataIndex && column.dataIndex !== 'protocol' && column.dataIndex !== 'name'"
+          :value="statusText(record[column.dataIndex])"
+          :tone="statusTone(tones, record[column.dataIndex])"
+        />
       </template>
-    </a-table>
+      <template #emptyText>没有匹配的协议</template>
+    </ListTable>
+    <ListPager v-model:page="page" v-model:page-size="pageSize" :total="rows.length" class="section-gap" />
     <details class="protocol-limits section-gap">
       <summary>检测限额与配置边界</summary>
       <a-descriptions bordered size="small" :column="1" class="section-gap"
@@ -176,51 +169,15 @@ watch(
   </template>
 </template>
 <style scoped>
-.section-gap {
-  margin-bottom: var(--section-gap, 12px);
-}
-.protocol-context,
-.protocol-toolbar {
+.protocol-context {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-}
-.protocol-context {
   font-size: 13px;
-}
-.protocol-search {
-  max-width: 320px;
 }
 .protocol-digest {
   overflow-wrap: anywhere;
-}
-.protocol-table {
-  min-width: 0;
-}
-.status {
-  display: inline-block;
-  border-radius: 4px;
-  padding: 1px 7px;
-  white-space: nowrap;
-  font-size: 12px;
-  line-height: 1.7;
-}
-.status-online {
-  color: var(--success);
-  background: var(--success-surface);
-}
-.status-medium {
-  color: var(--warning);
-  background: var(--warning-surface);
-}
-.status-unknown {
-  color: var(--status-text);
-  background: var(--status-surface);
-}
-.protocol-native {
-  color: var(--link);
-  background: var(--info-surface);
 }
 .protocol-limits {
   min-width: 0;
