@@ -5,6 +5,7 @@ import type { FormInstance } from 'ant-design-vue';
 import type { CollectorAction, CollectorTask } from '../data/collector';
 import { validateManagement, validateCapture, validateConnection, validateMaintenance } from '../data/collector';
 import { useCollector } from '../composables/useCollector';
+import ModalFooter from './ModalFooter.vue';
 const message = useFeedback();
 const props = defineProps<{ open: boolean; action: CollectorAction; serviceId?: string }>();
 const emit = defineEmits<{ close: []; requested: [task: CollectorTask] }>();
@@ -271,7 +272,6 @@ async function submit() {
     :title="title"
     :width="820"
     destroy-on-close
-    :footer="null"
     class="collector-form-modal"
     @cancel="emit('close')"
   >
@@ -571,12 +571,12 @@ async function submit() {
         >已核对设备、配置范围与业务影响；提交后仍需等待执行和回读。</a-checkbox
       >
     </div>
-    <div class="collector-modal-footer">
-      <span class="muted">申请保存在当前原型会话中</span
-      ><a-space
-        ><a-button @click="emit('close')">取消</a-button><a-button @click="check">检查配置</a-button
-        ><a-button type="primary" :disabled="!canSubmit" @click="submit">创建申请</a-button></a-space
-      >
-    </div>
+    <template #footer>
+      <ModalFooter note="申请保存在当前原型会话中">
+        <a-button @click="emit('close')">取消</a-button>
+        <a-button @click="check">检查配置</a-button>
+        <a-button type="primary" :disabled="!canSubmit" @click="submit">创建申请</a-button>
+      </ModalFooter>
+    </template>
   </a-modal>
 </template>

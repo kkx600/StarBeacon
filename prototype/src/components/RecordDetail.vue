@@ -14,6 +14,7 @@ import StatePanel from './StatePanel.vue';
 import SensorDetail from './SensorDetail.vue';
 import PcapDetail from './PcapDetail.vue';
 import AlertTriage from './AlertTriage.vue';
+import ModalFooter from './ModalFooter.vue';
 const message = useFeedback();
 const props = defineProps<{ open: boolean; page: PageSpec; record?: BusinessRecord; localArchive?: boolean }>();
 const emit = defineEmits<{ close: []; action: []; respond: [] }>();
@@ -83,7 +84,7 @@ function addNote() {
     :open="open"
     :title="`${page.objectLabel}详情`"
     :width="1080"
-    :footer="page.family === 'sensor' ? undefined : null"
+    :footer="record || page.family === 'sensor' ? undefined : null"
     destroy-on-close
     @cancel="emit('close')"
     class="record-detail-modal"
@@ -356,44 +357,23 @@ function addNote() {
           >
         </a-tab-pane>
       </a-tabs>
-      <div v-if="page.family !== 'sensor'" class="detail-footer">
-        <span class="muted">合成示例 · 证据与执行状态分别核对</span
-        ><a-space
-          ><a-button @click="emit('close')">关闭</a-button
-          ><a-button
-            v-if="
-              page.family === 'decision-evaluation' &&
-              record?.mode !== '持续评估与自动执行' &&
-              record?.status === '策略命中' &&
-              record?.action === '建议评估源 IP 封禁'
-            "
-            type="primary"
-            @click="emit('respond')"
-            >处置确认</a-button
-          ><a-button v-if="!page.readOnly" type="primary" @click="emit('action')">{{
-            page.rowAction
-          }}</a-button></a-space
-        >
-      </div>
     </template>
-    <template v-if="page.family === 'sensor'" #footer
-      ><div class="detail-footer sensor-detail-footer">
-        <span class="muted">合成示例 · 证据与执行状态分别核对</span
-        ><a-space
-          ><a-button @click="emit('close')">关闭</a-button
-          ><a-button v-if="record && !page.readOnly" type="primary" @click="emit('action')">{{
-            page.rowAction
-          }}</a-button></a-space
+    <template #footer>
+      <ModalFooter note="合成示例 · 证据与执行状态分别核对">
+        <a-button @click="emit('close')">关闭</a-button>
+        <a-button
+          v-if="
+            page.family === 'decision-evaluation' &&
+            record?.mode !== '持续评估与自动执行' &&
+            record?.status === '策略命中' &&
+            record?.action === '建议评估源 IP 封禁'
+          "
+          type="primary"
+          @click="emit('respond')"
+          >处置确认</a-button
         >
-      </div></template
-    >
+        <a-button v-if="record && !page.readOnly" type="primary" @click="emit('action')">{{ page.rowAction }}</a-button>
+      </ModalFooter>
+    </template>
   </a-modal>
 </template>
-<style scoped>
-.sensor-detail-footer {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  text-align: left;
-}
-</style>

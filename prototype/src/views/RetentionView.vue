@@ -8,6 +8,7 @@ import { DownloadOutlined, SettingOutlined, LockOutlined } from '@ant-design/ico
 import type { PageSpec, PreviewState } from '../models';
 import { useRecords, exportCsv } from '../composables/useRecords';
 import PageHeader from '../components/PageHeader.vue';
+import ModalFooter from '../components/ModalFooter.vue';
 import StatePanel from '../components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
@@ -232,14 +233,7 @@ function submit() {
       密文通常难以显著压缩。
     </p>
   </section>
-  <a-modal
-    :open="open"
-    title="调整留存策略"
-    :width="820"
-    ok-text="保存策略"
-    cancel-text="取消"
-    @cancel="close"
-    @ok="submit"
+  <a-modal :open="open" title="调整留存策略" :width="820" @cancel="close"
     ><div class="form-grid">
       <a-form-item label="数据类别"
         ><a-select
@@ -275,8 +269,13 @@ function submit() {
     <a-form-item label="变更依据" required style="margin-top: 16px"
       ><a-textarea v-model:value="reason" :rows="3" placeholder="填写业务依据、授权与容量安排" /></a-form-item
     ><a-checkbox v-model:checked="checked">已核对保全范围、容量和清理影响</a-checkbox>
-    <div class="modal-footnote">本原型不会删除实际数据。生产清理使用持久任务与可审计资格水位。</div></a-modal
-  >
+    <template #footer>
+      <ModalFooter note="本原型不会删除实际数据。生产清理使用持久任务与可审计资格水位。">
+        <a-button @click="close">取消</a-button>
+        <a-button type="primary" @click="submit">保存策略</a-button>
+      </ModalFooter>
+    </template>
+  </a-modal>
   <a-modal :open="detail" title="留存策略与保全范围" :width="760" :footer="null" @cancel="close"
     ><a-descriptions :column="1" bordered
       ><a-descriptions-item label="数据类别">{{ selected.name }}</a-descriptions-item

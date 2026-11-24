@@ -32,6 +32,9 @@
   padding: 0 var(--panel-inset) var(--panel-inset);
   margin-bottom: var(--section-gap);
 }
+:is(.collector-shell .page-surface, .collector-capability) > .panel + .panel {
+  margin-block-start: var(--section-gap);
+}
 .collector-section > .panel-heading {
   padding-inline: 0;
 }
@@ -91,19 +94,6 @@
   font-size: 16px;
   margin: var(--panel-inset) 0 var(--related-gap);
 }
-.collector-detail-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--section-gap);
-}
-.collector-form-modal .ant-modal-body {
-  padding-bottom: 0;
-}
-.collector-form-body {
-  max-height: 65vh;
-  overflow: auto;
-  padding: 2px 3px var(--section-gap);
-}
 .collector-form-body .ant-input-number {
   width: 100%;
 }
@@ -132,22 +122,8 @@
   margin-top: var(--section-gap);
   line-height: 1.8;
 }
-.collector-modal-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: var(--section-gap) 0;
-  border-top: 1px solid var(--line);
-}
-.collector-modal-footer > .muted {
-  font-size: 12px;
-}
 .collector-shell .ant-table-cell {
   overflow-wrap: anywhere;
-}
-.collector-shell .workspace-views {
-  margin-top: 0;
 }
 .collector-catalog {
   margin-top: var(--section-gap);

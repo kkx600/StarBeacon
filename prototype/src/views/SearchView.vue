@@ -121,7 +121,7 @@ const columns = [
   { title: '协议', dataIndex: 'protocol', width: 80 },
   { title: '请求方法', dataIndex: 'method', width: 90 },
   { title: 'Path', dataIndex: 'path', width: 180 },
-  { title: '发生时间', dataIndex: 'time', width: 178 },
+  { title: '发生时间', dataIndex: 'time', width: 178, fixed: 'right' as const },
   { title: '操作', key: 'action', width: 80, fixed: 'right' as const },
 ];
 watch(

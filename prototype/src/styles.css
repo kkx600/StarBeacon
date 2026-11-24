@@ -282,13 +282,6 @@ p {
   line-height: 1.7;
   margin-top: 6px;
 }
-.modal-footnote {
-  padding-top: 13px;
-  color: var(--muted);
-  font-size: 12px;
-  border-top: 1px solid var(--line);
-  margin-top: 12px;
-}
 .detail-heading {
   display: flex;
   align-items: center;
@@ -334,15 +327,6 @@ p {
   color: var(--muted);
   font-size: 12px;
   margin: 3px 0 0;
-}
-.detail-footer {
-  border-top: 1px solid var(--line);
-  margin-top: var(--panel-inset);
-  padding-top: var(--section-gap);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
 }
 .ant-descriptions-bordered .ant-descriptions-item-label {
   font-size: 12px;
@@ -1859,10 +1843,6 @@ textarea,
 }
 a {
   text-underline-offset: 3px;
-}
-
-.auth-intro h1 {
-  color: var(--link);
 }
 
 .selection-count {

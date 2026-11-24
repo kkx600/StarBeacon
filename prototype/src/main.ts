@@ -10,4 +10,6 @@ import './refresh.css';
 import { applyPalette } from './theme';
 
 applyPalette();
-createApp(App).use(Antd).use(router).mount('#app');
+const app = createApp(App).use(Antd).use(router);
+await router.isReady();
+app.mount('#app');

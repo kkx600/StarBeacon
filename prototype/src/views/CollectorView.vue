@@ -242,6 +242,11 @@ function clearFilters() {
 </script>
 <template>
   <div v-if="page" class="page-surface" :data-page-id="`collector-${page.id}`" :data-page-state="state">
+    <nav v-if="tabs.length > 1" class="workspace-views" aria-label="采集器工作区功能">
+      <a-tabs :active-key="activeTab" @change="changeTab">
+        <a-tab-pane v-for="tab in tabs" :key="tab.key" :tab="tab.title" />
+      </a-tabs>
+    </nav>
     <PageHeader :title="delivered?.title ?? page.title" :description="delivered?.description ?? page.description"
       ><a-button
         v-if="delivered && ['overview', 'interfaces', 'capture', 'responses', 'syslog'].includes(delivered.view)"
@@ -285,11 +290,6 @@ function clearFilters() {
           : '此视图展示目标设计。当前工程已交付运行状态、网卡、采集目标、原包、Syslog、通信身份、重放、任务和联动设备核对；此处的管理网络、接入编辑、升级及维护动作不代表已经交付。'
       "
     />
-    <nav class="workspace-views" aria-label="采集器工作区功能">
-      <a-tabs :active-key="activeTab" @change="changeTab"
-        ><a-tab-pane v-for="tab in tabs" :key="tab.key" :tab="tab.title"
-      /></a-tabs>
-    </nav>
     <CollectorCapabilityPreview
       v-if="delivered && ['overview', 'interfaces', 'capture', 'identity', 'tasks'].includes(delivered.view)"
       :view="delivered.view"
@@ -751,7 +751,6 @@ function clearFilters() {
               : `${page.title}详情`
       "
       :width="760"
-      :footer="null"
       destroy-on-close
       class="record-detail-modal"
       @cancel="closeDetail"
@@ -837,7 +836,7 @@ function clearFilters() {
         >
         <p class="field-hint">当前配置仅对应此样机，不能作为其它探针的实际配置或任务回执。</p></template
       >
-      <div class="collector-detail-footer"><a-button @click="closeDetail">关闭</a-button></div>
+      <template #footer><a-button @click="closeDetail">关闭</a-button></template>
     </a-modal>
   </div>
   <a-result v-else status="404" title="采集器页面不存在" sub-title="请从采集器导航选择可访问的功能。" />

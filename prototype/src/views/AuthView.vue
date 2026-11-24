@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   SafetyCertificateOutlined,
@@ -34,6 +34,13 @@ const description = computed(() =>
       : mode.value === 'expired'
         ? '当前认证会话已失效，重新登录后继续处理。'
         : '使用组织账号进入安全运营工作空间。',
+);
+watch(
+  title,
+  value => {
+    document.title = `${mode.value === 'login' ? '登录主控平台' : value} · 星烽 StarBeacon`;
+  },
+  { immediate: true },
 );
 async function submit() {
   try {

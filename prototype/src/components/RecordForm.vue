@@ -8,6 +8,7 @@ import { inspectRules } from '../../../web/packages/shared/src/utils/ruleSyntax'
 import { formValueFor } from '../composables/formValues';
 import { userInputError } from '../../../web/platform/src/features/users/user';
 import { managementInputError } from '../../../web/platform/src/features/sensors/management';
+import ModalFooter from './ModalFooter.vue';
 const props = defineProps<{ open: boolean; page: PageSpec; record?: BusinessRecord }>();
 const emit = defineEmits<{ close: []; save: [values: Record<string, unknown>] }>();
 const formRef = ref<FormInstance>();
@@ -206,12 +207,8 @@ async function submit() {
     :title="title"
     :width="page.family === 'decision' ? 820 : 720"
     :body-style="{ maxHeight: 'calc(100vh - 252px)', overflowY: 'auto' }"
-    :confirm-loading="busy"
-    ok-text="提交"
-    cancel-text="取消"
     destroy-on-close
     @cancel="emit('close')"
-    @ok="submit"
     class="record-form-modal"
   >
     <a-alert
@@ -318,7 +315,12 @@ async function submit() {
       </div>
       <small>本原型仅保存合成示例；判断、独立授权及设备效果分别核对。</small>
     </div>
-    <div class="modal-footnote">表单提交仅保存在当前原型会话中。</div>
+    <template #footer>
+      <ModalFooter note="表单提交仅保存在当前原型会话中。">
+        <a-button @click="emit('close')">取消</a-button>
+        <a-button type="primary" :loading="busy" @click="submit">提交</a-button>
+      </ModalFooter>
+    </template>
   </a-modal>
 </template>
 
