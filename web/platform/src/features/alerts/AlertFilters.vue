@@ -80,7 +80,7 @@ function reset() {
     class="panel filter-form"
     :model="form"
     :disabled="busy"
-    layout="vertical"
+    layout="horizontal"
     @finish="submit"
   >
     <div class="filter-mode">
@@ -147,10 +147,30 @@ function reset() {
   </a-form>
 </template>
 <style scoped>
+.filter-form {
+  align-items: start;
+  gap: var(--related-gap) var(--field-gap);
+}
 .filter-mode,
 .filter-error {
   grid-column: 1/-1;
-  margin-bottom: var(--panel-inset);
   min-width: 0;
+}
+.filter-form :deep(.ant-form-item) {
+  margin-bottom: 0;
+  min-width: 0;
+}
+.filter-form :deep(.ant-form-item-row) {
+  flex-wrap: nowrap;
+}
+.filter-form .filter-actions {
+  grid-column: 3;
+  justify-self: end;
+}
+@media (max-width: 1180px) {
+  .filter-form .filter-actions {
+    grid-column: 1/-1;
+    justify-self: start;
+  }
 }
 </style>

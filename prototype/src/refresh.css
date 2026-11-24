@@ -1,56 +1,6 @@
-/* 2026-11 改版：紧凑密度、说明收进标题、表格与分页标准。
+/* 2026-11 改版：紧凑密度、表格与分页标准。
    加载在 styles.css 之后，逐条覆盖旧规则；旧规则在源码格式化（开发任务 T03）时合并清理。 */
 
-/* 页面标题一行：标题 20px，说明只在“?”里出现。 */
-.page-header {
-  align-items: center;
-  min-height: 34px;
-  margin-bottom: var(--related-gap);
-}
-.page-heading {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.page-header h1 {
-  margin: 0;
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 600;
-  letter-spacing: 0;
-  white-space: nowrap;
-}
-.page-help-trigger {
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 16px;
-}
-.page-help-trigger:hover {
-  color: var(--link);
-  background: var(--row-hover);
-}
-.page-help {
-  display: flex;
-  flex-direction: column;
-  gap: var(--related-gap);
-  max-width: 420px;
-  color: var(--text);
-  font-size: 13px;
-  line-height: 1.7;
-}
-.page-help p {
-  margin: 0;
-}
-.page-header-actions {
-  max-width: 70%;
-}
 .workspace-views {
   margin-bottom: var(--related-gap);
 }

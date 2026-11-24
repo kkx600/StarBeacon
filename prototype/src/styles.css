@@ -132,26 +132,6 @@ p {
   background: var(--line);
   font-size: 12px;
 }
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--panel-inset);
-  align-items: center;
-  margin-bottom: var(--section-gap);
-}
-.page-header h1 {
-  margin-bottom: var(--label-gap);
-}
-.page-header p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 0;
-  max-width: 720px;
-}
-.page-header-actions {
-  flex-shrink: 0;
-}
 .page-eyebrow {
   color: var(--muted);
   font-size: 12px;
@@ -1714,16 +1694,6 @@ p {
   }
 }
 @media (max-width: 1180px) {
-  .page-header {
-    align-items: flex-start;
-  }
-  .page-header-actions {
-    max-width: 50%;
-  }
-  .page-header-actions > .ant-space {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
   .preview-caption {
     display: none;
   }

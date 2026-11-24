@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HelpNote from './HelpNote.vue';
+import PageHeader from './PageHeader.vue';
 import { computed, reactive } from 'vue';
 import { emptySourceQuery } from '../../../web/packages/shared/src/syslog';
 import SyslogSourceFilters from '../../../web/packages/shared/src/components/SyslogSourceFilters.vue';
@@ -24,14 +25,15 @@ function change(value: string) {
     :preview="[syslogLog]"
     :state="state === 'action' ? 'detail' : state"
     @state="change"
-  /><template v-else
-    ><header v-if="!local" class="page-header">
-      <div>
-        <h1>Syslog 接收</h1>
-        <p class="page-description">核对采集器的固定日志来源、接收状态与持久缓冲，不以日志正文声明设备或租户身份。</p>
-      </div>
+  /><template v-else>
+    <PageHeader
+      v-if="!local"
+      title="Syslog 接收"
+      description="核对采集器的固定日志来源、接收状态与持久缓冲，不以日志正文声明设备或租户身份。"
+      notice="TLS 来源校验客户端证书与指纹；TCP、UDP 来源使用明确授权的网段限制。来源配置由采集器私有文件管理，配置内容与监听地址不通过心跳公开。"
+    >
       <a-button @click="emit('state', 'data')">刷新来源</a-button>
-    </header>
+    </PageHeader>
     <SyslogSourceFilters
       v-if="!local"
       :model="filters"
@@ -40,12 +42,7 @@ function change(value: string) {
       @reset="
         Object.assign(filters, emptySourceQuery());
         emit('state', 'data');
-      " /><a-alert
-      v-if="!local"
-      type="info"
-      show-icon
-      message="TLS 来源校验客户端证书与指纹；TCP、UDP 来源使用明确授权的网段限制。来源配置由采集器私有文件管理，配置内容与监听地址不通过心跳公开。"
-      class="section-gap" />
+      " />
     <section class="panel">
       <div class="panel-header">
         <h2>日志来源</h2>

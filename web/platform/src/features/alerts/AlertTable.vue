@@ -25,6 +25,8 @@ const columns = [
 <template>
   <div class="table-wrap">
     <a-table
+      class="list-table"
+      size="small"
       :columns="columns"
       :data-source="result.items"
       row-key="event_id"
@@ -40,10 +42,14 @@ const columns = [
       @change="changePage"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'name'"
-          ><button class="link-button" @click="view(record.event_id)">{{ record.rule.name || '未命名检测规则' }}</button
-          ><small class="record-id">SID {{ record.rule.id || '未提供' }}</small></template
-        >
+        <div v-if="column.key === 'name'" class="alert-identity">
+          <button class="record-link" :title="record.rule.name || '未命名检测规则'" @click="view(record.event_id)">
+            {{ record.rule.name || '未命名检测规则' }}
+          </button>
+          <small class="record-id" :title="'SID ' + (record.rule.id || '未提供')"
+            >SID {{ record.rule.id || '未提供' }}</small
+          >
+        </div>
         <span v-else-if="column.key === 'severity'" class="status" :class="'status-' + record.severity">{{
           labels[record.severity as Alert['severity']]
         }}</span>
@@ -51,8 +57,27 @@ const columns = [
           record.network.protocol || record.network.transport || '未提供'
         }}</template>
         <template v-else-if="column.key === 'time'">{{ formatTime(record['@timestamp']) }}</template>
-        <a-button v-else-if="column.key === 'action'" type="link" @click="view(record.event_id)">查看</a-button>
+        <a-button v-else-if="column.key === 'action'" type="link" size="small" @click="view(record.event_id)"
+          >查看</a-button
+        >
       </template>
     </a-table>
   </div>
 </template>
+<style scoped>
+.alert-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--related-gap);
+  min-width: 0;
+}
+.alert-identity .record-link {
+  min-width: 0;
+}
+.alert-identity .record-id {
+  margin: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

@@ -80,6 +80,7 @@ watch(
 .alert-window {
   font-size: 12px;
   margin: 0 0 8px;
+  padding-inline: var(--panel-inset);
   overflow-wrap: anywhere;
 }
 .query-toolbar {
