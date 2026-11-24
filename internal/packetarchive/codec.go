@@ -14,6 +14,7 @@ import (
 
 const (
 	Schema                  = "packet.archive.v1"
+	PackedSchema            = "packet.archive.v2"
 	CodecVersion            = "klauspost/compress/v1.20.1"
 	MaxSegmentBytes   int64 = 64 * 1024 * 1024
 	MaxStoredBytes    int64 = 128 * 1024 * 1024
@@ -33,6 +34,7 @@ type Frame struct {
 	StoredLength int64  `json:"stored_length"`
 	RawSHA256    string `json:"raw_sha256"`
 	StoredSHA256 string `json:"stored_sha256"`
+	Codec        string `json:"codec,omitempty"`
 }
 
 type Encoding struct {
@@ -56,22 +58,29 @@ func validDigest(value string) bool {
 }
 
 func (index Encoding) Validate() error {
-	if index.Schema != Schema || index.FrameBytes < MinFrameBytes || index.FrameBytes > MaxFrameBytes || index.FrameBytes&(index.FrameBytes-1) != 0 || index.RawBytes < 24 || index.RawBytes > MaxSegmentBytes || index.StoredBytes < 1 || index.StoredBytes > MaxStoredBytes || len(index.Frames) < 1 || len(index.Frames) > MaxFrames || !validDigest(index.RawSHA256) || !validDigest(index.StoredSHA256) {
+	packed := index.Schema == PackedSchema
+	if index.Schema != Schema && !packed || index.FrameBytes < MinFrameBytes || index.FrameBytes > MaxFrameBytes || index.FrameBytes&(index.FrameBytes-1) != 0 || index.RawBytes < 24 || index.RawBytes > MaxSegmentBytes || index.StoredBytes < 1 || index.StoredBytes > MaxStoredBytes || len(index.Frames) < 1 || len(index.Frames) > MaxFrames || !validDigest(index.RawSHA256) || !validDigest(index.StoredSHA256) {
+		return ErrIntegrity
+	}
+	if packed && (index.FrameBytes != MaxFrameBytes || len(index.Frames) < 2) {
 		return ErrIntegrity
 	}
 	if index.Codec == "none" {
 		if index.Implementation != "identity" || index.Level != "none" || index.RawBytes != index.StoredBytes || index.RawSHA256 != index.StoredSHA256 {
 			return ErrIntegrity
 		}
-	} else if index.Codec != "zstd" || index.Implementation != CodecVersion || index.Level != "SpeedFastest" {
+	} else if index.Codec != "zstd" || index.Implementation != CodecVersion || !packed && index.Level != "SpeedFastest" || packed && index.Level != "zstd-3" {
 		return ErrIntegrity
 	}
 	var rawOffset, storedOffset int64
 	for i, frame := range index.Frames {
-		if frame.RawOffset != rawOffset || frame.StoredOffset != storedOffset || frame.RawLength < 1 || frame.RawLength > int64(index.FrameBytes) || frame.StoredLength < 1 || frame.StoredLength > 2*MaxFrameBytes || !validDigest(frame.RawSHA256) || !validDigest(frame.StoredSHA256) || i < len(index.Frames)-1 && frame.RawLength != int64(index.FrameBytes) {
+		if frame.RawOffset != rawOffset || frame.StoredOffset != storedOffset || frame.RawLength < 1 || frame.RawLength > int64(index.FrameBytes) || frame.StoredLength < 1 || frame.StoredLength > 2*MaxFrameBytes || !validDigest(frame.RawSHA256) || !validDigest(frame.StoredSHA256) || !packed && i < len(index.Frames)-1 && frame.RawLength != int64(index.FrameBytes) {
 			return ErrIntegrity
 		}
-		if index.Codec == "none" && (frame.RawLength != frame.StoredLength || frame.RawSHA256 != frame.StoredSHA256) {
+		if packed && (frame.Codec != "none" && (frame.Codec != "zstd" || index.Codec != "zstd") || frame.RawLength%4 != 0) || !packed && frame.Codec != "" {
+			return ErrIntegrity
+		}
+		if index.frameCodec(frame) == "none" && (frame.RawLength != frame.StoredLength || frame.RawSHA256 != frame.StoredSHA256) {
 			return ErrIntegrity
 		}
 		rawOffset += frame.RawLength
@@ -84,6 +93,13 @@ func (index Encoding) Validate() error {
 		return ErrIntegrity
 	}
 	return nil
+}
+
+func (index Encoding) frameCodec(frame Frame) string {
+	if index.Schema == PackedSchema {
+		return frame.Codec
+	}
+	return index.Codec
 }
 
 // EncodeFrames 在已经封存的原包副本上执行；失败时调用者保留原副本，不提交半成品目录。
@@ -151,17 +167,55 @@ func EncodeFrames(ctx context.Context, target io.Writer, source io.Reader, codec
 // RangeSource 必须绑定已授权对象的不可变版本；目录来自受信持久存储，不能由下载者提供。
 type RangeSource func(context.Context, int64, int64) (io.ReadCloser, error)
 
+func frameDecoder(codec string) (*zstd.Decoder, error) {
+	if codec != "zstd" {
+		return nil, nil
+	}
+	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(2*MaxFrameBytes), zstd.WithDecoderMaxWindow(MaxFrameBytes), zstd.WithDecodeAllCapLimit(true))
+}
+
+func readArchiveFrame(ctx context.Context, source RangeSource, frame Frame, codec string, decoder *zstd.Decoder) (raw, stored []byte, err error) {
+	if err = ctx.Err(); err != nil {
+		return nil, nil, err
+	}
+	reader, err := source(ctx, frame.StoredOffset, frame.StoredLength)
+	if err != nil {
+		return nil, nil, err
+	}
+	// 声明长度之外仍读取一个字节，拒绝忽略 Range 或返回额外内容的存储端。
+	stored, err = io.ReadAll(io.LimitReader(reader, frame.StoredLength+1))
+	closeErr := reader.Close()
+	if err != nil {
+		return nil, nil, err
+	}
+	if closeErr != nil {
+		return nil, nil, closeErr
+	}
+	if int64(len(stored)) != frame.StoredLength || Digest(stored) != frame.StoredSHA256 {
+		return nil, nil, ErrIntegrity
+	}
+	raw = stored
+	if codec == "zstd" {
+		raw, err = decoder.DecodeAll(stored, make([]byte, 0, frame.RawLength))
+		if err != nil {
+			return nil, nil, ErrIntegrity
+		}
+	}
+	if int64(len(raw)) != frame.RawLength || Digest(raw) != frame.RawSHA256 {
+		return nil, nil, ErrIntegrity
+	}
+	return raw, stored, nil
+}
+
 func ReadRange(ctx context.Context, target io.Writer, source RangeSource, index Encoding, offset, length int64) error {
 	if index.Validate() != nil || target == nil || source == nil || offset < 0 || length < 1 || offset >= index.RawBytes || length > index.RawBytes-offset {
 		return ErrIntegrity
 	}
-	var decoder *zstd.Decoder
-	if index.Codec == "zstd" {
-		var err error
-		decoder, err = zstd.NewReader(nil, zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(2*MaxFrameBytes), zstd.WithDecoderMaxWindow(MaxFrameBytes), zstd.WithDecodeAllCapLimit(true))
-		if err != nil {
-			return err
-		}
+	decoder, err := frameDecoder(index.Codec)
+	if err != nil {
+		return err
+	}
+	if decoder != nil {
 		defer decoder.Close()
 	}
 	full := offset == 0 && length == index.RawBytes
@@ -171,34 +225,9 @@ func ReadRange(ctx context.Context, target io.Writer, source RangeSource, index 
 		if frame.RawOffset+frame.RawLength <= offset || frame.RawOffset >= end {
 			continue
 		}
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		reader, err := source(ctx, frame.StoredOffset, frame.StoredLength)
+		raw, stored, err := readArchiveFrame(ctx, source, frame, index.frameCodec(frame), decoder)
 		if err != nil {
 			return err
-		}
-		// 声明长度之外仍读取一个字节，拒绝忽略 Range 或返回额外内容的存储端。
-		stored, readErr := io.ReadAll(io.LimitReader(reader, frame.StoredLength+1))
-		closeErr := reader.Close()
-		if readErr != nil {
-			return readErr
-		}
-		if closeErr != nil {
-			return closeErr
-		}
-		if int64(len(stored)) != frame.StoredLength || Digest(stored) != frame.StoredSHA256 {
-			return ErrIntegrity
-		}
-		raw := stored
-		if decoder != nil {
-			raw, err = decoder.DecodeAll(stored, make([]byte, 0, frame.RawLength))
-			if err != nil {
-				return ErrIntegrity
-			}
-		}
-		if int64(len(raw)) != frame.RawLength || Digest(raw) != frame.RawSHA256 {
-			return ErrIntegrity
 		}
 		if full {
 			_, _ = rawHash.Write(raw)

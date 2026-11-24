@@ -17,6 +17,7 @@ import (
 var localPacketDownloads = make(chan struct{}, 2)
 
 func registerLocalPackets(m *http.ServeMux, wal *WAL, auth *httpapi.Auth) {
+	m.HandleFunc("POST /api/local/v1/packet-archives/session-export", auth.Require(true, localPacketSession(wal, auth)))
 	m.HandleFunc("GET /api/local/v1/packet-archives/{id}/packets/{number}", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		number, err := packetarchive.InspectionNumber(r.PathValue("number"), r.URL.Query())
 		if err != nil || !contract.ValidID(r.PathValue("id")) {
@@ -123,7 +124,7 @@ func registerLocalPackets(m *http.ServeMux, wal *WAL, auth *httpapi.Auth) {
 		defer decoded.Close()
 		defer os.Remove(decoded.Name())
 		if err = packetarchive.ReadRange(ctx, decoded, packetarchive.RangeFile(file), row.Manifest.Encoding, 0, row.Manifest.Encoding.RawBytes); err == nil {
-			err = packetarchive.ValidateRawFile(ctx, decoded, row.Capture)
+			err = packetarchive.ValidateManifestRawFile(ctx, decoded, *row.Manifest)
 		}
 		if err != nil {
 			httpapi.Fail(w, r, 503, "packet_unconfirmed", "原包制品尚未完整核验")

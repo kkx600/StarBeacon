@@ -37,9 +37,11 @@ HTTP Raw 的两端二进制入口为 `POST /api/v1/replay/samples/http` 和 `POS
 
 单告警模型研判使用 `/api/v1/alerts/{id}/triage` 和 `/api/v1/alert-triage/jobs/{id}`，提供持久创建、所有者历史、详情与取消。实际调用前回读精确告警来源；输出仅允许实际引用与待复核建议，不发送原始载荷，不授权封禁。详见[告警模型研判](../docs/告警模型研判.md)。
 
-两端原包目录、详情、下载与逐包协议查看分别位于 `/api/v1/packet-archives` 和 `/api/local/v1/packet-archives`，仅管理员可访问；本机已确认上传并回收原件的记录不能再次本机下载。平台 `POST /api/v1/packet-archives/session-export` 要求 CSRF、固定双端身份及明确导出模式；完整性不足返回 422 和实际原因，成功返回经过 SHA-256 核验的 PCAPNG。上传只在版本对象及目录持久提交后返回精确确认，不下发对象存储密钥。限制与完整性口径见[原包归档与会话导出](../docs/原包归档与会话导出.md)。
+两端原包目录、详情、下载、逐包协议查看和会话导出分别位于 `/api/v1/packet-archives` 和 `/api/local/v1/packet-archives`，仅管理员可访问。`POST /packet-archives/session-export` 要求 CSRF、固定双端身份及明确导出模式，默认 TCP，UDP 可选快照。完整性不足返回 422 和实际原因，成功返回经过 SHA-256 核验的 PCAPNG。本机导出读取待主平台确认的归档，已确认的归档从平台读取。上传在指定版本对象及目录持久提交后返回精确确认。限制与完整性口径见[原包归档与会话导出](../docs/原包归档与会话导出.md)。
 
 留存试行范围的原包记录含 `capture.retention`。详情清单含 `retention_sessions`，按切片记录会话的策略修订、原始与保留字节及裁剪状态。完整导出遇到按策略裁剪的会话返回 422，原因含 `capture_policy_truncated`。采集器健康回执的 `last_seal` 提供最近有观察结果的封段摘要。
+
+分段归档的编码清单使用 `packet.archive.v2`，每帧声明 `codec`。会话接口通过内部索引选择帧，索引与源对象绑定。旧格式 `packet.archive.v1` 继续使用整段编码配置。
 
 租户用户 API 位于 `/api/v1/users`，仅允许当前有效管理员访问。创建密码为只写字段；编辑只接受角色、使用状态及预期修订，要求幂等键。用户权限、会话撤销、审计与公开回执同事务提交，跨租户目标或游标返回 404，冲突返回 409，到期回执返回 410。当前账号公开修订读取使用 `GET /api/v1/auth/account`，自身修改使用 `POST /api/v1/auth/password`，管理员重置其他成员使用 `POST /api/v1/users/{id}/password`。两种密码写入均验证操作者原密码、CSRF、预期修订和幂等键；持久验证预算为每人每 60 秒 10 次，过量返回 429 与 `Retry-After: 60`。成功原子撤销目标全部会话，失败回滚密码、撤销及审计。完整契约见[用户管理与权限](../docs/用户管理与权限.md)。
 

@@ -7313,7 +7313,7 @@
       "post": {
         "operationId": "exportPacketSession",
         "summary": "按准确双方身份导出完整 TCP 会话或明确快照",
-        "description": "管理员操作，同租户/探针/注册/捕获进程/配置及 Ethernet 网卡。原包读取期间持有目录共享锁，始终按指定对象版本校验。普通 TCP 握手、双向字节及 FIN 关闭核对；TFO、同时打开、RST 接受、分片、隧道、缺测或丢包不能取得严格完整资格。90 秒准备期限，两项全局并发；不会发包、合成握手或解密 TLS。PCAPNG section 注释保存结果、源对象版本与摘要；每包注释映射原归档和包 ID。",
+        "description": "管理员操作。同一租户、探针、注册代次、捕获进程、配置和 Ethernet 网卡。分段归档依据流位图读取指定对象版本的候选帧并核对摘要，索引缺失或损坏时从同版本对象重建。完整 TCP 导出核对握手、双向字节和 FIN 关闭。UDP 限快照。90 秒准备期限，最多两项并发。PCAPNG 节注释带对象版本和摘要，逐包注释带原归档与捕获序号。",
         "security": [
           {
             "SessionCookie": []
@@ -7486,7 +7486,8 @@
           "413": {
             "description": "最多 16 切片、256 MiB 输入、1 小时捕获窗口、1,048,576 扫描包或 64 MiB 输出预算超限"
           }
-        }
+        },
+        "x-required-role": "admin"
       }
     },
     "/api/v1/incidents": {
@@ -24079,6 +24080,14 @@
           "stored_sha256": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "zstd",
+              "none"
+            ],
+            "description": "分段归档声明本帧的实际编码。旧格式使用整段的编码设置。"
           }
         },
         "required": [
@@ -24096,7 +24105,10 @@
         "properties": {
           "schema": {
             "type": "string",
-            "const": "packet.archive.v1"
+            "enum": [
+              "packet.archive.v1",
+              "packet.archive.v2"
+            ]
           },
           "codec": {
             "type": "string",
@@ -24116,6 +24128,7 @@
             "type": "string",
             "enum": [
               "SpeedFastest",
+              "zstd-3",
               "none"
             ]
           },
@@ -24168,7 +24181,33 @@
           "stored_sha256",
           "frames"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "schema": {
+                  "const": "packet.archive.v2"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "frame_bytes": {
+                  "const": 1048576
+                },
+                "frames": {
+                  "minItems": 2,
+                  "items": {
+                    "required": [
+                      "codec"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
       "PacketArchiveManifest": {
         "type": "object",
@@ -24600,8 +24639,38 @@
               "maximum": 4095
             },
             "description": "按从外到内顺序；无 VLAN 时为空数组"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ],
+            "default": "tcp",
+            "description": "UDP 导出使用通信快照模式。"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "transport"
+              ],
+              "properties": {
+                "transport": {
+                  "const": "udp"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "mode": {
+                  "const": "snapshot"
+                }
+              }
+            }
+          }
+        ]
       },
       "PacketSessionReport": {
         "type": "object",

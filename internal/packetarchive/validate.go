@@ -14,6 +14,17 @@ import (
 
 // ValidateRawFile 在对象提交前核对原生 PCAPNG 内容与冻结捕获目录，格式仍由维护中的库解析。
 func ValidateRawFile(ctx context.Context, f *os.File, c Capture) (err error) {
+	return validateRawFile(ctx, f, c, false, nil)
+}
+
+func ValidateManifestRawFile(ctx context.Context, f *os.File, m Manifest) error {
+	if m.Validate() != nil {
+		return ErrIntegrity
+	}
+	return validateRawFile(ctx, f, m.Capture, m.Encoding.Schema == PackedSchema, nil)
+}
+
+func validateRawFile(ctx context.Context, f *os.File, c Capture, grouped bool, seen []byte) (err error) {
 	defer func() {
 		if recover() != nil {
 			err = ErrIntegrity
@@ -59,6 +70,9 @@ func ValidateRawFile(ctx context.Context, f *os.File, c Capture) (err error) {
 	if c.Retention != nil {
 		originalPackets = c.Retention.OriginalPackets
 	}
+	if grouped && seen == nil {
+		seen = make([]byte, bitmapSize(int(originalPackets)))
+	}
 	var first, last *time.Time
 	for {
 		if err = ctx.Err(); err != nil {
@@ -79,7 +93,16 @@ func ValidateRawFile(ctx context.Context, f *os.File, c Capture) (err error) {
 		if ci.Length > ci.CaptureLength {
 			truncated++
 		}
-		if packets > 1048576 || bytes > uint64(MaxSegmentBytes) || opts.PacketID == nil || *opts.PacketID <= previousID || *opts.PacketID > originalPackets {
+		if packets > 1048576 || bytes > uint64(MaxSegmentBytes) || opts.PacketID == nil || *opts.PacketID == 0 || *opts.PacketID > originalPackets {
+			return ErrIntegrity
+		}
+		if grouped {
+			position := int(*opts.PacketID - 1)
+			if hasFrame(seen, position) {
+				return ErrIntegrity
+			}
+			setFrame(seen, position)
+		} else if *opts.PacketID <= previousID {
 			return ErrIntegrity
 		}
 		previousID = *opts.PacketID

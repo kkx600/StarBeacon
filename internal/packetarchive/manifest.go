@@ -85,7 +85,8 @@ func (c Capture) Validate() error {
 }
 
 func (m Manifest) Validate() error {
-	if m.Capture.Validate() != nil || m.Encoding.Validate() != nil || m.Capture.PacketBytes > uint64(m.Encoding.RawBytes) || !m.validRetention() {
+	if m.Capture.Validate() != nil || m.Encoding.Validate() != nil || m.Capture.PacketBytes > uint64(m.Encoding.RawBytes) ||
+		m.Encoding.Schema == PackedSchema && m.Capture.Retention == nil || !m.validRetention() {
 		return ErrIntegrity
 	}
 	return nil

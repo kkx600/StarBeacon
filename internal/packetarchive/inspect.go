@@ -89,14 +89,33 @@ func InspectPacket(ctx context.Context, source RangeSource, m Manifest, staging 
 	if err = ReadRange(ctx, file, source, m.Encoding, 0, m.Encoding.RawBytes); err != nil {
 		return out, err
 	}
-	if err = ValidateRawFile(ctx, file, m.Capture); err != nil {
+	grouped := m.Encoding.Schema == PackedSchema
+	var retained []byte
+	if grouped {
+		retained = make([]byte, bitmapSize(int(m.Capture.Retention.OriginalPackets)))
+	}
+	if err = validateRawFile(ctx, file, m.Capture, grouped, retained); err != nil {
 		return out, err
+	}
+	var packetID uint64
+	if grouped {
+		// 保持目录序号为留存报文的捕获顺序，聚簇只改变对象内的物理位置。
+		rank := 0
+		for position := range int(m.Capture.Retention.OriginalPackets) {
+			if hasFrame(retained, position) {
+				rank++
+				if rank == number {
+					packetID = uint64(position + 1)
+					break
+				}
+			}
+		}
 	}
 	reader, err := pcapgo.NewNgReader(file, pcapgo.DefaultNgReaderOptions)
 	if err != nil {
 		return out, err
 	}
-	for index := 1; index <= number; index++ {
+	for index := uint64(1); index <= m.Capture.Packets; index++ {
 		if err = ctx.Err(); err != nil {
 			return PacketInspection{}, err
 		}
@@ -104,7 +123,7 @@ func InspectPacket(ctx context.Context, source RangeSource, m Manifest, staging 
 		if e != nil {
 			return PacketInspection{}, e
 		}
-		if index != number {
+		if grouped && *options.PacketID != packetID || !grouped && index != uint64(number) {
 			continue
 		}
 		_, manifestDigest, e := m.JSON()

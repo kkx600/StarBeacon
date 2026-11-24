@@ -2,8 +2,6 @@ package platform
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"net/http"
@@ -31,9 +29,8 @@ func (a *API) registerPacketArchives(m *http.ServeMux) {
 }
 
 func (a *API) exportPacketSession(w http.ResponseWriter, r *http.Request) {
-	var request packetarchive.SessionRequest
-	if len(r.URL.RawQuery) != 0 || httpapi.Decode(w, r, &request) != nil || request.Validate() != nil {
-		httpapi.Fail(w, r, 400, "invalid_session_export", "需要选择 1–16 个原包归档、导出模式及准确的双端 IP、端口和 MAC")
+	request, valid := httpapi.ReadPacketSession(w, r)
+	if !valid {
 		return
 	}
 	if a.Packets == nil || a.PacketStaging == "" {
@@ -62,79 +59,68 @@ func (a *API) exportPacketSession(w http.ResponseWriter, r *http.Request) {
 	defer output.Close()
 	defer os.Remove(output.Name())
 	var report packetarchive.SessionReport
-	err = a.DB.WithPacketArchives(ctx, u, request.ArchiveIDs, func(rows []store.PacketArchive) error {
-		inputs := make([]packetarchive.SessionInput, 0, len(rows))
+	var incomplete error
+	err = a.DB.WithPacketFlowIndexes(ctx, u, request.ArchiveIDs, func(rows []store.PacketArchive, save func(string, packetarchive.IndexRecord) error) error {
 		var total int64
 		for _, row := range rows {
 			total += row.Manifest.Encoding.RawBytes
-			if total > packetarchive.MaxSessionInputBytes {
-				return packetarchive.ErrLimit
+		}
+		if total > packetarchive.MaxSessionInputBytes {
+			return packetarchive.ErrLimit
+		}
+		inputs := make([]packetarchive.SessionInput, 0, len(rows))
+		for _, row := range rows {
+			source := func(ctx context.Context, start, length int64) (io.ReadCloser, error) {
+				return a.Packets.Range(ctx, row.ObjectKey, row.ObjectVersion, start, length)
 			}
-			file, e := os.CreateTemp(a.PacketStaging, ".session-source-")
+			if row.Manifest.Encoding.Schema == packetarchive.PackedSchema {
+				index, e := packetarchive.ResolveSegmentIndex(ctx, row.Index, row.Manifest, source, a.PacketStaging, func(rebuilt packetarchive.IndexRecord) error { return save(row.ID, rebuilt) })
+				if e != nil {
+					return e
+				}
+				inputs = append(inputs, packetarchive.SessionInput{Manifest: row.Manifest, ObjectVersion: row.ObjectVersion, Range: source, Index: &index})
+				continue
+			}
+			file, e := packetarchive.StageSessionSource(ctx, a.PacketStaging, row.Manifest, source)
 			if e != nil {
 				return e
 			}
 			defer file.Close()
 			defer os.Remove(file.Name())
-			source := func(ctx context.Context, start, length int64) (io.ReadCloser, error) {
-				return a.Packets.Range(ctx, row.ObjectKey, row.ObjectVersion, start, length)
-			}
-			if e = packetarchive.ReadRange(ctx, file, source, row.Manifest.Encoding, 0, row.Manifest.Encoding.RawBytes); e != nil {
-				return e
-			}
 			inputs = append(inputs, packetarchive.SessionInput{Manifest: row.Manifest, ObjectVersion: row.ObjectVersion, File: file})
 		}
 		var e error
 		report, e = packetarchive.ExportSession(ctx, output, request, inputs)
+		if errors.Is(e, packetarchive.ErrSessionIncomplete) {
+			incomplete = e
+			return nil
+		}
 		return e
 	})
+	if err == nil {
+		err = incomplete
+	}
 	if err != nil {
-		switch {
-		case errors.Is(err, packetarchive.ErrSessionIncomplete):
-			message := "所选原包未满足完整会话条件。请查看缺口原因；需要快照时请选择快照模式重新提交"
-			if request.Mode == "snapshot" {
-				message = "所选原包没有可导出的匹配报文，请核对双端身份和切片范围"
-			}
-			httpapi.JSON(w, 422, map[string]any{"code": "session_incomplete", "message": message, "report": report, "request_id": httpapi.RequestID(r)})
-		case errors.Is(err, packetarchive.ErrLimit):
-			httpapi.Fail(w, r, 413, "session_export_budget", "会话导出超过处理预算：最多 16 个切片、256 MiB 输入、1 小时捕获窗口与 64 MiB 输出")
-		case errors.Is(err, pgx.ErrNoRows):
+		if httpapi.PacketSessionFailure(w, r, request, report, err) {
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
 			operationError(w, r, err)
-		default:
+		} else {
 			httpapi.Fail(w, r, 503, "session_source_unconfirmed", "原包身份、指定对象版本或通信内容无法完整核验，请重新读取目录")
 		}
 		return
 	}
-	if _, err = output.Seek(0, io.SeekStart); err != nil {
-		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "会话导出制品不可读取")
-		return
-	}
-	hash := sha256.New()
-	size, err := io.Copy(hash, output)
-	if err != nil || ctx.Err() != nil {
-		httpapi.Fail(w, r, 503, "session_export_unconfirmed", "会话导出未完成，请稍后重试")
-		return
-	}
 	// 发送前再核对当前登录账号和每个源对象；准备完成不等于有权继续下载。
-	for _, id := range request.ArchiveIDs {
-		if _, err = a.DB.PacketArchive(ctx, u, id); err != nil {
-			operationError(w, r, err)
-			return
+	httpapi.SendPacketSession(ctx, w, r, output, request.ArchiveIDs[0], report.Completeness, func() bool {
+		for _, id := range request.ArchiveIDs {
+			if _, err := a.DB.PacketArchive(ctx, u, id); err != nil {
+				operationError(w, r, err)
+				return false
+			}
 		}
-	}
-	if _, err = output.Seek(0, io.SeekStart); err != nil {
-		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "会话导出制品不可读取")
-		return
-	}
-	w.Header().Set("Content-Type", "application/x-pcapng")
-	w.Header().Set("Content-Disposition", `attachment; filename="session-`+request.ArchiveIDs[0]+`.pcapng"`)
-	w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Content-SHA256", hex.EncodeToString(hash.Sum(nil)))
-	w.Header().Set("X-Session-Completeness", report.Completeness)
-	if _, err = io.Copy(w, output); err != nil {
-		panic(http.ErrAbortHandler)
-	}
+		return true
+	})
 }
 func (a *API) packetArchives(w http.ResponseWriter, r *http.Request) {
 	limit, ok := requestListLimit(w, r)
@@ -199,7 +185,7 @@ func (a *API) downloadPacketArchive(w http.ResponseWriter, r *http.Request) {
 		return a.Packets.Range(ctx, row.ObjectKey, row.ObjectVersion, start, length)
 	}
 	if err = packetarchive.ReadRange(ctx, file, source, row.Manifest.Encoding, 0, row.Manifest.Encoding.RawBytes); err == nil {
-		err = packetarchive.ValidateRawFile(ctx, file, row.Manifest.Capture)
+		err = packetarchive.ValidateManifestRawFile(ctx, file, row.Manifest)
 	}
 	if err != nil {
 		httpapi.Fail(w, r, 503, "packet_object_unconfirmed", "指定原包对象版本无法完整核验，请稍后重试")

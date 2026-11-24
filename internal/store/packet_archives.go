@@ -19,15 +19,16 @@ import (
 var ErrPacketBusy = errors.New("原包归档正在由其他传输处理")
 
 type PacketArchive struct {
-	ID             string                 `json:"id"`
-	State          string                 `json:"state"`
-	Manifest       packetarchive.Manifest `json:"manifest"`
-	ManifestSHA256 string                 `json:"manifest_sha256"`
-	ObjectKey      string                 `json:"-"`
-	ObjectVersion  string                 `json:"object_version"`
-	LeaseToken     string                 `json:"-"`
-	CreatedAt      time.Time              `json:"created_at"`
-	ExpiresAt      time.Time              `json:"expires_at"`
+	ID             string                    `json:"id"`
+	State          string                    `json:"state"`
+	Manifest       packetarchive.Manifest    `json:"manifest"`
+	Index          packetarchive.IndexRecord `json:"-"`
+	ManifestSHA256 string                    `json:"manifest_sha256"`
+	ObjectKey      string                    `json:"-"`
+	ObjectVersion  string                    `json:"object_version"`
+	LeaseToken     string                    `json:"-"`
+	CreatedAt      time.Time                 `json:"created_at"`
+	ExpiresAt      time.Time                 `json:"expires_at"`
 }
 
 func (v PacketArchive) Acknowledgement() packetarchive.Acknowledgement {
@@ -128,7 +129,10 @@ func (p *Postgres) RegisterPacketObject(ctx context.Context, id transport.Sensor
 		return nil
 	})
 }
-func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.SensorIdentity, row PacketArchive) (v PacketArchive, err error) {
+func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.SensorIdentity, row PacketArchive, index ...packetarchive.IndexRecord) (v PacketArchive, err error) {
+	if len(index) > 1 || (row.Manifest.Encoding.Schema == packetarchive.PackedSchema) != (len(index) == 1) {
+		return v, packetarchive.ErrIntegrity
+	}
 	err = p.TenantTx(ctx, id.TenantID, func(tx pgx.Tx) error {
 		if e := packetSensor(ctx, tx, id); e != nil {
 			return e
@@ -141,6 +145,9 @@ func (p *Postgres) CompletePacketArchive(ctx context.Context, id transport.Senso
 			return ErrConflict
 		}
 		v, e = scanPacketArchive(tx.QueryRow(ctx, `SELECT `+packetArchiveColumns+` FROM packet_archives WHERE tenant_id=$1 AND id=$2`, id.TenantID, row.ID))
+		if e == nil && len(index) == 1 {
+			e = setPacketFlowIndex(ctx, tx, v, index[0])
+		}
 		return e
 	})
 	return v, err
@@ -257,6 +264,46 @@ func (p *Postgres) WithPacketArchives(ctx context.Context, u model.Principal, id
 		return packetarchive.ErrIntegrity
 	}
 	return p.withPacketArchives(ctx, u, ids, func(_ pgx.Tx, rows []PacketArchive) error { return read(rows) })
+}
+
+func setPacketFlowIndex(ctx context.Context, tx pgx.Tx, row PacketArchive, index packetarchive.IndexRecord) error {
+	if _, err := index.Decode(row.Manifest); err != nil {
+		return err
+	}
+	_, err := tx.Exec(ctx, `INSERT INTO packet_archive_flow_indexes(tenant_id,archive_id,object_version,manifest_sha256,index_sha256,data)
+		VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(tenant_id,archive_id) DO UPDATE
+		SET object_version=excluded.object_version,manifest_sha256=excluded.manifest_sha256,index_sha256=excluded.index_sha256,data=excluded.data`,
+		row.Manifest.Capture.TenantID, row.ID, row.ObjectVersion, row.ManifestSHA256, index.SHA256, index.Data)
+	return err
+}
+
+// WithPacketFlowIndexes 共享归档读取租约。派生索引单独写入，重建不需要升级原包行锁。
+func (p *Postgres) WithPacketFlowIndexes(ctx context.Context, u model.Principal, ids []string, read func([]PacketArchive, func(string, packetarchive.IndexRecord) error) error) error {
+	if read == nil {
+		return packetarchive.ErrIntegrity
+	}
+	return p.withPacketArchives(ctx, u, ids, func(tx pgx.Tx, rows []PacketArchive) error {
+		for i := range rows {
+			row := &rows[i]
+			if row.Manifest.Encoding.Schema != packetarchive.PackedSchema {
+				continue
+			}
+			err := tx.QueryRow(ctx, `SELECT data,index_sha256 FROM packet_archive_flow_indexes
+				WHERE tenant_id=$1 AND archive_id=$2 AND object_version=$3 AND manifest_sha256=$4`, u.TenantID,
+				row.ID, row.ObjectVersion, row.ManifestSHA256).Scan(&row.Index.Data, &row.Index.SHA256)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			}
+		}
+		return read(rows, func(id string, index packetarchive.IndexRecord) error {
+			for _, row := range rows {
+				if row.ID == id {
+					return setPacketFlowIndex(ctx, tx, row, index)
+				}
+			}
+			return packetarchive.ErrIntegrity
+		})
+	})
 }
 func (p *Postgres) withPacketArchives(ctx context.Context, u model.Principal, ids []string, read func(pgx.Tx, []PacketArchive) error) error {
 	if u.Role != "admin" || len(ids) < 1 || len(ids) > packetarchive.MaxSessionInputs || read == nil {

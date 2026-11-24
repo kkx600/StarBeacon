@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	"github.com/kkx600/StarBeacon/internal/agent"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
@@ -68,7 +70,7 @@ func verifyNativePacketArchive(t *testing.T, ctx context.Context, platformHTTP *
 	require(t, os.WriteFile(path, original, 0600))
 	input, err := os.Open(path)
 	require(t, err)
-	validateErr := packetarchive.ValidateRawFile(ctx, input, capture)
+	validateErr := packetarchive.ValidateManifestRawFile(ctx, input, confirmed.Manifest)
 	input.Close()
 	require(t, validateErr)
 	metadata, err := replay.Inspect(ctx, path)
@@ -114,6 +116,49 @@ func nativeRetentionPolicy(t *testing.T, path string, revision uint64, mode stri
 	require(t, err)
 	require(t, os.WriteFile(path+".new", raw, 0600))
 	require(t, os.Rename(path+".new", path))
+}
+
+func verifyNativeIndexedSnapshot(t *testing.T, ctx context.Context, platformHTTP *liveHTTP, archive store.PacketArchive, flow packetarchive.RetentionSession, port uint16) {
+	t.Helper()
+	var inspection packetarchive.PacketInspection
+	platformHTTP.request("GET", "/packet-archives/"+archive.ID+"/packets/"+strconv.FormatUint(flow.FirstPacket, 10), "", nil, &inspection, 200)
+	raw, err := base64.StdEncoding.DecodeString(inspection.Packet)
+	require(t, err)
+	packet := gopacket.NewPacket(raw, layers.LayerTypeEthernet, gopacket.Default)
+	ethernet, etherOK := packet.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
+	tcp, tcpOK := packet.Layer(layers.LayerTypeTCP).(*layers.TCP)
+	if !etherOK || !tcpOK || uint16(tcp.SrcPort) != port || flow.VLAN != "" {
+		t.Fatal("未从隔离网络捕获该会话的 Ethernet/TCP 首包")
+	}
+	client, server := flow.A, flow.B
+	if client.Port() != port {
+		client, server = server, client
+	}
+	query := packetarchive.SessionRequest{ArchiveIDs: []string{archive.ID}, Mode: "snapshot", ClientIP: client.Addr().String(), ClientPort: client.Port(), ServerIP: server.Addr().String(), ServerPort: server.Port(), ClientMAC: ethernet.SrcMAC.String(), ServerMAC: ethernet.DstMAC.String(), VLANs: []uint16{}}
+	body, err := json.Marshal(query)
+	require(t, err)
+	request, err := http.NewRequestWithContext(ctx, "POST", platformHTTP.origin+platformHTTP.prefix+"/packet-archives/session-export", bytes.NewReader(body))
+	require(t, err)
+	request.Header.Set("Origin", platformHTTP.origin)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-CSRF-Token", platformHTTP.csrf)
+	response, err := platformHTTP.client.Do(request)
+	require(t, err)
+	defer response.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(response.Body, packetarchive.MaxSegmentBytes+1))
+	require(t, err)
+	if response.StatusCode != 200 || response.Header.Get("X-Session-Completeness") != "snapshot" ||
+		response.Header.Get("X-Content-SHA256") != packetarchive.Digest(data) || !bytes.Contains(data, []byte("/starbeacon/retention")) {
+		t.Fatalf("隔离网络会话取回缺少真实 HTTP 报文或校验证据，响应 %d", response.StatusCode)
+	}
+	reader, err := pcapgo.NewNgReader(bytes.NewReader(data), pcapgo.DefaultNgReaderOptions)
+	require(t, err)
+	var report packetarchive.SessionReport
+	require(t, json.Unmarshal([]byte(reader.SectionInfo().Comment), &report))
+	if report.PacketBytes != flow.RetainedBytes || len(report.Sources) != 1 || report.Sources[0].ObjectVersion != archive.ObjectVersion {
+		t.Fatalf("隔离网络会话与保存的捕获内容不一致，导出 %d／留存 %d 字节", report.PacketBytes, flow.RetainedBytes)
+	}
+	t.Logf("分段取回实测 隔离 Docker 网络的实际 HTTP 会话 %d 包、%d 字节，PCAPNG 摘要与对象版本已核验", report.Packets, report.PacketBytes)
 }
 
 func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, platformHTTP *liveHTTP, sensor, policy string) {
@@ -180,7 +225,7 @@ func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, pla
 		})
 		capture := archive.Manifest.Capture
 		summary := capture.Retention
-		if summary == nil || summary.PolicyRevision != revision || summary.Mode != mode || summary.NetworkDomain != "docker_capture_pilot" ||
+		if archive.Manifest.Encoding.Schema != packetarchive.PackedSchema || summary == nil || summary.PolicyRevision != revision || summary.Mode != mode || summary.NetworkDomain != "docker_capture_pilot" ||
 			summary.Degradation != "" || capture.KernelDrops == nil || *capture.KernelDrops != 0 {
 			t.Fatalf("实际归档的模式、修订或捕获计数有误 %+v／%+v", summary, capture)
 		}
@@ -205,6 +250,7 @@ func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, pla
 			if normal.State != "retained" || normal.RetainedBytes != normal.OriginalBytes {
 				t.Fatalf("完整保存遗漏了实际报文 %+v", normal)
 			}
+			verifyNativeIndexedSnapshot(t, ctx, platformHTTP, archive, normal, port)
 		case packetarchive.RetentionAlertOnly:
 			if normal.State != "metadata_only" || normal.RetainedBytes != 0 || alerted.State != "retained" ||
 				alerted.OriginalBytes < bodyBytes || alerted.RetainedBytes != alerted.OriginalBytes {

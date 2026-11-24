@@ -1180,6 +1180,177 @@
         "description": "平台以创建时间与 ID 游标每页最多 50 条；本机仅列出最近 200 条重试记录，正式留存由平台管理。存储未配置单独返回 available=false，不表示已产生归档。"
       }
     },
+    "/api/local/v1/packet-archives/session-export": {
+      "post": {
+        "operationId": "exportLocalPacketSession",
+        "summary": "按准确双方身份导出完整 TCP 会话或明确快照",
+        "description": "本机管理员操作。读取已定稿且仍待主平台持久确认的捕获段。分段归档只读取并核验会话候选帧，损坏索引从同一制品重建。支持完整 TCP 会话和明确选择的通信快照，UDP 限快照。与本机原包读取共享两项并发，准备期限 30 秒。",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PacketSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "原包尚未定稿、已确认回收或目录状态已变化",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "具体原因见 code/message；失败或结果未知时保留原件。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "含真实原始报文与源对象清单的 PCAPNG；严格条件不足不会返回文件",
+            "headers": {
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 24,
+                  "maximum": 67108864
+                }
+              },
+              "X-Content-SHA256": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "X-Session-Completeness": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "full_session",
+                    "snapshot"
+                  ]
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/x-pcapng": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "所选原包没有匹配报文或未满足严格完整条件；不提供降级文件",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "code",
+                    "message",
+                    "report",
+                    "request_id"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "const": "session_incomplete"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "report": {
+                      "$ref": "#/components/schemas/PacketSessionReport"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "最多 16 切片、256 MiB 输入、1 小时捕获窗口、1,048,576 扫描包或 64 MiB 输出预算超限"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
     "/api/local/v1/packet-archives/{id}": {
       "get": {
         "summary": "读取原包归档详情",
@@ -2760,6 +2931,14 @@
           "stored_sha256": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "zstd",
+              "none"
+            ],
+            "description": "分段归档声明本帧的实际编码。旧格式使用整段的编码设置。"
           }
         },
         "required": [
@@ -2777,7 +2956,10 @@
         "properties": {
           "schema": {
             "type": "string",
-            "const": "packet.archive.v1"
+            "enum": [
+              "packet.archive.v1",
+              "packet.archive.v2"
+            ]
           },
           "codec": {
             "type": "string",
@@ -2797,6 +2979,7 @@
             "type": "string",
             "enum": [
               "SpeedFastest",
+              "zstd-3",
               "none"
             ]
           },
@@ -2849,7 +3032,33 @@
           "stored_sha256",
           "frames"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "schema": {
+                  "const": "packet.archive.v2"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "frame_bytes": {
+                  "const": 1048576
+                },
+                "frames": {
+                  "minItems": 2,
+                  "items": {
+                    "required": [
+                      "codec"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
       "PacketArchiveManifest": {
         "type": "object",
@@ -4528,6 +4737,295 @@
         ],
         "additionalProperties": false,
         "description": "切片内的双向会话记录。仅元数据的会话不含可用原包。"
+      },
+      "PacketSessionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "archive_ids",
+          "mode",
+          "client_ip",
+          "client_port",
+          "server_ip",
+          "server_port",
+          "client_mac",
+          "server_mac",
+          "vlans"
+        ],
+        "properties": {
+          "archive_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "maxLength": 64
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "full_session",
+              "snapshot"
+            ]
+          },
+          "client_ip": {
+            "type": "string",
+            "maxLength": 45,
+            "description": "无区域标识的规范 IPv4 或 IPv6 地址"
+          },
+          "client_port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "server_ip": {
+            "type": "string",
+            "maxLength": 45
+          },
+          "server_port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "client_mac": {
+            "type": "string",
+            "pattern": "^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$"
+          },
+          "server_mac": {
+            "type": "string",
+            "pattern": "^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$"
+          },
+          "vlans": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4095
+            },
+            "description": "按从外到内顺序；无 VLAN 时为空数组"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ],
+            "default": "tcp",
+            "description": "UDP 导出使用通信快照模式。"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "transport"
+              ],
+              "properties": {
+                "transport": {
+                  "const": "udp"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "mode": {
+                  "const": "snapshot"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PacketSessionReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "request",
+          "sources",
+          "completeness",
+          "handshake_status",
+          "bidirectional_status",
+          "payload_coverage",
+          "payload_visibility",
+          "termination_status",
+          "checksum_validation",
+          "packets",
+          "packet_bytes",
+          "first_packet_at",
+          "last_packet_at",
+          "reasons"
+        ],
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "packet.session.v1"
+          },
+          "request": {
+            "$ref": "#/components/schemas/PacketSessionRequest"
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "object_version",
+                "raw_sha256",
+                "manifest_sha256"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                  "maxLength": 64
+                },
+                "object_version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "raw_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "manifest_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "retention": {
+                  "$ref": "#/components/schemas/PacketSessionRetention"
+                }
+              }
+            }
+          },
+          "completeness": {
+            "type": "string",
+            "enum": [
+              "full_session",
+              "snapshot"
+            ]
+          },
+          "handshake_status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "not_observed"
+            ]
+          },
+          "bidirectional_status": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "one_sided"
+            ]
+          },
+          "payload_coverage": {
+            "type": "string",
+            "enum": [
+              "contiguous_verified",
+              "gap_detected",
+              "unknown"
+            ]
+          },
+          "payload_visibility": {
+            "type": "string",
+            "const": "unknown"
+          },
+          "termination_status": {
+            "type": "string",
+            "enum": [
+              "not_observed",
+              "fin_verified",
+              "rst_observed",
+              "active_at_cutoff"
+            ]
+          },
+          "checksum_validation": {
+            "type": "string",
+            "const": "not_checked"
+          },
+          "packets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "packet_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "first_packet_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_packet_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z_]{1,80}$"
+            }
+          }
+        }
+      },
+      "PacketSessionRetention": {
+        "type": "object",
+        "properties": {
+          "network_domain": {
+            "type": "string",
+            "pattern": "^(?:[a-z0-9][a-z0-9_-]{0,63})?$",
+            "description": "策略不可读取且没有可确认修订时为空"
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "retained",
+              "policy_truncated",
+              "metadata_only"
+            ]
+          },
+          "original_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "retained_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          }
+        },
+        "required": [
+          "network_domain",
+          "policy_revision",
+          "state",
+          "original_bytes",
+          "retained_bytes"
+        ],
+        "additionalProperties": false
       }
     }
   }

@@ -84,7 +84,7 @@ func retainedRecord(t *testing.T, s *Spool, id string) (LocalRecord, *os.File) {
 	if err := ReadRange(ctx, file, RangeFile(stored), index, 0, index.RawBytes); err != nil {
 		t.Fatal(err)
 	}
-	if err := ValidateRawFile(ctx, file, row.Capture); err != nil {
+	if err := ValidateManifestRawFile(ctx, file, *row.Manifest); err != nil {
 		t.Fatal(err)
 	}
 	raw, sha, err := row.Manifest.JSON()
@@ -219,7 +219,7 @@ func TestSmartRetentionKeepsFirstMirrorWithinTheWindow(t *testing.T) {
 			t.Fatal("去重改变了第一副本、超窗口重传或原包序号", want, err)
 		}
 	}
-	report, err := ExportSession(context.Background(), io.Discard, sessionRequest(row.ID), []SessionInput{{*row.Manifest, "retention_test_version", final}})
+	report, err := ExportSession(context.Background(), io.Discard, sessionRequest(row.ID), []SessionInput{{Manifest: *row.Manifest, ObjectVersion: "retention_test_version", File: final}})
 	if !errors.Is(err, ErrSessionIncomplete) || !slices.Contains(report.Reasons, "capture_policy_truncated") {
 		t.Fatalf("去重后的会话缺少保留标记：%+v %v", report, err)
 	}

@@ -40,10 +40,11 @@ type SessionRequest struct {
 	ClientMAC  string   `json:"client_mac"`
 	ServerMAC  string   `json:"server_mac"`
 	VLANs      []uint16 `json:"vlans"`
+	Transport  string   `json:"transport,omitempty"`
 }
 
 func (r *SessionRequest) UnmarshalJSON(raw []byte) error {
-	fields := []string{"archive_ids", "mode", "client_ip", "client_port", "server_ip", "server_port", "client_mac", "server_mac", "vlans"}
+	fields := []string{"archive_ids", "mode", "client_ip", "client_port", "server_ip", "server_port", "client_mac", "server_mac", "vlans", "transport"}
 	if contract.JSONFields(string(raw), fields, 32768) != nil {
 		return ErrIntegrity
 	}
@@ -63,6 +64,9 @@ func (r *SessionRequest) UnmarshalJSON(raw []byte) error {
 
 func (r SessionRequest) Validate() error {
 	if len(r.ArchiveIDs) < 1 || len(r.ArchiveIDs) > MaxSessionInputs || r.Mode != "full_session" && r.Mode != "snapshot" || r.ClientPort == 0 || r.ServerPort == 0 || len(r.VLANs) > 8 {
+		return ErrIntegrity
+	}
+	if r.Transport != "" && r.Transport != "tcp" && (r.Transport != "udp" || r.Mode != "snapshot") {
 		return ErrIntegrity
 	}
 	seen := map[string]bool{}
@@ -99,6 +103,9 @@ type SessionInput struct {
 	Manifest      Manifest
 	ObjectVersion string
 	File          *os.File
+	Range         RangeSource
+	Index         *SegmentIndex
+	packets       []retrievedPacket
 }
 type SessionReference struct {
 	ID             string            `json:"id"`
@@ -146,13 +153,14 @@ type sessionHalf struct {
 	bytes     int64
 }
 type sessionProof struct {
-	report    SessionReport
-	half      [2]sessionHalf
-	synAck    bool
-	handshake bool
-	reset     bool
-	macs      [2][]byte
-	ips       [2]netip.Addr
+	report        SessionReport
+	half          [2]sessionHalf
+	synAck        bool
+	handshake     bool
+	reset         bool
+	macs          [2][]byte
+	ips           [2]netip.Addr
+	udpDirections [2]bool
 }
 
 func (p *sessionProof) reason(code string) {
@@ -174,14 +182,20 @@ func prepareSession(ctx context.Context, request SessionRequest, inputs []Sessio
 	p.macs[1], _ = net.ParseMAC(request.ServerMAC)
 	p.ips[0], _ = netip.ParseAddr(request.ClientIP)
 	p.ips[1], _ = netip.ParseAddr(request.ServerIP)
-	target, _ := orderedFlow(netip.AddrPortFrom(p.ips[0], request.ClientPort), netip.AddrPortFrom(p.ips[1], request.ServerPort), "tcp", vlanScope(request.VLANs))
+	protocol := request.Transport
+	if protocol == "" {
+		protocol = "tcp"
+	}
+	target, _ := orderedFlow(netip.AddrPortFrom(p.ips[0], request.ClientPort), netip.AddrPortFrom(p.ips[1], request.ServerPort), protocol, vlanScope(request.VLANs))
 	seen := map[string]bool{}
 	var total int64
+	var indexedCount uint64
+	var indexedBytes int64
 	base := ordered[0].Manifest.Capture
 	var domain string
 	for i, v := range ordered {
 		c := v.Manifest.Capture
-		if v.File == nil || v.Manifest.Validate() != nil || !ValidObjectVersion(v.ObjectVersion) || !slices.Contains(request.ArchiveIDs, c.ID) || seen[c.ID] || c.TenantID != base.TenantID || c.SensorID != base.SensorID || c.RegistrationID != base.RegistrationID || c.RunID != base.RunID || c.Interface != base.Interface || c.InterfaceMAC != base.InterfaceMAC || c.SettingsSHA256 != base.SettingsSHA256 {
+		if v.File == nil && v.Index == nil || v.Manifest.Validate() != nil || !ValidObjectVersion(v.ObjectVersion) || !slices.Contains(request.ArchiveIDs, c.ID) || seen[c.ID] || c.TenantID != base.TenantID || c.SensorID != base.SensorID || c.RegistrationID != base.RegistrationID || c.RunID != base.RunID || c.Interface != base.Interface || c.InterfaceMAC != base.InterfaceMAC || c.SettingsSHA256 != base.SettingsSHA256 {
 			return nil, nil, ErrIntegrity
 		}
 		seen[c.ID] = true
@@ -209,24 +223,13 @@ func prepareSession(ctx context.Context, request SessionRequest, inputs []Sessio
 		if c.VLANOffloadPackets > 0 {
 			p.reason("vlan_bytes_unavailable")
 		}
-		if _, e := v.File.Seek(0, io.SeekStart); e != nil {
-			return nil, nil, e
-		}
-		info, e := v.File.Stat()
-		if e != nil {
-			return nil, nil, e
-		}
-		if !info.Mode().IsRegular() || info.Size() != v.Manifest.Encoding.RawBytes {
-			return nil, nil, ErrIntegrity
-		}
-		hash := sha256.New()
-		if _, e := io.Copy(hash, contextReader{ctx: ctx, reader: v.File}); e != nil {
-			return nil, nil, e
-		}
-		if hex.EncodeToString(hash.Sum(nil)) != v.Manifest.Encoding.RawSHA256 {
-			return nil, nil, ErrIntegrity
-		}
-		if e := ValidateRawFile(ctx, v.File, c); e != nil {
+		if v.Index != nil {
+			packets, e := readIndexedSession(ctx, v, target, p, &indexedCount, &indexedBytes)
+			if e != nil {
+				return nil, nil, e
+			}
+			ordered[i].packets = packets
+		} else if e := verifySessionFile(ctx, v); e != nil {
 			return nil, nil, e
 		}
 		_, manifestSHA, e := v.Manifest.JSON()
@@ -258,6 +261,27 @@ func prepareSession(ctx context.Context, request SessionRequest, inputs []Sessio
 	return ordered, p, nil
 }
 
+func verifySessionFile(ctx context.Context, input SessionInput) error {
+	if _, err := input.File.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	info, err := input.File.Stat()
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || info.Size() != input.Manifest.Encoding.RawBytes {
+		return ErrIntegrity
+	}
+	hash := sha256.New()
+	if _, err = io.Copy(hash, contextReader{ctx: ctx, reader: input.File}); err != nil {
+		return err
+	}
+	if hex.EncodeToString(hash.Sum(nil)) != input.Manifest.Encoding.RawSHA256 {
+		return ErrIntegrity
+	}
+	return ValidateManifestRawFile(ctx, input.File, input.Manifest)
+}
+
 type contextReader struct {
 	ctx    context.Context
 	reader io.Reader
@@ -273,7 +297,56 @@ func (r contextReader) Read(b []byte) (int, error) {
 // walkSession 使用锁版 PCAPNG 读取器；零拷贝报文仅在当前回调内有效。
 func walkSession(ctx context.Context, inputs []SessionInput, proof *sessionProof, observe bool, write func([]byte, gopacket.CaptureInfo, pcapgo.NgPacketOptions, Capture) error) error {
 	var scanned uint64
+	visit := func(raw []byte, ci gopacket.CaptureInfo, opts pcapgo.NgPacketOptions, capture Capture) error {
+		scanned++
+		if scanned > maxSessionPackets {
+			return ErrLimit
+		}
+		tcp, direction, matched := proof.match(raw, observe)
+		if !matched {
+			return nil
+		}
+		if observe {
+			proof.report.Packets++
+			proof.report.PacketBytes += uint64(len(raw))
+			if proof.report.PacketBytes > uint64(MaxSegmentBytes-65536) {
+				return ErrLimit
+			}
+			stamp := ci.Timestamp.UTC()
+			if proof.report.FirstPacketAt == nil || stamp.Before(*proof.report.FirstPacketAt) {
+				proof.report.FirstPacketAt = &stamp
+			}
+			if proof.report.LastPacketAt == nil || stamp.After(*proof.report.LastPacketAt) {
+				proof.report.LastPacketAt = &stamp
+			}
+			if ci.CaptureLength < ci.Length {
+				proof.reason("selected_packet_truncated")
+			}
+			if tcp != nil {
+				if err := proof.observe(tcp, direction); err != nil {
+					return err
+				}
+			} else {
+				proof.udpDirections[direction] = true
+			}
+		}
+		if write != nil {
+			return write(raw, ci, opts, capture)
+		}
+		return nil
+	}
 	for _, input := range inputs {
+		if input.Index != nil {
+			for _, packet := range input.packets {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+				if err := visit(packet.raw, packet.info, packet.options, input.Manifest.Capture); err != nil {
+					return err
+				}
+			}
+			continue
+		}
 		if _, e := input.File.Seek(0, io.SeekStart); e != nil {
 			return e
 		}
@@ -292,38 +365,8 @@ func walkSession(ctx context.Context, inputs []SessionInput, proof *sessionProof
 			if e != nil {
 				return e
 			}
-			scanned++
-			if scanned > maxSessionPackets {
-				return ErrLimit
-			}
-			tcp, direction, matched := proof.match(raw, observe)
-			if !matched {
-				continue
-			}
-			if observe {
-				proof.report.Packets++
-				proof.report.PacketBytes += uint64(len(raw))
-				if proof.report.PacketBytes > uint64(MaxSegmentBytes-65536) {
-					return ErrLimit
-				}
-				stamp := ci.Timestamp.UTC()
-				if proof.report.FirstPacketAt == nil || stamp.Before(*proof.report.FirstPacketAt) {
-					proof.report.FirstPacketAt = &stamp
-				}
-				if proof.report.LastPacketAt == nil || stamp.After(*proof.report.LastPacketAt) {
-					proof.report.LastPacketAt = &stamp
-				}
-				if ci.CaptureLength < ci.Length {
-					proof.reason("selected_packet_truncated")
-				}
-				if e = proof.observe(tcp, direction); e != nil {
-					return e
-				}
-			}
-			if write != nil {
-				if e = write(raw, ci, opts, input.Manifest.Capture); e != nil {
-					return e
-				}
+			if e = visit(raw, ci, opts, input.Manifest.Capture); e != nil {
+				return e
 			}
 		}
 	}
@@ -383,11 +426,15 @@ func (p *sessionProof) match(raw []byte, observe bool) (*layers.TCP, int, bool) 
 		}
 		return nil, 0, false
 	}
+	ports := [2]uint16{p.report.Request.ClientPort, p.report.Request.ServerPort}
+	if p.report.Request.Transport == "udp" {
+		udp, ok := packet.Layer(layers.LayerTypeUDP).(*layers.UDP)
+		return nil, direction, ok && uint16(udp.SrcPort) == ports[direction] && uint16(udp.DstPort) == ports[1-direction]
+	}
 	tcp, ok := packet.Layer(layers.LayerTypeTCP).(*layers.TCP)
 	if !ok {
 		return nil, 0, false
 	}
-	ports := [2]uint16{p.report.Request.ClientPort, p.report.Request.ServerPort}
 	if uint16(tcp.SrcPort) != ports[direction] || uint16(tcp.DstPort) != ports[1-direction] {
 		return nil, 0, false
 	}
@@ -465,6 +512,15 @@ func (p *sessionProof) observe(tcp *layers.TCP, direction int) error {
 	return nil
 }
 func (p *sessionProof) finish() {
+	if p.report.Request.Transport == "udp" {
+		if p.udpDirections[0] && p.udpDirections[1] {
+			p.report.Bidirectional = "observed"
+		}
+		if p.report.Packets == 0 {
+			p.reason("no_matching_packets")
+		}
+		return
+	}
 	if p.half[0].syn && p.half[1].syn {
 		p.report.Bidirectional = "observed"
 	}

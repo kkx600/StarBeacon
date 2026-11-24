@@ -43,12 +43,15 @@ type LocalRecord struct {
 	Sequence        uint64           `json:"sequence"`
 	Acknowledgement *Acknowledgement `json:"acknowledgement,omitempty"`
 	Seal            *sealPlan        `json:"-"`
+	Index           IndexRecord      `json:"-"`
 }
 
 // 冻结的内部策略随任务持久化，不经过目录 API 分发本机地址配置。
 type persistentPacketRecord struct {
 	LocalRecord
-	Seal *sealPlan `json:"seal_plan,omitempty"`
+	Seal        *sealPlan `json:"seal_plan,omitempty"`
+	IndexData   []byte    `json:"segment_index,omitempty"`
+	IndexSHA256 string    `json:"segment_index_sha256,omitempty"`
 }
 
 func readPacketRecord(raw []byte, row *LocalRecord) error {
@@ -58,11 +61,12 @@ func readPacketRecord(raw []byte, row *LocalRecord) error {
 	}
 	*row = data.LocalRecord
 	row.Seal = data.Seal
+	row.Index = IndexRecord{Data: data.IndexData, SHA256: data.IndexSHA256}
 	return nil
 }
 
 func writePacketRecord(row LocalRecord) ([]byte, error) {
-	return json.Marshal(persistentPacketRecord{LocalRecord: row, Seal: row.Seal})
+	return json.Marshal(persistentPacketRecord{LocalRecord: row, Seal: row.Seal, IndexData: row.Index.Data, IndexSHA256: row.Index.SHA256})
 }
 
 // 索引只包含调度所需字段；轮转和页面列表不扫描或反序列化完整帧目录。
@@ -532,7 +536,7 @@ func (s *Spool) updateTx(id string, apply func(*bolt.Tx, *LocalRecord) error) er
 			return err
 		}
 		encoded, err := writePacketRecord(row)
-		if err != nil || len(encoded) > MaxManifestBytes+maxPolicyBytes+8192 {
+		if err != nil || len(encoded) > MaxManifestBytes+2*MaxFlowIndexBytes+maxPolicyBytes+8192 {
 			return ErrLimit
 		}
 		used, err := usageValue(tx)
@@ -717,7 +721,13 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 	}
 	temporary := file.Name()
 	defer os.Remove(temporary)
-	index, err := EncodeFrames(ctx, file, input, codec, DefaultFrameBytes)
+	var index Encoding
+	var directory SegmentIndex
+	if capture.Retention != nil && (capture.Retention.Degradation == "" || capture.Retention.Degradation == skipClustering || capture.Retention.Degradation == skipCompression) {
+		index, directory, err = encodePackedSegment(ctx, file, input, capture, sessions, codec, capture.Retention.Degradation == "")
+	} else {
+		index, err = EncodeFrames(ctx, file, input, codec, DefaultFrameBytes)
+	}
 	if err == nil {
 		err = file.Sync()
 	}
@@ -749,6 +759,13 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 	if err != nil {
 		return row, err
 	}
+	var flowIndex IndexRecord
+	if manifest.Encoding.Schema == PackedSchema {
+		flowIndex, err = directory.Record(manifest)
+		if err != nil {
+			return row, err
+		}
+	}
 	if err = os.Rename(temporary, targetPath); err == nil {
 		err = syncDirectory(s.Dir)
 	}
@@ -760,6 +777,7 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 			return ErrIntegrity
 		}
 		r.State, r.Capture, r.Manifest, r.ManifestSHA256 = "ready", capture, &manifest, digest
+		r.Index = flowIndex
 		r.Seal = nil
 		if capture.Retention != nil {
 			r.Code = capture.Retention.Degradation
@@ -770,6 +788,21 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 		return row, err
 	}
 	return s.Record(id)
+}
+
+func (s *Spool) RebuildIndex(ctx context.Context, file *os.File, row LocalRecord) (SegmentIndex, error) {
+	if file == nil || row.Manifest == nil || row.State != "ready" {
+		return SegmentIndex{}, ErrIntegrity
+	}
+	return ResolveSegmentIndex(ctx, row.Index, *row.Manifest, RangeFile(file), s.Dir, func(index IndexRecord) error {
+		return s.update(row.ID, func(latest *LocalRecord) error {
+			if latest.State != "ready" || latest.ManifestSHA256 != row.ManifestSHA256 {
+				return os.ErrNotExist
+			}
+			latest.Index = index
+			return nil
+		})
+	})
 }
 
 func (s *Spool) OpenStored(id string) (*os.File, LocalRecord, error) {
@@ -841,7 +874,11 @@ func (s *Spool) Confirm(ack Acknowledgement) error {
 	if err = syncDirectory(s.Dir); err != nil {
 		return err
 	}
-	return s.update(ack.ID, func(r *LocalRecord) error { r.State, r.ReservedBytes, r.Manifest = "confirmed", 0, nil; return nil })
+	return s.update(ack.ID, func(r *LocalRecord) error {
+		r.State, r.ReservedBytes, r.Manifest = "confirmed", 0, nil
+		r.Index = IndexRecord{}
+		return nil
+	})
 }
 
 func sameAcknowledgement(first, second Acknowledgement) bool {
