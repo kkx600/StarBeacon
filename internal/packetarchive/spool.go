@@ -42,6 +42,27 @@ type LocalRecord struct {
 	CreatedAt       time.Time        `json:"created_at"`
 	Sequence        uint64           `json:"sequence"`
 	Acknowledgement *Acknowledgement `json:"acknowledgement,omitempty"`
+	Seal            *sealPlan        `json:"-"`
+}
+
+// 冻结的内部策略随任务持久化，不经过目录 API 分发本机地址配置。
+type persistentPacketRecord struct {
+	LocalRecord
+	Seal *sealPlan `json:"seal_plan,omitempty"`
+}
+
+func readPacketRecord(raw []byte, row *LocalRecord) error {
+	var data persistentPacketRecord
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return err
+	}
+	*row = data.LocalRecord
+	row.Seal = data.Seal
+	return nil
+}
+
+func writePacketRecord(row LocalRecord) ([]byte, error) {
+	return json.Marshal(persistentPacketRecord{LocalRecord: row, Seal: row.Seal})
 }
 
 // 索引只包含调度所需字段；轮转和页面列表不扫描或反序列化完整帧目录。
@@ -143,7 +164,9 @@ type Spool struct {
 	Quota                              int64
 	SegmentBytes                       int64
 	TenantID, SensorID, RegistrationID string
+	RetentionFile                      string
 	mu                                 sync.Mutex
+	prepareMu                          sync.Mutex
 }
 
 type PendingCapture struct {
@@ -196,7 +219,7 @@ func NewSpool(db *bolt.DB, dir, tenant, sensor, registration string, quota, segm
 		for _, k := range ids {
 			v := b.Get(k)
 			var row LocalRecord
-			if json.Unmarshal(v, &row) != nil || row.ID != string(k) || !s.owns(row.Capture) || row.ReservedBytes < 0 {
+			if readPacketRecord(v, &row) != nil || row.ID != string(k) || !s.owns(row.Capture) || row.ReservedBytes < 0 {
 				return ErrIntegrity
 			}
 			if row.State == "capturing" {
@@ -226,7 +249,10 @@ func NewSpool(db *bolt.DB, dir, tenant, sensor, registration string, quota, segm
 				return ErrIntegrity
 			}
 			used += row.ReservedBytes
-			data, _ := json.Marshal(row)
+			data, err := writePacketRecord(row)
+			if err != nil {
+				return err
+			}
 			if err = b.Put(k, data); err != nil {
 				return err
 			}
@@ -265,7 +291,7 @@ func (s *Spool) Record(id string) (LocalRecord, error) {
 		if raw == nil {
 			return os.ErrNotExist
 		}
-		if json.Unmarshal(raw, &row) != nil || row.ID != id || !s.owns(row.Capture) {
+		if readPacketRecord(raw, &row) != nil || row.ID != id || !s.owns(row.Capture) {
 			return ErrIntegrity
 		}
 		return nil
@@ -315,7 +341,7 @@ func (s *Spool) NextPending() (row LocalRecord, err error) {
 				return ErrIntegrity
 			}
 			if meta.State == "sealed" || meta.State == "ready" || meta.State == "acknowledged" {
-				if json.Unmarshal(tx.Bucket(spoolBucket).Get(id), &row) != nil || row.ID != meta.ID || row.State != meta.State || row.Sequence != meta.Sequence || !reflect.DeepEqual(row.Capture, meta.Capture) || !s.owns(row.Capture) {
+				if readPacketRecord(tx.Bucket(spoolBucket).Get(id), &row) != nil || row.ID != meta.ID || row.State != meta.State || row.Sequence != meta.Sequence || !reflect.DeepEqual(row.Capture, meta.Capture) || !s.owns(row.Capture) {
 					return ErrIntegrity
 				}
 				return nil
@@ -354,6 +380,9 @@ func (s *Spool) untrackedBytes(tx *bolt.Tx) (int64, error) {
 				return 0, ErrQuota
 			}
 			info, e := file.Info()
+			if errors.Is(e, os.ErrNotExist) {
+				continue
+			}
 			if e != nil {
 				return 0, e
 			}
@@ -366,6 +395,9 @@ func (s *Spool) untrackedBytes(tx *bolt.Tx) (int64, error) {
 					id = strings.TrimSuffix(file.Name(), suffix)
 					break
 				}
+			}
+			if head, suffix, ok := strings.Cut(file.Name(), "."); ok && (strings.HasPrefix(suffix, "retained-") || strings.HasPrefix(suffix, "encoding-")) {
+				id = head
 			}
 			known := false
 			if contract.ValidID(id) {
@@ -461,6 +493,16 @@ func (s *Spool) Begin(header Capture) (*PendingCapture, error) {
 		_ = s.fail(row.ID, "capture_file_unavailable")
 		return nil, err
 	}
+	if s.RetentionFile != "" {
+		if err = preallocateCapture(file, s.SegmentBytes); err == nil {
+			err = syncDirectory(s.Dir)
+		}
+		if err != nil {
+			_ = file.Close()
+			_ = s.fail(row.ID, "capture_file_unavailable")
+			return nil, err
+		}
+	}
 	recorder, err := NewRecorder(file, header, s.SegmentBytes)
 	if err != nil {
 		_ = file.Close()
@@ -471,6 +513,10 @@ func (s *Spool) Begin(header Capture) (*PendingCapture, error) {
 }
 
 func (s *Spool) update(id string, apply func(*LocalRecord) error) error {
+	return s.updateTx(id, func(_ *bolt.Tx, row *LocalRecord) error { return apply(row) })
+}
+
+func (s *Spool) updateTx(id string, apply func(*bolt.Tx, *LocalRecord) error) error {
 	return s.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(spoolBucket)
 		raw := b.Get([]byte(id))
@@ -478,15 +524,15 @@ func (s *Spool) update(id string, apply func(*LocalRecord) error) error {
 			return os.ErrNotExist
 		}
 		var row LocalRecord
-		if json.Unmarshal(raw, &row) != nil || !s.owns(row.Capture) {
+		if readPacketRecord(raw, &row) != nil || !s.owns(row.Capture) {
 			return ErrIntegrity
 		}
 		oldReserve := row.ReservedBytes
-		if err := apply(&row); err != nil {
+		if err := apply(tx, &row); err != nil {
 			return err
 		}
-		encoded, err := json.Marshal(row)
-		if err != nil || len(encoded) > MaxManifestBytes+8192 {
+		encoded, err := writePacketRecord(row)
+		if err != nil || len(encoded) > MaxManifestBytes+maxPolicyBytes+8192 {
 			return ErrLimit
 		}
 		used, err := usageValue(tx)
@@ -554,9 +600,23 @@ func (p *PendingCapture) Seal(ended time.Time, termination string, drops *uint64
 		_ = p.spool.fail(p.ID, "capture_seal_unconfirmed")
 		return err
 	}
-	return p.spool.update(p.ID, func(row *LocalRecord) error {
+	retentionFile := p.spool.RetentionFile
+	var policy RetentionPolicy
+	var policyErr error
+	if retentionFile != "" {
+		policy, policyErr = readRetentionPolicy(retentionFile)
+	}
+	return p.spool.updateTx(p.ID, func(tx *bolt.Tx, row *LocalRecord) error {
 		if row.State != "capturing" {
 			return ErrIntegrity
+		}
+		if retentionFile != "" {
+			plan, err := freezeRetention(tx, policy, policyErr != nil)
+			if err != nil {
+				return err
+			}
+			row.Seal = plan
+			row.Code = plan.Degradation
 		}
 		row.State, row.Capture = "sealed", c
 		return nil
@@ -605,8 +665,8 @@ func openFile(path string, limit int64) (*os.File, error) {
 }
 
 func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.prepareMu.Lock()
+	defer s.prepareMu.Unlock()
 	row, err := s.Record(id)
 	if err != nil {
 		return row, err
@@ -635,18 +695,29 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 	}
 	rawPath, _ := s.path(id, ".raw")
 	targetPath, _ := s.path(id, ".stored")
-	source, err := openFile(rawPath, s.SegmentBytes)
+	source, err := openFile(rawPath, (row.ReservedBytes-MaxManifestBytes)/3)
 	if err != nil {
 		return row, err
 	}
 	defer source.Close()
-	file, err := os.CreateTemp(s.Dir, ".packet-encoding-")
+	capture, sessions, input, err := s.finalizeRetention(ctx, row, source)
+	if err != nil {
+		return row, err
+	}
+	if input != source {
+		defer os.Remove(input.Name())
+		defer input.Close()
+	}
+	if row.Seal != nil && (row.Seal.Degradation == skipCompression || row.Seal.Degradation == keepRaw) {
+		codec = "none"
+	}
+	file, err := os.CreateTemp(s.Dir, id+".encoding-")
 	if err != nil {
 		return row, err
 	}
 	temporary := file.Name()
 	defer os.Remove(temporary)
-	index, err := EncodeFrames(ctx, file, source, codec, DefaultFrameBytes)
+	index, err := EncodeFrames(ctx, file, input, codec, DefaultFrameBytes)
 	if err == nil {
 		err = file.Sync()
 	}
@@ -673,7 +744,7 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 	if err != nil {
 		return row, err
 	}
-	manifest := Manifest{Capture: row.Capture, Encoding: index}
+	manifest := Manifest{Capture: capture, Encoding: index, Sessions: sessions}
 	_, digest, err := manifest.JSON()
 	if err != nil {
 		return row, err
@@ -688,7 +759,11 @@ func (s *Spool) Prepare(ctx context.Context, id, codec string) (LocalRecord, err
 		if r.State != "sealed" {
 			return ErrIntegrity
 		}
-		r.State, r.Manifest, r.ManifestSHA256 = "ready", &manifest, digest
+		r.State, r.Capture, r.Manifest, r.ManifestSHA256 = "ready", capture, &manifest, digest
+		r.Seal = nil
+		if capture.Retention != nil {
+			r.Code = capture.Retention.Degradation
+		}
 		return nil
 	})
 	if err != nil {

@@ -16,35 +16,37 @@ const MaxManifestBytes = 512 * 1024
 
 // Capture 描述独立原包捕获的实际观测范围；镜像源是否漏包及网卡卸载仍属于外部限制。
 type Capture struct {
-	ID                 string     `json:"id"`
-	TenantID           string     `json:"tenant_id"`
-	SensorID           string     `json:"sensor_id"`
-	RegistrationID     string     `json:"registration_id"`
-	RunID              string     `json:"run_id"`
-	Interface          string     `json:"interface"`
-	InterfaceMAC       string     `json:"interface_mac"`
-	SettingsSHA256     string     `json:"settings_sha256"`
-	BPFFilter          string     `json:"bpf_filter"`
-	Promiscuous        bool       `json:"promiscuous"`
-	StartedAt          time.Time  `json:"started_at"`
-	EndedAt            time.Time  `json:"ended_at"`
-	FirstPacketAt      *time.Time `json:"first_packet_at"`
-	LastPacketAt       *time.Time `json:"last_packet_at"`
-	Packets            uint64     `json:"packets"`
-	PacketBytes        uint64     `json:"packet_bytes"`
-	TruncatedPackets   uint64     `json:"truncated_packets"`
-	VLANOffloadPackets uint64     `json:"vlan_offload_packets"`
-	KernelDrops        *uint64    `json:"kernel_drops,string"`
-	CounterState       string     `json:"counter_state"`
-	Termination        string     `json:"termination"`
-	Format             string     `json:"format"`
-	Source             string     `json:"source"`
-	SnapLength         uint32     `json:"snap_length"`
+	ID                 string            `json:"id"`
+	TenantID           string            `json:"tenant_id"`
+	SensorID           string            `json:"sensor_id"`
+	RegistrationID     string            `json:"registration_id"`
+	RunID              string            `json:"run_id"`
+	Interface          string            `json:"interface"`
+	InterfaceMAC       string            `json:"interface_mac"`
+	SettingsSHA256     string            `json:"settings_sha256"`
+	BPFFilter          string            `json:"bpf_filter"`
+	Promiscuous        bool              `json:"promiscuous"`
+	StartedAt          time.Time         `json:"started_at"`
+	EndedAt            time.Time         `json:"ended_at"`
+	FirstPacketAt      *time.Time        `json:"first_packet_at"`
+	LastPacketAt       *time.Time        `json:"last_packet_at"`
+	Packets            uint64            `json:"packets"`
+	PacketBytes        uint64            `json:"packet_bytes"`
+	TruncatedPackets   uint64            `json:"truncated_packets"`
+	VLANOffloadPackets uint64            `json:"vlan_offload_packets"`
+	KernelDrops        *uint64           `json:"kernel_drops,string"`
+	CounterState       string            `json:"counter_state"`
+	Termination        string            `json:"termination"`
+	Format             string            `json:"format"`
+	Source             string            `json:"source"`
+	SnapLength         uint32            `json:"snap_length"`
+	Retention          *RetentionSummary `json:"retention,omitempty"`
 }
 
 type Manifest struct {
-	Capture  Capture  `json:"capture"`
-	Encoding Encoding `json:"encoding"`
+	Capture  Capture            `json:"capture"`
+	Encoding Encoding           `json:"encoding"`
+	Sessions []RetentionSession `json:"retention_sessions,omitempty"`
 }
 
 func (c Capture) Validate() error {
@@ -76,11 +78,14 @@ func (c Capture) Validate() error {
 	default:
 		return ErrIntegrity
 	}
+	if c.Retention != nil && !c.Retention.valid(c) {
+		return ErrIntegrity
+	}
 	return nil
 }
 
 func (m Manifest) Validate() error {
-	if m.Capture.Validate() != nil || m.Encoding.Validate() != nil || m.Capture.PacketBytes > uint64(m.Encoding.RawBytes) {
+	if m.Capture.Validate() != nil || m.Encoding.Validate() != nil || m.Capture.PacketBytes > uint64(m.Encoding.RawBytes) || !m.validRetention() {
 		return ErrIntegrity
 	}
 	return nil
@@ -99,11 +104,13 @@ func (m Manifest) JSON() ([]byte, string, error) {
 
 var manifestFields = []string{"capture", "encoding", "id", "tenant_id", "sensor_id", "registration_id", "run_id", "interface", "interface_mac", "settings_sha256", "bpf_filter", "promiscuous", "started_at", "ended_at", "first_packet_at", "last_packet_at", "packets", "packet_bytes", "truncated_packets", "vlan_offload_packets", "kernel_drops", "counter_state", "termination", "format", "source", "snap_length", "schema", "codec", "implementation", "level", "frame_bytes", "raw_bytes", "stored_bytes", "raw_sha256", "stored_sha256", "frames", "raw_offset", "raw_length", "stored_offset", "stored_length"}
 
+var retentionFields = []string{"retention", "retention_sessions", "network_domain", "policy_revision", "mode", "original_packets", "original_bytes", "retained_bytes", "unclassified_bytes", "unclassified_retained_bytes", "duplicate_bytes", "degradation", "endpoint_a", "endpoint_b", "transport", "vlan", "first_packet", "protocol", "state"}
+
 func ParseManifest(raw []byte) (Manifest, error) {
 	var m Manifest
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
-	if contract.JSONFields(string(raw), manifestFields, MaxManifestBytes) != nil || decoder.Decode(&m) != nil || decoder.Decode(new(any)) != io.EOF || m.Validate() != nil {
+	if contract.JSONFields(string(raw), append(manifestFields, retentionFields...), MaxManifestBytes) != nil || decoder.Decode(&m) != nil || decoder.Decode(new(any)) != io.EOF || m.Validate() != nil {
 		return m, ErrIntegrity
 	}
 	return m, nil

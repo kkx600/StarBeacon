@@ -49,13 +49,17 @@ func captureStart(c Capture) (Capture, error) {
 }
 
 func NewRecorder(target io.Writer, c Capture, limit int64) (*Recorder, error) {
+	return newRecorder(target, c, limit, "原始内核捕获字节；镜像完整性与校验和卸载未独立验证")
+}
+
+func newRecorder(target io.Writer, c Capture, limit int64, comment string) (*Recorder, error) {
 	var err error
 	c, err = captureStart(c)
 	if err != nil || target == nil || limit < 1024*1024 || limit > MaxSegmentBytes {
 		return nil, ErrIntegrity
 	}
 	counter := &countWriter{target: target}
-	writer, err := pcapgo.NewNgWriterInterface(counter, pcapgo.NgInterface{Name: c.Interface, Description: "StarBeacon 原包捕获", Comment: "MAC=" + c.InterfaceMAC, Filter: c.BPFFilter, OS: "linux", LinkType: layers.LinkTypeEthernet, SnapLength: SnapLength, TimestampResolution: 9}, pcapgo.NgWriterOptions{SectionInfo: pcapgo.NgSectionInfo{OS: "linux", Application: "StarBeacon", Comment: "原始内核捕获字节；镜像完整性与校验和卸载未独立验证"}})
+	writer, err := pcapgo.NewNgWriterInterface(counter, pcapgo.NgInterface{Name: c.Interface, Description: "StarBeacon 原包捕获", Comment: "MAC=" + c.InterfaceMAC, Filter: c.BPFFilter, OS: "linux", LinkType: layers.LinkTypeEthernet, SnapLength: SnapLength, TimestampResolution: 9}, pcapgo.NgWriterOptions{SectionInfo: pcapgo.NgSectionInfo{OS: "linux", Application: "StarBeacon", Comment: comment}})
 	if err != nil {
 		return nil, err
 	}
@@ -66,22 +70,28 @@ func NewRecorder(target io.Writer, c Capture, limit int64) (*Recorder, error) {
 }
 
 func (r *Recorder) Write(ci gopacket.CaptureInfo, data []byte, vlanOffloadID *uint16) error {
+	if vlanOffloadID != nil && *vlanOffloadID > 4095 {
+		return ErrIntegrity
+	}
+	id := r.Capture.Packets + 1
+	opts := pcapgo.NgPacketOptions{PacketID: &id}
+	if vlanOffloadID != nil {
+		opts.Comments = []string{fmt.Sprintf("StarBeacon: vlan_offload_id=%d; VLAN 头由网卡移除，原字节未重建", *vlanOffloadID)}
+	}
+	return r.write(ci, data, opts, vlanOffloadID != nil)
+}
+
+func (r *Recorder) write(ci gopacket.CaptureInfo, data []byte, opts pcapgo.NgPacketOptions, vlanOffloaded bool) error {
 	if r.closed {
 		return io.ErrClosedPipe
 	}
-	if ci.Timestamp.IsZero() || ci.Timestamp.UnixNano() <= 0 || ci.Timestamp.Year() > 2261 || ci.CaptureLength != len(data) || ci.CaptureLength < 1 || ci.CaptureLength > SnapLength || ci.Length < ci.CaptureLength || ci.Length > 16*1024*1024 || ci.InterfaceIndex != 0 || vlanOffloadID != nil && *vlanOffloadID > 4095 {
+	if ci.Timestamp.IsZero() || ci.Timestamp.UnixNano() <= 0 || ci.Timestamp.Year() > 2261 || ci.CaptureLength != len(data) || ci.CaptureLength < 1 || ci.CaptureLength > SnapLength || ci.Length < ci.CaptureLength || ci.Length > 16*1024*1024 || ci.InterfaceIndex != 0 {
 		return ErrIntegrity
 	}
 	// 锁定的 pcapgo 使用 4 KiB 缓冲；额外留出 8 KiB 覆盖未刷写字节、选项和统计块。
 	// 捕获循环不为每个包强制刷新，不依赖压缩后的大小决定能否捕获。
 	if int64(len(data))+8192 > r.limit-r.bytes.size || r.Capture.Packets >= 1048576 {
 		return ErrRotate
-	}
-	opts := pcapgo.NgPacketOptions{}
-	id := r.Capture.Packets + 1
-	opts.PacketID = &id
-	if vlanOffloadID != nil {
-		opts.Comments = []string{fmt.Sprintf("StarBeacon: vlan_offload_id=%d; VLAN 头由网卡移除，原字节未重建", *vlanOffloadID)}
 	}
 	if err := r.writer.WritePacketWithOptions(ci, data, opts); err != nil {
 		return err
@@ -91,7 +101,7 @@ func (r *Recorder) Write(ci gopacket.CaptureInfo, data []byte, vlanOffloadID *ui
 	if ci.CaptureLength < ci.Length {
 		r.Capture.TruncatedPackets++
 	}
-	if vlanOffloadID != nil {
+	if vlanOffloaded {
 		r.Capture.VLANOffloadPackets++
 	}
 	at := ci.Timestamp.UTC()

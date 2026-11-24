@@ -35,6 +35,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/hosthealth"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/notify"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/testpcap"
@@ -246,7 +247,7 @@ func roleEnvironment(c config.Config) []string {
 		"CREDENTIAL_KEY": c.CredentialKey, "OUTBOUND_PRIVATE_NETWORKS": c.OutboundNetworks, "OUTBOUND_CA": c.OutboundCA,
 		"MCP_ISSUER": c.MCPIssuer, "MCP_INTROSPECTION_URL": c.MCPIntrospectionURL, "MCP_CLIENT_ID": c.MCPClientID, "MCP_CLIENT_SECRET": c.MCPClientSecret,
 		"REPLAY_BACKEND": c.ReplayBackend, "REPLAY_DIR": c.ReplayDir,
-		"PACKET_BACKEND": c.PacketBackend, "PACKET_DIR": c.PacketDir, "PACKET_CODEC": c.PacketCodec,
+		"PACKET_BACKEND": c.PacketBackend, "PACKET_DIR": c.PacketDir, "PACKET_CODEC": c.PacketCodec, "PACKET_RETENTION_FILE": c.PacketRetentionFile,
 		"SURICATA_BINARY": c.SuricataBinary, "SURICATA_CONFIG": c.SuricataConfig, "SURICATA_RULES_PATH": c.SuricataRulesPath,
 		"SURICATA_SOCKET": c.SuricataSocket, "SURICATA_PID_FILE": c.SuricataPIDFile,
 		"RESPONSE_CONNECTORS_FILE": c.ResponseConnectorsFile,
@@ -387,6 +388,8 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		agentConfig.CaptureManaged, agentConfig.AllowRuleApply = true, true
 		agentConfig.PacketCapture = true
 		agentConfig.PacketRotateInterval = 3 * time.Second
+		agentConfig.PacketRetentionFile = filepath.Join(dir, "packet-retention.json")
+		nativeRetentionPolicy(t, agentConfig.PacketRetentionFile, 1, packetarchive.RetentionSmart)
 		agentConfig.CaptureRotateBytes = 1024 * 1024
 		agentConfig.SuricataRulesPath = filepath.Join(dir, "active.rules")
 		require(t, os.WriteFile(agentConfig.SuricataRulesPath, []byte(rules), 0600))
@@ -959,6 +962,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 			_, observed := capture.Counters["capture.kernel_packets"]
 			return observed
 		})
+		verifyNativeRetention(t, ctx, collectorHTTP, platformHTTP, identity.SensorID, agentConfig.PacketRetentionFile)
 		configureFromPlatform(agent.CaptureSettings{Interfaces: []string{}, Threads: 1, Promiscuous: good.Promiscuous})
 		if capture.Status != "stopped" || capture.PID != 0 || capture.AppliedSettings == nil || len(capture.AppliedSettings.Interfaces) != 0 {
 			t.Fatal("停止采集未得到实际回读", capture)

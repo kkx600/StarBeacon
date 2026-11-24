@@ -70,6 +70,7 @@ type Config struct {
 	CaptureRotateBytes                                                        int64
 	PacketCapture                                                             bool
 	PacketDir, PacketBackend, PacketCodec                                     string
+	PacketRetentionFile                                                       string
 	PacketSpoolBytes, PacketSegmentBytes, PacketPoolBytes, PacketFreeBytes    int64
 	PacketFreePercent                                                         int
 	ESIndex                                                                   contract.IndexLayout
@@ -231,6 +232,10 @@ func Load(role string) (Config, error) {
 	if c.PacketCapture && (role != "agent" || !c.CaptureManaged) {
 		return c, fmt.Errorf("原包捕获要求采集器托管网卡配置")
 	}
+	c.PacketRetentionFile = env("PACKET_RETENTION_FILE", "")
+	if c.PacketRetentionFile != "" && (!c.PacketCapture || !filepath.IsAbs(c.PacketRetentionFile)) {
+		return c, fmt.Errorf("SB_PACKET_RETENTION_FILE 要求托管原包捕获和绝对路径")
+	}
 	c.PacketDir = env("PACKET_DIR", filepath.Join(filepath.Dir(c.StatePath), "packets"))
 	if role == "platform" {
 		c.PacketDir = env("PACKET_DIR", filepath.Join(filepath.Dir(c.ReplayDir), "packet-archives-platform"))
@@ -259,7 +264,11 @@ func Load(role string) (Config, error) {
 	if err != nil || c.PacketPoolBytes != 0 && c.PacketPoolBytes < 100*1024*1024 {
 		return c, fmt.Errorf("SB_PACKET_POOL_BYTES 为 0（不限）或至少 100 MiB")
 	}
-	seconds, e := strconv.Atoi(env("PACKET_ROTATE_SECONDS", "30"))
+	packetRotate := "30"
+	if c.PacketRetentionFile != "" {
+		packetRotate = "300"
+	}
+	seconds, e := strconv.Atoi(env("PACKET_ROTATE_SECONDS", packetRotate))
 	if e != nil || seconds < 1 || seconds > 3600 {
 		return c, fmt.Errorf("原包轮转间隔需为 1–3600 秒")
 	}

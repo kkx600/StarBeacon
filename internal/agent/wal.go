@@ -17,6 +17,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/enginehealth"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
@@ -203,6 +204,11 @@ func (w *WAL) AppendBatch(source Source, entries []Entry) error {
 			}
 			if e = m.Put([]byte(entry.Stream+"_sequence"), key(seq)); e != nil {
 				return e
+			}
+			if entry.Stream == "alerts" && w.packetArchives != nil && w.packetArchives.Spool.RetentionFile != "" && r.ObservedAt.IsValid() {
+				if e = packetarchive.RecordRetentionAlert(tx, r.Payload, r.EventId, r.ObservedAt.AsTime()); e != nil {
+					return e
+				}
 			}
 			n += uint64(len(p))
 		}

@@ -173,6 +173,61 @@ beforeEach(() => {
 });
 
 describe('原包目录响应边界', () => {
+  it('校验封段目录并在原包详情显示字节数、修订与实际降级', async () => {
+    const snapshot: PacketCapture = {
+      ...capture,
+      retention: {
+        network_domain: 'test_domain',
+        policy_revision: 3,
+        mode: 'smart',
+        original_packets: 20,
+        original_bytes: 1800,
+        retained_bytes: 800,
+        unclassified_bytes: 0,
+        unclassified_retained_bytes: 0,
+        duplicate_bytes: 30,
+        degradation: 'packet_seal_skip_compression',
+      },
+    };
+    const archive: PacketRecord = {
+      ...detail,
+      manifest: {
+        ...detail.manifest!,
+        capture: snapshot,
+        retention_sessions: [
+          {
+            endpoint_a: '192.0.2.1:40000',
+            endpoint_b: '192.0.2.2:80',
+            transport: 'tcp',
+            first_packet: 1,
+            started_at: stamp,
+            ended_at: stamp,
+            protocol: 'http',
+            state: 'policy_truncated',
+            original_bytes: 1800,
+            retained_bytes: 800,
+            policy_revision: 3,
+          },
+        ],
+      },
+    };
+    expect(validPacketRecord(archive, false, true)).toBe(true);
+    const wrapper = mount(PacketDetail, {
+      props: { record: archive, pending: false, error: '' },
+      global,
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(document.body.textContent).toContain('按策略截断');
+    expect(document.body.textContent).toContain('封段积压，改用无压缩归档');
+    wrapper.unmount();
+    archive.manifest!.retention_sessions![0].state = 'retained';
+    expect(validPacketRecord(archive, false, true)).toBe(false);
+    archive.manifest!.retention_sessions![0].state = 'policy_truncated';
+    snapshot.retention!.policy_revision = 4;
+    expect(validPacketRecord(archive, false, true)).toBe(false);
+  });
+
   it('平台摘要、本机活动捕获和冻结详情分别验证', () => {
     expect(validPacketPage(page())).toBe(true);
     expect(validPacketRecord(detail, false, true)).toBe(true);

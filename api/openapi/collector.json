@@ -2696,6 +2696,9 @@
           "snap_length": {
             "type": "integer",
             "const": 262144
+          },
+          "retention": {
+            "$ref": "#/components/schemas/PacketRetentionSummary"
           }
         },
         "required": [
@@ -2856,6 +2859,13 @@
           },
           "encoding": {
             "$ref": "#/components/schemas/PacketArchiveEncoding"
+          },
+          "retention_sessions": {
+            "type": "array",
+            "maxItems": 1024,
+            "items": {
+              "$ref": "#/components/schemas/PacketRetentionSession"
+            }
           }
         },
         "required": [
@@ -3161,6 +3171,9 @@
           "observed_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "last_seal": {
+            "$ref": "#/components/schemas/PacketRetentionSummary"
           }
         },
         "required": [
@@ -4347,6 +4360,174 @@
           "identity_quality",
           "upstream_loss"
         ]
+      },
+      "PacketRetentionSummary": {
+        "type": "object",
+        "properties": {
+          "network_domain": {
+            "type": "string",
+            "pattern": "^(?:[a-z0-9][a-z0-9_-]{0,63})?$",
+            "description": "策略不可读取且没有可确认修订时为空"
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "smart",
+              "full",
+              "alert_only"
+            ]
+          },
+          "original_packets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "original_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "retained_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "unclassified_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "unclassified_retained_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "duplicate_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "degradation": {
+            "type": "string",
+            "enum": [
+              "packet_seal_skip_clustering",
+              "packet_seal_skip_compression",
+              "packet_seal_raw_fallback",
+              "packet_seal_policy_unavailable",
+              "packet_seal_alert_window_unavailable",
+              "packet_seal_session_budget"
+            ]
+          }
+        },
+        "required": [
+          "network_domain",
+          "policy_revision",
+          "mode",
+          "original_packets",
+          "original_bytes",
+          "retained_bytes",
+          "unclassified_bytes",
+          "unclassified_retained_bytes",
+          "duplicate_bytes"
+        ],
+        "additionalProperties": false,
+        "description": "按实际落盘报文计量封段留存，不含 PCAPNG 容器开销。降级时 mode 表示实际策略。"
+      },
+      "PacketRetentionSession": {
+        "type": "object",
+        "properties": {
+          "endpoint_a": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 56,
+            "description": "规范 IP 和端口，IPv6 地址用方括号"
+          },
+          "endpoint_b": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 56,
+            "description": "规范 IP 和端口，IPv6 地址用方括号"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ]
+          },
+          "vlan": {
+            "type": "string",
+            "maxLength": 39,
+            "pattern": "^[0-9]{1,4}(,[0-9]{1,4}){0,7}$"
+          },
+          "first_packet": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp",
+              "http",
+              "tls",
+              "ssh",
+              "quic"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "retained",
+              "policy_truncated",
+              "metadata_only"
+            ]
+          },
+          "original_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "retained_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 67108864
+          },
+          "policy_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "endpoint_a",
+          "endpoint_b",
+          "transport",
+          "first_packet",
+          "started_at",
+          "ended_at",
+          "protocol",
+          "state",
+          "original_bytes",
+          "retained_bytes",
+          "policy_revision"
+        ],
+        "additionalProperties": false,
+        "description": "切片内的双向会话记录。仅元数据的会话不含可用原包。"
       }
     }
   }

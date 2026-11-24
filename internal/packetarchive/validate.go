@@ -54,7 +54,11 @@ func ValidateRawFile(ctx context.Context, f *os.File, c Capture) (err error) {
 	if err != nil || reader.NInterfaces() != 1 || reader.LinkType() != layers.LinkTypeEthernet || iface.Name != c.Interface || iface.Comment != "MAC="+c.InterfaceMAC || iface.Filter != c.BPFFilter || iface.SnapLength != SnapLength || iface.TimestampResolution != 9 {
 		return ErrIntegrity
 	}
-	var packets, bytes, truncated, vlan uint64
+	var packets, bytes, truncated, vlan, previousID uint64
+	originalPackets := c.Packets
+	if c.Retention != nil {
+		originalPackets = c.Retention.OriginalPackets
+	}
 	var first, last *time.Time
 	for {
 		if err = ctx.Err(); err != nil {
@@ -75,9 +79,10 @@ func ValidateRawFile(ctx context.Context, f *os.File, c Capture) (err error) {
 		if ci.Length > ci.CaptureLength {
 			truncated++
 		}
-		if packets > 1048576 || bytes > uint64(MaxSegmentBytes) || opts.PacketID == nil || *opts.PacketID != packets {
+		if packets > 1048576 || bytes > uint64(MaxSegmentBytes) || opts.PacketID == nil || *opts.PacketID <= previousID || *opts.PacketID > originalPackets {
 			return ErrIntegrity
 		}
+		previousID = *opts.PacketID
 		for _, comment := range opts.Comments {
 			if strings.HasPrefix(comment, "StarBeacon: vlan_offload_id=") {
 				vlan++

@@ -2,7 +2,15 @@
 import { Descriptions as ADescriptions, Modal as AModal } from 'ant-design-vue';
 import { computed } from 'vue';
 import StatePanel from './StatePanel.vue';
-import { packetCapture, packetUnsealed, packetStates, packetCodes, type PacketRecord } from '../packetArchives';
+import {
+  packetCapture,
+  packetUnsealed,
+  packetStates,
+  packetCodes,
+  retentionPolicyLabels,
+  retentionDegradations,
+  type PacketRecord,
+} from '../packetArchives';
 import { formatTime } from '../types';
 import { formatNumber, formatBytes } from '../utils/format';
 const ADescriptionsItem = ADescriptions.Item;
@@ -72,6 +80,19 @@ const unsealed = computed(() => (props.record ? packetUnsealed(props.record) : f
               >{{ formatNumber(capture.packets) }} 包 / {{ formatBytes(capture.packet_bytes) }}</template
             ></a-descriptions-item
           >
+          <template v-if="capture.retention">
+            <a-descriptions-item label="封段留存">
+              {{ retentionPolicyLabels[capture.retention.mode] }} · 修订
+              {{ capture.retention.policy_revision || '无数据' }} ·
+              {{ formatBytes(capture.retention.original_bytes) }} → {{ formatBytes(capture.retention.retained_bytes) }}
+              <template v-if="capture.retention.retained_bytes < capture.retention.original_bytes">
+                · 按策略截断</template
+              >
+            </a-descriptions-item>
+            <a-descriptions-item v-if="capture.retention.degradation" label="封段说明">
+              {{ retentionDegradations[capture.retention.degradation] }}
+            </a-descriptions-item>
+          </template>
           <a-descriptions-item label="截断 / VLAN 卸载"
             ><template v-if="unsealed">尚未冻结</template
             ><template v-else

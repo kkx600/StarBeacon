@@ -101,10 +101,18 @@ type SessionInput struct {
 	File          *os.File
 }
 type SessionReference struct {
-	ID             string `json:"id"`
-	ObjectVersion  string `json:"object_version"`
-	RawSHA256      string `json:"raw_sha256"`
-	ManifestSHA256 string `json:"manifest_sha256"`
+	ID             string            `json:"id"`
+	ObjectVersion  string            `json:"object_version"`
+	RawSHA256      string            `json:"raw_sha256"`
+	ManifestSHA256 string            `json:"manifest_sha256"`
+	Retention      *SessionRetention `json:"retention,omitempty"`
+}
+type SessionRetention struct {
+	NetworkDomain  string `json:"network_domain"`
+	PolicyRevision uint64 `json:"policy_revision"`
+	State          string `json:"state"`
+	OriginalBytes  uint64 `json:"original_bytes"`
+	RetainedBytes  uint64 `json:"retained_bytes"`
 }
 type SessionReport struct {
 	Schema             string             `json:"schema"`
@@ -166,15 +174,23 @@ func prepareSession(ctx context.Context, request SessionRequest, inputs []Sessio
 	p.macs[1], _ = net.ParseMAC(request.ServerMAC)
 	p.ips[0], _ = netip.ParseAddr(request.ClientIP)
 	p.ips[1], _ = netip.ParseAddr(request.ServerIP)
+	target, _ := orderedFlow(netip.AddrPortFrom(p.ips[0], request.ClientPort), netip.AddrPortFrom(p.ips[1], request.ServerPort), "tcp", vlanScope(request.VLANs))
 	seen := map[string]bool{}
 	var total int64
 	base := ordered[0].Manifest.Capture
+	var domain string
 	for i, v := range ordered {
 		c := v.Manifest.Capture
 		if v.File == nil || v.Manifest.Validate() != nil || !ValidObjectVersion(v.ObjectVersion) || !slices.Contains(request.ArchiveIDs, c.ID) || seen[c.ID] || c.TenantID != base.TenantID || c.SensorID != base.SensorID || c.RegistrationID != base.RegistrationID || c.RunID != base.RunID || c.Interface != base.Interface || c.InterfaceMAC != base.InterfaceMAC || c.SettingsSHA256 != base.SettingsSHA256 {
 			return nil, nil, ErrIntegrity
 		}
 		seen[c.ID] = true
+		if c.Retention != nil && c.Retention.NetworkDomain != "" {
+			if domain != "" && domain != c.Retention.NetworkDomain {
+				return nil, nil, ErrIntegrity
+			}
+			domain = c.Retention.NetworkDomain
+		}
 		total += v.Manifest.Encoding.RawBytes
 		if total > MaxSessionInputBytes {
 			return nil, nil, ErrLimit
@@ -217,7 +233,24 @@ func prepareSession(ctx context.Context, request SessionRequest, inputs []Sessio
 		if e != nil {
 			return nil, nil, e
 		}
-		p.report.Sources = append(p.report.Sources, SessionReference{c.ID, v.ObjectVersion, v.Manifest.Encoding.RawSHA256, manifestSHA})
+		source := SessionReference{ID: c.ID, ObjectVersion: v.ObjectVersion, RawSHA256: v.Manifest.Encoding.RawSHA256, ManifestSHA256: manifestSHA}
+		if c.Retention != nil {
+			retention := SessionRetention{NetworkDomain: c.Retention.NetworkDomain, PolicyRevision: c.Retention.PolicyRevision}
+			for _, session := range v.Manifest.Sessions {
+				if session.flowKey == target {
+					retention.OriginalBytes += session.OriginalBytes
+					retention.RetainedBytes += session.RetainedBytes
+				}
+			}
+			if retention.OriginalBytes > 0 {
+				retention.State = retentionState(retention.OriginalBytes, retention.RetainedBytes)
+				source.Retention = &retention
+				if retention.State != retainAll {
+					p.reason("capture_policy_truncated")
+				}
+			}
+		}
+		p.report.Sources = append(p.report.Sources, source)
 	}
 	if ordered[len(ordered)-1].Manifest.Capture.EndedAt.Sub(base.StartedAt) > time.Hour {
 		return nil, nil, ErrLimit

@@ -27,7 +27,29 @@ export interface PacketCapture {
   format: string;
   source: string;
   snap_length: number;
+  retention?: PacketRetention;
 }
+export interface PacketRetention {
+  network_domain: string;
+  policy_revision: number;
+  mode: keyof typeof retentionPolicyLabels;
+  original_packets: number;
+  original_bytes: number;
+  retained_bytes: number;
+  unclassified_bytes: number;
+  unclassified_retained_bytes: number;
+  duplicate_bytes: number;
+  degradation?: string;
+}
+export const retentionPolicyLabels = { smart: '智能留存', full: '完整保存', alert_only: '只存告警相关' } as const;
+export const retentionDegradations: Record<string, string> = {
+  packet_seal_skip_clustering: '封段积压，继续按捕获顺序写入',
+  packet_seal_skip_compression: '封段积压，改用无压缩归档',
+  packet_seal_raw_fallback: '封段积压，原样保留本段',
+  packet_seal_policy_unavailable: '留存策略无法确认，原样保留本段',
+  packet_seal_alert_window_unavailable: '告警范围无法确认，原样保留本段',
+  packet_seal_session_budget: '超过会话目录容量，原样保留本段',
+};
 export interface PacketEncoding {
   schema: string;
   codec: 'none' | 'zstd';
@@ -43,6 +65,21 @@ export interface PacketEncoding {
 export interface PacketManifest {
   capture: PacketCapture;
   encoding: PacketEncoding;
+  retention_sessions?: PacketRetentionSession[];
+}
+export interface PacketRetentionSession {
+  endpoint_a: string;
+  endpoint_b: string;
+  transport: 'tcp' | 'udp';
+  vlan?: string;
+  first_packet: number;
+  started_at: string;
+  ended_at: string;
+  protocol: 'tcp' | 'udp' | 'http' | 'tls' | 'ssh' | 'quic';
+  state: 'retained' | 'policy_truncated' | 'metadata_only';
+  original_bytes: number;
+  retained_bytes: number;
+  policy_revision: number;
 }
 export interface PacketAcknowledgement {
   id: string;
@@ -80,6 +117,7 @@ export interface PacketHealth {
   last_confirmed_at?: string;
   observed_at: string;
   interfaces: { id: string; interface: string; state: string; packets: string; observed_at: string }[];
+  last_seal?: PacketRetention;
 }
 export interface PacketPage {
   items: PacketRecord[];
@@ -118,6 +156,7 @@ export const sessionReasons: Record<string, string> = {
   capture_drop_counter_unavailable: '内核丢包计数无可靠数据',
   capture_drops_observed: '捕获窗口内存在内核丢包',
   capture_truncation_observed: '原包切片包含截断报文',
+  capture_policy_truncated: '所选会话已按留存策略裁剪',
   vlan_bytes_unavailable: '存在被网卡移除的 VLAN 头',
   overlapping_capture_windows: '捕获窗口重叠，来源关系需要核查',
   fragment_or_tunnel_scope_unsupported: 'IP 分片或隧道范围尚未具备完整性资格',
@@ -169,6 +208,7 @@ export const packetTones: StatusToneMap = {
   failed: statusTerms.异常,
 };
 export const packetCodes: Record<string, string> = {
+  ...retentionDegradations,
   packet_spool_full: '原包暂存额度已用尽，捕获已停止；未确认原件继续保留',
   packet_spool_unavailable: '原包暂存目录不可读取',
   packet_source_unavailable: '原包捕获网卡或过滤器异常',
@@ -194,6 +234,61 @@ const counter = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9]{1,20}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
+function validRetention(retention: PacketRetention) {
+  return (
+    object(retention) &&
+    Object.hasOwn(retentionPolicyLabels, retention.mode) &&
+    size(retention.policy_revision, Number.MAX_SAFE_INTEGER) &&
+    (retention.policy_revision === 0
+      ? retention.network_domain === '' && retention.degradation === 'packet_seal_policy_unavailable'
+      : id(retention.network_domain)) &&
+    size(retention.original_packets, 1048576) &&
+    size(retention.original_bytes) &&
+    retention.original_bytes >= retention.original_packets &&
+    size(retention.retained_bytes, retention.original_bytes) &&
+    size(retention.unclassified_bytes, retention.original_bytes) &&
+    size(retention.unclassified_retained_bytes, Math.min(retention.unclassified_bytes, retention.retained_bytes)) &&
+    size(retention.duplicate_bytes, retention.original_bytes - retention.retained_bytes) &&
+    (retention.mode !== 'full' || retention.retained_bytes === retention.original_bytes) &&
+    (retention.degradation === undefined || Object.hasOwn(retentionDegradations, retention.degradation))
+  );
+}
+function validRetentionSessions(rows: PacketRetentionSession[], summary: PacketRetention) {
+  if (!Array.isArray(rows) || rows.length > 1024) return false;
+  let previous = 0;
+  let original = summary.unclassified_bytes;
+  let retained = summary.unclassified_retained_bytes;
+  for (const row of rows) {
+    if (
+      !object(row) ||
+      ![row.endpoint_a, row.endpoint_b].every(endpoint => typeof endpoint === 'string' && endpoint.length <= 56) ||
+      !['tcp', 'udp'].includes(row.transport) ||
+      !(row.transport === 'tcp' ? ['tcp', 'http', 'tls', 'ssh'] : ['udp', 'quic']).includes(row.protocol) ||
+      (row.vlan !== undefined && !/^[0-9]{1,4}(,[0-9]{1,4}){0,7}$/.test(row.vlan)) ||
+      !size(row.first_packet, summary.original_packets) ||
+      row.first_packet <= previous ||
+      !time(row.started_at) ||
+      !time(row.ended_at) ||
+      Date.parse(row.started_at) > Date.parse(row.ended_at) ||
+      row.policy_revision !== summary.policy_revision ||
+      !size(row.original_bytes, summary.original_bytes - original) ||
+      row.original_bytes === 0 ||
+      !size(row.retained_bytes, Math.min(row.original_bytes, summary.retained_bytes - retained))
+    )
+      return false;
+    const state =
+      row.retained_bytes === row.original_bytes
+        ? 'retained'
+        : row.retained_bytes === 0
+          ? 'metadata_only'
+          : 'policy_truncated';
+    if (row.state !== state) return false;
+    previous = row.first_packet;
+    original += row.original_bytes;
+    retained += row.retained_bytes;
+  }
+  return original === summary.original_bytes && retained === summary.retained_bytes;
+}
 export function validSessionReport(value: unknown): value is SessionExportReport {
   if (!object(value)) return false;
   const r = value as unknown as SessionExportReport;
@@ -226,6 +321,7 @@ function validHealth(health: PacketHealth) {
     time(health.observed_at) &&
     (health.last_confirmed_id === undefined || id(health.last_confirmed_id)) &&
     (health.last_confirmed_at === undefined || time(health.last_confirmed_at)) &&
+    (health.last_seal === undefined || validRetention(health.last_seal)) &&
     Array.isArray(health.interfaces) &&
     health.interfaces.length <= 16 &&
     health.interfaces.every(
@@ -338,6 +434,23 @@ export function validPacketRecord(value: unknown, local = false, detail = false)
       row.manifest_sha256 === undefined
     );
   if (row.state === 'capturing') return false;
+  if (
+    capture.retention !== undefined &&
+    (!validRetention(capture.retention) ||
+      capture.retention.original_packets < capture.packets ||
+      capture.retention.retained_bytes !== capture.packet_bytes)
+  )
+    return false;
+  const retentionSessions = row.manifest?.retention_sessions;
+  if (
+    (retentionSessions !== undefined &&
+      (!capture.retention || !validRetentionSessions(retentionSessions, capture.retention))) ||
+    (row.manifest &&
+      capture.retention &&
+      retentionSessions === undefined &&
+      capture.retention.unclassified_bytes !== capture.retention.original_bytes)
+  )
+    return false;
   if (
     capture.format !== 'pcapng' ||
     capture.source !== 'AF_PACKET' ||

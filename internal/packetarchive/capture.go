@@ -41,6 +41,7 @@ func CapturePackets(ctx context.Context, s *Spool, header Capture, rotate time.D
 		return err
 	}
 	baseline, baseErr := source.Drops()
+	syncAt := header.StartedAt.Add(time.Second)
 	reportAt := time.Time{}
 	progress := func(state, code string) {
 		if report != nil {
@@ -88,7 +89,8 @@ func CapturePackets(ctx context.Context, s *Spool, header Capture, rotate time.D
 			progress("quarantined", "capture_source_interrupted")
 			return readErr
 		}
-		if now().Sub(pending.Recorder.Capture.StartedAt) >= rotate || len(data) > 0 && pending.Recorder.Capture.Packets >= 1048576 {
+		observed := now()
+		if observed.Sub(pending.Recorder.Capture.StartedAt) >= rotate || len(data) > 0 && pending.Recorder.Capture.Packets >= 1048576 {
 			if err = seal("rotation"); err != nil {
 				return err
 			}
@@ -97,7 +99,19 @@ func CapturePackets(ctx context.Context, s *Spool, header Capture, rotate time.D
 			if err != nil {
 				return err
 			}
+			syncAt = header.StartedAt.Add(time.Second)
 			progress("capturing", "")
+		}
+		if !observed.Before(syncAt) {
+			if err = pending.Recorder.Flush(); err == nil {
+				err = pending.File.Sync()
+			}
+			if err != nil {
+				_ = pending.Abort("capture_write_unconfirmed")
+				progress("quarantined", "capture_write_unconfirmed")
+				return err
+			}
+			syncAt = observed.Add(time.Second)
 		}
 		if readErr != nil {
 			continue
@@ -120,6 +134,7 @@ func CapturePackets(ctx context.Context, s *Spool, header Capture, rotate time.D
 			if err != nil {
 				return err
 			}
+			syncAt = header.StartedAt.Add(time.Second)
 			err = pending.Recorder.Write(ci, data, vlan)
 		}
 		if err != nil {

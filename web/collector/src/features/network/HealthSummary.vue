@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { HostHealth, MetricSpec } from '@starbeacon/shared/types.ts';
 import { formatPercent, formatTime, formatHealthErrors } from '@starbeacon/shared/types.ts';
-import { packetStates } from '@starbeacon/shared/packetArchives.ts';
+import { packetStates, retentionDegradations } from '@starbeacon/shared/packetArchives.ts';
 import { formatBytes } from '@starbeacon/shared/utils/format.ts';
 import EngineHealthSummary from '@starbeacon/shared/components/EngineHealthSummary.vue';
 import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
@@ -54,6 +54,9 @@ const metrics = computed<MetricSpec[]>(() => {
         原包 {{ packetStates[health.packet_archive.state] ?? '状态待核查' }} · 暂存
         {{ formatBytes(health.packet_archive.reserved_bytes) }} / {{ formatBytes(health.packet_archive.quota_bytes) }} ·
         最近平台确认 {{ formatTime(health.packet_archive.last_confirmed_at) }}
+      </p>
+      <p v-if="health.packet_archive?.last_seal?.degradation">
+        {{ retentionDegradations[health.packet_archive.last_seal.degradation] }}
       </p>
     </div>
   </section>

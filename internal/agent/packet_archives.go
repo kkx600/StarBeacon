@@ -31,6 +31,7 @@ type PacketArchiveState struct {
 	Interfaces      []packetarchive.CaptureProgress `json:"interfaces"`
 	LastConfirmedID string                          `json:"last_confirmed_id,omitempty"`
 	LastConfirmedAt *time.Time                      `json:"last_confirmed_at,omitempty"`
+	LastSeal        *packetarchive.RetentionSummary `json:"last_seal,omitempty"`
 	ObservedAt      time.Time                       `json:"observed_at"`
 }
 type PacketArchiveController struct {
@@ -53,6 +54,7 @@ func NewPacketArchiveController(c config.Config, w *WAL, capture *CaptureSupervi
 	if err != nil {
 		return nil, err
 	}
+	spool.RetentionFile = c.PacketRetentionFile
 	return &PacketArchiveController{Config: c, Spool: spool, Capture: capture, WAL: w, progress: map[string]packetarchive.CaptureProgress{}, state: PacketArchiveState{Enabled: true, State: "waiting", Codec: c.PacketCodec, QuotaBytes: strconv.FormatInt(c.PacketSpoolBytes, 10), Interfaces: []packetarchive.CaptureProgress{}}}, nil
 }
 func (p *PacketArchiveController) Snapshot() PacketArchiveState {
@@ -200,6 +202,11 @@ func (p *PacketArchiveController) Upload(ctx context.Context, client sensorv1.Se
 		} else if err == nil {
 			row, err = p.Spool.Prepare(ctx, row.ID, p.Config.PacketCodec)
 			if err == nil {
+				if last := row.Capture.Retention; last != nil && (last.OriginalPackets > 0 || last.Degradation != "") {
+					p.mu.Lock()
+					p.state.LastSeal = last
+					p.mu.Unlock()
+				}
 				call, cancel := context.WithTimeout(ctx, 90*time.Second)
 				err = p.uploadOne(call, client, row)
 				cancel()
