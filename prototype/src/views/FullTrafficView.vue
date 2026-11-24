@@ -7,7 +7,10 @@ import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
 import PageHeader from '../components/PageHeader.vue';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import TimeRangeField from '../../../web/packages/shared/src/components/TimeRangeField.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import StatePanel from '../components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
@@ -19,6 +22,7 @@ const props = defineProps<{ page: PageSpec; state: PreviewState }>();
 const emit = defineEmits<{ state: [value: PreviewState] }>();
 const message = useFeedback();
 const router = useRouter();
+const timeWindows = ['最近 1 小时', '最近 24 小时', '最近 7 天', '最近 30 天', '自定义'];
 
 const sessions = ref([
   {
@@ -154,41 +158,29 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
   <template v-else>
     <MetricBar :items="metrics" />
 
-    <section class="panel filter-panel" aria-label="会话检索">
-      <div class="filter-grid traffic-filter">
-        <label
-          ><span>时间</span
-          ><a-select
-            v-model:value="query.window"
-            :options="
-              ['最近 1 小时', '最近 24 小时', '最近 7 天', '最近 30 天', '自定义'].map(value => ({
-                value,
-                label: value,
-              }))
-            "
-        /></label>
-        <label
-          ><span>源</span><a-input v-model:value="query.source" placeholder="IP、网段或 IP:端口" allow-clear
-        /></label>
-        <label
-          ><span>目的</span><a-input v-model:value="query.destination" placeholder="IP、网段或 IP:端口" allow-clear
-        /></label>
-        <label
-          ><span>原包留存</span
-          ><a-select
-            v-model:value="query.retention"
-            placeholder="全部"
-            allow-clear
-            :options="['完整', '按策略截断', '仅元数据'].map(value => ({ value, label: value }))"
-        /></label>
-        <div class="filter-buttons">
-          <a-button type="primary"><SearchOutlined />查询</a-button>
-          <a-button @click="query = { window: '最近 24 小时', source: '', destination: '', retention: undefined }"
-            >重置</a-button
-          >
-        </div>
-      </div>
-    </section>
+    <ListFilters label="会话检索" wide>
+      <TimeRangeField v-model:preset="query.window" :presets="timeWindows" label="时间" />
+      <label
+        ><span>源</span><a-input v-model:value="query.source" placeholder="IP、网段或 IP:端口" allow-clear
+      /></label>
+      <label
+        ><span>目的</span><a-input v-model:value="query.destination" placeholder="IP、网段或 IP:端口" allow-clear
+      /></label>
+      <label
+        ><span>原包留存</span
+        ><a-select
+          v-model:value="query.retention"
+          placeholder="全部"
+          allow-clear
+          :options="['完整', '按策略截断', '仅元数据'].map(value => ({ value, label: value }))"
+      /></label>
+      <template #actions>
+        <a-button type="primary"><SearchOutlined />查询</a-button>
+        <a-button @click="query = { window: '最近 24 小时', source: '', destination: '', retention: undefined }"
+          >重置</a-button
+        >
+      </template>
+    </ListFilters>
 
     <section class="panel table-panel">
       <div class="table-toolbar">
@@ -202,12 +194,10 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
         action="查看留存策略"
         @action="router.push(settingsLink)"
       />
-      <a-table
+      <ListTable
         v-else
         :columns="columns"
         :data-source="rows.filter(row => !query.retention || row.retention === query.retention)"
-        row-key="id"
-        size="small"
         :scroll="{ x: 1170 }"
         :pagination="tablePagination()"
       >
@@ -246,7 +236,7 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
             >
           </span>
         </template>
-      </a-table>
+      </ListTable>
     </section>
   </template>
 </template>
@@ -258,13 +248,5 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
 }
 .traffic-policy-edit {
   margin-left: var(--related-gap);
-}
-.traffic-filter {
-  grid-template-columns: minmax(150px, 0.8fr) repeat(2, minmax(180px, 1.2fr)) minmax(150px, 0.8fr) auto;
-}
-@media (max-width: 1180px) {
-  .traffic-filter {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>

@@ -2,7 +2,7 @@
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { palette } from '../theme';
 import { computed, ref, watch } from 'vue';
-import { Modal } from 'ant-design-vue';
+import { Modal, type TableColumnType } from 'ant-design-vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   PlusOutlined,
@@ -29,7 +29,10 @@ import PacketInspectionDialog from './PacketInspectionDialog.vue';
 import SavedQueries from './SavedQueries.vue';
 import type { QuerySnapshot } from './SavedQueries.vue';
 import HelpNote from './HelpNote.vue';
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import ListPager from '../../../web/packages/shared/src/components/ListPager.vue';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
+import TimeRangeField from '../../../web/packages/shared/src/components/TimeRangeField.vue';
 import { defaultPageSize, pageOf } from '../../../web/packages/shared/src/pagination';
 import { healthFor, sensorMetrics } from '../data/sensorHealth';
 import { sensorThresholds } from '../composables/useSensorHealth';
@@ -58,6 +61,7 @@ const method = ref<string>();
 const source = ref('');
 const destination = ref('');
 const path = ref('');
+const timeWindows = ['最近 1 小时', '最近 24 小时', '最近 7 天'];
 const timeWindow = ref('最近 24 小时');
 const healthFilter = ref<string>();
 const batchIds = ref<string[]>([]);
@@ -229,7 +233,7 @@ const extraColumns = computed<ColumnSpec[]>(() =>
       ]
     : [],
 );
-const columns = computed(() => [
+const columns = computed<(ColumnSpec & TableColumnType<BusinessRecord>)[]>(() => [
   { title: '编号', key: 'id', dataIndex: 'id', width: 124, kind: 'code' as const, ellipsis: true },
   ...[...props.page.columns.slice(0, 1), ...extraColumns.value, ...props.page.columns.slice(1)]
     .filter(c => visibleCols.value.includes(c.key) || extraColumns.value.includes(c))
@@ -431,48 +435,46 @@ function batch() {
   />
   <MetricBar v-if="metrics.length && state !== 'loading' && state !== 'error'" :items="metrics" />
   <slot name="before" />
-  <section class="panel filter-panel" aria-label="检索条件">
-    <div :class="['filter-grid', { 'sensor-filter-grid': page.family === 'sensor' }]">
-      <label
-        ><span>关键词</span
-        ><a-input
-          v-model:value="query"
-          :placeholder="`名称、编号或${page.columns[1]?.title ?? '字段'}`"
-          allow-clear
-          @press-enter="search"
-      /></label>
-      <label
-        ><span>状态</span
-        ><a-select v-model:value="filterStatus" placeholder="全部状态" allow-clear :options="statusOptions"
-      /></label>
-      <label v-if="page.family === 'sensor'"
-        ><span>健康</span
-        ><a-select
-          v-model:value="healthFilter"
-          placeholder="全部健康状态"
-          allow-clear
-          :options="
-            [...new Set(displayRecords.map(record => String(record.health)))].map(value => ({ value, label: value }))
-          "
-      /></label>
-      <label v-if="page.family !== 'sensor-group' && page.family !== 'decision-evaluation'"
-        ><span>网络域</span
-        ><a-select
-          v-model:value="scope"
-          :options="['全部网络域', '总部网络域', '研发网络域', '分支网络域'].map(value => ({ value, label: value }))"
-      /></label>
-      <div class="filter-buttons">
-        <a-button type="primary" @click="search"><SearchOutlined />查询</a-button>
-        <a-button @click="reset">重置</a-button>
-        <a-button
-          v-if="['alert', 'session', 'log', 'behavior'].includes(page.family)"
-          type="link"
-          @click="advanced = !advanced"
-          >{{ advanced ? '收起' : '高级筛选' }}<FilterOutlined
-        /></a-button>
-      </div>
-    </div>
-    <div v-if="advanced" class="filter-grid advanced-filters">
+  <ListFilters :wide="page.family === 'sensor'">
+    <label
+      ><span>关键词</span
+      ><a-input
+        v-model:value="query"
+        :placeholder="`名称、编号或${page.columns[1]?.title ?? '字段'}`"
+        allow-clear
+        @press-enter="search"
+    /></label>
+    <label
+      ><span>状态</span
+      ><a-select v-model:value="filterStatus" placeholder="全部状态" allow-clear :options="statusOptions"
+    /></label>
+    <label v-if="page.family === 'sensor'"
+      ><span>健康</span
+      ><a-select
+        v-model:value="healthFilter"
+        placeholder="全部健康状态"
+        allow-clear
+        :options="
+          [...new Set(displayRecords.map(record => String(record.health)))].map(value => ({ value, label: value }))
+        "
+    /></label>
+    <label v-if="page.family !== 'sensor-group' && page.family !== 'decision-evaluation'"
+      ><span>网络域</span
+      ><a-select
+        v-model:value="scope"
+        :options="['全部网络域', '总部网络域', '研发网络域', '分支网络域'].map(value => ({ value, label: value }))"
+    /></label>
+    <template #actions>
+      <a-button type="primary" @click="search"><SearchOutlined />查询</a-button>
+      <a-button @click="reset">重置</a-button>
+      <a-button
+        v-if="['alert', 'session', 'log', 'behavior'].includes(page.family)"
+        type="link"
+        @click="advanced = !advanced"
+        >{{ advanced ? '收起' : '高级筛选' }}<FilterOutlined
+      /></a-button>
+    </template>
+    <template v-if="advanced" #advanced>
       <label><span>源 IP</span><a-input v-model:value="source" placeholder="例如 198.51.100.24" /></label>
       <label><span>目的 IP</span><a-input v-model:value="destination" placeholder="例如 10.20.1.15" /></label>
       <label
@@ -492,14 +494,9 @@ function batch() {
           :options="['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'].map(value => ({ value, label: value }))"
       /></label>
       <label><span>Path 路径</span><a-input v-model:value="path" placeholder="例如 /admin/login" /></label>
-      <label
-        ><span>时间范围</span
-        ><a-select
-          v-model:value="timeWindow"
-          :options="['最近 1 小时', '最近 24 小时', '最近 7 天'].map(value => ({ value, label: value }))"
-      /></label>
-    </div>
-  </section>
+      <TimeRangeField v-model:preset="timeWindow" :presets="timeWindows" />
+    </template>
+  </ListFilters>
   <section class="panel table-panel">
     <div class="table-toolbar">
       <div>
@@ -557,13 +554,10 @@ function batch() {
       "
     />
     <template v-else>
-      <a-table
+      <ListTable
         :columns="columns"
         :data-source="paged"
-        row-key="id"
-        size="small"
         :scroll="{ x: columns.reduce((sum, c) => sum + (c.width ?? 200), 44) }"
-        :pagination="false"
         :row-selection="
           page.family === 'sensor-group' || page.family === 'decision-evaluation' || localArchives
             ? undefined
@@ -579,7 +573,9 @@ function batch() {
         "
       >
         <template #bodyCell="{ column, record, text }">
-          <button v-if="column.key === 'name'" class="record-link" @click="view(record)">{{ text }}</button>
+          <button v-if="column.key === 'name'" class="record-link" :title="String(text ?? '')" @click="view(record)">
+            {{ text }}
+          </button>
           <span v-else-if="page.family === 'sensor' && column.key === 'lastSeen'" class="tabular">{{
             text ?? '尚未上报'
           }}</span>
@@ -628,7 +624,7 @@ function batch() {
             formatCell(text, column)
           }}</span>
         </template>
-      </a-table>
+      </ListTable>
       <ListPager v-model:page="currentPage" v-model:page-size="pageSize" :total="filtered.length" />
     </template>
   </section>

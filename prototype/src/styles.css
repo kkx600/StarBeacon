@@ -378,71 +378,8 @@ p {
   font-size: 12px;
   line-height: 1.75;
 }
-.filter-panel {
-  padding: var(--section-gap) var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.filter-grid {
-  display: grid;
-  grid-template-columns: minmax(230px, 1.5fr) minmax(155px, 1fr) minmax(160px, 1fr) auto;
-  gap: var(--field-gap);
-  align-items: end;
-}
-.filter-grid > label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--label-gap);
-  min-width: 0;
-}
-.filter-grid label > span,
 .capacity-fields label > span {
   font-size: 12px;
-  color: var(--field-label);
-}
-.filter-grid .ant-select {
-  width: 100%;
-}
-.filter-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.advanced-filters {
-  padding-top: var(--section-gap);
-  margin-top: var(--section-gap);
-  border-top: 1px solid var(--line);
-  grid-template-columns: repeat(4, minmax(130px, 1fr));
-}
-.table-panel {
-  overflow: hidden;
-}
-.table-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: var(--section-gap) var(--panel-inset);
-  border-bottom: 1px solid var(--line);
-}
-.table-toolbar > div:first-child {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-}
-.table-toolbar h2 {
-  margin: 0;
-  font-size: 16px;
-}
-.table-toolbar .muted {
-  font-size: 12px;
-}
-.table-panel .ant-table-wrapper .ant-table-pagination {
-  margin: var(--section-gap) var(--panel-inset);
-}
-.table-panel .ant-table-thead > tr > th {
-  font-size: 12px;
-  font-weight: 500;
   color: var(--field-label);
 }
 .ant-table {
@@ -451,18 +388,6 @@ p {
 }
 .ant-table-row:hover td {
   background: var(--row-hover) !important;
-}
-.record-link {
-  border: 0;
-  background: transparent;
-  color: var(--link);
-  font-weight: 500;
-  font-size: 13px;
-  padding: 0;
-  text-align: left;
-}
-.record-link:hover {
-  text-decoration: underline;
 }
 .row-id {
   font-size: 12px;
@@ -2002,13 +1927,6 @@ p {
   .topbar .ant-breadcrumb li:last-child {
     display: none;
   }
-  .filter-grid {
-    gap: 12px;
-    grid-template-columns: 1.3fr 1fr 1fr;
-  }
-  .filter-buttons {
-    grid-column: 1/-1;
-  }
   .page-header {
     align-items: flex-start;
   }
@@ -2130,10 +2048,6 @@ textarea:not(:disabled)::placeholder {
   line-height: 1.7;
   margin: 0 0 var(--section-gap);
 }
-.sensor-filter-grid {
-  grid-template-columns: minmax(180px, 1.4fr) minmax(95px, 0.65fr) minmax(130px, 1fr) minmax(140px, 1fr) auto;
-  gap: 12px;
-}
 .sensor-health-summary {
   display: flex;
   align-items: center;
@@ -2186,8 +2100,7 @@ textarea,
 [contenteditable='true'] {
   caret-color: var(--primary);
 }
-a,
-.record-link {
+a {
   text-underline-offset: 3px;
 }
 

@@ -75,6 +75,121 @@ strong {
 .ant-table-wrapper .ant-table-thead > tr > th {
   font-weight: 600;
 }
+/* 列表使用同一组字段间距、行高和横向滚动边界。 */
+.filter-panel {
+  padding: var(--related-gap) var(--panel-inset);
+  margin-bottom: var(--related-gap);
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) minmax(170px, 1fr) minmax(190px, 1fr) auto;
+  align-items: center;
+  gap: var(--field-gap);
+}
+.filter-grid-wide {
+  grid-template-columns: minmax(200px, 1.3fr) repeat(3, minmax(140px, 1fr)) auto;
+}
+.filter-grid > label,
+.filter-field {
+  display: flex;
+  align-items: center;
+  gap: var(--related-gap);
+  min-width: 0;
+}
+.filter-grid > label > span:first-child,
+.filter-field > label {
+  flex: none;
+  color: var(--field-label);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.filter-grid > label > :not(span:first-child),
+.filter-field > :not(label) {
+  flex: 1;
+  min-width: 0;
+}
+.filter-grid .ant-select {
+  width: 100%;
+}
+.filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--related-gap);
+}
+.advanced-filters {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: var(--related-gap);
+  margin-top: var(--related-gap);
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 1180px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.table-panel {
+  overflow: hidden;
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--field-gap);
+  padding: var(--related-gap) var(--panel-inset);
+  border-bottom: 1px solid var(--line);
+}
+.table-toolbar > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.table-toolbar h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.table-toolbar .muted {
+  font-size: 12px;
+}
+:is(.list-table.ant-table-wrapper, .table-panel .ant-table-wrapper) .ant-table-pagination {
+  margin: var(--section-gap) var(--panel-inset);
+}
+:is(.list-table.ant-table-wrapper, .table-panel .ant-table-wrapper) .ant-table-thead > tr > th {
+  padding: 8px 12px;
+  color: var(--field-label);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+:is(.list-table.ant-table-wrapper, .table-panel .ant-table-wrapper) .ant-table-tbody > tr > td {
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 22px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.record-link {
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 0;
+  text-align: left;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.record-link:hover {
+  text-decoration: underline;
+}
+:is(.list-table, .table-panel) .record-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 22px;
+}
 .form-section-title {
   grid-column: 1 / -1;
   margin: 4px 0 12px;

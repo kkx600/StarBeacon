@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Select as ASelect } from 'ant-design-vue';
 import { qualityEventNames, type QualityFilters } from '../qualityEvents';
+import TimeRangeField from './TimeRangeField.vue';
 const model = defineModel<QualityFilters>({ required: true });
 defineProps<{ pending: boolean }>();
 const emit = defineEmits<{ query: []; cancel: []; reset: [] }>();
@@ -8,16 +9,13 @@ const emit = defineEmits<{ query: []; cancel: []; reset: [] }>();
 <template>
   <a-form :model="model" layout="vertical" class="panel quality-event-form" @finish="emit('query')"
     ><div class="quality-event-fields">
-      <a-form-item label="开始时间（本地时间）" html-for="quality-start" required
-        ><a-input id="quality-start" v-model:value="model.start" type="datetime-local" step="1"
-      /></a-form-item>
-      <a-form-item
-        label="结束时间（本地时间）"
-        html-for="quality-end"
+      <TimeRangeField
+        v-model:start="model.start"
+        v-model:end="model.end"
+        id-prefix="quality"
         required
-        extra="结束时刻不包含在查询内，窗口最多 31 天。"
-        ><a-input id="quality-end" v-model:value="model.end" type="datetime-local" step="1"
-      /></a-form-item>
+        end-hint="结束时刻不包含在查询内，窗口最多 31 天。"
+      />
       <a-form-item label="事件类型" html-for="quality-kind"
         ><a-select
           id="quality-kind"
@@ -57,7 +55,7 @@ const emit = defineEmits<{ query: []; cancel: []; reset: [] }>();
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0 var(--field-gap);
 }
-.quality-event-fields .ant-form-item {
+.quality-event-fields :deep(.ant-form-item) {
   min-width: 0;
 }
 .quality-event-fields .ant-select {
