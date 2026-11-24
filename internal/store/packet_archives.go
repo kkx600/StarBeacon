@@ -183,10 +183,10 @@ type packetCursor struct {
 	ID   string    `json:"id"`
 }
 
-func (p *Postgres) PacketArchives(ctx context.Context, u model.Principal, sensor, cursor string) (out []PacketArchiveSummary, next string, err error) {
+func (p *Postgres) PacketArchives(ctx context.Context, u model.Principal, sensor, cursor string, limit int) (out []PacketArchiveSummary, next string, err error) {
 	out = []PacketArchiveSummary{}
 	var after packetCursor
-	if u.Role != "admin" || sensor != "" && !contract.ValidID(sensor) || len(cursor) > 1024 {
+	if !contract.ValidListLimit(limit) || u.Role != "admin" || sensor != "" && !contract.ValidID(sensor) || len(cursor) > 1024 {
 		return out, "", packetarchive.ErrIntegrity
 	}
 	if cursor != "" {
@@ -199,7 +199,7 @@ func (p *Postgres) PacketArchives(ctx context.Context, u model.Principal, sensor
 		if e := activePlanOwner(ctx, tx, u.TenantID, u.ID); e != nil {
 			return e
 		}
-		rows, e := tx.Query(ctx, `SELECT id,state,manifest->'capture',manifest->'encoding'->>'codec',(manifest->'encoding'->>'raw_bytes')::bigint,stored_bytes,manifest_sha256,created_at,expires_at FROM packet_archives WHERE tenant_id=$1 AND ($2='' OR sensor_id=$2) AND expires_at>now() AND ($3::timestamptz IS NULL OR (created_at,id)<($3,$4)) ORDER BY created_at DESC,id DESC LIMIT 51`, u.TenantID, sensor, nullableTime(after.Time), after.ID)
+		rows, e := tx.Query(ctx, `SELECT id,state,manifest->'capture',manifest->'encoding'->>'codec',(manifest->'encoding'->>'raw_bytes')::bigint,stored_bytes,manifest_sha256,created_at,expires_at FROM packet_archives WHERE tenant_id=$1 AND ($2='' OR sensor_id=$2) AND expires_at>now() AND ($3::timestamptz IS NULL OR (created_at,id)<($3,$4)) ORDER BY created_at DESC,id DESC LIMIT $5`, u.TenantID, sensor, nullableTime(after.Time), after.ID, limit+1)
 		if e != nil {
 			return e
 		}
@@ -217,8 +217,8 @@ func (p *Postgres) PacketArchives(ctx context.Context, u model.Principal, sensor
 		}
 		return rows.Err()
 	})
-	if err == nil && len(out) > 50 {
-		out = out[:50]
+	if err == nil && len(out) > limit {
+		out = out[:limit]
 		last := out[len(out)-1]
 		raw, _ := json.Marshal(packetCursor{last.CreatedAt, last.ID})
 		next = base64.RawURLEncoding.EncodeToString(raw)

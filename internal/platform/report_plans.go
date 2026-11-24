@@ -56,11 +56,15 @@ func (a *API) saveReportPlan(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) reportPlanRuns(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	if a.DB == nil {
 		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划数据服务暂不可用")
 		return
 	}
-	page, err := a.DB.ReportPlanRuns(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"))
+	page, err := a.DB.ReportPlanRuns(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		planFailure(w, r, err)
 		return

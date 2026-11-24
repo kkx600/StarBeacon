@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
@@ -170,16 +171,17 @@ func TestInventoryHTTPPersistenceHistoryAndTenantIsolation(t *testing.T) {
 	if normalized.Prefix != "192.0.2.0/24" {
 		t.Fatal("CIDR 未标准化")
 	}
-	for _, id := range []string{"obj_group_2", "obj_group_3"} {
+	for i := range 11 {
+		id := fmt.Sprintf("obj_group_page_%02d", i)
 		request(a, "POST", "/api/v1/inventory/groups", user.CSRF, server.URL, write(id, 0, inventory.Group{Name: "100%", Active: true}), 201, nil)
 	}
-	request(a, "GET", "/api/v1/inventory/groups?limit=1&keyword=100%25", "", "", nil, 200, &page)
-	if len(page.Items) != 1 || page.NextCursor == "" {
+	request(a, "GET", "/api/v1/inventory/groups?limit=10&keyword=100%25", "", "", nil, 200, &page)
+	if len(page.Items) != 10 || page.NextCursor != page.Items[9].ID {
 		t.Fatal("游标页未生成")
 	}
 	cursor := page.NextCursor
-	request(a, "GET", "/api/v1/inventory/groups?limit=1&keyword=100%25&cursor="+cursor, "", "", nil, 200, &page)
-	if len(page.Items) != 1 || page.Items[0].ID == cursor || page.NextCursor != "" {
+	request(a, "GET", "/api/v1/inventory/groups?limit=10&keyword=100%25&cursor="+cursor, "", "", nil, 200, &page)
+	if len(page.Items) != 1 || page.Items[0].ID != "obj_group_page_10" || page.NextCursor != "" {
 		t.Fatal("游标重读或遗漏")
 	}
 	for _, path := range []string{"/api/v1/inventory/users", "/api/v1/inventory/assets?limit=101", "/api/v1/inventory/assets?limit=wrong", "/api/v1/inventory/assets?cursor=..", "/api/v1/inventory/assets/obj_asset/history?at=wrong"} {
@@ -198,7 +200,8 @@ func TestInventoryHTTPPersistenceHistoryAndTenantIsolation(t *testing.T) {
 	require(t, owner.TenantTx(ctx, tenants[0], func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `SELECT count(*) FROM inventory_history WHERE tenant_id=$1 AND expires_at-valid_from=interval '180 days'`, tenants[0]).Scan(&count)
 	}))
-	if count != 6 {
+	// 基础目录的四条记录与 11 个分页样本都应应用默认留存。
+	if count != 15 {
 		t.Fatalf("历史默认留存错误：%d", count)
 	}
 	t.Log("真实 HTTP、PostgreSQL RLS、Redis 会话限流、资产修订、网段标准化、游标、权限与 180 天快照留存通过")

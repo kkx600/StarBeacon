@@ -252,7 +252,7 @@ func TestUserManagementAtomicRollbackPrivilegesAndConcurrentAdministrators(t *te
 func TestUserManagementPaginationQuotasCorruptReceiptsAndFailureBoundaries(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	f, u, _, _ := accountFixture(t, ctx)
+	f, u, _, password := accountFixture(t, ctx)
 	active := true
 	input := accounts.Create{Username: "boundary_owned", Password: store.Token(), Role: "viewer", Active: &active}
 	r, err := f.Runtime.CreateUser(ctx, u, "boundary_create", input)
@@ -300,8 +300,24 @@ func TestUserManagementPaginationQuotasCorruptReceiptsAndFailureBoundaries(t *te
 	if len(next.Items) != 4 || next.Next != "" {
 		t.Fatal("目录续点遗漏或重复用户", len(next.Items))
 	}
+	client := authenticatedFaultHTTP(t, ctx, f.Runtime, &platform.API{DB: f.Runtime}, u.Username, password)
+	var limited, continuation accounts.Page
+	client.request("GET", "/users?role=viewer&limit=10", "", nil, &limited, 200)
+	if len(limited.Items) != 10 || limited.Next != limited.Items[9].ID {
+		t.Fatal("指定页长或续点错误", limited)
+	}
+	client.request("GET", "/users?role=viewer&limit=100&before="+limited.Next, "", nil, &continuation, 200)
+	if len(continuation.Items) != 14 || continuation.Next != "" {
+		t.Fatal("改变页长后的游标续页错误", continuation)
+	}
+	expected := append(p.Items, next.Items...)
+	for i, row := range append(limited.Items, continuation.Items...) {
+		if row.ID != expected[i].ID {
+			t.Fatal("页长变化改变目录顺序或遗漏用户", i, row.ID)
+		}
+	}
 	seen := map[string]bool{}
-	for _, row := range append(p.Items, next.Items...) {
+	for _, row := range expected {
 		if seen[row.ID] {
 			t.Fatal("分页重复")
 		}

@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net/http"
@@ -328,13 +329,16 @@ func TestAnalysisPersistentJobsReportsOwnershipBudgetsAndCancellation(t *testing
 	if duplicate.Revision != report.Revision+1 || duplicate.ID == report.ID {
 		t.Fatal("报告修订覆盖旧记录", duplicate)
 	}
+	for i := range 9 {
+		a.request("POST", "/analysis/jobs", fmt.Sprintf("stats_report_page_%02d", i), reportInput, nil, 202)
+	}
 	var page store.AnalysisPage
-	a.request("GET", "/analysis/jobs?group=reports&limit=1", "", nil, &page, 200)
-	if len(page.Items) != 1 || page.Next == "" {
+	a.request("GET", "/analysis/jobs?group=reports&limit=10", "", nil, &page, 200)
+	if len(page.Items) != 10 || page.Next != page.Items[9].ID {
 		t.Fatal("报告分页错误", page)
 	}
-	a.request("GET", "/analysis/jobs?group=reports&limit=1&before="+page.Next, "", nil, &page, 200)
-	if len(page.Items) != 1 || page.Next != "" {
+	a.request("GET", "/analysis/jobs?group=reports&limit=10&before="+page.Next, "", nil, &page, 200)
+	if len(page.Items) != 1 || page.Items[0].ID != report.ID || page.Next != "" {
 		t.Fatal("报告分页重复或遗漏", page)
 	}
 	b.request("GET", "/analysis/jobs?group=reports", "", nil, &page, 200)

@@ -156,8 +156,7 @@ type QualityPage struct {
 }
 
 func (s *Elasticsearch) QualityEvents(ctx context.Context, tenant, sensor, registration, kind string, q model.SearchRequest) (QualityPage, error) {
-	result := QualityPage{Items: []qualityevent.Event{}, Total: "0", Page: q.Page, PageSize: 20}
-	q.PageSize = 20
+	result := QualityPage{Items: []qualityevent.Event{}, Total: "0", Page: q.Page, PageSize: q.PageSize}
 	extra := []any{map[string]any{"term": map[string]string{"event.dataset": qualityevent.Dataset}}}
 	for _, pair := range []struct{ field, value string }{{"sensor_id", sensor}, {"sensor_registration_id", registration}, {"rule.id", kind}} {
 		if pair.value != "" {
@@ -177,5 +176,6 @@ func (s *Elasticsearch) QualityEvents(ctx context.Context, tenant, sensor, regis
 	}
 	result.Total = strconv.FormatInt(page.Total, 10)
 	result.Page = page.Page
+	result.PageSize = page.PageSize
 	return result, nil
 }

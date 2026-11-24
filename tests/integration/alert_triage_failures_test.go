@@ -106,11 +106,11 @@ func TestAlertTriageDatabaseInterruptionPreservesFrozenJobsAndQueue(t *testing.T
 			return e
 		}},
 		{"history", []string{"SELECT id,state,provider_id"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.AlertTriages(ctx, u, input.EventID, input.RawSHA256, "")
+			_, e := db.AlertTriages(ctx, u, input.EventID, input.RawSHA256, "", 20)
 			return e
 		}},
 		{"cursor", []string{"SELECT created_at FROM alert_triage_jobs"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.AlertTriages(ctx, u, input.EventID, input.RawSHA256, job.ID)
+			_, e := db.AlertTriages(ctx, u, input.EventID, input.RawSHA256, job.ID, 20)
 			return e
 		}},
 		{"start", []string{"SELECT jsonb_build_object", "SELECT public.lock_report_plan_owner", "SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE alert_triage_jobs SET state='running'"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {

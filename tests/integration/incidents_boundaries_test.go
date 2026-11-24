@@ -73,7 +73,7 @@ func TestIncidentsTransactionsPaginationCorruptionAndQuotas(t *testing.T) {
 			_, e := db.Incidents(ctx, u, incident.Query{Before: seed.ID})
 			return e
 		}},
-		{"history", []string{"SELECT state<>'closed'", "SELECT record,revision"}, func(db *store.Postgres) error { _, e := db.IncidentHistory(ctx, u, seed.ID, ""); return e }},
+		{"history", []string{"SELECT state<>'closed'", "SELECT record,revision"}, func(db *store.Postgres) error { _, e := db.IncidentHistory(ctx, u, seed.ID, "", 20); return e }},
 		{"owners", []string{"SELECT u.id,u.username"}, func(db *store.Postgres) error { _, e := db.IncidentAssignees(ctx, u); return e }},
 		{"receipt", []string{"SELECT input_hash,record"}, func(db *store.Postgres) error {
 			_, e := db.IncidentReceipt(ctx, u, "seed_owned", "create", store.IncidentCreateHash(input))
@@ -105,7 +105,7 @@ func TestIncidentsTransactionsPaginationCorruptionAndQuotas(t *testing.T) {
 	if _, e := f.Runtime.IncidentAssignees(ctx, model.Principal{}); !errors.Is(e, incident.ErrInput) {
 		t.Fatal("无身份可读取责任人", e)
 	}
-	if _, e := f.Runtime.IncidentHistory(ctx, u, "bad/id", ""); !errors.Is(e, incident.ErrInput) {
+	if _, e := f.Runtime.IncidentHistory(ctx, u, "bad/id", "", 20); !errors.Is(e, incident.ErrInput) {
 		t.Fatal("错误历史标识可查询", e)
 	}
 	if _, e := f.Runtime.CreateIncident(ctx, u, "bad/id", input, nil, ""); !errors.Is(e, incident.ErrInput) {
@@ -161,15 +161,25 @@ func TestIncidentsTransactionsPaginationCorruptionAndQuotas(t *testing.T) {
 		}
 		seen[r.ID] = true
 	}
-	history, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, "")
+	history, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, "", 20)
 	require(t, err)
 	if len(history.Items) != 20 || history.Next != "4" {
 		t.Fatal("时间线续点错误", history)
 	}
-	oldHistory, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, history.Next)
+	oldHistory, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, history.Next, 20)
 	require(t, err)
 	if len(oldHistory.Items) != 3 || oldHistory.Items[2].Revision != 1 || oldHistory.Next != "" {
 		t.Fatal("旧调查材料缺失或重复", oldHistory)
+	}
+	small, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, "", 10)
+	require(t, err)
+	if len(small.Items) != 10 || small.Next != "14" {
+		t.Fatal("指定页长未保留修订续点", small)
+	}
+	remainder, err := f.Runtime.IncidentHistory(ctx, u, seed.ID, small.Next, 50)
+	require(t, err)
+	if len(remainder.Items) != 13 || remainder.Items[0].Revision != 13 || remainder.Items[12].Revision != 1 || remainder.Next != "" {
+		t.Fatal("按修订续页重复或遗漏", remainder)
 	}
 
 	t.Run("corrupted_current_and_history_fail_closed", func(t *testing.T) {
@@ -189,7 +199,7 @@ func TestIncidentsTransactionsPaginationCorruptionAndQuotas(t *testing.T) {
 		require(t, f.Owner.Pool.QueryRow(ctx, `SELECT record FROM incident_changes WHERE tenant_id=$1 AND incident_id=$2 AND revision=23`, tenant, seed.ID).Scan(&original))
 		_, e = f.Owner.Pool.Exec(ctx, `UPDATE incident_changes SET record='{}' WHERE tenant_id=$1 AND incident_id=$2 AND revision=23`, tenant, seed.ID)
 		require(t, e)
-		if _, e = f.Runtime.IncidentHistory(ctx, u, seed.ID, ""); e == nil {
+		if _, e = f.Runtime.IncidentHistory(ctx, u, seed.ID, "", 20); e == nil {
 			t.Fatal("损坏调查历史可读取")
 		}
 		if _, e = f.Runtime.IncidentReceipt(ctx, u, "change_page_22", "change", store.IncidentChangeHash(seed.ID, change)); e == nil {

@@ -307,13 +307,19 @@ func TestNativePlatformManagementIsolationCASAuditSampleRecoveryAndLogout(t *tes
 			t.Fatal("操作日志缺少实际请求元数据")
 		}
 	}
-	a.request("GET", "/audits/operations?limit=1", "", nil, &audit, 200)
-	if len(audit.Items) != 1 || audit.NextCursor == "" {
+	require(t, fixture.Owner.TenantTx(ctx, identity.TenantID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `INSERT INTO operation_audits(tenant_id,user_id,action,object_id,request_id)
+			SELECT u.tenant_id,u.id,'list.page.fixture','fixture_'||n,'req_fixture_'||n
+			FROM users u CROSS JOIN generate_series(1,11) n WHERE u.tenant_id=$1 AND u.username='http_admin_a'`, identity.TenantID)
+		return err
+	}))
+	a.request("GET", "/audits/operations?limit=10", "", nil, &audit, 200)
+	if len(audit.Items) != 10 || audit.NextCursor != audit.Items[9].ID {
 		t.Fatal("操作日志没有返回有界游标")
 	}
-	newest := audit.Items[0].ID
-	a.request("GET", "/audits/operations?limit=1&cursor="+audit.NextCursor, "", nil, &audit, 200)
-	if len(audit.Items) != 1 || audit.Items[0].ID == newest {
+	boundary := audit.NextCursor
+	a.request("GET", "/audits/operations?limit=10&cursor="+boundary, "", nil, &audit, 200)
+	if len(audit.Items) == 0 || audit.Items[0].ID == boundary {
 		t.Fatal("日志游标重复返回同一对象")
 	}
 	b.request("GET", "/audits/operations", "", nil, &audit, 200)

@@ -208,7 +208,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	if count != 2 {
 		t.Fatal("自动研判每日登记额度被绕过", count)
 	}
-	pageTriggers, err := f.Runtime.AutomaticTriages(ctx, u, policy.ID, policy.Revision, "")
+	pageTriggers, err := f.Runtime.AutomaticTriages(ctx, u, policy.ID, policy.Revision, "", 20)
 	require(t, err)
 	if len(pageTriggers.Items) != 2 || pageTriggers.Next != "" {
 		t.Fatal("触发记录不能反映已提交与额度拒绝")
@@ -220,7 +220,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	}
 	other := u
 	other.Role = "viewer"
-	if _, err := f.Runtime.AutomaticTriages(ctx, other, policy.ID, policy.Revision, ""); !errors.Is(err, decision.ErrPermission) {
+	if _, err := f.Runtime.AutomaticTriages(ctx, other, policy.ID, policy.Revision, "", 20); !errors.Is(err, decision.ErrPermission) {
 		t.Fatal("只读账号读取了私有自动研判记录", err)
 	}
 	if f.Runtime.RecordAutomaticTriage(ctx, "/", nil) == nil || f.Runtime.RecordAutomaticTriage(ctx, u.TenantID, make([]model.Alert, 501)) == nil {

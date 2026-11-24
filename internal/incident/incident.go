@@ -160,10 +160,11 @@ type Query struct {
 	Status   string
 	Severity string
 	Before   string
+	Limit    int
 }
 
 func (q Query) Validate() error {
-	if (q.Status != "" && !slices.Contains([]string{"open", "investigating", "closed"}, q.Status)) || (q.Severity != "" && !slices.Contains([]string{"low", "medium", "high", "critical"}, q.Severity)) || (q.Before != "" && !contract.ValidID(q.Before)) {
+	if q.Limit != 0 && !contract.ValidListLimit(q.Limit) || (q.Status != "" && !slices.Contains([]string{"open", "investigating", "closed"}, q.Status)) || (q.Severity != "" && !slices.Contains([]string{"low", "medium", "high", "critical"}, q.Severity)) || (q.Before != "" && !contract.ValidID(q.Before)) {
 		return ErrInput
 	}
 	return nil

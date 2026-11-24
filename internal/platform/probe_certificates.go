@@ -25,8 +25,12 @@ func (a *API) registerProbeCertificates(m *http.ServeMux) {
 }
 
 func (a *API) probeEnrollments(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	q := r.URL.Query()
-	if len(q) > 1 || len(q["cursor"]) > 1 || len(q) == 1 && !q.Has("cursor") {
+	if !incidentQuery(r, "cursor", "limit") {
 		probeFailure(w, r, probepki.ErrInput)
 		return
 	}
@@ -34,7 +38,7 @@ func (a *API) probeEnrollments(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 503, "storage_unavailable", "注册目录暂不可用")
 		return
 	}
-	items, next, err := a.DB.ProbeEnrollments(r.Context(), httpapi.Principal(r), q.Get("cursor"))
+	items, next, err := a.DB.ProbeEnrollments(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
 	if err != nil {
 		probeFailure(w, r, err)
 		return
@@ -132,8 +136,12 @@ func (a *API) exchangeProbeEnrollment(w http.ResponseWriter, r *http.Request) {
 	httpapi.JSON(w, 200, c)
 }
 func (a *API) probeCertificates(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	q := r.URL.Query()
-	if len(q) > 1 || len(q["cursor"]) > 1 || len(q) == 1 && !q.Has("cursor") {
+	if !incidentQuery(r, "cursor", "limit") {
 		probeFailure(w, r, probepki.ErrInput)
 		return
 	}
@@ -141,7 +149,7 @@ func (a *API) probeCertificates(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 503, "storage_unavailable", "证书目录暂不可用")
 		return
 	}
-	items, next, err := a.DB.ProbeCertificates(r.Context(), httpapi.Principal(r), r.PathValue("id"), q.Get("cursor"))
+	items, next, err := a.DB.ProbeCertificates(r.Context(), httpapi.Principal(r), r.PathValue("id"), q.Get("cursor"), limit)
 	if err != nil {
 		probeFailure(w, r, err)
 		return

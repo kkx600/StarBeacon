@@ -82,7 +82,7 @@ func TestResponseConnectorsBoundedPagingAndFilters(t *testing.T) {
 	q.SensorID = "sensor_connector_001"
 	q.DeviceID = "device_2"
 	q.Status = "ready"
-	q.Limit = 1
+	q.Limit = 10
 	var page store.ResponseConnectorPage
 	client.request("GET", connectorPath(q), "", nil, &page, 200)
 	if len(page.Items) != 1 || page.Items[0].ConnectorID != "connector_2" || page.NextCursor != "" {
@@ -93,10 +93,13 @@ func TestResponseConnectorsBoundedPagingAndFilters(t *testing.T) {
 	if len(page.Items) != 0 {
 		t.Fatal("设备筛选未生效")
 	}
-	q = responseapi.ConnectorQuery{Limit: 1}
+	q = responseapi.ConnectorQuery{Limit: 10}
 	client.request("GET", connectorPath(q), "", nil, &page, 200)
+	if len(page.Items) != 10 || page.NextCursor == "" {
+		t.Fatal("页长或续页游标无效", page)
+	}
 	q.Cursor = page.NextCursor
-	q.Limit = 2
+	q.Limit = 20
 	client.request("GET", connectorPath(q), "", nil, nil, 400)
 }
 

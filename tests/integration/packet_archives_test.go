@@ -187,7 +187,7 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 	if _, err = f.Runtime.PacketArchive(ctx, viewer, row.ID); !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatal("查看者可访问通信原包", err)
 	}
-	items, next, err := f.Runtime.PacketArchives(ctx, adminA, id.SensorID, "")
+	items, next, err := f.Runtime.PacketArchives(ctx, adminA, id.SensorID, "", 50)
 	require(t, err)
 	if len(items) != 1 || next != "" || items[0].Capture.Packets != 9 {
 		t.Fatal("目录摘要与实际捕获不一致")
@@ -494,11 +494,11 @@ func TestPacketArchiveDirectoryLeaseQuotaCASAndCustomRetention(t *testing.T) {
 	u, _, err := f.Owner.Password(ctx, "packet_owner")
 	require(t, err)
 	for _, v := range []struct{ sensor, cursor string }{{"id.invalid", ""}, {"", "bad"}, {"", string(bytes.Repeat([]byte("x"), 1025))}} {
-		if _, _, err = f.Runtime.PacketArchives(ctx, u, v.sensor, v.cursor); err == nil {
+		if _, _, err = f.Runtime.PacketArchives(ctx, u, v.sensor, v.cursor, 50); err == nil {
 			t.Fatal("非法目录分页被接受")
 		}
 	}
-	if _, _, err = f.Runtime.PacketArchives(ctx, model.Principal{TenantID: id.TenantID, Role: "viewer"}, "", ""); err == nil {
+	if _, _, err = f.Runtime.PacketArchives(ctx, model.Principal{TenantID: id.TenantID, Role: "viewer"}, "", "", 50); err == nil {
 		t.Fatal("查看者原包枚举未拒绝")
 	}
 }

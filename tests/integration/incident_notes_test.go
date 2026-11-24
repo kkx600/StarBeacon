@@ -167,17 +167,17 @@ func TestIncidentNotesRealPaginationQuotasAndProtectedRetention(t *testing.T) {
 		_, err = f.Runtime.ChangeIncidentNote(ctx, u, parent.ID, first.ID, fmt.Sprintf("notes_revision_%d", i), incident.NoteChange{IncidentRevision: 1, ExpectedRevision: int64(i), Spec: input.Spec, Reason: "核对来源"}, "notes_budget")
 		require(t, err)
 	}
-	history, err := f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "")
+	history, err := f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "", 20)
 	require(t, err)
 	if len(history.Items) != 20 || history.Next != "4" {
 		t.Fatal("笔记历史首屏错误", history.Next)
 	}
-	history, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, history.Next)
+	history, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, history.Next, 20)
 	require(t, err)
 	if len(history.Items) != 3 || history.Next != "" {
 		t.Fatal("笔记历史尾页错误")
 	}
-	_, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "01")
+	_, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "01", 20)
 	if !errors.Is(err, incident.ErrNoteInput) {
 		t.Fatal("非规范历史修订被接受")
 	}
@@ -281,7 +281,7 @@ func TestIncidentNotesRealFailureBudgetsAndRevokedActor(t *testing.T) {
 	require(t, err)
 	_, err = f.Owner.Pool.Exec(ctx, `REVOKE SELECT ON incident_note_changes FROM starbeacon_app`)
 	require(t, err)
-	if _, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, ""); err == nil {
+	if _, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "", 20); err == nil {
 		t.Fatal("不可读取历史仍返回成功")
 	}
 	if _, err = f.Runtime.CreateIncidentNote(ctx, u, parent.ID, "notes_history_unavailable", input, "note_failures"); err == nil {
@@ -298,7 +298,7 @@ func TestIncidentNotesRealFailureBudgetsAndRevokedActor(t *testing.T) {
 	if _, err = f.Runtime.IncidentNote(ctx, u, parent.ID, first.ID); err == nil {
 		t.Fatal("详情不可读仍报告成功")
 	}
-	if _, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, ""); err == nil {
+	if _, err = f.Runtime.IncidentNoteHistory(ctx, u, parent.ID, first.ID, "", 20); err == nil {
 		t.Fatal("历史绕过当前笔记核验")
 	}
 	change.ExpectedRevision = 1

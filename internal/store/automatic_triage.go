@@ -44,16 +44,16 @@ type AutomaticTriagePage struct {
 	Next  string                  `json:"next_cursor"`
 }
 
-func (p *Postgres) AutomaticTriages(ctx context.Context, u model.Principal, id string, revision int64, cursor string) (AutomaticTriagePage, error) {
+func (p *Postgres) AutomaticTriages(ctx context.Context, u model.Principal, id string, revision int64, cursor string, limit int) (AutomaticTriagePage, error) {
 	page := AutomaticTriagePage{Items: []AutomaticTriageRecord{}}
-	if !contract.ValidID(id) || revision < 1 || revision > decision.MaxRevision || cursor != "" && !contract.ValidID(cursor) {
+	if !contract.ValidListLimit(limit) || !contract.ValidID(id) || revision < 1 || revision > decision.MaxRevision || cursor != "" && !contract.ValidID(cursor) {
 		return page, decision.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		if err := decisionPolicyUser(ctx, tx, u, true); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT id,policy_id,policy_revision,definition_sha256,event_id,raw_sha256,sensor_id,registration_id,state,code,triage_id,created_at,expires_at FROM decision_triage_triggers WHERE tenant_id=$1 AND created_by=$2 AND policy_id=$3 AND policy_revision=$4 AND id>$5 AND expires_at>now() ORDER BY id LIMIT 21`, u.TenantID, u.ID, id, revision, cursor)
+		rows, err := tx.Query(ctx, `SELECT id,policy_id,policy_revision,definition_sha256,event_id,raw_sha256,sensor_id,registration_id,state,code,triage_id,created_at,expires_at FROM decision_triage_triggers WHERE tenant_id=$1 AND created_by=$2 AND policy_id=$3 AND policy_revision=$4 AND id>$5 AND expires_at>now() ORDER BY id LIMIT $6`, u.TenantID, u.ID, id, revision, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -67,9 +67,9 @@ func (p *Postgres) AutomaticTriages(ctx context.Context, u model.Principal, id s
 		}
 		return rows.Err()
 	})
-	if len(page.Items) > 20 {
-		page.Next = page.Items[19].ID
-		page.Items = page.Items[:20]
+	if len(page.Items) > limit {
+		page.Next = page.Items[limit-1].ID
+		page.Items = page.Items[:limit]
 	}
 	return page, err
 }

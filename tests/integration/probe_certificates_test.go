@@ -212,7 +212,7 @@ func TestProbeEnrollmentHTTPTransactionProofIsolationAndRevocation(t *testing.T)
 		}
 		return nil
 	}))
-	if _, _, err = f.Runtime.ProbeCertificates(ctx, model.Principal{ID: u.ID, TenantID: u.TenantID, Role: "viewer"}, id.SensorID, ""); err == nil {
+	if _, _, err = f.Runtime.ProbeCertificates(ctx, model.Principal{ID: u.ID, TenantID: u.TenantID, Role: "viewer"}, id.SensorID, "", 20); err == nil {
 		t.Fatal("只读角色读取证书管理目录")
 	}
 }
@@ -305,10 +305,10 @@ func TestProbeEnrollmentSigningOutcomesAndConcurrentBinding(t *testing.T) {
 	if _, err = f.Runtime.CreateProbeEnrollment(ctx, u, probepki.EnrollmentInput{Token: credential, Name: "并发探针", TTLSeconds: 3600}); !errors.Is(err, probepki.ErrQuota) {
 		t.Fatal("同一探针超过四个有效授权", err)
 	}
-	if _, _, err = f.Runtime.ProbeCertificates(ctx, u, "invalid.probe", ""); !errors.Is(err, probepki.ErrInput) {
+	if _, _, err = f.Runtime.ProbeCertificates(ctx, u, "invalid.probe", "", 20); !errors.Is(err, probepki.ErrInput) {
 		t.Fatal("证书目录接受非法探针标识", err)
 	}
-	if _, _, err = f.Runtime.ProbeEnrollments(ctx, u, "invalid.cursor"); !errors.Is(err, probepki.ErrInput) {
+	if _, _, err = f.Runtime.ProbeEnrollments(ctx, u, "invalid.cursor", 20); !errors.Is(err, probepki.ErrInput) {
 		t.Fatal("注册目录接受非法游标", err)
 	}
 	if _, err = f.Runtime.RevokeProbeCertificate(ctx, u, "invalid.certificate"); !errors.Is(err, probepki.ErrInput) {
@@ -537,7 +537,7 @@ func TestProbeCertificateDirectoriesPaginateWithoutDuplicateOrPrivateMaterials(t
 	}
 	viewer := u
 	viewer.Role = "viewer"
-	if _, _, err := f.Runtime.ProbeEnrollments(ctx, viewer, ""); err == nil {
+	if _, _, err := f.Runtime.ProbeEnrollments(ctx, viewer, "", 20); err == nil {
 		t.Fatal("只读身份读取注册授权目录")
 	}
 }

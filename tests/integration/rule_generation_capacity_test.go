@@ -66,12 +66,12 @@ func TestRuleGenerationBoundedHistorySIDExhaustionAndDisabledProvider(t *testing
 		_, err = f.Runtime.CancelRuleGeneration(ctx, u, v.ID, queue, "cancel")
 		require(t, err)
 	}
-	page, err := f.Runtime.RuleGenerations(ctx, u, "")
+	page, err := f.Runtime.RuleGenerations(ctx, u, "", 20)
 	require(t, err)
 	if len(page.Items) != 20 || page.Next == "" {
 		t.Fatal("规则生成历史没有二十条分页", len(page.Items))
 	}
-	next, err := f.Runtime.RuleGenerations(ctx, u, page.Next)
+	next, err := f.Runtime.RuleGenerations(ctx, u, page.Next, 20)
 	require(t, err)
 	if len(next.Items) != 2 || next.Next != "" {
 		t.Fatal("规则生成历史翻页丢失或重复", len(next.Items))

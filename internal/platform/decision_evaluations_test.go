@@ -50,8 +50,8 @@ func TestDecisionEvaluationHTTPBoundsKeysAndUnavailableStorage(t *testing.T) {
 			t.Fatal("档案目录边界不同", url, w.Code)
 		}
 	}
-	q, err := evaluationListQuery(httptest.NewRequest("GET", "/?limit=1&cursor=evaluation_owned&policy_id=policy_owned&triage_id=triage_owned&status=matched", nil))
-	if err != nil || q.Limit != 1 || q.Cursor != "evaluation_owned" || q.Status != "matched" {
+	q, err := evaluationListQuery(httptest.NewRequest("GET", "/?limit=10&cursor=evaluation_owned&policy_id=policy_owned&triage_id=triage_owned&status=matched", nil))
+	if err != nil || q.Limit != 10 || q.Cursor != "evaluation_owned" || q.Status != "matched" {
 		t.Fatal("合法目录查询被拒绝")
 	}
 	for _, url := range []string{"/", "/?unexpected=x"} {

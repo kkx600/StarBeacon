@@ -199,12 +199,12 @@ func TestIncidentTasksRealPaginationQuotasAndProtectedRetention(t *testing.T) {
 		_, err = f.Runtime.ChangeIncidentTask(ctx, u, parent.ID, first.ID, fmt.Sprintf("history_%d", i), incident.TaskChange{IncidentRevision: 1, ExpectedRevision: int64(i), Spec: input.Spec, Note: "保留独立进展"}, "owned_tasks")
 		require(t, err)
 	}
-	history, err := f.Runtime.IncidentTaskHistory(ctx, u, parent.ID, first.ID, "")
+	history, err := f.Runtime.IncidentTaskHistory(ctx, u, parent.ID, first.ID, "", 20)
 	require(t, err)
 	if len(history.Items) != 20 || history.Next != "4" || history.Items[0].Revision != 23 {
 		t.Fatal("历史分页不稳定", history.Next)
 	}
-	history, err = f.Runtime.IncidentTaskHistory(ctx, u, parent.ID, first.ID, history.Next)
+	history, err = f.Runtime.IncidentTaskHistory(ctx, u, parent.ID, first.ID, history.Next, 20)
 	require(t, err)
 	if len(history.Items) != 3 || history.Next != "" {
 		t.Fatal("历史尾页丢失")

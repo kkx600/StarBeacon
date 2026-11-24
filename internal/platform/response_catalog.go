@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
@@ -13,7 +12,7 @@ import (
 )
 
 func responseCatalogQuery(r *http.Request) (response.CatalogQuery, error) {
-	q := response.CatalogQuery{Limit: 20}
+	q := response.CatalogQuery{Limit: contract.DefaultListLimit}
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return q, response.ErrInput
@@ -42,10 +41,7 @@ func responseCatalogQuery(r *http.Request) (response.CatalogQuery, error) {
 		case "cursor":
 			q.Cursor = v[0]
 		case "limit":
-			q.Limit, err = strconv.Atoi(v[0])
-			if err == nil && strconv.Itoa(q.Limit) != v[0] {
-				err = response.ErrInput
-			}
+			q.Limit, err = parseListLimit(v)
 		default:
 			return q, response.ErrInput
 		}

@@ -28,7 +28,7 @@ func TestQualityEventSearchPinsDatasetTenantRegistrationAndCompleteness(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := model.SearchRequest{Start: now.Add(-time.Hour), End: now.Add(time.Hour), Page: 1, PageSize: 20}
+	q := model.SearchRequest{Start: now.Add(-time.Hour), End: now.Add(time.Hour), Page: 1, PageSize: 50}
 	for _, mode := range []string{"valid", "empty", "tamper", "scope", "kind", "incomplete", "transport"} {
 		t.Run(mode, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +37,9 @@ func TestQualityEventSearchPinsDatasetTenantRegistrationAndCompleteness(t *testi
 				}
 				var body map[string]any
 				_ = json.NewDecoder(r.Body).Decode(&body)
+				if body["size"] != float64(q.PageSize) {
+					t.Error("未按请求页长检索", body["size"])
+				}
 				raw, _ := json.Marshal(body)
 				for _, part := range []string{"starbeacon.sensor_quality", "probe_owned", "reg_owned", "quality", "limitation"} {
 					if !strings.Contains(string(raw), part) {
@@ -69,7 +72,7 @@ func TestQualityEventSearchPinsDatasetTenantRegistrationAndCompleteness(t *testi
 			if (err == nil) != (mode == "valid" || mode == "empty") {
 				t.Fatal("不完整事件被接受或有效事件被拒绝", err)
 			}
-			if mode == "valid" && (got.Total != "1" || len(got.Items) != 1 || got.Items[0].ID != event.ID) {
+			if mode == "valid" && (got.Total != "1" || got.PageSize != q.PageSize || len(got.Items) != 1 || got.Items[0].ID != event.ID) {
 				t.Fatal(got)
 			}
 			if mode == "empty" && (got.Total != "0" || got.Items == nil) {

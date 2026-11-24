@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"time"
@@ -17,9 +18,13 @@ func (a *API) registerQualityEvents(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/sensors/quality-events", a.Auth.Require(false, a.qualityEvents))
 }
 func qualityQuery(r *http.Request) (model.SearchRequest, string, string, string, error) {
-	q := model.SearchRequest{Page: 1, PageSize: 20}
+	q := model.SearchRequest{Page: 1, PageSize: contract.DefaultListLimit}
 	var sensor, registration, kind string
-	for k, v := range r.URL.Query() {
+	values, parseErr := url.ParseQuery(r.URL.RawQuery)
+	if parseErr != nil {
+		return q, "", "", "", store.ErrConflict
+	}
+	for k, v := range values {
 		if len(v) != 1 {
 			return q, "", "", "", store.ErrConflict
 		}
@@ -34,6 +39,8 @@ func qualityQuery(r *http.Request) (model.SearchRequest, string, string, string,
 			if err == nil && (q.Page < 1 || strconv.Itoa(q.Page) != v[0]) {
 				err = store.ErrConflict
 			}
+		case "limit":
+			q.PageSize, err = parseListLimit(v)
 		case "sensor_id":
 			sensor = v[0]
 		case "registration_id":
@@ -55,7 +62,7 @@ func qualityQuery(r *http.Request) (model.SearchRequest, string, string, string,
 func (a *API) qualityEvents(w http.ResponseWriter, r *http.Request) {
 	q, sensor, registration, kind, err := qualityQuery(r)
 	if err != nil {
-		httpapi.Fail(w, r, 400, "invalid_quality_query", "请核对时间窗口、探针、注册代次、事件类型和页码；时间须在 2000—2100 年内，窗口不超过 31 天，每页 20 条，最多检索前 10000 条")
+		httpapi.Fail(w, r, 400, "invalid_quality_query", "请核对时间窗口、探针、注册代次、事件类型和分页。时间须在 2000—2100 年内，窗口最多 31 天，最多检索前 10000 条。"+errListLimit.Error())
 		return
 	}
 	if a.ES == nil {

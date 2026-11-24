@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -49,11 +50,15 @@ func TestDecisionPolicyHTTPIsolationRevisionsSyntaxAndNoUnsupportedExecution(t *
 	a.request("POST", "/decision-policies", "policy_wrong_expression", c, nil, 400)
 	c = decisionPolicyInput("policy_second")
 	a.request("POST", "/decision-policies", "policy_second_create", c, &repeated, 200)
-	a.request("GET", "/decision-policies?limit=1", "", nil, &page, 200)
-	if len(page.Items) != 1 || page.NextCursor != first.ID {
+	for i := range 9 {
+		id := fmt.Sprintf("policy_page_%02d", i)
+		a.request("POST", "/decision-policies", id, decisionPolicyInput(id), nil, 200)
+	}
+	a.request("GET", "/decision-policies?limit=10", "", nil, &page, 200)
+	if len(page.Items) != 10 || page.Items[0].ID != first.ID || page.NextCursor != page.Items[9].ID {
 		t.Fatal("首个策略目录游标不一致")
 	}
-	a.request("GET", "/decision-policies?limit=1&cursor="+page.NextCursor, "", nil, &page, 200)
+	a.request("GET", "/decision-policies?limit=10&cursor="+page.NextCursor, "", nil, &page, 200)
 	if len(page.Items) != 1 || page.Items[0].ID != c.ID || page.NextCursor != "" {
 		t.Fatal("策略后续页不一致")
 	}

@@ -58,6 +58,9 @@ func (p *Postgres) Incident(ctx context.Context, u model.Principal, id string) (
 }
 
 func (p *Postgres) Incidents(ctx context.Context, u model.Principal, q incident.Query) (incident.Page, error) {
+	if q.Limit == 0 {
+		q.Limit = contract.DefaultListLimit
+	}
 	page := incident.Page{Items: []incident.Record{}}
 	if !incidentPrincipal(u) || q.Validate() != nil {
 		return page, incident.ErrInput
@@ -71,7 +74,7 @@ func (p *Postgres) Incidents(ctx context.Context, u model.Principal, q incident.
 			}
 			before = &t
 		}
-		rows, err := tx.Query(ctx, `SELECT `+incidentColumns+` FROM incidents WHERE tenant_id=$1 AND ($2='' OR state=$2) AND ($3='' OR severity=$3) AND (state<>'closed' OR expires_at>now()) AND ($4::timestamptz IS NULL OR (created_at,id)<($4,$5)) ORDER BY created_at DESC,id DESC LIMIT 21`, u.TenantID, q.Status, q.Severity, before, q.Before)
+		rows, err := tx.Query(ctx, `SELECT `+incidentColumns+` FROM incidents WHERE tenant_id=$1 AND ($2='' OR state=$2) AND ($3='' OR severity=$3) AND (state<>'closed' OR expires_at>now()) AND ($4::timestamptz IS NULL OR (created_at,id)<($4,$5)) ORDER BY created_at DESC,id DESC LIMIT $6`, u.TenantID, q.Status, q.Severity, before, q.Before, q.Limit+1)
 		if err != nil {
 			return err
 		}
@@ -86,9 +89,9 @@ func (p *Postgres) Incidents(ctx context.Context, u model.Principal, q incident.
 		if err = rows.Err(); err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > q.Limit {
+			page.Items = page.Items[:q.Limit]
+			page.Next = page.Items[q.Limit-1].ID
 		}
 		return nil
 	})
@@ -324,7 +327,7 @@ func (p *Postgres) writeIncident(ctx context.Context, u model.Principal, id, key
 	return result, err
 }
 
-func (p *Postgres) IncidentHistory(ctx context.Context, u model.Principal, id, before string) (incident.Page, error) {
+func (p *Postgres) IncidentHistory(ctx context.Context, u model.Principal, id, before string, limit int) (incident.Page, error) {
 	page := incident.Page{Items: []incident.Record{}}
 	boundary := int64(incident.MaxRevision + 1)
 	if before != "" {
@@ -334,7 +337,7 @@ func (p *Postgres) IncidentHistory(ctx context.Context, u model.Principal, id, b
 		}
 		boundary = n
 	}
-	if !incidentPrincipal(u) || !contract.ValidID(id) {
+	if !contract.ValidListLimit(limit) || !incidentPrincipal(u) || !contract.ValidID(id) {
 		return page, incident.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
@@ -342,7 +345,7 @@ func (p *Postgres) IncidentHistory(ctx context.Context, u model.Principal, id, b
 		if err := tx.QueryRow(ctx, `SELECT state<>'closed' FROM incidents WHERE tenant_id=$1 AND id=$2 AND (state<>'closed' OR expires_at>now())`, u.TenantID, id).Scan(&active); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT record,revision FROM incident_changes WHERE tenant_id=$1 AND incident_id=$2 AND revision<$3 AND ($4 OR expires_at>now()) ORDER BY revision DESC LIMIT 21`, u.TenantID, id, boundary, active)
+		rows, err := tx.Query(ctx, `SELECT record,revision FROM incident_changes WHERE tenant_id=$1 AND incident_id=$2 AND revision<$3 AND ($4 OR expires_at>now()) ORDER BY revision DESC LIMIT $5`, u.TenantID, id, boundary, active, limit+1)
 		if err != nil {
 			return err
 		}
@@ -362,9 +365,9 @@ func (p *Postgres) IncidentHistory(ctx context.Context, u model.Principal, id, b
 		if err = rows.Err(); err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = strconv.FormatInt(page.Items[19].Revision, 10)
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = strconv.FormatInt(page.Items[limit-1].Revision, 10)
 		}
 		return nil
 	})

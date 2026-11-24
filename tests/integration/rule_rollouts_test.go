@@ -130,13 +130,13 @@ func TestRuleRolloutPersistenceAuthorizationAndTransactions(t *testing.T) {
 	}
 	viewer := f.u
 	viewer.Role = "viewer"
-	if _, err = f.f.Runtime.RuleRollouts(ctx, viewer, ""); err == nil {
+	if _, err = f.f.Runtime.RuleRollouts(ctx, viewer, "", 20); err == nil {
 		t.Fatal("只读角色读取发布目录")
 	}
 	if _, err = f.f.Runtime.CreateRuleRollout(ctx, viewer, c, "viewer"); err == nil {
 		t.Fatal("只读角色创建发布")
 	}
-	if _, err = f.f.Runtime.RuleRollouts(ctx, f.u, "bad/id"); !errors.Is(err, rulerollout.ErrInput) {
+	if _, err = f.f.Runtime.RuleRollouts(ctx, f.u, "bad/id", 20); !errors.Is(err, rulerollout.ErrInput) {
 		t.Fatal(err)
 	}
 	if _, err = f.f.Runtime.RuleRollout(ctx, f.u, "bad/id"); !errors.Is(err, rulerollout.ErrInput) {
@@ -153,7 +153,7 @@ func TestRuleRolloutPersistenceAuthorizationAndTransactions(t *testing.T) {
 			t.Run(method+prefix, func(t *testing.T) {
 				broken, tracer := disconnectedStore(t, ctx, f.f.RuntimeDSN, prefix)
 				if method == "list" {
-					_, err = broken.RuleRollouts(ctx, f.u, "")
+					_, err = broken.RuleRollouts(ctx, f.u, "", 20)
 				} else {
 					_, err = broken.RuleRollout(ctx, f.u, c.ID)
 				}
@@ -224,7 +224,7 @@ func TestRuleRolloutPersistenceAuthorizationAndTransactions(t *testing.T) {
 			t.Fatal("未下发目标状态错误")
 		}
 	}
-	page, err := f.f.Runtime.RuleRollouts(ctx, f.u, "")
+	page, err := f.f.Runtime.RuleRollouts(ctx, f.u, "", 20)
 	require(t, err)
 	if len(page.Items) != 1 || page.Items[0].Targets != nil {
 		t.Fatal("目录返回错误")

@@ -4,6 +4,7 @@ import { Table as ATable } from 'ant-design-vue';
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue';
 import type { TableRowSelection } from 'ant-design-vue/es/table/interface';
 import type { ApiClient } from '../api';
+import { defaultPageSize } from '../pagination';
 import {
   packetCapture,
   packetUnsealed,
@@ -176,7 +177,7 @@ function inspect(row: PacketRecord) {
       {{
         local
           ? '本机展示最近 200 条捕获与确认记录。平台持久确认后本机回收原件；已归档数据请在主平台查询。'
-          : '每页展示 50 条原包切片。默认留存 180 天，具体到期时间按归档时生效的留存策略确定。'
+          : `每页展示 ${defaultPageSize} 条原包切片。默认留存 180 天，具体到期时间按归档时生效的留存策略确定。`
       }}
       单个切片不保证包含完整连接。
     </p>

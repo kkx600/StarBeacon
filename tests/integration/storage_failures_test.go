@@ -243,7 +243,10 @@ func TestPostgresDisconnectRollsBackConfigurationTasksAndAudit(t *testing.T) {
 		}},
 		{"models_list", []string{"UPDATE model_capability_checks", "SELECT p.id"}, func(db *store.Postgres) error { _, e := db.ModelProviders(ctx, tenant); return e }},
 		{"channels_list", []string{"SELECT id,revision,name"}, func(db *store.Postgres) error { _, e := db.NotificationChannels(ctx, tenant); return e }},
-		{"deliveries_list", []string{"SELECT d.id,b.channel_id"}, func(db *store.Postgres) error { _, _, e := db.NotificationDeliveries(ctx, tenant, "", ""); return e }},
+		{"deliveries_list", []string{"SELECT d.id,b.channel_id"}, func(db *store.Postgres) error {
+			_, _, e := db.NotificationDeliveries(ctx, tenant, "", "", 20)
+			return e
+		}},
 		{"retention_list", []string{"SELECT category,days"}, func(db *store.Postgres) error { _, e := db.RetentionPolicies(ctx, tenant); return e }},
 		{"tasks_list", []string{"UPDATE sensor_tasks", "SELECT id,sensor_id"}, func(db *store.Postgres) error { _, e := db.Tasks(ctx, tenant, ""); return e }},
 		{"samples_list", []string{"SELECT id,name,size"}, func(db *store.Postgres) error { _, e := db.Samples(ctx, tenant); return e }},

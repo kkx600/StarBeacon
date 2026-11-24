@@ -67,12 +67,16 @@ func decodeIncidentNote(w http.ResponseWriter, r *http.Request, target any) bool
 }
 
 func (a *API) incidentNotes(w http.ResponseWriter, r *http.Request) {
-	q := incident.NoteQuery{Status: r.URL.Query().Get("status"), Before: r.URL.Query().Get("before")}
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	q := incident.NoteQuery{Limit: limit, Status: r.URL.Query().Get("status"), Before: r.URL.Query().Get("before")}
 	if q.Validate() != nil {
 		incidentNoteFailure(w, r, incident.ErrNoteInput)
 		return
 	}
-	if !a.incidentNoteReady(w, r, false, "status", "before") {
+	if !a.incidentNoteReady(w, r, false, "status", "before", "limit") {
 		return
 	}
 	result, err := a.DB.IncidentNotes(r.Context(), httpapi.Principal(r), r.PathValue("id"), q)
@@ -96,10 +100,14 @@ func (a *API) incidentNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) incidentNoteHistory(w http.ResponseWriter, r *http.Request) {
-	if !a.incidentNoteReady(w, r, true, "before") {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
 		return
 	}
-	result, err := a.DB.IncidentNoteHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.PathValue("note"), r.URL.Query().Get("before"))
+	if !a.incidentNoteReady(w, r, true, "before", "limit") {
+		return
+	}
+	result, err := a.DB.IncidentNoteHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.PathValue("note"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		incidentNoteFailure(w, r, err)
 		return

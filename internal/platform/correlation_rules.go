@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -78,8 +79,13 @@ func (a *API) correlationReady(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func (a *API) correlationRules(w http.ResponseWriter, r *http.Request) {
-	q := correlation.Query{Limit: 20}
-	for k, values := range r.URL.Query() {
+	q := correlation.Query{Limit: contract.DefaultListLimit}
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		correlationFailure(w, r, correlation.ErrInput)
+		return
+	}
+	for k, values := range query {
 		if len(values) != 1 {
 			correlationFailure(w, r, correlation.ErrInput)
 			return
@@ -92,8 +98,8 @@ func (a *API) correlationRules(w http.ResponseWriter, r *http.Request) {
 		case "active":
 			q.Active = values[0]
 		case "limit":
-			n, err := strconv.Atoi(values[0])
-			if err != nil || strconv.Itoa(n) != values[0] {
+			n, err := parseListLimit(values)
+			if err != nil {
 				correlationFailure(w, r, correlation.ErrInput)
 				return
 			}

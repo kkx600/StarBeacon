@@ -2,7 +2,7 @@ package platform
 
 import (
 	"net/http"
-	"strconv"
+	"net/url"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/decision"
@@ -27,8 +27,12 @@ func (a *API) createDecisionEvaluation(w http.ResponseWriter, r *http.Request) {
 }
 
 func evaluationListQuery(r *http.Request) (decision.EvaluationQuery, error) {
-	q := decision.EvaluationQuery{Limit: 20}
-	for key, values := range r.URL.Query() {
+	q := decision.EvaluationQuery{Limit: contract.DefaultListLimit}
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return q, decision.ErrInput
+	}
+	for key, values := range query {
 		if len(values) != 1 {
 			return q, decision.ErrInput
 		}
@@ -42,9 +46,8 @@ func evaluationListQuery(r *http.Request) (decision.EvaluationQuery, error) {
 		case "status":
 			q.Status = values[0]
 		case "limit":
-			var err error
-			q.Limit, err = strconv.Atoi(values[0])
-			if err != nil || strconv.Itoa(q.Limit) != values[0] {
+			q.Limit, err = parseListLimit(values)
+			if err != nil {
 				return q, decision.ErrInput
 			}
 		default:

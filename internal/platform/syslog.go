@@ -5,17 +5,17 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/syslogdata"
 )
 
 func syslogSourceQuery(r *http.Request) (syslogdata.SourceQuery, error) {
-	q := syslogdata.SourceQuery{Limit: 20}
+	q := syslogdata.SourceQuery{Limit: contract.DefaultListLimit}
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return q, syslogdata.ErrInput
@@ -32,8 +32,8 @@ func syslogSourceQuery(r *http.Request) (syslogdata.SourceQuery, error) {
 		case "cursor":
 			q.Cursor = v[0]
 		case "limit":
-			q.Limit, err = strconv.Atoi(v[0])
-			if err != nil || strconv.Itoa(q.Limit) != v[0] {
+			q.Limit, err = parseListLimit(v)
+			if err != nil {
 				return q, syslogdata.ErrInput
 			}
 		default:

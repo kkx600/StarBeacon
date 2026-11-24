@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -110,8 +111,12 @@ func (a *API) applicationReady(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func applicationListQuery(r *http.Request) (application.ListQuery, error) {
-	q := application.ListQuery{Limit: 20}
-	for key, values := range r.URL.Query() {
+	q := application.ListQuery{Limit: contract.DefaultListLimit}
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return q, application.ErrInput
+	}
+	for key, values := range query {
 		if len(values) != 1 {
 			return q, application.ErrInput
 		}
@@ -123,9 +128,8 @@ func applicationListQuery(r *http.Request) (application.ListQuery, error) {
 		case "active":
 			q.Active = values[0]
 		case "limit":
-			var err error
-			q.Limit, err = strconv.Atoi(values[0])
-			if err != nil || strconv.Itoa(q.Limit) != values[0] {
+			q.Limit, err = parseListLimit(values)
+			if err != nil {
 				return q, application.ErrInput
 			}
 		default:

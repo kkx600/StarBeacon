@@ -2,7 +2,6 @@ package platform
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/httpapi"
@@ -10,8 +9,12 @@ import (
 )
 
 func (a *API) auditRecords(w http.ResponseWriter, r *http.Request, category string) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	now := time.Now().UTC()
-	q := store.AuditQuery{Start: now.AddDate(0, 0, -7), End: now, Limit: 50, Cursor: r.URL.Query().Get("cursor"), Action: r.URL.Query().Get("action"), Username: r.URL.Query().Get("username")}
+	q := store.AuditQuery{Start: now.AddDate(0, 0, -7), End: now, Limit: limit, Cursor: r.URL.Query().Get("cursor"), Action: r.URL.Query().Get("action"), Username: r.URL.Query().Get("username")}
 	values := r.URL.Query()
 	var e error
 	if v := values.Get("start"); v != "" {
@@ -25,13 +28,6 @@ func (a *API) auditRecords(w http.ResponseWriter, r *http.Request, category stri
 		q.End, e = time.Parse(time.RFC3339Nano, v)
 		if e != nil {
 			httpapi.Fail(w, r, 400, "invalid_time", "日志结束时间无效")
-			return
-		}
-	}
-	if v := values.Get("limit"); v != "" {
-		q.Limit, e = strconv.Atoi(v)
-		if e != nil {
-			httpapi.Fail(w, r, 400, "invalid_limit", "日志页大小无效")
 			return
 		}
 	}

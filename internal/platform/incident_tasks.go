@@ -51,12 +51,16 @@ func decodeIncidentTask(w http.ResponseWriter, r *http.Request, target any) bool
 }
 
 func (a *API) incidentTasks(w http.ResponseWriter, r *http.Request) {
-	q := incident.TaskQuery{Status: r.URL.Query().Get("status"), Before: r.URL.Query().Get("before")}
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	q := incident.TaskQuery{Limit: limit, Status: r.URL.Query().Get("status"), Before: r.URL.Query().Get("before")}
 	if q.Validate() != nil {
 		incidentFailure(w, r, incident.ErrTaskInput)
 		return
 	}
-	if !a.incidentTaskReady(w, r, false, "status", "before") {
+	if !a.incidentTaskReady(w, r, false, "status", "before", "limit") {
 		return
 	}
 	result, err := a.DB.IncidentTasks(r.Context(), httpapi.Principal(r), r.PathValue("id"), q)
@@ -80,10 +84,14 @@ func (a *API) incidentTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) incidentTaskHistory(w http.ResponseWriter, r *http.Request) {
-	if !a.incidentTaskReady(w, r, true, "before") {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
 		return
 	}
-	result, err := a.DB.IncidentTaskHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.PathValue("task"), r.URL.Query().Get("before"))
+	if !a.incidentTaskReady(w, r, true, "before", "limit") {
+		return
+	}
+	result, err := a.DB.IncidentTaskHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.PathValue("task"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		incidentFailure(w, r, err)
 		return

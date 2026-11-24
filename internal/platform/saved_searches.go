@@ -3,9 +3,10 @@ package platform
 import (
 	"errors"
 	"net/http"
-	"strconv"
+	"net/url"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/savedsearch"
 	"github.com/kkx600/StarBeacon/internal/searchfilter"
@@ -49,8 +50,12 @@ func (a *API) savedSearchReady(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func savedSearchListQuery(r *http.Request) (savedsearch.ListQuery, error) {
-	q := savedsearch.ListQuery{Limit: 20, Active: "true"}
-	for key, values := range r.URL.Query() {
+	q := savedsearch.ListQuery{Limit: contract.DefaultListLimit, Active: "true"}
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return q, savedsearch.ErrInput
+	}
+	for key, values := range query {
 		if len(values) != 1 {
 			return q, savedsearch.ErrInput
 		}
@@ -66,8 +71,7 @@ func savedSearchListQuery(r *http.Request) (savedsearch.ListQuery, error) {
 		case "cursor":
 			q.Cursor = values[0]
 		case "limit":
-			var err error
-			q.Limit, err = strconv.Atoi(values[0])
+			q.Limit, err = parseListLimit(values)
 			if err != nil {
 				return q, savedsearch.ErrInput
 			}

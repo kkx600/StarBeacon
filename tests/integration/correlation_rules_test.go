@@ -166,7 +166,7 @@ func TestCorrelationDirectoryPaginationQuotasExpiryAndRevocation(t *testing.T) {
 	cursor := ""
 	for {
 		var page correlation.Page
-		a.request("GET", "/correlation-rules?limit=17&keyword=同源&cursor="+cursor, "", nil, &page, 200)
+		a.request("GET", "/correlation-rules?limit=20&keyword=同源&cursor="+cursor, "", nil, &page, 200)
 		for _, item := range page.Items {
 			if seen[item.ID] || item.Validate() != nil {
 				t.Fatal("分页重复或损坏", item.ID)
@@ -180,8 +180,8 @@ func TestCorrelationDirectoryPaginationQuotasExpiryAndRevocation(t *testing.T) {
 			t.Fatal("游标没有推进")
 		}
 		cursor = page.NextCursor
-		a.request("GET", "/correlation-rules?limit=18&keyword=同源&cursor="+cursor, "", nil, nil, 400)
-		if _, err := f.Runtime.CorrelationRules(ctx, foreign, correlation.Query{Limit: 17, Keyword: "同源", Cursor: cursor}); !errors.Is(err, correlation.ErrInput) {
+		a.request("GET", "/correlation-rules?limit=10&keyword=同源&cursor="+cursor, "", nil, nil, 400)
+		if _, err := f.Runtime.CorrelationRules(ctx, foreign, correlation.Query{Limit: 20, Keyword: "同源", Cursor: cursor}); !errors.Is(err, correlation.ErrInput) {
 			t.Fatal("游标未绑定租户", err)
 		}
 	}

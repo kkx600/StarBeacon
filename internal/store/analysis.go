@@ -317,7 +317,7 @@ type AnalysisPage struct {
 
 func (p *Postgres) AnalysisJobs(ctx context.Context, user model.Principal, group, before string, limit int) (AnalysisPage, error) {
 	page := AnalysisPage{Items: []AnalysisSummary{}}
-	if !slices.Contains([]string{"reports", "chat"}, group) || limit < 1 || limit > 50 || (before != "" && !contract.ValidID(before)) {
+	if !slices.Contains([]string{"reports", "chat"}, group) || limit < 1 || limit > 100 || (before != "" && !contract.ValidID(before)) {
 		return page, assistant.ErrInput
 	}
 	err := p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
@@ -525,9 +525,9 @@ type AnalysisConversation struct {
 	Next  string          `json:"next_cursor"`
 }
 
-func (p *Postgres) AnalysisThreads(ctx context.Context, user model.Principal, before string) (AnalysisThreadsPage, error) {
+func (p *Postgres) AnalysisThreads(ctx context.Context, user model.Principal, before string, limit int) (AnalysisThreadsPage, error) {
 	page := AnalysisThreadsPage{Items: []AnalysisThread{}}
-	if before != "" && !contract.ValidID(before) {
+	if !contract.ValidListLimit(limit) || before != "" && !contract.ValidID(before) {
 		return page, assistant.ErrInput
 	}
 	err := p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
@@ -542,7 +542,7 @@ func (p *Postgres) AnalysisThreads(ctx context.Context, user model.Principal, be
 				return err
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT t.id,t.title,t.updated_at,j.id,j.state FROM analysis_threads t JOIN LATERAL(SELECT id,state FROM analysis_jobs WHERE tenant_id=t.tenant_id AND thread_id=t.id AND created_by=t.created_by AND expires_at>now() ORDER BY created_at DESC,id DESC LIMIT 1) j ON true WHERE t.tenant_id=$1 AND t.created_by=$2 AND t.expires_at>now() AND (t.updated_at,t.id)<($3,$4) ORDER BY t.updated_at DESC,t.id DESC LIMIT 21`, user.TenantID, user.ID, boundary, cursor)
+		rows, err := tx.Query(ctx, `SELECT t.id,t.title,t.updated_at,j.id,j.state FROM analysis_threads t JOIN LATERAL(SELECT id,state FROM analysis_jobs WHERE tenant_id=t.tenant_id AND thread_id=t.id AND created_by=t.created_by AND expires_at>now() ORDER BY created_at DESC,id DESC LIMIT 1) j ON true WHERE t.tenant_id=$1 AND t.created_by=$2 AND t.expires_at>now() AND (t.updated_at,t.id)<($3,$4) ORDER BY t.updated_at DESC,t.id DESC LIMIT $5`, user.TenantID, user.ID, boundary, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -554,18 +554,18 @@ func (p *Postgres) AnalysisThreads(ctx context.Context, user model.Principal, be
 			}
 			page.Items = append(page.Items, item)
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = page.Items[limit-1].ID
 		}
 		return rows.Err()
 	})
 	return page, err
 }
 
-func (p *Postgres) AnalysisConversation(ctx context.Context, user model.Principal, id, before string) (AnalysisConversation, error) {
+func (p *Postgres) AnalysisConversation(ctx context.Context, user model.Principal, id, before string, limit int) (AnalysisConversation, error) {
 	result := AnalysisConversation{ID: id, Jobs: []assistant.Job{}}
-	if !contract.ValidID(id) || (before != "" && !contract.ValidID(before)) {
+	if !contract.ValidListLimit(limit) || !contract.ValidID(id) || (before != "" && !contract.ValidID(before)) {
 		return result, assistant.ErrInput
 	}
 	err := p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
@@ -583,7 +583,7 @@ func (p *Postgres) AnalysisConversation(ctx context.Context, user model.Principa
 				return err
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT `+analysisJSON+` FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() AND (created_at,id)<($4,$5) ORDER BY created_at DESC,id DESC LIMIT 11`, user.TenantID, id, user.ID, boundary, cursor)
+		rows, err := tx.Query(ctx, `SELECT `+analysisJSON+` FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() AND (created_at,id)<($4,$5) ORDER BY created_at DESC,id DESC LIMIT $6`, user.TenantID, id, user.ID, boundary, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -595,9 +595,9 @@ func (p *Postgres) AnalysisConversation(ctx context.Context, user model.Principa
 			}
 			result.Jobs = append(result.Jobs, job)
 		}
-		if len(result.Jobs) > 10 {
-			result.Jobs = result.Jobs[:10]
-			result.Next = result.Jobs[9].ID
+		if len(result.Jobs) > limit {
+			result.Jobs = result.Jobs[:limit]
+			result.Next = result.Jobs[limit-1].ID
 		}
 		slices.Reverse(result.Jobs)
 		return rows.Err()

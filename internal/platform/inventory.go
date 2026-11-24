@@ -3,7 +3,6 @@ package platform
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,17 +19,12 @@ func (a *API) registerInventory(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/inventory/{kind}/{id}/history", a.Auth.Require(false, a.inventoryHistory))
 }
 func (a *API) inventoryList(w http.ResponseWriter, r *http.Request) {
-	limit := 20
-	if raw := r.URL.Query().Get("limit"); raw != "" {
-		var err error
-		limit, err = strconv.Atoi(raw)
-		if err != nil {
-			httpapi.Fail(w, r, 400, "invalid_page", "列表大小无效")
-			return
-		}
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
 	}
 	kind, cursor, keyword := r.PathValue("kind"), r.URL.Query().Get("cursor"), r.URL.Query().Get("keyword")
-	if !inventory.ValidKind(kind) || limit < 1 || limit > 100 || len([]rune(keyword)) > 128 || strings.ContainsAny(keyword, "\x00\r\n") || (cursor != "" && !contract.ValidID(cursor)) {
+	if !inventory.ValidKind(kind) || len([]rune(keyword)) > 128 || strings.ContainsAny(keyword, "\x00\r\n") || (cursor != "" && !contract.ValidID(cursor)) {
 		httpapi.Fail(w, r, 400, "invalid_inventory_query", "对象类型、游标或列表大小无效")
 		return
 	}

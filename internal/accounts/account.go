@@ -102,10 +102,11 @@ type Query struct {
 	Role   string
 	Active string
 	Before string
+	Limit  int
 }
 
 func (q Query) Validate() error {
-	if q.Role != "" && !ValidRole(q.Role) || q.Active != "" && q.Active != "true" && q.Active != "false" || q.Before != "" && !contract.ValidID(q.Before) {
+	if q.Limit != 0 && !contract.ValidListLimit(q.Limit) || q.Role != "" && !ValidRole(q.Role) || q.Active != "" && q.Active != "true" && q.Active != "false" || q.Before != "" && !contract.ValidID(q.Before) {
 		return ErrInput
 	}
 	return nil

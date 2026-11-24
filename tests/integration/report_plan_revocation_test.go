@@ -97,7 +97,7 @@ func TestReportPlanOwnerRevocationStopsInitialAndRecoveredRuns(t *testing.T) {
 			if len(plans) != 1 || plans[0].Revision != 2 || plans[0].Spec.Enabled || plans[0].NextAt != nil {
 				t.Fatal("权限撤销没有持久停止计划", plans)
 			}
-			runs, err := f.Runtime.ReportPlanRuns(ctx, user, plans[0].ID, "")
+			runs, err := f.Runtime.ReportPlanRuns(ctx, user, plans[0].ID, "", 20)
 			require(t, err)
 			if len(runs.Items) != 1 || runs.Items[0].State != "failed" || runs.Items[0].Code != "plan_qualification_changed" || runs.Items[0].AnalysisID != "" || runs.Items[0].FinishedAt == nil || runs.Items[0].PlanRevision != 1 {
 				t.Fatal("资格变化缺少完整失败记录", runs)

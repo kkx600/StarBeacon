@@ -78,7 +78,7 @@ func TestIncidentNoteStoreRejectsInvalidScopeBeforeDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, before := range []string{"", "invalid", "00", "0", "1001"} {
-		if _, err := p.IncidentNoteHistory(ctx, u, "case_owned", "note_owned", before); !errors.Is(err, incident.ErrNoteInput) {
+		if _, err := p.IncidentNoteHistory(ctx, u, "case_owned", "note_owned", before, 20); !errors.Is(err, incident.ErrNoteInput) {
 			t.Fatal("非法历史范围进入数据库", before, err)
 		}
 	}

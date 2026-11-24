@@ -104,11 +104,11 @@ func TestRuleGenerationDatabaseInterruptionPreservesSIDQueueAndCandidates(t *tes
 			return e
 		}},
 		{"history", []string{"SELECT id,left"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.RuleGenerations(ctx, u, "")
+			_, e := db.RuleGenerations(ctx, u, "", 20)
 			return e
 		}},
 		{"cursor", []string{"SELECT created_at FROM rule_generation_jobs"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.RuleGenerations(ctx, u, job.ID)
+			_, e := db.RuleGenerations(ctx, u, job.ID, 20)
 			return e
 		}},
 		{"start", []string{"SELECT jsonb_build_object", "SELECT public.lock_report_plan_owner", "SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE rule_generation_jobs SET state='running'"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {

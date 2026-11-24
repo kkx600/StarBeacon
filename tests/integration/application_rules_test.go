@@ -97,14 +97,6 @@ func TestApplicationRulesHTTPIsolationVersionsVisibleMetadataAndAudit(t *testing
 	if result.Status != "conflict" || result.MatchedRuleCount != 2 {
 		t.Fatal("产品冲突被掩盖")
 	}
-	a.request("GET", "/application-rules?limit=1", "", nil, &page, 200)
-	if len(page.Items) != 1 || page.Items[0].ID != first.ID || page.NextCursor != first.ID {
-		t.Fatal("首个目录游标不一致")
-	}
-	a.request("GET", "/application-rules?limit=1&cursor="+page.NextCursor, "", nil, &page, 200)
-	if len(page.Items) != 1 || page.Items[0].ID != second.ID || page.NextCursor != "" {
-		t.Fatal("后续规则目录遗漏")
-	}
 	edited := applicationRuleEdit(second)
 	off := false
 	edited.Active = &off
@@ -149,6 +141,18 @@ func TestApplicationRulesHTTPIsolationVersionsVisibleMetadataAndAudit(t *testing
 	}))
 	if auditCount < 10 || leaked != 0 {
 		t.Fatal("验证与维护未审计或材料进入审计")
+	}
+	for i := range 9 {
+		id := fmt.Sprintf("app_page_%02d", i)
+		a.request("POST", "/application-rules", id, applicationRuleInput(id), nil, 200)
+	}
+	a.request("GET", "/application-rules?limit=10", "", nil, &page, 200)
+	if len(page.Items) != 10 || page.Items[0].ID != first.ID || page.NextCursor != page.Items[9].ID {
+		t.Fatal("首个目录游标不一致")
+	}
+	a.request("GET", "/application-rules?limit=10&cursor="+page.NextCursor, "", nil, &page, 200)
+	if len(page.Items) != 1 || page.Items[0].ID != second.ID || page.NextCursor != "" {
+		t.Fatal("后续规则目录遗漏")
 	}
 }
 

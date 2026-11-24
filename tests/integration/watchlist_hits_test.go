@@ -113,26 +113,37 @@ func TestWatchlistHitsRecordDeduplicationDailyCapAndTenantIsolation(t *testing.T
 	if len(page.Items[0].Matches) != 2 || page.Items[0].Matches[0].Field != watchlist.FieldSourceIP || page.Items[0].Matches[1].Field != watchlist.FieldDestinationIP {
 		t.Fatal("多项匹配未按固定字段顺序登记", page.Items[0].Matches)
 	}
+	extras := make([]model.Alert, 0, 8)
+	for i := range 8 {
+		extras = append(extras, hitAlert(u.TenantID, fmt.Sprintf("event_whits_page_%02d", i), base.Add(-time.Duration(i+1)*time.Minute), received, "198.18.0.1", "203.0.113.60"))
+	}
+	require(t, f.Runtime.RecordWatchlistHits(ctx, u.TenantID, extras))
 	// 游标绑定租户、名单、窗口与页大小；翻页不重复也不丢项。
 	seen := map[string]bool{}
 	cursor := ""
 	for {
-		var single watchlist.HitPage
-		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=1&cursor="+url.QueryEscape(cursor)), "", nil, &single, 200)
-		if len(single.Items) != 1 || seen[single.Items[0].ID] {
-			t.Fatal("命中翻页重复或空页", single)
+		var result watchlist.HitPage
+		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=10&cursor="+url.QueryEscape(cursor)), "", nil, &result, 200)
+		if cursor == "" && len(result.Items) != 10 || cursor != "" && len(result.Items) != 1 {
+			t.Fatal("命中分页条数不一致", result)
 		}
-		seen[single.Items[0].ID] = true
-		if single.NextCursor == "" {
+		for _, hit := range result.Items {
+			if seen[hit.ID] {
+				t.Fatal("命中翻页重复", hit.ID)
+			}
+			seen[hit.ID] = true
+		}
+		if result.NextCursor == "" {
 			break
 		}
-		cursor = single.NextCursor
+		cursor = result.NextCursor
 		// 同一游标换页大小或换窗口都必须拒绝，并且不得被当作服务不可用。
-		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=2&cursor="+url.QueryEscape(cursor)), "", nil, nil, 400)
-		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start.Add(-time.Minute), end, "&limit=1&cursor="+url.QueryEscape(cursor)), "", nil, nil, 400)
-		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=1&cursor="+url.QueryEscape(cursor+"x")), "", nil, nil, 400)
+		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=20&cursor="+url.QueryEscape(cursor)), "", nil, nil, 400)
+		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start.Add(-time.Minute), end, "&limit=10&cursor="+url.QueryEscape(cursor)), "", nil, nil, 400)
+		a.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=10&cursor="+url.QueryEscape(cursor+"x")), "", nil, nil, 400)
+		b.request("GET", "/watchlists/"+record.ID+"/hits"+hitWindow(start, end, "&limit=10&cursor="+url.QueryEscape(cursor)), "", nil, nil, 400)
 	}
-	if len(seen) != 3 {
+	if len(seen) != 11 {
 		t.Fatal("命中翻页丢项", len(seen))
 	}
 	// 跨租户游标复用必须拒绝；行级安全同时保证异租户读不到命中。

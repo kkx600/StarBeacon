@@ -96,7 +96,7 @@ func exerciseNativeRuleSync(t *testing.T, ctx context.Context, f *isolatedDataba
 	if _, err := f.Runtime.SweepRuleSync(ctx, u.TenantID, nil); !errors.Is(err, rulesync.ErrInput) {
 		t.Fatal("缺少签名未拒绝")
 	}
-	if _, err := f.Runtime.RuleSyncPlans(ctx, u, "bad/id"); !errors.Is(err, rulesync.ErrInput) {
+	if _, err := f.Runtime.RuleSyncPlans(ctx, u, "bad/id", 20); !errors.Is(err, rulesync.ErrInput) {
 		t.Fatal("非法游标通过")
 	}
 	for _, cursor := range []string{"?bad=1", "?cursor=a&cursor=b"} {

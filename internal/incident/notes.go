@@ -91,10 +91,11 @@ type NotePage struct {
 type NoteQuery struct {
 	Status string
 	Before string
+	Limit  int
 }
 
 func (q NoteQuery) Validate() error {
-	if q.Status != "" && !slices.Contains([]string{"active", "withdrawn"}, q.Status) || q.Before != "" && !contract.ValidID(q.Before) {
+	if q.Limit != 0 && !contract.ValidListLimit(q.Limit) || q.Status != "" && !slices.Contains([]string{"active", "withdrawn"}, q.Status) || q.Before != "" && !contract.ValidID(q.Before) {
 		return ErrNoteInput
 	}
 	return nil

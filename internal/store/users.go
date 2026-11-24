@@ -36,6 +36,9 @@ func userRow(row pgx.Row) (accounts.Record, error) {
 	return r, err
 }
 func (p *Postgres) Users(ctx context.Context, u model.Principal, q accounts.Query) (accounts.Page, error) {
+	if q.Limit == 0 {
+		q.Limit = contract.DefaultListLimit
+	}
 	page := accounts.Page{Items: []accounts.Record{}}
 	if q.Validate() != nil {
 		return page, accounts.ErrInput
@@ -53,7 +56,7 @@ func (p *Postgres) Users(ctx context.Context, u model.Principal, q accounts.Quer
 				return pgx.ErrNoRows
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT id,username,role,active,revision,created_at,updated_at FROM users WHERE tenant_id=$1 AND ($2='' OR role=$2) AND ($3='' OR active=($3='true')) AND ($4='' OR id<$4) ORDER BY id DESC LIMIT 21`, u.TenantID, q.Role, q.Active, q.Before)
+		rows, err := tx.Query(ctx, `SELECT id,username,role,active,revision,created_at,updated_at FROM users WHERE tenant_id=$1 AND ($2='' OR role=$2) AND ($3='' OR active=($3='true')) AND ($4='' OR id<$4) ORDER BY id DESC LIMIT $5`, u.TenantID, q.Role, q.Active, q.Before, q.Limit+1)
 		if err != nil {
 			return err
 		}
@@ -68,9 +71,9 @@ func (p *Postgres) Users(ctx context.Context, u model.Principal, q accounts.Quer
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > q.Limit {
+			page.Items = page.Items[:q.Limit]
+			page.Next = page.Items[q.Limit-1].ID
 		}
 		return nil
 	})

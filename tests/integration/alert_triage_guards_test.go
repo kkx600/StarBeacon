@@ -162,7 +162,7 @@ func TestAlertTriageExecutionGuardsAndBoundedHistory(t *testing.T) {
 	seen := map[string]bool{}
 	cursor := ""
 	for pageNo := 0; ; pageNo++ {
-		page, e := f.Runtime.AlertTriages(ctx, u, input.EventID, input.RawSHA256, cursor)
+		page, e := f.Runtime.AlertTriages(ctx, u, input.EventID, input.RawSHA256, cursor, 20)
 		require(t, e)
 		if len(page.Items) == 0 || len(page.Items) > 20 || (pageNo == 0 && page.Next == "") {
 			t.Fatal("研判历史未按二十条上限分页", len(page.Items), page.Next)
@@ -181,7 +181,7 @@ func TestAlertTriageExecutionGuardsAndBoundedHistory(t *testing.T) {
 	if len(seen) != 30 {
 		t.Fatal("有界翻页丢失作业", len(seen))
 	}
-	if _, err := f.Runtime.AlertTriages(ctx, u, "other_event", input.RawSHA256, j.ID); !errors.Is(err, pgx.ErrNoRows) {
+	if _, err := f.Runtime.AlertTriages(ctx, u, "other_event", input.RawSHA256, j.ID, 20); !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatal("游标跨告警读取", err)
 	}
 	wrongInput := input

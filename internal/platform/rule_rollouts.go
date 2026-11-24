@@ -29,8 +29,12 @@ func rolloutFailure(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 func (a *API) ruleRollouts(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	q := r.URL.Query()
-	if len(q) > 1 || len(q["cursor"]) > 1 || len(q) == 1 && !q.Has("cursor") || q.Has("cursor") && !contract.ValidID(q.Get("cursor")) {
+	if !incidentQuery(r, "cursor", "limit") || q.Has("cursor") && !contract.ValidID(q.Get("cursor")) {
 		rolloutFailure(w, r, rulerollout.ErrInput)
 		return
 	}
@@ -38,7 +42,7 @@ func (a *API) ruleRollouts(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务暂不可用")
 		return
 	}
-	out, err := a.DB.RuleRollouts(r.Context(), httpapi.Principal(r), q.Get("cursor"))
+	out, err := a.DB.RuleRollouts(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
 	if err != nil {
 		rolloutFailure(w, r, err)
 		return

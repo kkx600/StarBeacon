@@ -45,7 +45,7 @@ HTTP Raw 按原字节封装为 Ethernet / IPv4 / TCP PCAP，保留 CRLF、重复
 | `POST /api/v1/replay/samples/http` | 平台导入 HTTP Raw |
 | `POST /api/local/v1/replay/samples/http` | 采集器导入 HTTP Raw |
 | `POST /api/v1/rule-generation/jobs` | 提交持久生成任务 |
-| `GET /api/v1/rule-generation/jobs` | 当前所有者历史，每页 20 条 |
+| `GET /api/v1/rule-generation/jobs` | 当前所有者历史，默认每页 20 条，支持 `limit` |
 | `GET /api/v1/rule-generation/jobs/{id}` | 材料、候选及处理结果 |
 | `POST /api/v1/rule-generation/jobs/{id}/cancel` | 取消请求 |
 | `POST /api/v1/rule-generation/jobs/{id}/adopt` | 人工采纳指定 SID |

@@ -189,7 +189,7 @@ func TestSyslogAuditHTTPWorkerTLSDeliveryAndTenantIsolation(t *testing.T) {
 		t.Fatal("业务操作与验证结果没有独立投递")
 	}
 	eventually(t, ctx, "审计回执未持久化", func() bool {
-		items, _, err := f.Runtime.NotificationDeliveries(ctx, u.TenantID, "", "")
+		items, _, err := f.Runtime.NotificationDeliveries(ctx, u.TenantID, "", "", 20)
 		if err != nil || len(items) != 4 {
 			return false
 		}
@@ -207,7 +207,7 @@ func TestSyslogAuditHTTPWorkerTLSDeliveryAndTenantIsolation(t *testing.T) {
 	if len(page.Items) != 4 {
 		t.Fatal("推送列表没有包含审计")
 	}
-	foreign, _, err := f.Runtime.NotificationDeliveries(ctx, b.TenantID, "", "")
+	foreign, _, err := f.Runtime.NotificationDeliveries(ctx, b.TenantID, "", "", 20)
 	require(t, err)
 	if len(foreign) != 0 {
 		t.Fatal("跨租户看到审计投递")

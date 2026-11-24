@@ -68,16 +68,16 @@ type RuleRolloutPage struct {
 	NextCursor string                `json:"next_cursor"`
 }
 
-func (p *Postgres) RuleRollouts(ctx context.Context, u model.Principal, cursor string) (RuleRolloutPage, error) {
+func (p *Postgres) RuleRollouts(ctx context.Context, u model.Principal, cursor string, limit int) (RuleRolloutPage, error) {
 	out := RuleRolloutPage{Items: []rulerollout.Rollout{}}
-	if cursor != "" && !contract.ValidID(cursor) {
+	if !contract.ValidListLimit(limit) || cursor != "" && !contract.ValidID(cursor) {
 		return out, rulerollout.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		if err := sensorManager(ctx, tx, u); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT `+ruleRolloutJSON+` FROM rule_rollouts r WHERE tenant_id=$1 AND id>$2 AND (expires_at>now() OR finished_at IS NULL) ORDER BY id LIMIT 21`, u.TenantID, cursor)
+		rows, err := tx.Query(ctx, `SELECT `+ruleRolloutJSON+` FROM rule_rollouts r WHERE tenant_id=$1 AND id>$2 AND (expires_at>now() OR finished_at IS NULL) ORDER BY id LIMIT $3`, u.TenantID, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -92,9 +92,9 @@ func (p *Postgres) RuleRollouts(ctx context.Context, u model.Principal, cursor s
 		if err = rows.Err(); err != nil {
 			return err
 		}
-		if len(out.Items) > 20 {
-			out.Items = out.Items[:20]
-			out.NextCursor = out.Items[19].ID
+		if len(out.Items) > limit {
+			out.Items = out.Items[:limit]
+			out.NextCursor = out.Items[limit-1].ID
 		}
 		return nil
 	})

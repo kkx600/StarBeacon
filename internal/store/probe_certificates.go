@@ -241,17 +241,17 @@ func (p *Postgres) SensorCertificateActive(ctx context.Context, id transport.Sen
 		return nil
 	})
 }
-func (p *Postgres) ProbeCertificates(ctx context.Context, u model.Principal, sensor, cursor string) ([]probepki.Certificate, string, error) {
+func (p *Postgres) ProbeCertificates(ctx context.Context, u model.Principal, sensor, cursor string, limit int) ([]probepki.Certificate, string, error) {
 	out := []probepki.Certificate{}
 	next := ""
-	if !contract.ValidID(sensor) || cursor != "" && !contract.ValidID(cursor) {
+	if !contract.ValidListLimit(limit) || !contract.ValidID(sensor) || cursor != "" && !contract.ValidID(cursor) {
 		return out, next, probepki.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		if err := sensorManager(ctx, tx, u); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT id,sensor_id,registration_id,COALESCE(fingerprint,''),serial,not_before,not_after,revoked_at,ca_revocation,state,csr_sha256 FROM probe_certificates WHERE tenant_id=$1 AND sensor_id=$2 AND id>$3 AND retain_until>now() ORDER BY id LIMIT 21`, u.TenantID, sensor, cursor)
+		rows, err := tx.Query(ctx, `SELECT id,sensor_id,registration_id,COALESCE(fingerprint,''),serial,not_before,not_after,revoked_at,ca_revocation,state,csr_sha256 FROM probe_certificates WHERE tenant_id=$1 AND sensor_id=$2 AND id>$3 AND retain_until>now() ORDER BY id LIMIT $4`, u.TenantID, sensor, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -268,9 +268,9 @@ func (p *Postgres) ProbeCertificates(ctx context.Context, u model.Principal, sen
 		}
 		return rows.Err()
 	})
-	if len(out) > 20 {
-		out = out[:20]
-		next = out[19].ID
+	if len(out) > limit {
+		out = out[:limit]
+		next = out[limit-1].ID
 	}
 	return out, next, err
 }

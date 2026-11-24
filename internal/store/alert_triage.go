@@ -175,9 +175,9 @@ type TriagePage struct {
 	Available bool            `json:"model_execution_available"`
 }
 
-func (p *Postgres) AlertTriages(ctx context.Context, u model.Principal, event, digest, before string) (TriagePage, error) {
+func (p *Postgres) AlertTriages(ctx context.Context, u model.Principal, event, digest, before string, limit int) (TriagePage, error) {
 	page := TriagePage{Items: []TriageSummary{}}
-	if !contract.ValidID(event) || !assessment.ValidDigest(digest) || !contract.ValidID(u.ID) || u.Role != "admin" || (before != "" && !contract.ValidID(before)) {
+	if !contract.ValidListLimit(limit) || !contract.ValidID(event) || !assessment.ValidDigest(digest) || !contract.ValidID(u.ID) || u.Role != "admin" || (before != "" && !contract.ValidID(before)) {
 		return page, triage.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
@@ -191,7 +191,7 @@ func (p *Postgres) AlertTriages(ctx context.Context, u model.Principal, event, d
 				return err
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT id,state,provider_id,created_at FROM alert_triage_jobs WHERE tenant_id=$1 AND created_by=$2 AND event_id=$3 AND raw_sha256=$4 AND expires_at>now() AND (created_at,id)<($5,$6) ORDER BY created_at DESC,id DESC LIMIT 21`, u.TenantID, u.ID, event, digest, at, cursor)
+		rows, err := tx.Query(ctx, `SELECT id,state,provider_id,created_at FROM alert_triage_jobs WHERE tenant_id=$1 AND created_by=$2 AND event_id=$3 AND raw_sha256=$4 AND expires_at>now() AND (created_at,id)<($5,$6) ORDER BY created_at DESC,id DESC LIMIT $7`, u.TenantID, u.ID, event, digest, at, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -203,9 +203,9 @@ func (p *Postgres) AlertTriages(ctx context.Context, u model.Principal, event, d
 			}
 			page.Items = append(page.Items, item)
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = page.Items[limit-1].ID
 		}
 		return rows.Err()
 	})

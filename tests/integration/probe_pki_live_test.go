@@ -213,7 +213,7 @@ func TestProbePKIRealStepCAEnrollmentAutomaticRenewalAndLiveRevocation(t *testin
 	require(t, oldStream.Send(&sensorv1.AgentMessage{SensorId: id.SensorID, SensorRegistrationId: id.RegistrationID, MessageId: "old_overlap", Kind: sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_HEARTBEAT, PayloadSchema: "host.health.v1", PayloadJson: health}))
 	_, err = oldStream.Recv()
 	require(t, err)
-	items, _, err := f.Runtime.ProbeCertificates(ctx, u, id.SensorID, "")
+	items, _, err := f.Runtime.ProbeCertificates(ctx, u, id.SensorID, "", 20)
 	require(t, err)
 	if len(items) != 2 {
 		t.Fatal("证书轮换缺少两份独立签发记录")

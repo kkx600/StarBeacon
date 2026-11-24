@@ -4,14 +4,14 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strconv"
 
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/response"
 )
 
 func responseConnectorQuery(r *http.Request) (response.ConnectorQuery, error) {
-	q := response.ConnectorQuery{Limit: 20}
+	q := response.ConnectorQuery{Limit: contract.DefaultListLimit}
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return q, response.ErrInput
@@ -30,10 +30,7 @@ func responseConnectorQuery(r *http.Request) (response.ConnectorQuery, error) {
 		case "cursor":
 			q.Cursor = v[0]
 		case "limit":
-			q.Limit, err = strconv.Atoi(v[0])
-			if err == nil && strconv.Itoa(q.Limit) != v[0] {
-				err = response.ErrInput
-			}
+			q.Limit, err = parseListLimit(v)
 		default:
 			return q, response.ErrInput
 		}

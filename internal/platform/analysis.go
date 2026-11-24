@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -125,14 +124,9 @@ func (a *API) analysisJob(w http.ResponseWriter, r *http.Request) {
 	httpapi.JSON(w, 200, job)
 }
 func (a *API) analysisJobs(w http.ResponseWriter, r *http.Request) {
-	limit := 20
-	var err error
-	if value := r.URL.Query().Get("limit"); value != "" {
-		limit, err = strconv.Atoi(value)
-		if err != nil {
-			analysisFailure(w, r, assistant.ErrInput)
-			return
-		}
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
 	}
 	group := r.URL.Query().Get("group")
 	if group == "" {
@@ -160,7 +154,11 @@ func (a *API) cancelAnalysis(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) analysisThreads(w http.ResponseWriter, r *http.Request) {
-	page, err := a.DB.AnalysisThreads(r.Context(), httpapi.Principal(r), r.URL.Query().Get("before"))
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	page, err := a.DB.AnalysisThreads(r.Context(), httpapi.Principal(r), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		analysisFailure(w, r, err)
 		return
@@ -168,7 +166,11 @@ func (a *API) analysisThreads(w http.ResponseWriter, r *http.Request) {
 	httpapi.JSON(w, 200, page)
 }
 func (a *API) analysisConversation(w http.ResponseWriter, r *http.Request) {
-	page, err := a.DB.AnalysisConversation(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"))
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	page, err := a.DB.AnalysisConversation(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		analysisFailure(w, r, err)
 		return

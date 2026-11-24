@@ -271,7 +271,7 @@ func TestWatchlistsDirectoryQuotaHistoryRetentionAndCorruption(t *testing.T) {
 	cursor := ""
 	for {
 		var page watchlist.Page
-		a.request("GET", "/watchlists?limit=17&kind=protect&cursor="+cursor, "", nil, &page, 200)
+		a.request("GET", "/watchlists?limit=20&kind=protect&cursor="+cursor, "", nil, &page, 200)
 		for _, item := range page.Items {
 			if seen[item.ID] || item.Validate() != nil {
 				t.Fatal("目录重复或损坏")
@@ -282,8 +282,8 @@ func TestWatchlistsDirectoryQuotaHistoryRetentionAndCorruption(t *testing.T) {
 			break
 		}
 		cursor = page.NextCursor
-		a.request("GET", "/watchlists?limit=18&kind=protect&cursor="+cursor, "", nil, nil, 400)
-		if _, e := f.Runtime.Watchlists(ctx, foreign, watchlist.Query{Limit: 17, Kind: "protect", Cursor: cursor}); !errors.Is(e, watchlist.ErrInput) {
+		a.request("GET", "/watchlists?limit=10&kind=protect&cursor="+cursor, "", nil, nil, 400)
+		if _, e := f.Runtime.Watchlists(ctx, foreign, watchlist.Query{Limit: 20, Kind: "protect", Cursor: cursor}); !errors.Is(e, watchlist.ErrInput) {
 			t.Fatal("目录游标跨租户", e)
 		}
 	}

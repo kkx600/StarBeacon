@@ -57,16 +57,16 @@ type RuleSyncPage struct {
 	NextCursor string          `json:"next_cursor"`
 }
 
-func (p *Postgres) RuleSyncPlans(ctx context.Context, u model.Principal, cursor string) (RuleSyncPage, error) {
+func (p *Postgres) RuleSyncPlans(ctx context.Context, u model.Principal, cursor string, limit int) (RuleSyncPage, error) {
 	page := RuleSyncPage{Items: []rulesync.Plan{}}
-	if cursor != "" && !contract.ValidID(cursor) {
+	if !contract.ValidListLimit(limit) || cursor != "" && !contract.ValidID(cursor) {
 		return page, rulesync.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
 		if err := sensorManager(ctx, tx, u); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT `+ruleSyncPlanJSON+` FROM rule_sync_plans p WHERE tenant_id=$1 AND id>$2 ORDER BY id LIMIT 21`, u.TenantID, cursor)
+		rows, err := tx.Query(ctx, `SELECT `+ruleSyncPlanJSON+` FROM rule_sync_plans p WHERE tenant_id=$1 AND id>$2 ORDER BY id LIMIT $3`, u.TenantID, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -83,9 +83,9 @@ func (p *Postgres) RuleSyncPlans(ctx context.Context, u model.Principal, cursor 
 		if err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.NextCursor = page.Items[19].ID
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.NextCursor = page.Items[limit-1].ID
 		}
 		for i := range page.Items {
 			page.Items[i].Run, err = ruleSyncLatest(ctx, tx, u.TenantID, page.Items[i].ID)

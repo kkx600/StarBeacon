@@ -380,9 +380,9 @@ type PlanRunPage struct {
 	Next  string              `json:"next_cursor"`
 }
 
-func (p *Postgres) ReportPlanRuns(ctx context.Context, user model.Principal, id, before string) (PlanRunPage, error) {
+func (p *Postgres) ReportPlanRuns(ctx context.Context, user model.Principal, id, before string, limit int) (PlanRunPage, error) {
 	page := PlanRunPage{Items: []assistant.PlanRun{}}
-	if !contract.ValidID(id) || (before != "" && !contract.ValidID(before)) {
+	if !contract.ValidListLimit(limit) || !contract.ValidID(id) || (before != "" && !contract.ValidID(before)) {
 		return page, assistant.ErrInput
 	}
 	err := p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
@@ -403,7 +403,7 @@ func (p *Postgres) ReportPlanRuns(ctx context.Context, user model.Principal, id,
 				return err
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT `+planRunJSON+` FROM report_plan_runs h LEFT JOIN analysis_jobs j ON j.tenant_id=h.tenant_id AND j.id=h.analysis_id AND j.expires_at>now() WHERE h.tenant_id=$1 AND h.plan_id=$2 AND h.created_by=$3 AND h.expires_at>now() AND (h.created_at,h.id)<($4,$5) ORDER BY h.created_at DESC,h.id DESC LIMIT 21`, user.TenantID, id, user.ID, boundary, cursor)
+		rows, err := tx.Query(ctx, `SELECT `+planRunJSON+` FROM report_plan_runs h LEFT JOIN analysis_jobs j ON j.tenant_id=h.tenant_id AND j.id=h.analysis_id AND j.expires_at>now() WHERE h.tenant_id=$1 AND h.plan_id=$2 AND h.created_by=$3 AND h.expires_at>now() AND (h.created_at,h.id)<($4,$5) ORDER BY h.created_at DESC,h.id DESC LIMIT $6`, user.TenantID, id, user.ID, boundary, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -419,8 +419,8 @@ func (p *Postgres) ReportPlanRuns(ctx context.Context, user model.Principal, id,
 			}
 			page.Items = append(page.Items, item)
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
 			page.Next = page.Items[len(page.Items)-1].ID
 		}
 		return rows.Err()

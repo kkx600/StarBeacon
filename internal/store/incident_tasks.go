@@ -46,6 +46,9 @@ func taskParent(ctx context.Context, tx pgx.Tx, u model.Principal, id string, lo
 }
 
 func (p *Postgres) IncidentTasks(ctx context.Context, u model.Principal, parent string, q incident.TaskQuery) (incident.TaskPage, error) {
+	if q.Limit == 0 {
+		q.Limit = contract.DefaultListLimit
+	}
 	page := incident.TaskPage{Items: []incident.TaskRecord{}}
 	if !incidentPrincipal(u) || !contract.ValidID(parent) || q.Validate() != nil {
 		return page, incident.ErrTaskInput
@@ -64,7 +67,7 @@ func (p *Postgres) IncidentTasks(ctx context.Context, u model.Principal, parent 
 			}
 			before = &value
 		}
-		rows, err := tx.Query(ctx, `SELECT `+incidentTaskColumns+` FROM incident_tasks WHERE tenant_id=$1 AND incident_id=$2 AND ($3='' OR state=$3) AND ($4 OR expires_at>now()) AND ($5::timestamptz IS NULL OR (created_at,id)<($5,$6)) ORDER BY created_at DESC,id DESC LIMIT 21`, u.TenantID, parent, q.Status, active, before, q.Before)
+		rows, err := tx.Query(ctx, `SELECT `+incidentTaskColumns+` FROM incident_tasks WHERE tenant_id=$1 AND incident_id=$2 AND ($3='' OR state=$3) AND ($4 OR expires_at>now()) AND ($5::timestamptz IS NULL OR (created_at,id)<($5,$6)) ORDER BY created_at DESC,id DESC LIMIT $7`, u.TenantID, parent, q.Status, active, before, q.Before, q.Limit+1)
 		if err != nil {
 			return err
 		}
@@ -79,9 +82,9 @@ func (p *Postgres) IncidentTasks(ctx context.Context, u model.Principal, parent 
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > q.Limit {
+			page.Items = page.Items[:q.Limit]
+			page.Next = page.Items[q.Limit-1].ID
 		}
 		return nil
 	})
@@ -240,7 +243,7 @@ func (p *Postgres) writeIncidentTask(ctx context.Context, u model.Principal, par
 	return result, err
 }
 
-func (p *Postgres) IncidentTaskHistory(ctx context.Context, u model.Principal, parent, id, before string) (incident.TaskPage, error) {
+func (p *Postgres) IncidentTaskHistory(ctx context.Context, u model.Principal, parent, id, before string, limit int) (incident.TaskPage, error) {
 	page := incident.TaskPage{Items: []incident.TaskRecord{}}
 	boundary := int64(incident.MaxRevision + 1)
 	if before != "" {
@@ -250,7 +253,7 @@ func (p *Postgres) IncidentTaskHistory(ctx context.Context, u model.Principal, p
 		}
 		boundary = value
 	}
-	if !incidentPrincipal(u) || !contract.ValidID(parent) || !contract.ValidID(id) {
+	if !contract.ValidListLimit(limit) || !incidentPrincipal(u) || !contract.ValidID(parent) || !contract.ValidID(id) {
 		return page, incident.ErrTaskInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
@@ -261,7 +264,7 @@ func (p *Postgres) IncidentTaskHistory(ctx context.Context, u model.Principal, p
 		if _, err := scanIncidentTask(tx.QueryRow(ctx, `SELECT `+incidentTaskColumns+` FROM incident_tasks WHERE tenant_id=$1 AND incident_id=$2 AND id=$3 AND ($4 OR expires_at>now())`, u.TenantID, parent, id, owner.Spec.Status != "closed")); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT record,revision FROM incident_task_changes WHERE tenant_id=$1 AND incident_id=$2 AND task_id=$3 AND revision<$4 AND ($5 OR expires_at>now()) ORDER BY revision DESC LIMIT 21`, u.TenantID, parent, id, boundary, owner.Spec.Status != "closed")
+		rows, err := tx.Query(ctx, `SELECT record,revision FROM incident_task_changes WHERE tenant_id=$1 AND incident_id=$2 AND task_id=$3 AND revision<$4 AND ($5 OR expires_at>now()) ORDER BY revision DESC LIMIT $6`, u.TenantID, parent, id, boundary, owner.Spec.Status != "closed", limit+1)
 		if err != nil {
 			return err
 		}
@@ -281,9 +284,9 @@ func (p *Postgres) IncidentTaskHistory(ctx context.Context, u model.Principal, p
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = strconv.FormatInt(page.Items[19].Revision, 10)
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = strconv.FormatInt(page.Items[limit-1].Revision, 10)
 		}
 		return nil
 	})

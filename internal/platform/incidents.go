@@ -89,8 +89,12 @@ func decodeIncident(w http.ResponseWriter, r *http.Request, target any) bool {
 }
 
 func (a *API) incidents(w http.ResponseWriter, r *http.Request) {
-	q := incident.Query{Status: r.URL.Query().Get("status"), Severity: r.URL.Query().Get("severity"), Before: r.URL.Query().Get("before")}
-	if !incidentQuery(r, "status", "severity", "before") || q.Validate() != nil {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	q := incident.Query{Limit: limit, Status: r.URL.Query().Get("status"), Severity: r.URL.Query().Get("severity"), Before: r.URL.Query().Get("before")}
+	if !incidentQuery(r, "status", "severity", "before", "limit") || q.Validate() != nil {
 		incidentFailure(w, r, incident.ErrInput)
 		return
 	}
@@ -138,7 +142,11 @@ func (a *API) incidentAssignees(w http.ResponseWriter, r *http.Request) {
 	httpapi.JSON(w, 200, map[string]any{"items": rows})
 }
 func (a *API) incidentHistory(w http.ResponseWriter, r *http.Request) {
-	if !incidentQuery(r, "before") || !contract.ValidID(r.PathValue("id")) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	if !incidentQuery(r, "before", "limit") || !contract.ValidID(r.PathValue("id")) {
 		incidentFailure(w, r, incident.ErrInput)
 		return
 	}
@@ -146,7 +154,7 @@ func (a *API) incidentHistory(w http.ResponseWriter, r *http.Request) {
 		incidentFailure(w, r, errors.New("事件存储未配置"))
 		return
 	}
-	rows, err := a.DB.IncidentHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"))
+	rows, err := a.DB.IncidentHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		incidentFailure(w, r, err)
 		return

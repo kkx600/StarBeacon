@@ -101,10 +101,11 @@ type TaskPage struct {
 type TaskQuery struct {
 	Status string
 	Before string
+	Limit  int
 }
 
 func (q TaskQuery) Validate() error {
-	if q.Status != "" && !slices.Contains([]string{"open", "in_progress", "completed", "cancelled"}, q.Status) || q.Before != "" && !contract.ValidID(q.Before) {
+	if q.Limit != 0 && !contract.ValidListLimit(q.Limit) || q.Status != "" && !slices.Contains([]string{"open", "in_progress", "completed", "cancelled"}, q.Status) || q.Before != "" && !contract.ValidID(q.Before) {
 		return ErrTaskInput
 	}
 	return nil

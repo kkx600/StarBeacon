@@ -154,7 +154,7 @@ func TestReportPlanLeaseQualificationAtomicSubmissionAndQuotas(t *testing.T) {
 		t.Fatal("已经提交的运行再次生成报告", err)
 	}
 	require(t, f.Runtime.FailReportPlanRun(ctx, lease, "preparation_unavailable"))
-	runs, err := f.Runtime.ReportPlanRuns(ctx, u, plan.ID, "")
+	runs, err := f.Runtime.ReportPlanRuns(ctx, u, plan.ID, "", 20)
 	require(t, err)
 	if len(runs.Items) != 1 || runs.Items[0].State != "submitted" || runs.Items[0].AnalysisID != job.ID {
 		t.Fatal("失败回写覆盖已经提交的报告", runs)
@@ -180,7 +180,7 @@ func TestReportPlanLeaseQualificationAtomicSubmissionAndQuotas(t *testing.T) {
 	if _, err := f.Runtime.SaveReportPlan(ctx, u, assistant.PlanChange{ID: "plan_limit_overflow", Spec: change.Spec}, queue, nil, "quota"); !errors.Is(err, store.ErrPlanQuota) {
 		t.Fatal("计划数量超过租户硬上限", err)
 	}
-	if _, err := f.Runtime.ReportPlanRuns(ctx, u, "bad/id", ""); !errors.Is(err, assistant.ErrInput) {
+	if _, err := f.Runtime.ReportPlanRuns(ctx, u, "bad/id", "", 20); !errors.Is(err, assistant.ErrInput) {
 		t.Fatal("无效计划标识未拒绝", err)
 	}
 	if _, err := f.Runtime.StartReportPlan(ctx, assistant.PlanArgs{}, 0, nil); !errors.Is(err, assistant.ErrInput) {

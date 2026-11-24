@@ -85,7 +85,7 @@ func (a *API) watchlistImpactReady(w http.ResponseWriter, r *http.Request) bool 
 	return false
 }
 func (a *API) watchlists(w http.ResponseWriter, r *http.Request) {
-	q := watchlist.Query{Limit: 20}
+	q := watchlist.Query{Limit: contract.DefaultListLimit}
 	values, parseErr := url.ParseQuery(r.URL.RawQuery)
 	if parseErr != nil {
 		watchlistFailure(w, r, watchlist.ErrInput)
@@ -106,8 +106,8 @@ func (a *API) watchlists(w http.ResponseWriter, r *http.Request) {
 		case "kind":
 			q.Kind = v[0]
 		case "limit":
-			n, e := strconv.Atoi(v[0])
-			if e != nil || strconv.Itoa(n) != v[0] {
+			n, e := parseListLimit(v)
+			if e != nil {
 				watchlistFailure(w, r, watchlist.ErrInput)
 				return
 			}
@@ -182,7 +182,7 @@ func (a *API) previewWatchlist(w http.ResponseWriter, r *http.Request) {
 
 // watchlistHits 读取单份名单在观测时间窗内的命中；游标的租户与窗口绑定由存储复核，此处只校验请求形态。
 func (a *API) watchlistHits(w http.ResponseWriter, r *http.Request) {
-	q := watchlist.HitQuery{ListID: r.PathValue("id"), Limit: 20}
+	q := watchlist.HitQuery{ListID: r.PathValue("id"), Limit: contract.DefaultListLimit}
 	values, parseErr := url.ParseQuery(r.URL.RawQuery)
 	if parseErr != nil || !contract.ValidID(q.ListID) {
 		watchlistFailure(w, r, watchlist.ErrInput)
@@ -202,12 +202,7 @@ func (a *API) watchlistHits(w http.ResponseWriter, r *http.Request) {
 		case "cursor":
 			q.Cursor = v[0]
 		case "limit":
-			n, convErr := strconv.Atoi(v[0])
-			if convErr != nil || strconv.Itoa(n) != v[0] {
-				e = watchlist.ErrInput
-				break
-			}
-			q.Limit = n
+			q.Limit, e = parseListLimit(v)
 		default:
 			e = watchlist.ErrInput
 		}

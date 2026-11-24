@@ -129,7 +129,7 @@ func (p *Postgres) SaveAlertAssessment(ctx context.Context, user model.Principal
 var ErrAssessmentQuota = errors.New("告警研判变更额度不足")
 var ErrAssessmentExpired = errors.New("研判记录已到保留期限")
 
-func (p *Postgres) AlertAssessmentHistory(ctx context.Context, user model.Principal, id, digest, before string) (assessment.HistoryPage, error) {
+func (p *Postgres) AlertAssessmentHistory(ctx context.Context, user model.Principal, id, digest, before string, limit int) (assessment.HistoryPage, error) {
 	page := assessment.HistoryPage{Items: []assessment.Record{}}
 	boundary := int64(1 << 53)
 	if before != "" {
@@ -139,11 +139,11 @@ func (p *Postgres) AlertAssessmentHistory(ctx context.Context, user model.Princi
 		}
 		boundary = value
 	}
-	if !validAssessmentIdentity(user, id, digest) {
+	if !contract.ValidListLimit(limit) || !validAssessmentIdentity(user, id, digest) {
 		return page, assessment.ErrInput
 	}
 	err := p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT record FROM alert_assessment_changes WHERE tenant_id=$1 AND event_id=$2 AND record->>'raw_sha256'=$3 AND revision<$4 AND expires_at>now() ORDER BY revision DESC LIMIT 21`, user.TenantID, id, digest, boundary)
+		rows, err := tx.Query(ctx, `SELECT record FROM alert_assessment_changes WHERE tenant_id=$1 AND event_id=$2 AND record->>'raw_sha256'=$3 AND revision<$4 AND expires_at>now() ORDER BY revision DESC LIMIT $5`, user.TenantID, id, digest, boundary, limit+1)
 		if err != nil {
 			return err
 		}
@@ -159,9 +159,9 @@ func (p *Postgres) AlertAssessmentHistory(ctx context.Context, user model.Princi
 			}
 			page.Items = append(page.Items, record)
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = strconv.FormatInt(page.Items[19].Revision, 10)
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = strconv.FormatInt(page.Items[limit-1].Revision, 10)
 		}
 		return rows.Err()
 	})

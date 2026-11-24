@@ -79,10 +79,14 @@ func (a *API) saveAlertAssessment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) alertAssessmentHistory(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	if !a.checkAssessmentSource(w, r) {
 		return
 	}
-	result, err := a.DB.AlertAssessmentHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("sha256"), r.URL.Query().Get("before"))
+	result, err := a.DB.AlertAssessmentHistory(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("sha256"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		assessmentFailure(w, r, err)
 		return

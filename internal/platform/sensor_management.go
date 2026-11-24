@@ -3,9 +3,10 @@ package platform
 import (
 	"errors"
 	"net/http"
-	"strconv"
+	"net/url"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/sensormanagement"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -18,8 +19,11 @@ func (a *API) registerSensorManagement(m *http.ServeMux) {
 }
 
 func sensorQuery(r *http.Request, groups bool) (sensormanagement.Query, error) {
-	q := sensormanagement.Query{Limit: 20}
-	values := r.URL.Query()
+	q := sensormanagement.Query{Limit: contract.DefaultListLimit}
+	values, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return q, sensormanagement.ErrInput
+	}
 	for key, v := range values {
 		if len(v) != 1 {
 			return q, sensormanagement.ErrInput
@@ -30,8 +34,7 @@ func sensorQuery(r *http.Request, groups bool) (sensormanagement.Query, error) {
 		case "keyword":
 			q.Keyword = v[0]
 		case "limit":
-			var err error
-			q.Limit, err = strconv.Atoi(v[0])
+			q.Limit, err = parseListLimit(v)
 			if err != nil {
 				return q, sensormanagement.ErrInput
 			}

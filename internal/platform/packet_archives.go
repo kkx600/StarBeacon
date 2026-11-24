@@ -137,17 +137,16 @@ func (a *API) exportPacketSession(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (a *API) packetArchives(w http.ResponseWriter, r *http.Request) {
-	if len(r.URL.Query()) > 2 || len(r.URL.Query()["sensor_id"]) > 1 || len(r.URL.Query()["cursor"]) > 1 {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	if !incidentQuery(r, "sensor_id", "cursor", "limit") {
 		httpapi.Fail(w, r, 400, "invalid_request", "原包目录筛选参数无效")
 		return
 	}
-	for name := range r.URL.Query() {
-		if name != "sensor_id" && name != "cursor" {
-			httpapi.Fail(w, r, 400, "invalid_request", "原包目录筛选参数无效")
-			return
-		}
-	}
-	items, next, err := a.DB.PacketArchives(r.Context(), httpapi.Principal(r), r.URL.Query().Get("sensor_id"), r.URL.Query().Get("cursor"))
+	q := r.URL.Query()
+	items, next, err := a.DB.PacketArchives(r.Context(), httpapi.Principal(r), q.Get("sensor_id"), q.Get("cursor"), limit)
 	if err != nil {
 		if errors.Is(err, packetarchive.ErrIntegrity) {
 			httpapi.Fail(w, r, 400, "invalid_request", "原包目录筛选参数无效")

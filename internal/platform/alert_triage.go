@@ -92,10 +92,14 @@ func (a *API) createAlertTriage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) alertTriages(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	if !a.triageData(w, r) {
 		return
 	}
-	page, err := a.DB.AlertTriages(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("sha256"), r.URL.Query().Get("before"))
+	page, err := a.DB.AlertTriages(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("sha256"), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		triageFailure(w, r, err)
 		return

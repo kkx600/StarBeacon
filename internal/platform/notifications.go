@@ -70,7 +70,11 @@ func (a *API) testNotificationChannel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) notificationDeliveries(w http.ResponseWriter, r *http.Request) {
-	items, next, err := a.DB.NotificationDeliveries(r.Context(), httpapi.Principal(r).TenantID, r.URL.Query().Get("cursor"), r.URL.Query().Get("state"))
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	items, next, err := a.DB.NotificationDeliveries(r.Context(), httpapi.Principal(r).TenantID, r.URL.Query().Get("cursor"), r.URL.Query().Get("state"), limit)
 	if err != nil {
 		notificationFailure(w, r, err)
 		return

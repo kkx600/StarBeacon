@@ -189,10 +189,10 @@ func TestAlertAssessmentRealOwnershipHistoryAndImmutableEvidence(t *testing.T) {
 	if _, err := f.Runtime.AlertAssessment(ctx, user, "bad/id", digest); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效事件标识未拒绝", err)
 	}
-	if _, err := f.Runtime.AlertAssessmentHistory(ctx, user, events[0], digest, "bad"); !errors.Is(err, assessment.ErrInput) {
+	if _, err := f.Runtime.AlertAssessmentHistory(ctx, user, events[0], digest, "bad", 20); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效历史游标未拒绝", err)
 	}
-	if _, err := f.Runtime.AlertAssessmentHistory(ctx, model.Principal{}, events[0], digest, ""); !errors.Is(err, assessment.ErrInput) {
+	if _, err := f.Runtime.AlertAssessmentHistory(ctx, model.Principal{}, events[0], digest, "", 20); !errors.Is(err, assessment.ErrInput) {
 		t.Fatal("无效历史身份未拒绝", err)
 	}
 	if _, err := f.Runtime.AlertAssessment(ctx, user, events[0], strings.Repeat("b", 64)); !errors.Is(err, store.ErrConflict) {

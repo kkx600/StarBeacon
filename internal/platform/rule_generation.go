@@ -133,10 +133,14 @@ func (a *API) ruleGeneration(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) ruleGenerations(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	if !a.generationData(w, r) {
 		return
 	}
-	page, err := a.DB.RuleGenerations(r.Context(), httpapi.Principal(r), r.URL.Query().Get("before"))
+	page, err := a.DB.RuleGenerations(r.Context(), httpapi.Principal(r), r.URL.Query().Get("before"), limit)
 	if err != nil {
 		generationFailure(w, r, err)
 		return

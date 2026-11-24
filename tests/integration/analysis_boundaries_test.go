@@ -74,9 +74,12 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 		}},
 		{"history", []string{"SELECT id FROM analysis_threads", "SELECT request->>'question'"}, func(db *store.Postgres) error { _, e := db.AnalysisHistory(ctx, u, seed.Request.ThreadID); return e }},
 		{"report_cursor", []string{"UPDATE analysis_jobs SET state='uncertain'", "SELECT created_at FROM analysis_jobs", "SELECT id,kind,COALESCE"}, func(db *store.Postgres) error { _, e := db.AnalysisJobs(ctx, u, "chat", seed.ID, 2); return e }},
-		{"thread_cursor", []string{"UPDATE analysis_jobs SET state='uncertain'", "SELECT updated_at FROM analysis_threads", "SELECT t.id,t.title"}, func(db *store.Postgres) error { _, e := db.AnalysisThreads(ctx, u, seed.Request.ThreadID); return e }},
+		{"thread_cursor", []string{"UPDATE analysis_jobs SET state='uncertain'", "SELECT updated_at FROM analysis_threads", "SELECT t.id,t.title"}, func(db *store.Postgres) error {
+			_, e := db.AnalysisThreads(ctx, u, seed.Request.ThreadID, 20)
+			return e
+		}},
 		{"conversation_cursor", []string{"UPDATE analysis_jobs SET state='uncertain'", "SELECT title FROM analysis_threads", "SELECT created_at FROM analysis_jobs", "SELECT jsonb_build_object"}, func(db *store.Postgres) error {
-			_, e := db.AnalysisConversation(ctx, u, seed.Request.ThreadID, seed.ID)
+			_, e := db.AnalysisConversation(ctx, u, seed.Request.ThreadID, seed.ID, 10)
 			return e
 		}},
 		{"followup", []string{"SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE rule_generation_jobs SET state='uncertain'", "UPDATE alert_triage_jobs SET state='uncertain'", "SELECT count(*) FILTER", "SELECT count(*) FROM analysis_jobs", "SELECT id FROM analysis_threads", "SELECT id,state FROM analysis_jobs", "UPDATE analysis_threads", "INSERT INTO analysis_jobs", "UPDATE analysis_jobs SET river_job_id", "INSERT INTO operation_audits"}, func(db *store.Postgres) error {
@@ -113,15 +116,15 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 	for _, tc := range []struct {
 		group, cursor string
 		limit         int
-	}{{"unknown", "", 20}, {"reports", "", 0}, {"reports", "", 51}, {"reports", "id.invalid", 20}} {
+	}{{"unknown", "", 20}, {"reports", "", 0}, {"reports", "", 101}, {"reports", "id.invalid", 20}} {
 		if _, e := f.Runtime.AnalysisJobs(ctx, u, tc.group, tc.cursor, tc.limit); !errors.Is(e, assistant.ErrInput) {
 			t.Fatal("无效列表参数未拒绝", e)
 		}
 	}
-	if _, e := f.Runtime.AnalysisThreads(ctx, u, "id.invalid"); !errors.Is(e, assistant.ErrInput) {
+	if _, e := f.Runtime.AnalysisThreads(ctx, u, "id.invalid", 20); !errors.Is(e, assistant.ErrInput) {
 		t.Fatal("无效对话游标未拒绝", e)
 	}
-	if _, e := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, "id.invalid"); !errors.Is(e, assistant.ErrInput) {
+	if _, e := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, "id.invalid", 10); !errors.Is(e, assistant.ErrInput) {
 		t.Fatal("无效内容游标未拒绝", e)
 	}
 	if _, e := f.Runtime.AnalysisJob(ctx, u, "id.invalid"); !errors.Is(e, pgx.ErrNoRows) {
@@ -205,12 +208,12 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 		}
 		return nil
 	}))
-	threads, err := f.Runtime.AnalysisThreads(ctx, u, "")
+	threads, err := f.Runtime.AnalysisThreads(ctx, u, "", 20)
 	require(t, err)
 	if len(threads.Items) != 20 || threads.Next == "" {
 		t.Fatal("对话分页边界缺失", threads)
 	}
-	older, err := f.Runtime.AnalysisThreads(ctx, u, threads.Next)
+	older, err := f.Runtime.AnalysisThreads(ctx, u, threads.Next, 20)
 	require(t, err)
 	if len(older.Items) != 4 || older.Next != "" {
 		t.Fatal("对话分页出现重复或遗漏", older)
@@ -222,12 +225,12 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 		}
 		seen[item.ID] = true
 	}
-	conversation, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, "")
+	conversation, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, "", 10)
 	require(t, err)
 	if len(conversation.Jobs) != 10 || conversation.Next == "" {
 		t.Fatal("内容分页边界缺失", conversation)
 	}
-	previous, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, conversation.Next)
+	previous, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, conversation.Next, 10)
 	require(t, err)
 	if len(previous.Jobs) != 3 || previous.Next != "" {
 		t.Fatal("内容跨页遗漏或重复", previous)
@@ -322,7 +325,7 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 	if _, err := f.Runtime.AnalysisJobs(ctx, u, "chat", "", 20); err == nil {
 		t.Fatal("损坏统计窗口被呈现为有效作业")
 	}
-	if _, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, ""); err == nil {
+	if _, err := f.Runtime.AnalysisConversation(ctx, u, seed.Request.ThreadID, "", 10); err == nil {
 		t.Fatal("损坏作业被呈现为有效对话")
 	}
 }

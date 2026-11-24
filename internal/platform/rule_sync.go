@@ -30,8 +30,12 @@ func ruleSyncFailure(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func (a *API) ruleSyncPlans(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
 	q := r.URL.Query()
-	if len(q) > 1 || len(q["cursor"]) > 1 || len(q) == 1 && !q.Has("cursor") {
+	if !incidentQuery(r, "cursor", "limit") {
 		ruleSyncFailure(w, r, rulesync.ErrInput)
 		return
 	}
@@ -39,7 +43,7 @@ func (a *API) ruleSyncPlans(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 503, "rule_sync_unavailable", "规则同步数据服务暂不可用")
 		return
 	}
-	page, err := a.DB.RuleSyncPlans(r.Context(), httpapi.Principal(r), q.Get("cursor"))
+	page, err := a.DB.RuleSyncPlans(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
 	if err != nil {
 		ruleSyncFailure(w, r, err)
 		return

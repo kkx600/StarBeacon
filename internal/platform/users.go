@@ -42,8 +42,12 @@ func userFailure(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 func (a *API) users(w http.ResponseWriter, r *http.Request) {
-	q := accounts.Query{Role: r.URL.Query().Get("role"), Active: r.URL.Query().Get("active"), Before: r.URL.Query().Get("before")}
-	if !incidentQuery(r, "role", "active", "before") || q.Validate() != nil {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	q := accounts.Query{Limit: limit, Role: r.URL.Query().Get("role"), Active: r.URL.Query().Get("active"), Before: r.URL.Query().Get("before")}
+	if !incidentQuery(r, "role", "active", "before", "limit") || q.Validate() != nil {
 		userFailure(w, r, accounts.ErrInput)
 		return
 	}

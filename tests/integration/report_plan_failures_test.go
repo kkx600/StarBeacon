@@ -127,18 +127,18 @@ func TestReportPlanDatabaseInterruptionPreservesScheduleAndHistory(t *testing.T)
 			return db.FailReportPlanRun(ctx, lease, "plan_qualification_changed", q)
 		}},
 		{"history", []string{"SELECT id FROM report_plans", "UPDATE report_plan_runs h", "UPDATE analysis_jobs SET state='failed'", "SELECT jsonb_build_object('id',h.id"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.ReportPlanRuns(ctx, u, plan.ID, "")
+			_, e := db.ReportPlanRuns(ctx, u, plan.ID, "", 20)
 			return e
 		}},
 		{"history_cursor", []string{"SELECT created_at FROM report_plan_runs"}, func(db *store.Postgres, _ *river.Client[pgx.Tx]) error {
-			_, e := db.ReportPlanRuns(ctx, u, plan.ID, lease.RunID)
+			_, e := db.ReportPlanRuns(ctx, u, plan.ID, lease.RunID, 20)
 			return e
 		}},
 	}
 	check(ops)
 	require(t, f.Runtime.CheckReportPlanLease(ctx, lease))
 	require(t, f.Runtime.FailReportPlanRun(ctx, lease, "plan_qualification_changed", queue))
-	runs, err := f.Runtime.ReportPlanRuns(ctx, u, plan.ID, "")
+	runs, err := f.Runtime.ReportPlanRuns(ctx, u, plan.ID, "", 20)
 	require(t, err)
 	if len(runs.Items) != 1 || runs.Items[0].State != "failed" || runs.Items[0].Code != "plan_qualification_changed" {
 		t.Fatal("恢复后失败状态未准确持久化")

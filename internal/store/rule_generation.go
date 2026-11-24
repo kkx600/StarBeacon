@@ -225,9 +225,9 @@ type GenerationPage struct {
 	Next  string              `json:"next_cursor"`
 }
 
-func (p *Postgres) RuleGenerations(ctx context.Context, u model.Principal, before string) (GenerationPage, error) {
+func (p *Postgres) RuleGenerations(ctx context.Context, u model.Principal, before string, limit int) (GenerationPage, error) {
 	page := GenerationPage{Items: []GenerationSummary{}}
-	if before != "" && !contract.ValidID(before) {
+	if !contract.ValidListLimit(limit) || before != "" && !contract.ValidID(before) {
 		return page, rulegen.ErrInput
 	}
 	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
@@ -242,7 +242,7 @@ func (p *Postgres) RuleGenerations(ctx context.Context, u model.Principal, befor
 				return err
 			}
 		}
-		rows, err := tx.Query(ctx, `SELECT id,left(request->>'description',80),request->>'source',state,provider_id,created_at,cancel_requested FROM rule_generation_jobs WHERE tenant_id=$1 AND created_by=$2 AND expires_at>now() AND (created_at,id)<($3,$4) ORDER BY created_at DESC,id DESC LIMIT 21`, u.TenantID, u.ID, at, cursor)
+		rows, err := tx.Query(ctx, `SELECT id,left(request->>'description',80),request->>'source',state,provider_id,created_at,cancel_requested FROM rule_generation_jobs WHERE tenant_id=$1 AND created_by=$2 AND expires_at>now() AND (created_at,id)<($3,$4) ORDER BY created_at DESC,id DESC LIMIT $5`, u.TenantID, u.ID, at, cursor, limit+1)
 		if err != nil {
 			return err
 		}
@@ -254,9 +254,9 @@ func (p *Postgres) RuleGenerations(ctx context.Context, u model.Principal, befor
 			}
 			page.Items = append(page.Items, v)
 		}
-		if len(page.Items) > 20 {
-			page.Items = page.Items[:20]
-			page.Next = page.Items[19].ID
+		if len(page.Items) > limit {
+			page.Items = page.Items[:limit]
+			page.Next = page.Items[limit-1].ID
 		}
 		return rows.Err()
 	})

@@ -69,7 +69,7 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 			return e
 		}},
 		{"read", []string{"SELECT id,state,manifest"}, func(db *store.Postgres) error { _, e := db.PacketArchive(ctx, u, row.ID); return e }},
-		{"directory", []string{"SELECT id,state,manifest->'capture'"}, func(db *store.Postgres) error { _, _, e := db.PacketArchives(ctx, u, "", ""); return e }},
+		{"directory", []string{"SELECT id,state,manifest->'capture'"}, func(db *store.Postgres) error { _, _, e := db.PacketArchives(ctx, u, "", "", 50); return e }},
 		{"version", []string{"SELECT public.lock_packet_sensor", "UPDATE packet_archives SET state='stored'"}, func(db *store.Postgres) error { return db.RegisterPacketObject(ctx, id, row, version) }},
 		{"completion", []string{"UPDATE packet_archives SET state='ready'"}, func(db *store.Postgres) error { _, e := db.CompletePacketArchive(ctx, id, row); return e }},
 		{"release", []string{"UPDATE packet_archives SET lease_until=now()"}, func(db *store.Postgres) error { return db.ReleasePacketLease(ctx, id, row) }},
@@ -112,7 +112,7 @@ func TestPacketArchiveDirectoryTransactionsNeverConfirmPartialWrites(t *testing.
 	if _, e := f.Runtime.PacketArchive(ctx, u, row.ID); e == nil {
 		t.Fatal("损坏原包目录返回有效材料")
 	}
-	if _, _, e := f.Runtime.PacketArchives(ctx, u, "", ""); e == nil {
+	if _, _, e := f.Runtime.PacketArchives(ctx, u, "", "", 50); e == nil {
 		t.Fatal("损坏捕获概要可以列出")
 	}
 }

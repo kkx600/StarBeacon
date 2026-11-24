@@ -283,15 +283,15 @@ func parseDeliveryCursor(cursor string) (*time.Time, string, error) {
 	return &at, fields[1], nil
 }
 
-func (p *Postgres) NotificationDeliveries(ctx context.Context, tenant, cursor, state string) ([]Delivery, string, error) {
+func (p *Postgres) NotificationDeliveries(ctx context.Context, tenant, cursor, state string, limit int) ([]Delivery, string, error) {
 	result := []Delivery{}
 	next := ""
 	at, after, cursorError := parseDeliveryCursor(cursor)
-	if cursorError != nil || (state != "" && !slices.Contains([]string{"queued", "running", "retry", "accepted", "transport_written", "failed", "uncertain", "suppressed", "cancelled"}, state)) {
+	if !contract.ValidListLimit(limit) || cursorError != nil || (state != "" && !slices.Contains([]string{"queued", "running", "retry", "accepted", "transport_written", "failed", "uncertain", "suppressed", "cancelled"}, state)) {
 		return result, next, ErrNotificationQuery
 	}
 	err := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT d.id,b.channel_id,c.name,c.kind,b.channel_revision,d.recipient,d.state,d.version,d.attempts,jsonb_array_length(b.message->'alerts'),CASE WHEN b.message ? 'logs' THEN jsonb_array_length(b.message->'logs') WHEN b.message ? 'quality' THEN jsonb_array_length(b.message->'quality') ELSE jsonb_array_length(b.message->'alerts') END,COALESCE(b.message->'logs'->0->>'stream',CASE WHEN b.message ? 'quality' THEN 'quality' WHEN (b.message->>'test')::boolean THEN 'test' ELSE 'alerts' END),d.receipt,d.created_at,d.updated_at FROM notification_deliveries d JOIN notification_batches b ON b.tenant_id=d.tenant_id AND b.id=d.batch_id JOIN notification_channels c ON c.tenant_id=b.tenant_id AND c.id=b.channel_id WHERE d.tenant_id=$1 AND ($2::timestamptz IS NULL OR (d.created_at,d.id)<($2::timestamptz,$3::text)) AND ($4='' OR d.state=$4) AND d.expires_at>now() ORDER BY d.created_at DESC,d.id DESC LIMIT 21`, tenant, at, after, state)
+		rows, err := tx.Query(ctx, `SELECT d.id,b.channel_id,c.name,c.kind,b.channel_revision,d.recipient,d.state,d.version,d.attempts,jsonb_array_length(b.message->'alerts'),CASE WHEN b.message ? 'logs' THEN jsonb_array_length(b.message->'logs') WHEN b.message ? 'quality' THEN jsonb_array_length(b.message->'quality') ELSE jsonb_array_length(b.message->'alerts') END,COALESCE(b.message->'logs'->0->>'stream',CASE WHEN b.message ? 'quality' THEN 'quality' WHEN (b.message->>'test')::boolean THEN 'test' ELSE 'alerts' END),d.receipt,d.created_at,d.updated_at FROM notification_deliveries d JOIN notification_batches b ON b.tenant_id=d.tenant_id AND b.id=d.batch_id JOIN notification_channels c ON c.tenant_id=b.tenant_id AND c.id=b.channel_id WHERE d.tenant_id=$1 AND ($2::timestamptz IS NULL OR (d.created_at,d.id)<($2::timestamptz,$3::text)) AND ($4='' OR d.state=$4) AND d.expires_at>now() ORDER BY d.created_at DESC,d.id DESC LIMIT $5`, tenant, at, after, state, limit+1)
 		if err != nil {
 			return err
 		}
@@ -305,9 +305,9 @@ func (p *Postgres) NotificationDeliveries(ctx context.Context, tenant, cursor, s
 		}
 		return rows.Err()
 	})
-	if len(result) > 20 {
-		next = deliveryCursor(result[19])
-		result = result[:20]
+	if len(result) > limit {
+		next = deliveryCursor(result[limit-1])
+		result = result[:limit]
 	}
 	return result, next, err
 }

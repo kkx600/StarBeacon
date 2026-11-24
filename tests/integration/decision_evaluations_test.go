@@ -82,15 +82,15 @@ func TestDecisionEvaluationArchiveHTTPIdempotencyIsolationAndHistory(t *testing.
 	changed := input
 	changed.ExpectedRevision++
 	a.request("POST", "/decision-evaluations", "archive_submit", changed, nil, 409)
-	for i := 0; i < 3; i++ {
+	for i := range 11 {
 		a.request("POST", "/decision-evaluations", fmt.Sprintf("archive_page_%d", i), input, &again, 200)
 	}
 	var page decision.EvaluationPage
-	a.request("GET", "/decision-evaluations?limit=2&status=matched&policy_id="+p.ID, "", nil, &page, 200)
-	if len(page.Items) != 2 || page.Items[0].ID != again.ID || page.NextCursor != page.Items[1].ID {
+	a.request("GET", "/decision-evaluations?limit=10&status=matched&policy_id="+p.ID, "", nil, &page, 200)
+	if len(page.Items) != 10 || page.Items[0].ID != again.ID || page.NextCursor != page.Items[9].ID {
 		t.Fatal("持久提交倒序或游标错误")
 	}
-	a.request("GET", "/decision-evaluations?limit=2&status=matched&cursor="+page.NextCursor, "", nil, &page, 200)
+	a.request("GET", "/decision-evaluations?limit=10&status=matched&cursor="+page.NextCursor, "", nil, &page, 200)
 	if len(page.Items) != 2 || page.Items[1].ID != first.ID || page.NextCursor != "" {
 		t.Fatal("下一页丢失或重复记录")
 	}

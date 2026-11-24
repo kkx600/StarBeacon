@@ -16,22 +16,20 @@ import (
 )
 
 func (a *API) automaticTriages(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	for key := range query {
-		if key != "before" {
-			decisionFailure(w, r, decision.ErrInput)
-			return
-		}
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
 	}
+	query := r.URL.Query()
 	revision, err := strconv.ParseInt(r.PathValue("revision"), 10, 64)
-	if err != nil || strconv.FormatInt(revision, 10) != r.PathValue("revision") || revision < 1 || revision > decision.MaxRevision || !contract.ValidID(r.PathValue("id")) || query.Get("before") != "" && !contract.ValidID(query.Get("before")) || len(query) > 1 || query.Has("before") && len(query["before"]) != 1 {
+	if !incidentQuery(r, "before", "limit") || err != nil || strconv.FormatInt(revision, 10) != r.PathValue("revision") || revision < 1 || revision > decision.MaxRevision || !contract.ValidID(r.PathValue("id")) || query.Get("before") != "" && !contract.ValidID(query.Get("before")) {
 		decisionFailure(w, r, decision.ErrInput)
 		return
 	}
 	if !a.decisionReady(w, r) {
 		return
 	}
-	page, err := a.DB.AutomaticTriages(r.Context(), httpapi.Principal(r), r.PathValue("id"), revision, query.Get("before"))
+	page, err := a.DB.AutomaticTriages(r.Context(), httpapi.Principal(r), r.PathValue("id"), revision, query.Get("before"), limit)
 	if err != nil {
 		decisionFailure(w, r, err)
 		return
