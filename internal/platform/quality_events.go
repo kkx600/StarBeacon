@@ -66,7 +66,7 @@ func (a *API) qualityEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.ES == nil {
-		httpapi.Fail(w, r, 503, "quality_unavailable", "质量事件检索服务暂不可用")
+		httpapi.Fail(w, r, 503, "quality_unavailable", "质量事件检索服务异常，请稍后重试")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)

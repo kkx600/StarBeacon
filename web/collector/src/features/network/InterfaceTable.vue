@@ -25,7 +25,7 @@ const columns = [
     <template #bodyCell="{ column, record }">
       <StatusTag
         v-if="column.key === 'status'"
-        :value="record.up ? '启用' : '关闭'"
+        :value="record.up ? '启用' : '停用'"
         :tone="record.up ? statusTerms.启用 : statusTerms.停用"
       />
       <span v-else-if="column.key === 'mac'" class="technical">{{ record.mac || '未提供' }}</span>

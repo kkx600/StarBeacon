@@ -22,9 +22,9 @@ describe('界面时间格式', () => {
   });
 
   it('缺测和无效时间分别给出提示', () => {
-    expect(formatTime()).toBe('未获取');
-    expect(formatTime(null)).toBe('未获取');
-    expect(formatTime('')).toBe('未获取');
+    expect(formatTime()).toBe('无数据');
+    expect(formatTime(null)).toBe('无数据');
+    expect(formatTime('')).toBe('无数据');
     expect(formatTime('invalid')).toBe('时间无效');
     expect(formatTime(new Date(Number.NaN))).toBe('时间无效');
   });

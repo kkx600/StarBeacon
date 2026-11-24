@@ -36,7 +36,7 @@ function submit() {
 function download() {
   downloadError.value = '';
   if (!props.receipt || !props.token || props.receipt.revoked || Date.parse(props.receipt.expires_at) <= Date.now()) {
-    downloadError.value = '注册凭据已不可用，请创建独立凭据。';
+    downloadError.value = '当前注册凭据无法下载，请创建独立凭据。';
     return;
   }
   try {

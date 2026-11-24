@@ -12,7 +12,7 @@ import (
 )
 
 var ErrQualification = errors.New("发布需要同一探针、注册代次、规则修订与检测配置的有效装载和正反样本回执")
-var ErrReconciliation = errors.New("待核实规则事务或当前设备摘要不匹配，请刷新探针状态并核对实际规则")
+var ErrReconciliation = errors.New("结果未知的规则事务或当前设备摘要不匹配，请刷新探针状态并核对实际规则")
 
 type Evidence struct {
 	Command control.Command

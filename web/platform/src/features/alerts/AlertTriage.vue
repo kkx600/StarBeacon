@@ -2,7 +2,8 @@
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onMounted, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue';
 import { Descriptions as ADescriptions, Select as ASelect, Checkbox as ACheckbox } from 'ant-design-vue';
-import { formatTime } from '@starbeacon/shared/types.ts';
+import { modelJobTones } from '@starbeacon/shared/statusTones.ts';
+import { formatTime, modelJobStates } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { session } from '../../session';
@@ -10,8 +11,6 @@ import { router } from '../../router';
 import { resultNames } from '../models/models';
 import {
   triageCodes,
-  triageStates,
-  triageStateTones,
   triageVerdicts,
   triageOutcomes,
   triageRecommendations,
@@ -135,7 +134,7 @@ onScopeDispose(() => {
         :disabled="locked"
         :loading="pending"
         :options="
-          items.map(row => ({ value: row.id, label: `${formatTime(row.created_at)} · ${triageStates[row.state]}` }))
+          items.map(row => ({ value: row.id, label: `${formatTime(row.created_at)} · ${modelJobStates[row.state]}` }))
         "
         @update:value="selectRecord"
       />
@@ -155,7 +154,7 @@ onScopeDispose(() => {
     <a-alert
       v-if="!pending && !error && !available"
       type="warning"
-      message="模型执行或材料检索服务暂不可用，可以查看已有记录，暂不能提交研判。"
+      message="模型执行或材料检索服务异常，暂不能提交研判。可查看已有记录或稍后重试。"
       show-icon
       class="section-gap"
     />
@@ -250,7 +249,7 @@ onScopeDispose(() => {
         <template v-if="selected">
           <a-descriptions bordered size="small" :column="{ xs: 1, sm: 2 }">
             <a-descriptions-item label="作业状态"
-              ><StatusTag :tone="triageStateTones[selected.state]" :value="triageStates[selected.state]"
+              ><StatusTag :tone="modelJobTones[selected.state]" :value="modelJobStates[selected.state]"
             /></a-descriptions-item>
             <a-descriptions-item label="模型修订"
               >{{
@@ -270,18 +269,18 @@ onScopeDispose(() => {
               >{{ formatTime(selected.created_at) }} / {{ formatTime(selected.finished_at) }}</a-descriptions-item
             >
             <a-descriptions-item label="模型调用耗时">{{
-              selected.result.duration_ms === null ? '未获得实际调用耗时' : selected.result.duration_ms + ' ms'
+              selected.result.duration_ms === null ? '无数据' : selected.result.duration_ms + ' ms'
             }}</a-descriptions-item>
             <a-descriptions-item label="调用用量">{{
               selected.result.usage
                 ? `输入 ${selected.result.usage.input_tokens} / 输出 ${selected.result.usage.output_tokens} Token`
-                : '提供方未返回用量'
+                : '无数据'
             }}</a-descriptions-item>
           </a-descriptions>
           <a-alert
             v-if="selected.state === 'uncertain'"
             type="warning"
-            message="提供方是否完成调用无法确认，费用可能已产生。平台不会自动重试本次调用；请先核对提供方记录。"
+            message="模型调用结果未知，费用可能已产生。平台不会自动重试，请先核对提供方记录。"
             show-icon
             class="section-gap"
           />
@@ -300,9 +299,8 @@ onScopeDispose(() => {
               >评估决策策略</a-button
             >
             <div class="triage-answer-heading">
-              <strong>{{ triageVerdicts[selected.answer.verdict] }}</strong><span>{{
-                triageOutcomes[selected.answer.outcome]
-              }}</span
+              <strong>模型建议 · {{ triageVerdicts[selected.answer.verdict] }}（待复核）</strong
+              ><span>{{ triageOutcomes[selected.answer.outcome] }}</span
               ><StatusTag tone="neutral" :value="`模型自评分 ${(selected.answer.confidence * 100).toFixed(1)}%`" />
             </div>
             <p class="triage-text">{{ selected.answer.reason }}</p>

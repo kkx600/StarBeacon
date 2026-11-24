@@ -1,3 +1,4 @@
+import { statusTerms } from '../../../web/packages/shared/src/terms.ts';
 import {
   alertSeverityTones,
   alertWorkflowTones,
@@ -153,23 +154,22 @@ export const taskTones = {
   结果未知: taskStateTones.unknown,
   已过期: taskStateTones.expired,
   已取消: taskStateTones.cancelled,
-  '已生效（示例）': taskStateTones.succeeded,
   原生执行未配置: 'warning',
-  待验证: 'warning',
-  证据不足: 'warning',
-  不完整: 'warning',
+  待验证: statusTerms.待验证,
+  证据不足: statusTerms.证据不足,
+  不完整: statusTerms.不完整,
 } as const satisfies StatusToneMap;
 
 export const configurationTones = {
   默认: 'neutral',
-  草稿: 'neutral',
-  启用: 'success',
-  停用: 'neutral',
-  未启用: 'neutral',
-  未配置: 'warning',
-  待验证: 'warning',
-  已验证: 'success',
-  验证失败: 'danger',
+  草稿: statusTerms.草稿,
+  启用: statusTerms.启用,
+  停用: statusTerms.停用,
+  未启用: statusTerms.未启用,
+  未配置: statusTerms.未配置,
+  待验证: statusTerms.待验证,
+  已验证: statusTerms.已验证,
+  验证失败: statusTerms.验证失败,
   灰度中: 'info',
   已发布: 'neutral',
   已回滚: 'neutral',
@@ -177,10 +177,10 @@ export const configurationTones = {
 
 const reviewTones = {
   ...taskTones,
-  待处理: 'warning',
-  处理中: 'info',
-  待复核: 'warning',
-  已关闭: 'neutral',
+  待处理: statusTerms.待处理,
+  处理中: statusTerms.处理中,
+  待复核: statusTerms.待复核,
+  已关闭: statusTerms.已关闭,
   待审核: 'warning',
   待训练: 'warning',
   待研判: alertWorkflowTones.open,
@@ -188,13 +188,13 @@ const reviewTones = {
 
 export const responseTones = {
   ...taskTones,
-  待确认: 'warning',
-  已确认: 'success',
-  已驳回: 'neutral',
-  已生效: 'success',
-  已撤销: 'neutral',
-  未执行: 'neutral',
-  尚未核验: 'neutral',
+  待确认: statusTerms.待确认,
+  已确认: statusTerms.已确认,
+  已驳回: statusTerms.已驳回,
+  已生效: statusTerms.已生效,
+  已撤销: statusTerms.已撤销,
+  未执行: statusTerms.未执行,
+  待验证: statusTerms.待验证,
 } as const satisfies StatusToneMap;
 
 const integrityTones = {
@@ -203,7 +203,7 @@ const integrityTones = {
   缺少握手: 'danger',
   单向观测: 'warning',
   字节缺口: 'danger',
-  不完整: 'warning',
+  不完整: statusTerms.不完整,
   等待上传: 'warning',
   原件待核查: 'warning',
   确认待回收: 'warning',
@@ -211,21 +211,26 @@ const integrityTones = {
   仅元数据: 'warning',
   部分支持: 'warning',
   支持: 'success',
-  不支持: 'neutral',
-  证据不足: 'warning',
+  不支持: statusTerms.不支持,
+  证据不足: statusTerms.证据不足,
 } as const satisfies StatusToneMap;
 
 const auditTones = { 成功: 'success', 拒绝: 'danger', 'MFA 失败': 'danger', 凭据错误: 'danger' } as const;
 const deliveryTones = { ...taskTones, 已发送: 'success', 已送达: 'success', 无回执: 'neutral' } as const;
-const inventoryTones = { ...connectionTones, 待确认: 'warning', 待复核: 'warning', 证据不足: 'warning' } as const;
-const qualityTones = { ...healthTones, 证据不足: 'warning' } as const;
+const inventoryTones = {
+  ...connectionTones,
+  待确认: statusTerms.待确认,
+  待复核: statusTerms.待复核,
+  证据不足: statusTerms.证据不足,
+} as const;
+const qualityTones = { ...healthTones, 证据不足: statusTerms.证据不足 } as const;
 const familyTones = new Map<string, StatusToneMap>([
   ['alert', alertTones],
   ['sensor', connectionTones],
   ['platform', healthTones],
   ['quality', qualityTones],
   ['data-quality', qualityTones],
-  ['packet-time', { ...healthTones, 待复核: 'warning' }],
+  ['packet-time', { ...healthTones, 待复核: statusTerms.待复核 }],
   ['action', responseTones],
   ['playbook-run', responseTones],
   ['device', { ...connectionTones, ...responseTones, ...configurationTones }],

@@ -113,7 +113,7 @@ func Middleware(next http.Handler, policy clientip.Policy) http.Handler {
 		defer func() {
 			if v := recover(); v != nil {
 				slog.Error("HTTP 请求异常", "request_id", id)
-				Fail(w, r, 500, "internal_error", "服务暂时不可用")
+				Fail(w, r, 500, "internal_error", "服务异常，请稍后重试")
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -133,7 +133,7 @@ func (a *Auth) Require(admin bool, next http.HandlerFunc) http.HandlerFunc {
 		u, e := a.Store.Session(r.Context(), c.Value)
 		if e != nil {
 			if !errors.Is(e, model.ErrUnauthenticated) {
-				Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
+				Fail(w, r, 503, "auth_unavailable", "认证服务异常，请稍后重试")
 				return
 			}
 			Fail(w, r, 401, "session_expired", "会话已失效，请重新登录")
@@ -191,7 +191,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	ok, e := a.allowLogin(r)
 	if e != nil {
-		Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
+		Fail(w, r, 503, "auth_unavailable", "认证服务异常，请稍后重试")
 		return
 	}
 	if !ok {
@@ -219,7 +219,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	e = bcrypt.CompareHashAndPassword(compare, []byte(input.Password))
 	telemetry.AuthPhaseDuration.WithLabelValues("password_verify").Observe(time.Since(phase).Seconds())
 	if lookup != nil && !errors.Is(lookup, model.ErrUnauthenticated) {
-		Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
+		Fail(w, r, 503, "auth_unavailable", "认证服务异常，请稍后重试")
 		return
 	}
 	success := lookup == nil && e == nil
@@ -242,7 +242,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 			Fail(w, r, 401, "credentials_changed", "账号信息已变化，请重新登录")
 			return
 		}
-		Fail(w, r, 503, "auth_unavailable", "认证服务暂时不可用")
+		Fail(w, r, 503, "auth_unavailable", "认证服务异常，请稍后重试")
 		return
 	}
 	u.CSRF = csrf

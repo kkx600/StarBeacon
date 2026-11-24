@@ -344,7 +344,7 @@ export function watchlistState(
   return instant(v.definition.valid_from)! > clock ? 'scheduled' : 'effective';
 }
 export const watchlistStates = {
-  disabled: '已停用',
+  disabled: '停用',
   scheduled: '待生效',
   expired: '已到期',
   effective: '有效',

@@ -30,7 +30,7 @@ const columns = computed(() => [
       ><span v-else-if="column.key === 'action'" :title="record.action">{{ actionLabel(record.action) }}</span
       ><StatusTag
         v-else-if="column.key === 'success'"
-        :value="record.success === true ? '验证通过' : record.success === false ? '验证失败' : '未获取'"
+        :value="record.success === true ? '已验证' : record.success === false ? '验证失败' : '无数据'"
         :tone="
           record.success === true
             ? statusTerms.已验证
@@ -43,7 +43,7 @@ const columns = computed(() => [
         v-else-if="
           column.dataIndex === 'source_ip' || column.dataIndex === 'object_id' || column.dataIndex === 'username'
         "
-        >{{ record[column.dataIndex] || '未获取' }}</span
+        >{{ record[column.dataIndex] || '无数据' }}</span
       ></template
     ></ListTable
   >

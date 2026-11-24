@@ -87,7 +87,7 @@ async function submit(settings: CaptureSettings) {
   try {
     if (await save(settings)) {
       const value = capture.value;
-      if (value.status === 'running') message.success('采集配置已生效');
+      if (value.status === 'running') message.success('采集配置已应用');
       else if (value.status === 'stopped') message.success('采集已停止');
       else if (value.error_code) message.warning(captureErrors[value.error_code] ?? '配置已保存，实际执行状态需要核对');
       else message.success('采集目标保存成功，等待应用');

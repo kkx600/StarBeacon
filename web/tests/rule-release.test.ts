@@ -359,7 +359,7 @@ describe('规则发布对话框', () => {
     await wrapper.getComponent(Checkbox).setValue(true, 'checked');
     await click('提交发布任务');
     expect(document.body.textContent).toContain('发布任务已受理');
-    expect(document.body.textContent).toContain('受理不等于规则已生效');
+    expect(document.body.textContent).toContain('实际应用状态以设备回执为准');
     expect(button('提交发布任务').disabled).toBe(true);
     expect(document.body.querySelector('a[href="/sensors/tasks"]')).not.toBeNull();
     wrapper.getComponent(Modal).vm.$emit('cancel');

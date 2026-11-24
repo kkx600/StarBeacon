@@ -81,11 +81,7 @@ const unsealed = computed(() => (props.record ? packetUnsealed(props.record) : f
           >
           <a-descriptions-item label="内核丢包"
             >{{
-              unsealed
-                ? '尚未冻结'
-                : capture.counter_state === 'observed'
-                  ? `${capture.kernel_drops} 包`
-                  : '未获取可靠计数'
+              unsealed ? '尚未冻结' : capture.counter_state === 'observed' ? `${capture.kernel_drops} 包` : '无可靠计数'
             }}
             · 不代表镜像源没有丢包</a-descriptions-item
           >
@@ -108,7 +104,7 @@ const unsealed = computed(() => (props.record ? packetUnsealed(props.record) : f
             >{{
               record.manifest?.encoding.codec ??
               record.codec ??
-              (unsealed ? '尚未编码' : record.state === 'confirmed' ? '详见主平台归档' : '未获取编码信息')
+              (unsealed ? '尚未编码' : record.state === 'confirmed' ? '详见主平台归档' : '编码信息无数据')
             }}<template v-if="record.manifest">
               · {{ record.manifest.encoding.frames.length }} 个独立块</template
             ></a-descriptions-item

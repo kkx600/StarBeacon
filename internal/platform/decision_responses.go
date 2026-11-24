@@ -38,7 +38,7 @@ func decisionResponseFailure(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "本人评估、研判或探针不存在、已到期或不可访问")
 	default:
-		httpapi.Fail(w, r, 503, "decision_response_unavailable", "处置确认暂不可用；提交结果未确认时，请保留原请求键并核对原提交")
+		httpapi.Fail(w, r, 503, "decision_response_unavailable", "处置确认服务异常。提交结果未知时，请保留原请求键并核对原提交")
 	}
 }
 

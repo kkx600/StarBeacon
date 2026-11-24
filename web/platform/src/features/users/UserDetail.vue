@@ -14,7 +14,7 @@ const emit = defineEmits<{ close: []; reload: []; edit: []; password: [] }>();
       :loading="pending"
       :error="error"
       :empty="!record"
-      description="用户详情暂不可用，请刷新后核对。"
+      description="用户详情读取异常，请稍后重试。"
       @retry="emit('reload')"
     >
       <template v-if="record"

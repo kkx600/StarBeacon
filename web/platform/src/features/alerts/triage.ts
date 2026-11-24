@@ -1,21 +1,11 @@
 import type { ModelResult } from '../models/models';
-import type { StatusTone } from '@starbeacon/shared/terms.ts';
+import { modelJobStates } from '@starbeacon/shared/types.ts';
 
-export const triageStates = {
-  queued: '等待研判',
-  running: '研判中',
-  succeeded: '建议已生成',
-  failed: '研判失败',
-  refused: '提供方拒答',
-  incomplete: '输出未完成',
-  uncertain: '结果未知',
-  cancelled: '已取消',
-} as const;
 export const triageVerdicts = {
   undetermined: '证据不足',
-  suspicious: '待核实',
-  false_positive: '疑似误报',
-  confirmed: '疑似威胁',
+  suspicious: '可疑',
+  false_positive: '误报',
+  confirmed: '真实攻击',
 } as const;
 export const triageOutcomes = { unknown: '攻击结果尚未确认', attempt: '观察到攻击尝试' } as const;
 export const triageRecommendations = {
@@ -30,23 +20,13 @@ export const triageCodes: Record<string, string> = {
   alert_source_unavailable: '告警来源已变化、过期或不可访问，调用未执行',
   authorization_revoked: '作业所有者已失去执行权限，调用未执行',
   provider_revision_changed: '模型修订已改变，调用未执行',
-  provider_disabled: '模型提供方已停用，调用未执行',
-  provider_config_unavailable: '模型配置或凭据不可用，调用未执行',
+  provider_disabled: '模型提供方处于停用状态，调用未执行',
+  provider_config_unavailable: '模型配置或凭据异常，调用未执行',
   triage_input_invalid: '冻结材料或研判模板无法核验，调用未执行',
   queue_wait_expired: '等待执行超时，调用未执行',
   cancelled_before_execution: '作业在模型调用前取消',
 };
-export type TriageState = keyof typeof triageStates;
-export const triageStateTones = {
-  queued: 'neutral',
-  running: 'info',
-  succeeded: 'success',
-  failed: 'danger',
-  refused: 'warning',
-  incomplete: 'warning',
-  uncertain: 'warning',
-  cancelled: 'neutral',
-} as const satisfies Record<TriageState, StatusTone>;
+export type TriageState = keyof typeof modelJobStates;
 export interface TriageRequest {
   event_id: string;
   raw_sha256: string;
@@ -153,7 +133,7 @@ function count(v: unknown) {
   return Number.isSafeInteger(v) && Number(v) >= 0;
 }
 function state(v: unknown) {
-  return typeof v === 'string' && Object.hasOwn(triageStates, v);
+  return typeof v === 'string' && Object.hasOwn(modelJobStates, v);
 }
 function list(v: unknown): v is string[] {
   return Array.isArray(v) && v.length <= 8 && new Set(v).size === v.length && v.every(s => text(s, 512));

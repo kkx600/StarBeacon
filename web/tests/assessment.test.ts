@@ -112,7 +112,7 @@ describe('告警研判数据契约', () => {
       '证据引用',
     );
     expect(assessmentInputError({ ...change.spec, status: 'closed', verdict: 'suspicious' })).toContain('明确研判结论');
-    expect(assessmentInputError({ ...change.spec, outcome: 'attempt' })).toContain('确认威胁');
+    expect(assessmentInputError({ ...change.spec, outcome: 'attempt' })).toContain('真实攻击');
     for (const evidence of [[''], ['ref', 'ref'], ['r'.repeat(257)], Array.from({ length: 9 }, (_, i) => 'ref' + i)])
       expect(assessmentInputError({ ...change.spec, evidence })).not.toBe('');
     for (const note of ['', ' leading ', '正文\u0000', '证'.repeat(2049)])

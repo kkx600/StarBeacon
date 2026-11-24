@@ -43,7 +43,7 @@ const localError = ref(''),
   locked = computed(() => props.busy || props.unconfirmed);
 const groups = [
   { key: 'any', label: '候选域名条件', help: '至少一个名称条件命中。共享域名只能形成产品候选。' },
-  { key: 'all', label: '同时满足条件', help: '所有附加条件均须命中；缺测时不补造。' },
+  { key: 'all', label: '同时满足条件', help: '所有附加条件均须命中，只使用实际观测的数据。' },
   { key: 'exclude', label: '排除条件', help: '任一排除条件命中时，该规则不参与识别。' },
 ] as const;
 const count = computed(() => form.any.length + form.all.length + form.exclude.length);

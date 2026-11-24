@@ -67,7 +67,7 @@ function changeTab(value: unknown) {
               ><a-descriptions-item label="当前修订保留期限"
                 >{{ formatTime(record.expires_at) }} ·
                 {{
-                  record.spec.status === 'closed' ? '已结案记录按固化期限保留' : '未关闭事件及其历史受保护'
+                  record.spec.status === 'closed' ? '已关闭事件按固化期限保留' : '未关闭事件及其历史受保护'
                 }}</a-descriptions-item
               ></a-descriptions
             >

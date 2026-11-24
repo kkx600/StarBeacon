@@ -31,13 +31,13 @@ func savedSearchFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, savedsearch.ErrQuota):
 		httpapi.Fail(w, r, 429, "saved_search_quota", "保存查询或最近 24 小时的变更数量已达上限")
 	case errors.Is(err, savedsearch.ErrInactive):
-		httpapi.Fail(w, r, 409, "saved_search_inactive", "该查询已停用，请刷新列表并选择有效查询")
+		httpapi.Fail(w, r, 409, "saved_search_inactive", "该查询处于停用状态，请刷新列表并选择有效查询")
 	case errors.Is(err, store.ErrConflict):
 		httpapi.Fail(w, r, 409, "saved_search_conflict", "查询实例、修订、数据集或原提交输入已变化，请刷新后核对")
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "查询不存在、已到期或不可访问")
 	default:
-		httpapi.Fail(w, r, 503, "saved_search_unavailable", "保存查询服务暂不可用；提交结果未确认时请核对原提交")
+		httpapi.Fail(w, r, 503, "saved_search_unavailable", "保存查询服务异常。提交结果未知时，请核对原提交")
 	}
 }
 

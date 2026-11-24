@@ -74,10 +74,10 @@ export const defaultTrafficFilters = (): TrafficFilters => ({
   severity: '',
 });
 export function packetCountLabel(value: string | null | undefined): string {
-  return value ? `${value} 包` : '包数未获取';
+  return value ? `${value} 包` : '包数无数据';
 }
 export function endpoint(ip: string | undefined, port: number | undefined): string {
-  if (!ip) return '未观测到';
+  if (!ip) return '无数据';
   return port ? `${ip.includes(':') ? '[' + ip + ']' : ip}:${port}` : ip;
 }
 const object = (value: unknown): value is Record<string, unknown> =>

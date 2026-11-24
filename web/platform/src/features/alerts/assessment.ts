@@ -1,9 +1,15 @@
-export const assessmentStatuses = { open: '待处理', investigating: '调查中', closed: '已关闭' } as const;
+import { statusTerms, type StatusTone } from '@starbeacon/shared/terms.ts';
+export const assessmentStatuses = { open: '待处理', investigating: '处理中', closed: '已关闭' } as const;
+export const assessmentStatusTones = {
+  open: statusTerms.待处理,
+  investigating: statusTerms.处理中,
+  closed: statusTerms.已关闭,
+} as const satisfies Record<keyof typeof assessmentStatuses, StatusTone>;
 export const assessmentVerdicts = {
   unreviewed: '未研判',
-  suspicious: '待核实',
+  suspicious: '可疑',
   false_positive: '误报',
-  confirmed: '确认威胁',
+  confirmed: '真实攻击',
 } as const;
 export const assessmentOutcomes = {
   unknown: '尚未确认',
@@ -72,7 +78,7 @@ export function assessmentInputError(spec: AssessmentSpec) {
     return '证据引用最多 8 条，每条不超过 256 字符，不能重复。';
   if (spec.status === 'closed' && !['false_positive', 'confirmed'].includes(spec.verdict))
     return '请先明确研判结论，再关闭告警。';
-  if (spec.verdict !== 'confirmed' && spec.outcome !== 'unknown') return '只有确认威胁后才能记录攻击结果。';
+  if (spec.verdict !== 'confirmed' && spec.outcome !== 'unknown') return '研判结论为真实攻击时才能记录攻击结果。';
   if (['success', 'prevented'].includes(spec.outcome) && !spec.evidence.length)
     return '确认攻击成功或已阻止时，需要提供可复核的证据引用。';
   return '';

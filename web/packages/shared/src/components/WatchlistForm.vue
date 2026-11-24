@@ -67,7 +67,7 @@ const sensorMap = computed(
 const options = computed(() =>
   [...sensorMap.value].map(([value, s]) => ({
     value,
-    label: `${s.name} · ${s.sensor_id}${s.available === false ? '（当前注册不可用）' : ''}`,
+    label: `${s.name} · ${s.sensor_id}${s.available === false ? '（当前注册无法选择）' : ''}`,
     disabled: s.available === false,
   })),
 );
@@ -245,7 +245,7 @@ watch(
           placeholder="选择指定探针"
           @update:value="scopes" />
         <div class="watchlist-sensor-actions">
-          <span v-if="unavailable" class="page-description">所选范围含不可用注册，请刷新并重新选择。</span
+          <span v-if="unavailable" class="page-description">所选范围含无法使用的注册，请刷新并重新选择。</span
           ><span v-else-if="!sensorsPending && !sensors.length" class="page-description">没有可选择的启用探针。</span
           ><a-button size="small" :loading="sensorsPending" :disabled="locked" @click="emit('refreshSensors')"
             >刷新探针</a-button

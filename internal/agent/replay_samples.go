@@ -118,7 +118,7 @@ func (s *ReplayService) Register(m *http.ServeMux, auth *httpapi.Auth) {
 			return nil
 		})
 		if e != nil {
-			httpapi.Fail(w, r, 503, "storage_unavailable", "样本索引不可用")
+			httpapi.Fail(w, r, 503, "storage_unavailable", "样本索引异常，请稍后重试")
 			return
 		}
 		sort.Slice(items, func(i, j int) bool { return items[i].CreatedAt.After(items[j].CreatedAt) })

@@ -113,19 +113,19 @@ describe('流量响应契约', () => {
     missing.items[0]!.details.flow = null;
     const wrapper = mount(TrafficTable, { props: { result: missing }, global, attachTo: document.body });
     await flushPromises();
-    expect(wrapper.text()).toContain('包数未获取');
-    expect(wrapper.text()).not.toContain('未获取 包');
+    expect(wrapper.text()).toContain('包数无数据');
+    expect(wrapper.text()).not.toContain('无数据 包');
     expect(wrapper.text()).not.toContain('0 B');
     const counted = result();
     counted.items[0]!.details.flow!.packets_to_server = '0';
     await wrapper.setProps({ result: counted });
     expect(wrapper.text()).toContain('0 包');
-    expect(wrapper.text()).not.toContain('包数未获取');
+    expect(wrapper.text()).not.toContain('包数无数据');
     wrapper.unmount();
     const detail = mount(TrafficDetail, { props: { record: missing.items[0]! }, global, attachTo: document.body });
     await flushPromises();
-    expect(document.body.textContent).toContain('包数未获取');
-    expect(document.body.textContent).not.toContain('未获取 包');
+    expect(document.body.textContent).toContain('包数无数据');
+    expect(document.body.textContent).not.toContain('无数据 包');
     detail.unmount();
   });
   it('计数保留 uint64 精度，IPv6 端口与缺测含义清楚', () => {
@@ -133,7 +133,7 @@ describe('流量响应契约', () => {
     expect(endpoint('2001:db8::1', 443)).toBe('[2001:db8::1]:443');
     expect(endpoint('192.0.2.1', 80)).toBe('192.0.2.1:80');
     expect(endpoint('2001:db8::1', undefined)).toBe('2001:db8::1');
-    expect(endpoint(undefined, 80)).toBe('未观测到');
+    expect(endpoint(undefined, 80)).toBe('无数据');
     const empty = { items: [], total: 0, page: 1, page_size: 20 };
     expect(validTrafficResult(empty, query, principal.tenant_id)).toBe(true);
     const unavailable = result();
@@ -367,8 +367,7 @@ describe('流量检索页面', () => {
     expect(document.body.textContent).toContain('不证明密文已解密');
     expect(document.body.textContent).toContain('service.test');
     expect(document.body.textContent).toContain('当前账号未获原始载荷读取权限');
-    expect(document.body.textContent).toContain('未获取');
-    expect(document.body.textContent).toContain('未观测到');
+    expect(document.body.textContent).toContain('无数据 / 无数据');
     await wrapper.setProps({
       record: {
         ...value,

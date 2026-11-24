@@ -54,7 +54,7 @@ const timeOptions = [
           v-model:value="form.success"
           :options="[
             { label: '全部结果', value: '' },
-            { label: '验证通过', value: 'true' },
+            { label: '已验证', value: 'true' },
             { label: '验证失败', value: 'false' },
           ]"
       /></a-form-item>

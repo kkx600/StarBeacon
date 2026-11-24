@@ -62,7 +62,7 @@ func watchlistFailure(w http.ResponseWriter, r *http.Request, e error) {
 	case errors.Is(e, watchlist.ErrIncomplete):
 		httpapi.Fail(w, r, 503, "watchlist_impact_incomplete", "历史告警检索结果不完整，本次未交付计数")
 	default:
-		httpapi.Fail(w, r, 503, "watchlist_unavailable", "名单服务暂不可用或修订不完整，未提交部分结果")
+		httpapi.Fail(w, r, 503, "watchlist_unavailable", "名单服务异常或修订不完整。仅在数据完整时提交结果")
 	}
 }
 func (a *API) watchlistReady(w http.ResponseWriter, r *http.Request) bool {

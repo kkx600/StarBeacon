@@ -11,7 +11,7 @@ const props = defineProps<{ result: WatchlistPreviewResult; input?: WatchlistPre
       show-icon
       :message="result.admissible ? '当前范围允许启用' : '当前范围不能启用'"
       :description="
-        result.effective ? '按核验时间，名单处于有效期内且已启用。' : '名单当前未生效，材料匹配不表示策略已生效。'
+        result.effective ? '名单在核验时间处于启用状态且在有效期内。' : '名单当前无效，材料匹配仅用于预览。'
       "
       class="section-gap"
     />

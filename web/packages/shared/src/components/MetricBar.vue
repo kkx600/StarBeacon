@@ -9,8 +9,7 @@ const displayed = computed(() =>
   props.items.map(item => {
     const value = String(item.value ?? '').trim();
     const missing =
-      ['', '—', '无数据', '未获取', '未提供'].includes(value) ||
-      (typeof item.value === 'number' && !Number.isFinite(item.value));
+      ['', '—', '无数据', '未提供'].includes(value) || (typeof item.value === 'number' && !Number.isFinite(item.value));
     if (missing) {
       return { label: item.label, value: '—', note: item.missingReason || '未取得观测值', missing };
     }

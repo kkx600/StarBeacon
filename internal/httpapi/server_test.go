@@ -77,6 +77,9 @@ func TestLoginDoesNotTreatStorageFailureAsWrongPassword(t *testing.T) {
 	if w.Code != 503 || !strings.Contains(w.Body.String(), "auth_unavailable") {
 		t.Fatal("依赖故障被解释为错误密码")
 	}
+	if !strings.Contains(w.Body.String(), "认证服务异常，请稍后重试") {
+		t.Fatal("认证故障响应没有提供标准错误提示")
+	}
 }
 
 func TestMissingAccountRetainsDefaultCostAndNeverReceivesSession(t *testing.T) {

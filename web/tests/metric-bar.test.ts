@@ -33,7 +33,7 @@ describe('共享指标条', () => {
       props: {
         items: [
           { label: '落盘', value: null, suffix: 'TB', tone: 'warning', missingReason: '尚未取得落盘统计' },
-          { label: '缺测', value: '未获取', note: '观测范围' },
+          { label: '缺测', value: '无数据', note: '观测范围' },
           { label: '无效值', value: Number.NaN, tone: 'danger' },
         ],
       },

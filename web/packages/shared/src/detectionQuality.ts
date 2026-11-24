@@ -58,7 +58,7 @@ export interface QualityReport {
   policy: QualityFacet;
 }
 export const qualityStates = {
-  unavailable: '尚未观测',
+  unavailable: '无数据',
   baseline: '等待连续样本',
   observed: '区间观测',
   counter_reset: '计数发生复位',
@@ -80,14 +80,14 @@ export const qualityFacetStates = {
   policy_applied: '存在策略影响',
 } as const;
 export const qualityHelp: Record<keyof typeof qualityStates, string> = {
-  unavailable: '尚未取得可核对的原生统计。外部 EVE、缺测和无告警均不能据此判断检测覆盖。',
+  unavailable: '原生统计无可核对的数据。评估检测覆盖需要原生统计作为依据，外部 EVE 或零告警仍需核对。',
   baseline: '首个样本仅建立累计基线，取得后续连续样本后才能计算区间增量。',
   observed: '仅反映列出的原生计数在本区间的变化；没有增量不代表流量安全或检测完整。',
   counter_reset: '累计计数下降，可能发生引擎或检测线程复位。本次不计算增量，后续重新建立区间。',
   sample_gap: '采样或接收间隔超过 20 秒，或接收时间回退。本次不计算连续区间增量。',
   stale: '原生样本已超过 20 秒或时间无法核对。以下累计值仅作为历史观测保留。',
   stopped: '检测引擎没有处于可核对的运行状态。以下数据如有保留，仅代表历史观测。',
-  offline: '探针当前未在线，无法确认引擎是否运行。以下数据如有保留，仅代表最后一次观测。',
+  offline: '探针离线，引擎运行状态无数据。以下数据如有保留，仅代表最后一次观测。',
 };
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 const date = (v: unknown): v is string => typeof v === 'string' && Number.isFinite(Date.parse(v));

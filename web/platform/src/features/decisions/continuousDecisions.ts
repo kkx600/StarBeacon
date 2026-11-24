@@ -5,7 +5,7 @@ export const continuousCodes = {
   policy_authorized: '策略已授权签名任务',
   manual_confirmation_required: '等待管理员确认候选',
   policy_not_matched: '当前策略或材料未满足判断条件',
-  model_binding_changed: '模型已停用或绑定修订变化',
+  model_binding_changed: '模型处于停用状态或绑定修订已变化',
   score_below_threshold: '模型自报分数未达到固定阈值',
   conclusion_not_eligible: '结论、攻击结果或建议未满足固定门槛',
   evidence_limited: '告警材料存在未完整提供的字段',

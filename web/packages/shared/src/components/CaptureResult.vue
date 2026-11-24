@@ -7,21 +7,21 @@ const props = defineProps<{ result: Record<string, unknown> }>();
 const state = computed(() =>
   typeof props.result.status === 'string'
     ? (captureStates[props.result.status as keyof typeof captureStates] ?? '状态无法识别')
-    : '尚未观测',
+    : '无数据',
 );
 const names = (value: unknown) =>
-  Array.isArray(value) && value.every(i => typeof i === 'string') ? value.join('、') || '未采集' : '尚未观测';
+  Array.isArray(value) && value.every(i => typeof i === 'string') ? value.join('、') || '未采集' : '无数据';
 const applied = computed(() =>
   props.result.applied_settings && typeof props.result.applied_settings === 'object'
     ? (props.result.applied_settings as Record<string, unknown>).interfaces
     : undefined,
 );
 const revision = (value: unknown) =>
-  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : '尚未观测';
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : '无数据';
 const digest = computed(() =>
   typeof props.result.config_sha256 === 'string' && /^[a-f0-9]{64}$/.test(props.result.config_sha256)
     ? props.result.config_sha256
-    : '尚未观测',
+    : '无数据',
 );
 </script>
 <template>

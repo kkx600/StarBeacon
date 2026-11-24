@@ -369,7 +369,7 @@ onScopeDispose(() => {
             :loading="bindingsPending"
             :disabled="locked"
             :options="providers.map(v => ({ value: v.id, label: v.name + ' · 修订 ' + v.revision }))"
-            placeholder="选择已启用模型"
+            placeholder="选择启用的模型"
             @update:value="chooseProvider"
         /></a-form-item>
         <p class="policy-binding page-description">

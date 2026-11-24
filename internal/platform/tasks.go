@@ -148,7 +148,7 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 		}
 	case "rules.reconcile":
 		if !contract.ValidID(input.UnknownTaskID) || input.PackageID != "" || input.Revision != 0 {
-			httpapi.Fail(w, r, 400, "invalid_request", "请选择待核实规则任务，核实任务不接受规则包参数")
+			httpapi.Fail(w, r, 400, "invalid_request", "请选择执行结果未知的规则任务。核实任务不接受规则包参数")
 			return
 		}
 		payload, e = json.Marshal(control.RuleReconcile{UnknownTaskID: input.UnknownTaskID, ExpectedSHA256: input.ExpectedRulesSHA256})

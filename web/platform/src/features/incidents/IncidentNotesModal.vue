@@ -216,7 +216,7 @@ if (unconfirmed.value) restore();
         :loading="pending"
         :error="error"
         :empty="!page.items.length"
-        description="当前条件下没有调查笔记。可记录已观察事实、来源及待核实的问题。"
+        description="当前条件下没有调查笔记。可记录已观察事实、来源及需要补充证据的问题。"
         @retry="props.state.refresh"
       >
         <ListTable :data-source="page.items" :columns="columns" :scroll="{ x: 938 }">

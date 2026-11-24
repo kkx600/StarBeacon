@@ -93,7 +93,7 @@ function save() {
     <a-alert
       v-if="!available"
       type="info"
-      message="计划执行服务暂不可用，可保存停用计划。"
+      message="计划执行服务异常，请稍后重试。可保存停用计划。"
       show-icon
       class="section-gap"
     />
@@ -143,7 +143,7 @@ function save() {
       <a-alert
         v-if="draft.provider_id && !current"
         type="warning"
-        message="计划绑定的模型当前不可用，请选择启用的模型或仅生成统计报告。"
+        message="计划绑定的模型未满足执行条件，请选择启用且具备凭据的模型，或仅生成统计报告。"
         show-icon
         class="section-gap"
       />

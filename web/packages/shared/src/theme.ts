@@ -69,7 +69,7 @@ export const palette = {
   infoSurface: componentSurfaces.colorInfoBg,
   infoText: '#29343d',
   infoDot: componentColors.colorInfo,
-  // “进行中”一类状态的标签：主色文字配极浅的主色底。
+  // “运行中”一类状态的标签：主色文字配极浅的主色底。
   progressSurface: '#eef2ff',
   progressText: componentColors.colorPrimary,
   warningBorder: componentSurfaces.colorWarningBorder,

@@ -480,10 +480,10 @@ describe('渠道列表、推送回执与工作区交互', () => {
       record: { ...delivery, state: 'accepted', receipt: { code: 'future' }, recipient: 'user@example.invalid' },
     });
     expect(document.body.textContent).toContain('其他处理状态');
-    expect(document.body.textContent).toContain('未获取');
+    expect(document.body.textContent).toContain('无数据');
     expect(document.body.textContent).not.toContain('人工重试');
     await detail.setProps({ record: { ...delivery, receipt: {} } });
-    expect(document.body.textContent).toContain('尚未获取渠道回执');
+    expect(document.body.textContent).toContain('尚无渠道回执');
     (document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();
     await flushPromises();
     expect(detail.emitted('close')).toHaveLength(1);
@@ -494,7 +494,7 @@ describe('渠道列表、推送回执与工作区交互', () => {
       transport_written: 'success',
       failed: 'danger',
       uncertain: 'warning',
-      retry: 'warning',
+      retry: 'info',
       queued: 'neutral',
     });
   });
@@ -518,7 +518,7 @@ describe('渠道列表、推送回执与工作区交互', () => {
     await wrapper.setProps({ record: { ...delivery, kind: 'syslog_tls', receipt: { frames: 10, frames_written: 0 } } });
     expect(document.body.textContent).toContain('已完整写入 0 / 10 帧');
     await wrapper.setProps({ record: { ...delivery, kind: 'syslog_tcp', receipt: {} } });
-    expect(document.body.textContent).toContain('未获取');
+    expect(document.body.textContent).toContain('无数据');
     expect(document.body.textContent).not.toContain('已完整写入 0 /');
   });
   it('渠道配置保存与测试受理后进入单表推送日志', async () => {
@@ -563,7 +563,7 @@ describe('渠道列表、推送回执与工作区交互', () => {
   it('未启用、空列表、失败与冲突有明确状态，操作失败保留当前界面', async () => {
     request.mockResolvedValueOnce({ items: [], available: false, development: false });
     const { wrapper } = await workspace();
-    expect(wrapper.text()).toContain('通知服务尚未启用');
+    expect(wrapper.text()).toContain('通知服务未启用');
     expect(button('创建渠道').disabled).toBe(true);
     expect(wrapper.text()).toContain('暂无通知渠道');
     request.mockRejectedValueOnce(new Error('渠道读取超时'));

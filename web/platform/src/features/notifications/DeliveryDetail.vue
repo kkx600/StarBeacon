@@ -23,7 +23,7 @@ const emit = defineEmits<{ close: []; retry: [record: Delivery] }>();
         >推送日志详情
         <PageHelp title="渠道回执">
           <p>渠道受理只说明渠道已接手消息。是否已读、传输后是否落盘，请向接收渠道分别核对。</p>
-          <p>结果待核实时，人工重试前须先查看接收记录。</p>
+          <p>投递结果未知时，人工重试前须先查看接收记录。</p>
         </PageHelp>
       </span>
     </template>
@@ -43,20 +43,20 @@ const emit = defineEmits<{ close: []; retry: [record: Delivery] }>();
         ><DescriptionsItem label="记录数量">{{ record.record_count ?? record.alert_count }}</DescriptionsItem
         ><DescriptionsItem label="尝试次数">{{ record.attempts }}</DescriptionsItem
         ><DescriptionsItem label="渠道回执">{{
-          record.receipt.code ? (receiptNames[record.receipt.code] ?? '渠道返回其他处理状态') : '尚未获取渠道回执'
+          record.receipt.code ? (receiptNames[record.receipt.code] ?? '渠道返回其他处理状态') : '尚无渠道回执'
         }}</DescriptionsItem
         ><template v-if="record.kind === 'syslog_tls' || record.kind === 'syslog_tcp'"
-          ><DescriptionsItem label="计划发送帧数">{{ record.receipt.frames ?? '未获取' }}</DescriptionsItem
+          ><DescriptionsItem label="计划发送帧数">{{ record.receipt.frames ?? '无数据' }}</DescriptionsItem
           ><DescriptionsItem label="完整写入帧数">{{
-            record.receipt.frames_written ?? '未获取'
+            record.receipt.frames_written ?? '无数据'
           }}</DescriptionsItem></template
         ><template v-else
-          ><DescriptionsItem label="HTTP 状态">{{ record.receipt.http_status ?? '未获取' }}</DescriptionsItem
+          ><DescriptionsItem label="HTTP 状态">{{ record.receipt.http_status ?? '无数据' }}</DescriptionsItem
           ><DescriptionsItem label="业务代码">{{
-            record.receipt.provider_code ?? '未获取'
+            record.receipt.provider_code ?? '无数据'
           }}</DescriptionsItem></template
         ><DescriptionsItem label="执行耗时">{{
-          record.receipt.duration_ms == null ? '未获取' : record.receipt.duration_ms + ' ms'
+          record.receipt.duration_ms == null ? '无数据' : record.receipt.duration_ms + ' ms'
         }}</DescriptionsItem
         ><DescriptionsItem label="创建时间">{{ formatTime(record.created_at) }}</DescriptionsItem
         ><DescriptionsItem label="更新时间">{{ formatTime(record.updated_at) }}</DescriptionsItem></Descriptions

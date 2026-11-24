@@ -46,7 +46,7 @@ export const applicationReasons: Record<string, string> = {
   no_matching_rule: '未命中部署时的规则快照',
   visible_name_rule: '可见名称与附加规则条件匹配',
   multiple_products: '多个不同产品的规则同时命中',
-  metadata_unavailable: '未观测到可用名称或协议属性',
+  metadata_unavailable: '名称与协议属性无数据',
   metadata_invalid: '可见元数据无效或超过匹配范围',
   transaction_unbound: '协议事务由引擎估计，未用于产品归因',
 };

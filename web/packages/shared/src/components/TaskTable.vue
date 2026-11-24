@@ -15,6 +15,7 @@ import ListTable from './ListTable.vue';
 import StatusTag from './StatusTag.vue';
 import { tablePagination } from '../pagination';
 import { statusTone, taskStateTones } from '../statusTones';
+import { statusTerms } from '../terms';
 type ObservationFields = Record<string, unknown>;
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{
@@ -123,13 +124,13 @@ function close() {
       </button>
       <StatusTag
         v-else-if="column.key === 'state'"
-        :tone="record.rule_resolution ? 'success' : statusTone(taskStateTones, record.state)"
+        :tone="record.rule_resolution ? statusTerms.已验证 : statusTone(taskStateTones, record.state)"
         :value="record.rule_resolution ? '已核实' : (taskStates[record.state] ?? record.state)"
       />
       <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
       <template v-else-if="column.key === 'leaseExpiry'">{{ formatTime(record.response_action?.expires_at) }}</template>
       <template v-else-if="column.key === 'ack'">{{
-        record.origin === 'local' ? '本地任务' : record.acknowledged ? '已确认' : '等待确认'
+        record.origin === 'local' ? '本地任务' : record.acknowledged ? '已确认' : '待确认'
       }}</template>
       <div v-else-if="column.key === 'action'" class="table-row-actions">
         <a-button type="link" size="small" @click="view(record.id)">查看</a-button
@@ -167,7 +168,7 @@ function close() {
         type="info"
         show-icon
         message="任务记录受执行确认保护"
-        description="未获平台确认、仍在执行或结果待核实的记录暂不清理。保留截止是原计划期限，不代表任务结果已经核实。"
+        description="平台待确认、正在运行或结果未知的记录暂不清理。保留截止是原计划期限，任务结果以独立核验为准。"
         class="section-gap"
       />
       <a-alert
@@ -188,7 +189,7 @@ function close() {
         v-else-if="selected.state === 'unknown'"
         type="warning"
         show-icon
-        message="执行结果待核实，请核对设备当前状态后处理，避免重复执行。"
+        message="执行结果未知，请先核对设备当前状态，避免重复执行。"
         class="section-gap"
       />
       <a-alert
@@ -230,7 +231,7 @@ function close() {
         ><a-alert
           type="info"
           show-icon
-          message="以下为已有设备配置回读快照；没有回执时不代表设备已执行。到期及后续变更需再次回读，实际流量阻断效果尚未观测。"
+          message="以下为已有设备配置回读快照；没有回执时不代表设备已执行。到期及后续变更需再次回读，实际流量阻断效果无观测数据。"
           class="section-gap"
         /><a-descriptions bordered :column="1" size="small"
           ><a-descriptions-item label="设备 / 连接器"

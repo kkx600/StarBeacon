@@ -34,7 +34,7 @@ export const scopeNames: Record<RetentionCategory['scope'], string> = {
   new_indices: '新建索引',
   new_samples: '新建 PCAP 对象',
   new_records: '新建业务记录',
-  pending_pipeline: '存储流程未接入',
+  pending_pipeline: '相应存储流程未提供',
 };
 const categoryIds = new Set([
   'alerts',

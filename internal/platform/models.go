@@ -41,7 +41,7 @@ func modelFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, secrets.ErrUnavailable):
 		httpapi.Fail(w, r, 503, "credentials_unavailable", "模型凭据密钥未配置或凭据校验失败")
 	default:
-		httpapi.Fail(w, r, 503, "storage_unavailable", "模型配置服务暂时不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "模型配置服务异常，请稍后重试")
 	}
 }
 func (a *API) modelProviders(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { shallowRef } from 'vue';
 import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
@@ -80,15 +81,19 @@ function configure(id: string) {
           </button>
           <StatusTag
             v-else-if="column.key === 'state'"
-            :tone="record.spec.enabled ? 'success' : 'neutral'"
+            :tone="record.spec.enabled ? statusTerms.启用 : statusTerms.停用"
             :value="record.spec.enabled ? '启用' : '停用'"
           />
           <StatusTag
             v-else-if="column.key === 'run'"
-            :tone="statusTone(syncStateTones, record.run?.state)"
-            :value="
-              record.run ? syncStates[record.run.state] : record.processed_revision ? '运行档案已到期' : '等待核对'
+            :tone="
+              record.run
+                ? statusTone(syncStateTones, record.run.state)
+                : record.processed_revision
+                  ? statusTerms.已过期
+                  : statusTerms.排队中
             "
+            :value="record.run ? syncStates[record.run.state] : record.processed_revision ? '运行档案已到期' : '排队中'"
           />
           <template v-else-if="column.key === 'time'">{{ formatTime(record.updated_at) }}</template>
           <div v-else-if="column.key === 'action'" class="table-row-actions">

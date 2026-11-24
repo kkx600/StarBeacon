@@ -45,7 +45,7 @@
 | RuleEditor / inspectRules | 共用 CodeMirror 6 编辑器，提供行号、高亮、撤销、换行和基础结构错误定位；关键词、变量与引擎兼容由原生 Suricata 检查。 |
 | ReplayWorkspace / ReplayResult | 两端 PCAP / HTTP Raw 原字节导入、合成来源提示、规则与执行探针选择、真实离线结果及失败／截断边界。 |
 | TaskWorkspace / TaskTable | 平台签名任务、独立本地任务、任务标识链接、原档案单条读取、执行时回执及有限刷新；历史核实摘要不冒充设备当前状态，装载回执不推断后续样本状态。 |
-| HealthSummary / InterfaceTable | 展示实测指标、网卡能力和观测时间；离线及缺测保留明确状态。 |
+| HealthSummary / InterfaceTable | 展示实测指标、网卡能力和观测时间；离线和无数据各自保留明确状态。 |
 | CaptureForm / CaptureResult | 两端共享采集参数表单与执行时回执描述；本机保存、平台受理、生效修订和回执观测时间分别呈现，当前状态在采集配置中核对。 |
 
 ## 界面边界
@@ -58,7 +58,7 @@
 
 平台探针管理的「探针列表」「探针分组」「注册与证书」「任务记录」分别为 `/sensors/list`、`/sensors/groups`、`/sensors/identity`、`/sensors/tasks`；检测规则的「规则包」「应用识别规则」「重放样本」「重放任务」「规则自动同步」分别为 `/detection/rules/packages`、`/detection/rules/applications`、`/detection/rules/samples`、`/detection/rules/tasks`、`/detection/rules/sync`，AI 规则生成为 `/ai/rule-generation`。采集器「网卡列表」「采集配置」「原包归档」「Syslog 接收」分别为 `/network/interfaces`、`/network/capture`、`/network/archives`、`/network/syslog`，重放样本与任务记录为 `/rules/samples`、`/rules/tasks`。资产管理使用 `/inventory/list`、`/inventory/groups`、`/inventory/networks`；平台运行状态为 `/system/operations/health`，操作／登录日志为 `/system/audit/operations`、`/system/audit/logins`；通知中心为 `/notifications/channels`、`/notifications/deliveries`；模型配置为 `/ai/models`，智能助手为 `/ai/assistant`，报告中心为 `/reports/records`、`/reports/plans`，态势总览／大屏分别为 `/overview/dashboard`、`/overview/screen`，数据留存为 `/system/governance/retention`。运行与审计、通知中心、模型配置、智能助手、报告中心和数据留存仅对管理员开放。每个视图只展示所属业务数据集，详情描述表不作为另一份业务列表。
 
-页面使用中文业务名称，加载、错误、无数据各自呈现真实请求状态；数据缺测使用“未获取”。探针在线状态以平台接收时间判定，离线后保留最后观测时间。CPU、内存、磁盘和网络计数标注宿主机口径，接口字节数不作为镜像捕获吞吐。
+页面使用中文业务名称，加载、错误、无数据各自呈现真实请求状态；数据缺失使用“无数据”，指标可用“—”并标注原因。状态标签根据业务状态键选取标准词登记的色调。探针在线状态以平台接收时间判定，离线后保留最后观测时间。CPU、内存、磁盘和网络计数标注宿主机口径，接口字节数不作为镜像捕获吞吐。
 
 原始 EVE 属于事件 JSON，不标为原生通信报文，不构造 PCAP、握手、攻击成功或封禁成功。原包归档另行读取独立捕获的 PCAPNG；导出仅复制匹配原始帧，模式和缺口分别标注。模型配置与连接验证不授予安全决策资格。尚未连接的升级、领域评测、报告审批发布／PDF 和设备阻断不提供可提交的假操作入口。
 
@@ -74,7 +74,7 @@ PCAP 重放不向真实网络发包，本地输入规则与平台规则包修订
 
 规则编辑器仅对受控 `alert` 规则做本地基础诊断：规则头、引号／转义、括号结构、末尾分号、SID 范围与重复、rev 和 900 KiB 文本上限。错误项可点击定位；基础检查通过不表示完整 Suricata 语法、语义或目标引擎兼容已经验证。`rules.apply` 需要同一探针与配置的一天内原生装载、独立正反样本回执；缺少资格返回 409。
 
-容量按 SI 的 B／KB／MB／GB／TB 等单位展示，速率按千进制 bit/s 系列展示；显式二进制值保留 KiB 等单位。累计整数字符串与 bigint 保留 64 位精度，缺测与零分开，带不同单位的数量按原始精度排序。
+容量按 SI 的 B／KB／MB／GB／TB 等单位展示，速率按千进制 bit/s 系列展示；显式二进制值保留 KiB 等单位。累计整数字符串与 bigint 保留 64 位精度，无数据与零分开，带不同单位的数量按原始精度排序。
 
 共享入口只注册通用 Ant 组件，业务组件及其子组件必须有明确的局部绑定。回归测试编译核对全部工程 Vue 模板的组件解析，同时检查导出弹窗的实际对话框、遮罩和页面外挂载；文案出现在 DOM 中不能作为组件渲染正确的证明。
 

@@ -34,7 +34,7 @@ const storage = computed(() => result.value?.packet_storage);
 const amount = (value: string) => (/^\d{1,20}$/.test(value) ? BigInt(value) : null);
 const count = (value: string) => {
   const parsed = amount(value);
-  return parsed === null ? '未获取' : formatNumber(parsed);
+  return parsed === null ? '无数据' : formatNumber(parsed);
 };
 const pressure = computed(() => {
   const value = storage.value;
@@ -59,25 +59,25 @@ const runtimeMetrics = computed<MetricSpec[]>(() => {
       label: 'CPU 使用率',
       value: formatPercent(runtime.cpu_percent),
       note: '所在运行环境观测',
-      missingReason: '未获取运行环境 CPU 指标',
+      missingReason: '运行环境 CPU 指标无数据',
     },
     {
       label: '内存使用率',
       value: formatPercent(runtime.memory_percent),
       note: '所在运行环境观测',
-      missingReason: '未获取运行环境内存指标',
+      missingReason: '运行环境内存指标无数据',
     },
     {
       label: '磁盘使用率',
       value: formatPercent(runtime.disk_percent),
       note: '进程工作目录所在磁盘',
-      missingReason: '未获取进程工作目录的磁盘指标',
+      missingReason: '进程工作目录的磁盘指标无数据',
     },
     {
       label: '进程堆内存',
       value: formatBytes(runtime.heap_bytes),
       note: '平台进程实际分配',
-      missingReason: '未获取堆内存观测',
+      missingReason: '进程堆内存无观测数据',
     },
   ];
 });
@@ -93,7 +93,7 @@ const storageMetrics = computed<MetricSpec[]>(() => {
       value: value.measured ? formatBytes(value.free_bytes, true) : null,
       note: `总容量 ${formatBytes(value.total_bytes, true)}`,
       tone: pressure.value ? 'warning' : undefined,
-      missingReason: value.measured ? '未获取部署存储的剩余空间' : '对象存储无法测量剩余空间',
+      missingReason: value.measured ? '部署存储剩余空间无数据' : '对象存储无法测量剩余空间',
     },
     value.measured
       ? {
@@ -110,7 +110,7 @@ const storageMetrics = computed<MetricSpec[]>(() => {
       label: '本租户原包',
       value: count(value.archives),
       note: occupied,
-      missingReason: `未获取本租户原包计数 · ${occupied}`,
+      missingReason: `本租户原包计数无数据 · ${occupied}`,
     },
     {
       label: '实际可回溯',
@@ -149,7 +149,7 @@ onScopeDispose(() => controller?.abort());
       <a-alert
         v-if="unavailable"
         type="warning"
-        message="部分平台依赖不可用，相关操作可能无法完成，请核对服务状态。"
+        message="部分平台依赖异常。相关操作可能失败，请核对服务状态。"
         show-icon
         class="section-gap"
       />
@@ -167,7 +167,7 @@ onScopeDispose(() => controller?.abort());
           <div v-for="(state, name) in result.services" :key="name">
             <span>{{ serviceNames[String(name)] ?? name }}</span>
             <StatusTag
-              :value="state === 'ready' ? '可用' : '不可用'"
+              :value="state === 'ready' ? '正常' : '异常'"
               :tone="state === 'ready' ? statusTerms.正常 : statusTerms.异常"
             />
           </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '../terms';
 import { formatNumber } from '../utils/format';
 import { computed, shallowRef, watch, onScopeDispose } from 'vue';
 import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
@@ -62,14 +63,14 @@ function close() {
 const sourceTones: StatusToneMap = {
   starting: 'info',
   listening: 'success',
-  unavailable: 'danger',
-  degraded: 'danger',
+  unavailable: statusTerms.异常,
+  degraded: statusTerms.异常,
   stopped: 'neutral',
 };
 function condition(v: SyslogSource) {
-  if (v.sensor_status === 'disabled') return { value: '探针已停用', tone: 'neutral' } as const;
-  if (v.sensor_status === 'offline') return { value: '探针离线', tone: 'neutral' } as const;
-  if (stale(v)) return { value: '观测已过期', tone: 'neutral' } as const;
+  if (v.sensor_status === 'disabled') return { value: '探针停用', tone: statusTerms.停用 } as const;
+  if (v.sensor_status === 'offline') return { value: '探针离线', tone: statusTerms.离线 } as const;
+  if (stale(v)) return { value: '观测已过期', tone: statusTerms.已过期 } as const;
   return { value: sourceStates[v.state] ?? '接收状态未知', tone: statusTone(sourceTones, v.state) };
 }
 </script>
@@ -107,7 +108,7 @@ function condition(v: SyslogSource) {
         ><a-descriptions-item label="传输 / 格式"
           >{{ selected.transport.toUpperCase() }} / {{ selected.format.toUpperCase() }}</a-descriptions-item
         ><a-descriptions-item label="来源身份">{{
-          selected.identity_quality === 'certificate' ? '客户端证书与指纹验证' : '来源网段限制，未验证设备身份'
+          selected.identity_quality === 'certificate' ? '客户端证书与指纹验证' : '仅按来源网段限制，设备身份待验证'
         }}</a-descriptions-item
         ><a-descriptions-item label="来源时间策略">{{
           selected.format === 'rfc3164'

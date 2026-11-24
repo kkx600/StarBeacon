@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('模型配置');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
@@ -48,7 +49,7 @@ async function test(record: ModelProvider) {
   const result = await state.test(record);
   if (result) {
     selectedID.value = record.id;
-    if (result.state === 'succeeded') message.success('模型连接验证通过');
+    if (result.state === 'succeeded') message.success('模型连接已验证');
   }
 }
 </script>
@@ -66,7 +67,7 @@ async function test(record: ModelProvider) {
   <a-alert
     v-if="!pending && !available && !error"
     type="info"
-    message="模型凭据服务尚未启用，配置暂不可用。"
+    message="模型凭据服务未启用。"
     show-icon
     class="section-gap"
   />
@@ -91,7 +92,7 @@ async function test(record: ModelProvider) {
           <template v-if="column.key === 'kind'">{{ providerNames[record.kind] }}</template>
           <StatusTag
             v-else-if="column.key === 'enabled'"
-            :tone="record.enabled ? 'success' : 'neutral'"
+            :tone="record.enabled ? statusTerms.启用 : statusTerms.停用"
             :value="record.enabled ? '启用' : '停用'"
           />
           <template v-else-if="column.key === 'external'">{{ record.allow_external ? '允许' : '禁止' }}</template>
@@ -101,7 +102,7 @@ async function test(record: ModelProvider) {
               :tone="statusTone(checkTones, record.check.state)"
               :value="checkNames[record.check.state] ?? '其他处理状态'"
             />
-            <StatusTag v-else tone="neutral" value="尚未验证" />
+            <StatusTag v-else :tone="statusTerms.待验证" value="待验证" />
           </template>
           <div v-else-if="column.key === 'actions'" class="table-row-actions">
             <a-button type="link" size="small" :disabled="busy || !available" @click="edit(record)">配置</a-button>

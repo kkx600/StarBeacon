@@ -168,7 +168,12 @@ onScopeDispose(() => {
             rule.definition.filter ? '告警条件：' + rule.definition.filter : '所选范围内全部告警'
           }}。执行时重新核对当前规则状态与修订。
         </p>
-        <a-alert v-if="!rule.active" type="warning" show-icon message="所选修订已停用，请返回目录核对当前规则。" />
+        <a-alert
+          v-if="!rule.active"
+          type="warning"
+          show-icon
+          message="所选修订处于停用状态，请返回目录核对当前规则。"
+        />
       </section>
       <CorrelationScopeForm
         :key="rule.id + '/' + rule.revision"

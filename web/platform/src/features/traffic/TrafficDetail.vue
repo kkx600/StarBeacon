@@ -34,7 +34,7 @@ const emit = defineEmits<{ close: [] }>();
       <a-descriptions bordered :column="1" size="small">
         <a-descriptions-item label="记录类型 / 协议"
           >{{ trafficKinds[record.event.kind] }} /
-          {{ record.network.protocol || record.network.transport || '未观测到' }}</a-descriptions-item
+          {{ record.network.protocol || record.network.transport || '无数据' }}</a-descriptions-item
         >
         <a-descriptions-item label="事件 / 探针标识"
           ><span class="technical">{{ record.event_id }} / {{ record.sensor_id }}</span></a-descriptions-item
@@ -46,16 +46,16 @@ const emit = defineEmits<{ close: [] }>();
           ></a-descriptions-item
         >
         <a-descriptions-item label="源 IP / MAC"
-          >{{ record.source.ip || '未观测到' }} / {{ record.source.mac || '未观测到' }}</a-descriptions-item
+          >{{ record.source.ip || '无数据' }} / {{ record.source.mac || '无数据' }}</a-descriptions-item
         >
         <a-descriptions-item label="目的 IP / MAC"
-          >{{ record.destination.ip || '未观测到' }} / {{ record.destination.mac || '未观测到' }}</a-descriptions-item
+          >{{ record.destination.ip || '无数据' }} / {{ record.destination.mac || '无数据' }}</a-descriptions-item
         >
         <a-descriptions-item label="会话源侧 MAC 集合">{{
-          record.details.source_macs.join('、') || '未观测到'
+          record.details.source_macs.join('、') || '无数据'
         }}</a-descriptions-item>
         <a-descriptions-item label="会话目的侧 MAC 集合">{{
-          record.details.destination_macs.join('、') || '未观测到'
+          record.details.destination_macs.join('、') || '无数据'
         }}</a-descriptions-item>
         <a-descriptions-item label="事件 / 代理观察 / 平台接收时间"
           >{{ formatTime(record['@timestamp']) }} / {{ formatTime(record.observed_at) }} /
@@ -95,11 +95,11 @@ const emit = defineEmits<{ close: [] }>();
           class="section-gap"
         /><a-descriptions bordered :column="1" size="small"
           ><a-descriptions-item label="SNI / 版本"
-            >{{ record.details.tls.sni || '未观测到' }} /
+            >{{ record.details.tls.sni || '无数据' }} /
             {{ record.details.tls.version || '未提供' }}</a-descriptions-item
           ><a-descriptions-item label="证书主体 / 签发者"
-            >{{ record.details.tls.subject || '未观测到' }} /
-            {{ record.details.tls.issuer || '未观测到' }}</a-descriptions-item
+            >{{ record.details.tls.subject || '无数据' }} /
+            {{ record.details.tls.issuer || '无数据' }}</a-descriptions-item
           ><a-descriptions-item label="源记录证书指纹"
             ><span class="technical">{{ record.details.tls.fingerprint || '未提供' }}</span></a-descriptions-item
           ></a-descriptions

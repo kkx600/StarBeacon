@@ -282,7 +282,7 @@ export function createCollectorFixtures() {
         type: '规则同步',
         source: '主控平台',
         target: 'rules-demo-20260930',
-        status: '已生效（示例）',
+        status: '已完成',
         time: '2026-09-30 09:30:00',
         summary: '历史合成回执：12840 条规则；目标包与引擎实际包一致。',
         steps: [
@@ -324,7 +324,7 @@ export function createCollectorFixtures() {
         actor: '本地管理员（示例）',
         action: '登录本地控制台',
         object: 'SENSORS-0001',
-        result: '成功（示例）',
+        result: '已完成',
       },
       {
         id: 'AUD-003',

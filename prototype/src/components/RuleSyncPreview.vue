@@ -176,7 +176,9 @@ function save(c: RuleSyncChange) {
     @close="editing = undefined"
   />
   <a-modal v-if="detail" open title="规则同步详情" :footer="null" :width="780" @cancel="detail = undefined"
-    ><HelpNote message="合成执行记录，不代表真实引擎已验证或已生效。" /><a-descriptions bordered :column="1"
+    ><HelpNote message="执行记录为合成示例，真实引擎的验证与应用状态以设备回执为准。" /><a-descriptions
+      bordered
+      :column="1"
       ><a-descriptions-item label="计划">{{ detail.spec.name }} · 授权修订 {{ detail.revision }}</a-descriptions-item
       ><a-descriptions-item label="探针">{{ detail.spec.sensor_id }}</a-descriptions-item
       ><a-descriptions-item label="注册代次">{{ detail.spec.registration_id }}</a-descriptions-item

@@ -53,7 +53,7 @@ func (a *API) exportEvents(w http.ResponseWriter, r *http.Request, dataset strin
 	defer cancel()
 	r = r.WithContext(ctx)
 	if a.ES == nil || a.DB == nil {
-		httpapi.Fail(w, r, 503, "export_unavailable", "检索导出服务暂时不可用")
+		httpapi.Fail(w, r, 503, "export_unavailable", "检索导出服务异常，请稍后重试")
 		return
 	}
 	u := httpapi.Principal(r)

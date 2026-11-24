@@ -63,7 +63,7 @@ describe('历史任务详情与链接', () => {
     const { wrapper } = await workspace();
     expect(document.body.textContent?.includes('该回执仅证明规则可加载')).toBe(show);
     expect(document.body.textContent).toContain('任务追溯');
-    if (kind === 'rules.apply') expect(document.body.textContent).toContain('规则发布 / 执行成功');
+    if (kind === 'rules.apply') expect(document.body.textContent).toContain('规则发布 / 已完成');
     wrapper.unmount();
   });
   it('应用安装档案绑定原任务和持久状态摘要，拒绝其他任务或损坏回执', async () => {

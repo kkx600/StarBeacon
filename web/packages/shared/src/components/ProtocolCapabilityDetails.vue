@@ -26,6 +26,6 @@ const bindingMode: Record<string, string> = {
     <a-descriptions-item label="效果资格">未完成独立正反例及非标准端口验收</a-descriptions-item>
   </a-descriptions>
   <p class="page-description section-gap">
-    “原生目录已列出”不能单独证明事务解析已启用；“已配置”也不证明当前流量存在、完整可见或规则有效。目录不授予文件下载、模型调用或设备动作权限。
+    “原生目录已列出”时仍需验证事务解析状态；“已配置”也不证明当前流量存在、完整可见或规则有效。目录不授予文件下载、模型调用或设备动作权限。
   </p>
 </template>

@@ -58,11 +58,11 @@ describe('运行状态', () => {
     const wrapper = mount(PlatformHealth, { global });
     expect(wrapper.text()).toContain('正在读取数据');
     await flushPromises();
-    expect(wrapper.text()).toContain('部分平台依赖不可用');
-    expect(wrapper.text()).toContain('内存指标不可用');
+    expect(wrapper.text()).toContain('部分平台依赖异常');
+    expect(wrapper.text()).toContain('内存指标无数据');
     const missing = wrapper.get('.metric-item[data-missing]');
     expect(missing.get('.metric-value').text()).toBe('—');
-    expect(missing.get('.metric-note').text()).toBe('未获取运行环境内存指标');
+    expect(missing.get('.metric-note').text()).toBe('运行环境内存指标无数据');
     expect(wrapper.text()).toContain('1.23 MB');
     expect(wrapper.text()).toContain('test-commit');
     expect(wrapper.find('.ant-table').exists()).toBe(false);
@@ -70,7 +70,7 @@ describe('运行状态', () => {
     await wrapper.get('button').trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('custom');
-    expect(wrapper.text()).not.toContain('部分平台依赖不可用');
+    expect(wrapper.text()).not.toContain('部分平台依赖异常');
   });
   it('原包存储按部署容量共享，只展示本租户的可回溯范围', async () => {
     const storage = {
@@ -251,9 +251,9 @@ describe('日志列表和详情', () => {
         { ...record, id: 'third', source_ip: '', username: '' },
       ],
     });
-    expect(wrapper.text()).toContain('验证通过');
+    expect(wrapper.text()).toContain('已验证');
     expect(wrapper.text()).toContain('验证失败');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据');
     expect(actionLabel('future.action')).toBe('其他操作');
   });
   it('通知和模型写入的审计名称保持业务含义', async () => {
@@ -292,7 +292,7 @@ describe('日志列表和详情', () => {
       },
     });
     await flushPromises();
-    expect(document.body.textContent).toContain('验证通过');
+    expect(document.body.textContent).toContain('已验证');
     expect(document.body.textContent).toContain('未提供');
     await wrapper.setProps({
       record: { ...record, action: 'users.password.recover', username: 'database:owner', reason: '值班管理员凭据遗失' },

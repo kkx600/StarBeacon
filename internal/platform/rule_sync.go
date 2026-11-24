@@ -40,7 +40,7 @@ func (a *API) ruleSyncPlans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "rule_sync_unavailable", "规则同步数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "rule_sync_unavailable", "规则同步数据服务异常，请稍后重试")
 		return
 	}
 	page, err := a.DB.RuleSyncPlans(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
@@ -64,7 +64,7 @@ func (a *API) saveRuleSyncPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil || (input.Spec.Enabled && (len(a.Signer) != ed25519.PrivateKeySize || a.Samples == nil)) {
-		httpapi.Fail(w, r, 503, "rule_sync_unavailable", "规则同步执行服务暂不可用，可保存停用计划")
+		httpapi.Fail(w, r, 503, "rule_sync_unavailable", "规则同步执行服务异常，请稍后重试。可保存停用计划")
 		return
 	}
 	item, err := a.DB.SaveRuleSyncPlan(r.Context(), httpapi.Principal(r), input, httpapi.RequestID(r))

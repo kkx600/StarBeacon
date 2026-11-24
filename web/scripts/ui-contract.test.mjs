@@ -7,11 +7,11 @@ import { inspectRules } from '../packages/shared/src/utils/ruleSyntax.ts';
 import { palette as actual } from '../packages/shared/src/theme.ts';
 import { palette as prototype } from '../../prototype/src/theme.ts';
 const rule = 'alert http any any -> $HOME_NET any (msg:"样例"; http.uri; content:"/admin"; sid:1000001; rev:1;)';
-test('容量与速率自动换算，缺测与零区分，64 位计数保留精度', () => {
+test('容量与速率自动换算，无数据与零分别显示，64 位计数保留精度', () => {
   assert.equal(formatBytes(0), '0 B');
-  assert.equal(formatBytes(null), '未获取');
-  assert.equal(formatBytes(-1), '未获取');
-  assert.equal(formatBytes(Infinity), '未获取');
+  assert.equal(formatBytes(null), '无数据');
+  assert.equal(formatBytes(-1), '无数据');
+  assert.equal(formatBytes(Infinity), '无数据');
   assert.equal(formatBytes(1000), '1 KB');
   assert.equal(formatBytes(10 ** 6), '1 MB');
   assert.equal(formatBytes(10 ** 9), '1 GB');
@@ -22,7 +22,7 @@ test('容量与速率自动换算，缺测与零区分，64 位计数保留精�
   assert.equal(formatBitRate(10 ** 9), '1 Gbit/s');
   assert.equal(formatQuantity('12000 Mbit/s'), '12 Gbit/s');
   assert.equal(formatQuantity('2048 MiB'), '2 GiB');
-  assert.equal(formatQuantity('不可观测'), '不可观测');
+  assert.equal(formatQuantity('无数据'), '无数据');
   assert.equal(formatBytes(10n ** 40n), '>1000000 EB');
   assert.equal(formatBytes(10 ** 40), '>1000000 EB');
   assert.equal(formatQuantity('18446744073709551615'), '18.45 EB');

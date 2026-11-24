@@ -35,7 +35,7 @@ func (a *API) probeEnrollments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "storage_unavailable", "注册目录暂不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "注册目录服务异常，请稍后重试")
 		return
 	}
 	items, next, err := a.DB.ProbeEnrollments(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
@@ -50,7 +50,7 @@ func probeFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, probepki.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_probe_certificate", "请核对注册绑定、令牌和 CSR")
 	case errors.Is(err, probepki.ErrDenied):
-		httpapi.Fail(w, r, 403, "probe_credential_unavailable", "注册凭据或探针状态不可用")
+		httpapi.Fail(w, r, 403, "probe_credential_unavailable", "注册凭据或探针状态未通过校验")
 	case errors.Is(err, probepki.ErrConflict):
 		httpapi.Fail(w, r, 409, "certificate_result_unconfirmed", "CSR 已绑定，或签发结果尚未核实，请保留原提交并联系管理员")
 	case errors.Is(err, probepki.ErrQuota):
@@ -146,7 +146,7 @@ func (a *API) probeCertificates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "storage_unavailable", "证书目录暂不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "证书目录服务异常，请稍后重试")
 		return
 	}
 	items, next, err := a.DB.ProbeCertificates(r.Context(), httpapi.Principal(r), r.PathValue("id"), q.Get("cursor"), limit)
@@ -162,7 +162,7 @@ func (a *API) revokeProbeEnrollment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "storage_unavailable", "注册目录暂不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "注册目录服务异常，请稍后重试")
 		return
 	}
 	if err := a.DB.RevokeProbeEnrollment(r.Context(), httpapi.Principal(r), r.PathValue("id")); err != nil {
@@ -177,7 +177,7 @@ func (a *API) revokeProbeCertificate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "storage_unavailable", "证书目录暂不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "证书目录服务异常，请稍后重试")
 		return
 	}
 	u := httpapi.Principal(r)

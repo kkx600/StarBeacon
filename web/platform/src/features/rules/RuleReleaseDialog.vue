@@ -28,7 +28,7 @@ defineProps<{ release: ReturnType<typeof useRuleRelease> }>();
         ><template #description
           >任务 <span class="technical">{{ release.taskID.value }}</span>，<router-link to="/sensors/tasks"
             >查看设备执行回执</router-link
-          >。受理不等于规则已生效。</template
+          >。实际应用状态以设备回执为准。</template
         ></a-alert
       >
       <a-form layout="vertical" :disabled="release.submitting.value || !!release.taskID.value">

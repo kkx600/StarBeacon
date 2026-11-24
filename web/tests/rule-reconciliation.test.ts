@@ -87,7 +87,7 @@ describe('待核实规则任务', () => {
     });
     expect(first[0]).toBe('/sensors/probe_1/tasks');
     expect(message.success).toHaveBeenCalledWith('规则核实任务已受理，请查看设备执行回执');
-    expect(wrapper.text()).toContain('待核实');
+    expect(wrapper.text()).toContain('结果未知');
   });
   it('核实完成显示执行时的规则摘要与独立任务，原中断回执仍可查看', async () => {
     const wrapper = mount(TaskTable, {

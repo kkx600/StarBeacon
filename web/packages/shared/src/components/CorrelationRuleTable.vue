@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '../terms';
 import { computed } from 'vue';
 import ListTable from './ListTable.vue';
 import { tablePagination } from '../pagination';
@@ -53,7 +54,7 @@ const columns = [
         >{{ record.definition.window_seconds }} 秒 / {{ record.definition.threshold }}</template
       ><StatusTag
         v-else-if="column.key === 'active'"
-        :tone="record.active ? 'success' : 'neutral'"
+        :tone="record.active ? statusTerms.启用 : statusTerms.停用"
         :value="record.active ? '允许回测' : '停用'"
       />
       <template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>

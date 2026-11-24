@@ -174,7 +174,7 @@ describe('报告计划契约', () => {
     expect(validRunPage({ ...runPage, next_cursor: 'bad/id' })).toBe(false);
   });
   it('区分报告提交、结果未知、过期与停机错过范围', () => {
-    expect(planRunState(run)).toBe('处理完成');
+    expect(planRunState(run)).toBe('已完成');
     expect(planRunState({ ...run, analysis_state: 'uncertain' })).toBe('结果未知');
     expect(planRunState({ ...run, analysis_state: '' })).toBe('报告已到保留期限');
     const preparing = {
@@ -356,7 +356,7 @@ describe('计划配置交互', () => {
       spec: { provider_revision: analysisProvider.revision + 1 },
     });
     await wrapper.setProps({ providers: [] });
-    expect(document.body.textContent).toContain('模型当前不可用');
+    expect(document.body.textContent).toContain('计划绑定的模型未满足执行条件');
     expect(button('保存计划').disabled).toBe(true);
   });
   it('执行服务不可用可保存停用计划，未知保存冻结表单', async () => {
@@ -487,7 +487,7 @@ describe('报告计划工作台', () => {
     expect(message.success).toHaveBeenCalledWith('报告计划保存结果已确认');
     await click('停用');
     await click('停用计划');
-    expect(message.success).toHaveBeenCalledWith('报告计划已停用');
+    expect(message.success).toHaveBeenCalledWith('报告计划已设为停用');
   });
   it('空状态、执行服务故障和恢复入口不冒充正常数据', async () => {
     request.mockImplementation((path: string) =>
@@ -500,7 +500,7 @@ describe('报告计划工作台', () => {
     const wrapper = mount(ReportPlansWorkspace, { global, attachTo: document.body });
     await flushPromises();
     expect(wrapper.text()).toContain('暂无报告计划');
-    expect(wrapper.text()).toContain('计划执行服务暂不可用');
+    expect(wrapper.text()).toContain('计划执行服务异常');
     await click('创建计划');
     await click('取消');
     request.mockRejectedValueOnce(new Error('读取失败'));

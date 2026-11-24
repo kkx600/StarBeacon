@@ -34,7 +34,7 @@ async function submitted(input?: PasswordInput) {
       :loading="state.pending.value"
       :error="state.error.value"
       :empty="!state.record.value"
-      description="当前账号信息暂不可用，请刷新后核对。"
+      description="当前账号信息读取异常，请稍后重试。"
       @retry="state.reload"
       ><PasswordForm
         v-if="state.record.value"

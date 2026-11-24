@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '../terms';
 import { computed, shallowRef, watch } from 'vue';
 import { Descriptions as ADescriptions, Modal as AModal } from 'ant-design-vue';
 import type { CaptureConfig } from '../types';
@@ -35,9 +36,11 @@ const changed = computed(
 const statusText = (value: unknown) => protocolStatus[value as ProtocolStatus] ?? '尚未核实';
 const tones: StatusToneMap = {
   configured: 'success',
+  not_implemented: statusTerms.未提供,
+  not_configured: statusTerms.未配置,
   detection_only: 'warning',
   partial: 'warning',
-  requires_validation: 'warning',
+  requires_validation: statusTerms.待验证,
   native_listed: 'info',
   packet_headers_only: 'info',
 };

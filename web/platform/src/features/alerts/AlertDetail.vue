@@ -63,10 +63,10 @@ function investigate() {
               ><span class="technical">{{ alert.event_id }}</span></a-descriptions-item
             >
             <a-descriptions-item label="源 IP / MAC"
-              >{{ alert.source.ip ?? '未提供' }} / {{ alert.source.mac ?? '未观测到' }}</a-descriptions-item
+              >{{ alert.source.ip ?? '未提供' }} / {{ alert.source.mac ?? '无数据' }}</a-descriptions-item
             >
             <a-descriptions-item label="目的 IP / MAC"
-              >{{ alert.destination.ip ?? '未提供' }} / {{ alert.destination.mac ?? '未观测到' }}</a-descriptions-item
+              >{{ alert.destination.ip ?? '未提供' }} / {{ alert.destination.mac ?? '无数据' }}</a-descriptions-item
             >
             <a-descriptions-item label="传输 / 应用协议"
               >{{ alert.network.transport ?? '未提供' }} / {{ alert.network.protocol ?? '未提供' }}</a-descriptions-item

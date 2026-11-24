@@ -43,7 +43,7 @@ func triageFailure(w http.ResponseWriter, r *http.Request, err error) {
 
 func (a *API) triageData(w http.ResponseWriter, r *http.Request) bool {
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "triage_unavailable", "模型研判数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "triage_unavailable", "模型研判数据服务异常，请稍后重试")
 		return false
 	}
 	return true
@@ -70,7 +70,7 @@ func (a *API) createAlertTriage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.Jobs == nil || a.Vault == nil || a.ES == nil || (a.JobsReady != nil && !a.JobsReady()) {
-		httpapi.Fail(w, r, 503, "triage_unavailable", "模型执行、告警检索或凭据服务暂不可用，研判尚未提交")
+		httpapi.Fail(w, r, 503, "triage_unavailable", "模型执行、告警检索或凭据服务异常，研判未提交。请稍后重试")
 		return
 	}
 	alert, err := a.ES.ReadAlertEvidence(r.Context(), u.TenantID, input.EventID, input.RawSHA256)

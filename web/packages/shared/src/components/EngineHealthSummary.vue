@@ -28,7 +28,7 @@ const tones: StatusToneMap = { observed: 'success', unavailable: 'danger' };
       <p v-if="!observation" class="page-description">
         {{
           report
-            ? '返回的观测格式不完整，无法确认进程及规则装载状态。'
+            ? '观测数据不完整，进程及规则装载状态无可靠数据。'
             : '设备尚未上报原生进程与规则装载观测，登记文件摘要不能代替该项核对。'
         }}
       </p>

@@ -44,7 +44,7 @@ func incidentFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, store.ErrIncidentExpired):
 		httpapi.Fail(w, r, 410, "incident_expired", "记录已到保留期限，请刷新列表；原请求不能重新创建已到期的操作")
 	case errors.Is(err, store.ErrIncidentOwner):
-		httpapi.Fail(w, r, 409, "assignee_unavailable", "所选责任人已停用或不具备当前租户的调查权限，请重新选择")
+		httpapi.Fail(w, r, 409, "assignee_unavailable", "所选责任人处于停用状态或缺少当前租户的调查权限，请重新选择")
 	case errors.Is(err, store.ErrConflict):
 		httpapi.Fail(w, r, 409, "incident_conflict", "事件修订或原请求已变化，请刷新后核对；相同请求键不能改变输入")
 	case errors.Is(err, store.ErrAlertIdentity):
@@ -55,7 +55,7 @@ func incidentFailure(w http.ResponseWriter, r *http.Request, err error) {
 		w.Header().Set("Retry-After", "60")
 		httpapi.Fail(w, r, 429, "incident_quota_exceeded", "事件记录或今日变更额度已用尽，请稍后重试或核对留存策略")
 	default:
-		httpapi.Fail(w, r, 503, "incident_unavailable", "事件服务暂不可用；保存结果需使用原请求核对后确认")
+		httpapi.Fail(w, r, 503, "incident_unavailable", "事件服务异常。请使用原请求核对保存结果")
 	}
 }
 

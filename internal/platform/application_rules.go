@@ -60,7 +60,7 @@ func applicationFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "应用识别规则修订不存在、已到期或不可访问")
 	default:
-		httpapi.Fail(w, r, 503, "application_rule_unavailable", "应用识别规则服务暂不可用；提交结果未确认时请核对原提交")
+		httpapi.Fail(w, r, 503, "application_rule_unavailable", "应用识别规则服务异常。提交结果未知时，请核对原提交")
 	}
 }
 

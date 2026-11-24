@@ -132,7 +132,7 @@ async function cancel(id: string) {
   <a-alert
     v-if="!pending && !state.available.value && !error"
     type="warning"
-    message="模型分析执行服务暂不可用，请联系管理员核对运行状态。"
+    message="模型分析执行服务异常。请联系管理员核对运行状态。"
     show-icon
     class="section-gap"
   />
@@ -221,7 +221,7 @@ async function cancel(id: string) {
                 working(job.state)
                   ? '分析正在处理，结果将在完成后显示。'
                   : job.state === 'uncertain'
-                    ? '请求可能已执行，结果无法确认；不会自动重试。'
+                    ? '请求可能已执行，结果未知。平台不会自动重试。'
                     : '尚无可展示的智能结论，可查看统计与运行结果。'
               }}
             </p>

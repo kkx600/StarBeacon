@@ -86,7 +86,7 @@ func decisionFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "策略修订、本人研判或评估记录不存在、已到期或不可访问")
 	default:
-		httpapi.Fail(w, r, 503, "decision_policy_unavailable", "决策策略或研判材料暂不可用；提交结果未确认时请核对原提交")
+		httpapi.Fail(w, r, 503, "decision_policy_unavailable", "决策策略或研判材料读取异常。提交结果未知时，请核对原提交")
 	}
 }
 

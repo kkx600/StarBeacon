@@ -32,7 +32,7 @@ func assessmentFailure(w http.ResponseWriter, r *http.Request, err error) {
 		w.Header().Set("Retry-After", "60")
 		httpapi.Fail(w, r, 429, "assessment_quota_exceeded", "研判变更额度已用尽，请稍后重试或核对该告警的操作记录")
 	default:
-		httpapi.Fail(w, r, 503, "assessment_unavailable", "研判服务暂不可用，保存结果需核对后确认")
+		httpapi.Fail(w, r, 503, "assessment_unavailable", "研判服务异常。请核对保存结果")
 	}
 }
 

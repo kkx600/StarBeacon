@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('报告计划');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
@@ -88,7 +89,7 @@ async function confirm() {
 }
 async function disable(record: ReportPlan) {
   if (await state.save({ id: record.id, expected_revision: record.revision, spec: { ...record.spec, enabled: false } }))
-    message.success('报告计划已停用');
+    message.success('报告计划已设为停用');
 }
 async function showRuns(record: ReportPlan) {
   selected.value = record;
@@ -143,7 +144,7 @@ async function showReport(id: string) {
   <a-alert
     v-if="!selected && !pending && !available && !error"
     type="info"
-    message="报告计划执行服务暂不可用，可核对已有计划或保存停用配置。"
+    message="报告计划执行服务异常。可核对已有计划或保存停用配置。"
     show-icon
     class="section-gap"
   />
@@ -193,7 +194,7 @@ async function showReport(id: string) {
           }}</template>
           <StatusTag
             v-else-if="column.key === 'state'"
-            :tone="record.spec.enabled ? 'success' : 'neutral'"
+            :tone="record.spec.enabled ? statusTerms.启用 : statusTerms.停用"
             :value="record.spec.enabled ? '启用' : '停用'"
           />
           <template v-else-if="column.key === 'next'">{{

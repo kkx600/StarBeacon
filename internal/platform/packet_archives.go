@@ -56,7 +56,7 @@ func (a *API) exportPacketSession(w http.ResponseWriter, r *http.Request) {
 	}
 	output, err := os.CreateTemp(a.PacketStaging, ".session-export-")
 	if err != nil {
-		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "会话导出暂存不可用")
+		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "会话导出暂存服务异常，请稍后重试")
 		return
 	}
 	defer output.Close()
@@ -190,7 +190,7 @@ func (a *API) downloadPacketArchive(w http.ResponseWriter, r *http.Request) {
 	}
 	file, err := os.CreateTemp(a.PacketStaging, ".packet-download-")
 	if err != nil {
-		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "原包下载暂存不可用")
+		httpapi.Fail(w, r, 503, "packet_staging_unavailable", "原包下载暂存服务异常，请稍后重试")
 		return
 	}
 	defer file.Close()

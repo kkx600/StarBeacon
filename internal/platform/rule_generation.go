@@ -51,7 +51,7 @@ func generationFailure(w http.ResponseWriter, r *http.Request, err error) {
 
 func (a *API) generationData(w http.ResponseWriter, r *http.Request) bool {
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "generation_unavailable", "规则生成数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "generation_unavailable", "规则生成数据服务异常，请稍后重试")
 		return false
 	}
 	return true
@@ -78,7 +78,7 @@ func (a *API) createRuleGeneration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.Jobs == nil || a.Vault == nil || (a.JobsReady != nil && !a.JobsReady()) {
-		httpapi.Fail(w, r, 503, "generation_unavailable", "模型执行服务或凭据密钥暂不可用，规则生成尚未提交")
+		httpapi.Fail(w, r, 503, "generation_unavailable", "模型执行服务或凭据密钥异常，规则生成未提交。请稍后重试")
 		return
 	}
 	ctx, stop := context.WithTimeout(r.Context(), 12*time.Second)

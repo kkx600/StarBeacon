@@ -7,10 +7,10 @@ import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
 import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
 import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
-import { alertWorkflowTones } from '@starbeacon/shared/statusTones.ts';
-import type { StatusTone } from '@starbeacon/shared/terms.ts';
+import { statusTerms, type StatusTone } from '@starbeacon/shared/terms.ts';
 import {
   assessmentStatuses,
+  assessmentStatusTones,
   assessmentVerdicts,
   assessmentOutcomes,
   initialAssessment,
@@ -42,9 +42,9 @@ watch(
 const disabled = computed(() => pending.value || busy.value || unconfirmed.value || !!error.value || !current.value);
 const verdictTones = {
   unreviewed: 'neutral',
-  suspicious: 'warning',
-  false_positive: 'neutral',
-  confirmed: 'danger',
+  suspicious: statusTerms.可疑,
+  false_positive: statusTerms.误报,
+  confirmed: statusTerms.真实攻击,
 } as const satisfies Record<AssessmentSpec['verdict'], StatusTone>;
 const columns = [
   { title: '修订', dataIndex: 'revision', width: 64, className: 'technical' },
@@ -110,7 +110,7 @@ onMounted(() => {
           <template v-if="column.key === 'updated'">{{ formatTime(record.updated_at) }}</template>
           <StatusTag
             v-else-if="column.key === 'status'"
-            :tone="alertWorkflowTones[record.spec.status]"
+            :tone="assessmentStatusTones[record.spec.status]"
             :value="assessmentStatuses[record.spec.status]"
           />
           <StatusTag

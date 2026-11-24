@@ -64,7 +64,7 @@ beforeEach(() => {
 describe('显示和安全回跳', () => {
   it('整数字符串、不同数量级和缺测采用有界格式且排序保留精度', () => {
     for (const value of [null, undefined, '', -1, -1n, NaN, Infinity, 'invalid'])
-      expect(formatBytes(value)).toBe('未获取');
+      expect(formatBytes(value)).toBe('无数据');
     expect(formatBytes('18446744073709551615')).toBe('18.45 EB');
     expect(formatBytes(1024, true)).toBe('1 KiB');
     expect(formatBytes('999999')).toBe('1 MB');
@@ -87,8 +87,8 @@ describe('显示和安全回跳', () => {
     expect(compareQuantity(null, undefined)).toBe(0);
     expect(compareQuantity('a2', 'a10')).toBeLessThan(0);
     expect(compareQuantity('1 B', '1 bit/s')).not.toBeNaN();
-    expect(formatTime(null)).toBe('未获取');
-    expect(formatPercent(null)).toBe('未获取');
+    expect(formatTime(null)).toBe('无数据');
+    expect(formatPercent(null)).toBe('无数据');
     expect(formatPercent(10)).toBe('10.0%');
     expect(formatHealthErrors([])).toBe('无已报告异常');
     expect(formatHealthErrors(['cpu_unavailable', 'future'])).toContain('未识别的观测异常');

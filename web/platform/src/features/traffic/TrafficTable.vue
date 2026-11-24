@@ -37,7 +37,7 @@ function directionalCount(record: TrafficRecord, direction: 'server' | 'client')
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'kind'">{{ trafficKinds[record.event.kind] }}</template>
       <template v-else-if="column.key === 'protocol'">
-        {{ record.network.protocol || record.network.transport || '未观测到' }}
+        {{ record.network.protocol || record.network.transport || '无数据' }}
       </template>
       <template v-else-if="column.key === 'source' || column.key === 'destination'">
         <span :title="endpoint(record[column.key].ip, record[column.key].port)">

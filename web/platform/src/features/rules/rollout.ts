@@ -1,3 +1,4 @@
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { syncPlanValid, type RuleSyncPlan, type RuleSyncRun, type RuleSyncSpec } from './sync';
 
 interface RolloutSelection {
@@ -60,7 +61,7 @@ export const rolloutStates: Record<string, string> = {
 };
 export const targetStates: Record<string, string> = {
   queued: '尚未启用',
-  active: '执行中',
+  active: '运行中',
   observing: '等待生效观察',
   succeeded: '生效已记录',
   blocked: '目标受阻',
@@ -77,7 +78,7 @@ export const rolloutStateTones = {
 } as const;
 export const rolloutTargetTones = {
   queued: 'neutral',
-  active: 'info',
+  active: statusTerms.运行中,
   observing: 'info',
   succeeded: 'success',
   stopped: 'neutral',
@@ -90,10 +91,10 @@ export const rolloutCodes: Record<string, string> = {
   waiting_for_engine: '等待发布后的有效原生观测',
   engine_health_failed: '原生进程或规则装载核对未通过，停止后续提交',
   waiting_for_rule_task: '设备还有规则写入或未核实任务',
-  owner_unavailable: '批准账号已停用或权限变化',
+  owner_unavailable: '批准账号处于停用状态或权限已变化',
   deadline_exceeded: '执行期限已到，停止后续提交',
-  target_failed: '目标验证失败或执行结果待核实',
-  sensor_identity_changed: '目标已停用或注册代次变化',
+  target_failed: '目标验证失败或执行结果未知',
+  sensor_identity_changed: '目标处于停用状态或注册代次已变化',
   rules_digest_changed: '设备当前规则摘要与批准修订不一致',
   plan_changed: '批准计划修订已变化',
   operator_stopped: '管理员停止后续发布',

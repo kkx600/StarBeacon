@@ -541,7 +541,7 @@ describe('原包目录工作区', () => {
     expect(modal.textContent).not.toContain('制品尚未编码');
     expect(modal.textContent).toContain('本机只保留确认摘要和捕获目录');
     expect(modal.textContent).toContain('详见主平台归档');
-    expect(modal.textContent).toContain('未获取 / 2.5 KB');
+    expect(modal.textContent).toContain('无数据 / 2.5 KB');
   });
   it('下载校验成功后才保存，拒绝重复请求，错误与卸载不产生文件', async () => {
     vi.useFakeTimers();
@@ -595,7 +595,7 @@ describe('原包目录工作区', () => {
       attachTo: document.body,
     });
     await flushPromises();
-    expect(document.body.textContent).toContain('未获取可靠计数');
+    expect(document.body.textContent).toContain('无可靠计数');
     expect(document.body.textContent).toContain('主平台尚未确认');
     expect(document.body.textContent).toContain('无法按平台留存时间回收');
     await wrapper.setProps({ record: { ...record, state: 'capturing' } });

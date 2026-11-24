@@ -25,7 +25,7 @@ func userFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, accounts.ErrInput):
 		httpapi.Fail(w, r, 400, "invalid_user", "用户参数无效或没有可提交的变更，请核对账号、角色、状态及修订")
 	case errors.Is(err, accounts.ErrUnavailable):
-		httpapi.Fail(w, r, 403, "user_management_forbidden", "当前账号已停用或不具备用户管理权限")
+		httpapi.Fail(w, r, 403, "user_management_forbidden", "当前账号处于停用状态或缺少用户管理权限")
 	case errors.Is(err, accounts.ErrProtected):
 		httpapi.Fail(w, r, 409, "current_user_protected", "不能停用或降低当前登录账号的权限，请由其他管理员处理")
 	case errors.Is(err, store.ErrConflict):
@@ -38,7 +38,7 @@ func userFailure(w http.ResponseWriter, r *http.Request, err error) {
 		w.Header().Set("Retry-After", "60")
 		httpapi.Fail(w, r, 429, "user_quota_exceeded", "用户数量或今日变更额度已用尽，请稍后重试")
 	default:
-		httpapi.Fail(w, r, 503, "user_management_unavailable", "用户管理服务暂不可用；提交结果需使用原请求核对")
+		httpapi.Fail(w, r, 503, "user_management_unavailable", "用户管理服务异常。请使用原请求核对提交结果")
 	}
 }
 func (a *API) users(w http.ResponseWriter, r *http.Request) {

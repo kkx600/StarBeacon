@@ -1,3 +1,4 @@
+import { statusTerms } from './terms';
 import { defaultPageSize } from './pagination';
 import type { StatusToneMap } from './statusTones';
 
@@ -114,7 +115,7 @@ export interface SessionExportReport {
   reasons: string[];
 }
 export const sessionReasons: Record<string, string> = {
-  capture_drop_counter_unavailable: '未获取可靠的内核丢包计数',
+  capture_drop_counter_unavailable: '内核丢包计数无可靠数据',
   capture_drops_observed: '捕获窗口内存在内核丢包',
   capture_truncation_observed: '原包切片包含截断报文',
   vlan_bytes_unavailable: '存在被网卡移除的 VLAN 头',
@@ -165,12 +166,12 @@ export const packetTones: StatusToneMap = {
   deleting: 'info',
   waiting: 'neutral',
   stopped: 'neutral',
-  failed: 'danger',
+  failed: statusTerms.异常,
 };
 export const packetCodes: Record<string, string> = {
   packet_spool_full: '原包暂存额度已用尽，捕获已停止；未确认原件继续保留',
   packet_spool_unavailable: '原包暂存目录不可读取',
-  packet_source_unavailable: '原包捕获网卡或过滤器不可用',
+  packet_source_unavailable: '原包捕获网卡或过滤器异常',
   packet_validation_failed: '原包或持久目录未通过校验，原件已保留供核查',
   capture_source_interrupted: '原包捕获中断，部分原件已保留',
   capture_record_invalid: '捕获记录元数据不完整，原件待核查',

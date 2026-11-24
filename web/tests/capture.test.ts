@@ -102,7 +102,7 @@ describe('采集配置与实际状态', () => {
     expect(wrapper.text()).toContain('运行异常');
     expect(wrapper.text()).toContain('目标配置未生效');
     expect(wrapper.text()).toContain('期望 3 / 生效 2');
-    expect(wrapper.text()).toContain('尚未观测');
+    expect(wrapper.text()).toContain('无数据');
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined();
   });
   it('停止当前采集必须明确确认，停止后空目标不伪装为捕获成功', async () => {

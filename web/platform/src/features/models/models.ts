@@ -1,3 +1,4 @@
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 export type ProviderKind = 'openai_responses' | 'openai_chat';
 export interface ModelUsage {
   input_tokens: number;
@@ -59,19 +60,19 @@ export const providerNames: Record<ProviderKind, string> = {
 };
 export const checkNames: Record<string, string> = {
   running: '验证中',
-  succeeded: '连接正常',
+  succeeded: '已验证',
   failed: '验证失败',
   uncertain: '结果未知',
   refused: '提供方拒答',
-  incomplete: '输出未完成',
+  incomplete: '不完整',
 };
 export const checkTones = {
   running: 'info',
-  succeeded: 'success',
-  failed: 'danger',
-  uncertain: 'warning',
+  succeeded: statusTerms.已验证,
+  failed: statusTerms.验证失败,
+  uncertain: statusTerms.结果未知,
   refused: 'warning',
-  incomplete: 'warning',
+  incomplete: statusTerms.不完整,
 } as const;
 export const resultNames: Record<string, string> = {
   completed: '生成接口已返回完整响应',
@@ -81,7 +82,7 @@ export const resultNames: Record<string, string> = {
   provider_redirect: '提供方返回重定向，调用已停止',
   provider_rejected: '提供方拒绝请求',
   provider_rate_limited: '提供方限制请求频率',
-  provider_result_unknown: '请求可能已执行，结果无法确认',
+  provider_result_unknown: '请求可能已执行，结果未知',
   request_cancelled: '请求在发送前取消',
   provider_unavailable: '提供方暂不可连接',
   invalid_response: '提供方响应不符合约定',

@@ -108,7 +108,7 @@ func discoveryFailure(w http.ResponseWriter, r *http.Request, err error) {
 		httpapi.Fail(w, r, 413, "discovery_limit", discovery.ErrLimit.Error())
 	case errors.Is(err, errDiscoveryBusy):
 		w.Header().Set("Retry-After", "60")
-		httpapi.Fail(w, r, 429, "discovery_busy", "当前租户存在进行中的发现查询，或已达到每分钟 6 次的预算，请稍后重试")
+		httpapi.Fail(w, r, 429, "discovery_busy", "当前租户有正在运行的发现查询，或已达到每分钟 6 次的查询限额，请稍后重试")
 	default:
 		httpapi.Fail(w, r, 503, "discovery_unavailable", "未能完整核对流量观测，本次不提供部分结果；请稍后重试")
 	}

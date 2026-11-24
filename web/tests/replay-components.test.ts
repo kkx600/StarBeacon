@@ -250,7 +250,7 @@ describe('执行回执与自动更新', () => {
       Promise.resolve(path === '/replay/samples' ? samples : { items: [{ ...task, state: 'succeeded' }] }),
     );
     await click('重试');
-    expect(wrapper.text()).toContain('执行成功');
+    expect(wrapper.text()).toContain('已完成');
     const signal = request.mock.lastCall?.[1].signal as AbortSignal;
     wrapper.unmount();
     expect(signal.aborted).toBe(true);
@@ -294,7 +294,7 @@ describe('执行回执与自动更新', () => {
     expect(wrapper.text()).toContain('登记规则快照');
     expect(wrapper.text()).toContain('02:00:00:00:00:01');
     expect(wrapper.text()).toContain('2026-10-01 00:00:00.321');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据');
     await wrapper.setProps({
       result: { replay: 'completed', match_status: 'unmatched', rule_mode: 'package', alerts: 'invalid' },
     });
@@ -373,7 +373,7 @@ describe('执行回执与自动更新', () => {
         },
       ],
     });
-    expect(document.body.textContent).toContain('执行结果待核实');
+    expect(document.body.textContent).toContain('执行结果未知');
     expect(wrapper.findAll('button').some(value => value.text() === '取消')).toBe(false);
     await wrapper.setProps({
       local: true,

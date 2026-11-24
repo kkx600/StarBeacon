@@ -271,7 +271,7 @@ watch(
       v-if="!detail.active"
       type="warning"
       show-icon
-      message="该查询已停用，不能应用。"
+      message="该查询处于停用状态，不能应用。"
       class="section-gap"
     /><a-alert
       v-if="detail.definition.parser_version !== parserVersion"

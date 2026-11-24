@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, ref, watch } from 'vue';
 import { Checkbox, InputNumber, Modal } from 'ant-design-vue';
@@ -105,7 +106,7 @@ async function publish() {
           ><StatusTag
             v-else-if="column.key === 'scope'"
             :value="record.scope ? scopeNames[record.scope] : '未提供'"
-            :tone="record.scope === 'pending_pipeline' ? 'warning' : 'info'"
+            :tone="!record.scope || record.scope === 'pending_pipeline' ? statusTerms.未提供 : 'info'"
           />
           <a-button
             v-else-if="column.key === 'action'"

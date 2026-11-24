@@ -70,7 +70,7 @@ describe('态势数据范围与交互', () => {
     expect(countText('0')).toBe('0');
     expect(countText('10000')).toBe('1.0 万');
     expect(countText('123450000')).toBe('1.23 亿');
-    expect(countText('oops')).toBe('未获取');
+    expect(countText('oops')).toBe('无数据');
     expect(percentage('1', '3')).toBe(33.33);
     expect(percentage('5', '0')).toBe(0);
     expect(percentage('invalid', '3')).toBe(0);

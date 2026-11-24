@@ -1,8 +1,8 @@
 import type { ResponseConnector } from './response';
-import { readyConnector } from './response';
+import { connectorStates, readyConnector } from './response';
 import { instant } from './utils/instant';
 import { goJSONDigest } from './utils/goJSONDigest';
-import type { StatusTone } from './terms';
+import { statusTerms, type StatusTone } from './terms';
 
 export interface DeviceQuery {
   sensor_id: string;
@@ -46,9 +46,7 @@ export const emptyDeviceQuery = (): DeviceQuery => ({
 });
 export const connectorStatuses = [
   { value: '', label: '全部核验状态' },
-  { value: 'ready', label: '身份已核验' },
-  { value: 'unverified', label: '身份待核验' },
-  { value: 'unavailable', label: '设备不可用' },
+  ...Object.entries(connectorStates).map(([value, label]) => ({ value, label })),
 ];
 export function deviceQuery(v: DeviceQuery): DeviceQuery {
   if (
@@ -75,24 +73,24 @@ export function usableDevice(v: ResponseDevice, now = Date.now()) {
   );
 }
 export const deviceConditions = {
-  disabled: '探针已停用',
+  disabled: '探针处于停用状态',
   offline: '探针离线或心跳过期',
-  pending: '等待设备核验',
+  pending: '设备待验证',
   stale: '设备观测已过期',
-  unavailable: '设备不可用',
-  unverified: '身份待核验',
+  unavailable: '设备异常',
+  unverified: '待验证',
   unsupported: '执行能力不完整',
   ready: '具备提交条件',
   probe_stale: '探针观测已过期',
 } as const;
 export const deviceConditionTones = {
-  disabled: 'neutral',
-  offline: 'neutral',
-  pending: 'info',
+  disabled: statusTerms.停用,
+  offline: statusTerms.离线,
+  pending: statusTerms.待验证,
   stale: 'warning',
-  unavailable: 'danger',
-  unverified: 'warning',
-  unsupported: 'warning',
+  unavailable: statusTerms.异常,
+  unverified: statusTerms.待验证,
+  unsupported: statusTerms.不完整,
   ready: 'success',
   probe_stale: 'warning',
 } as const satisfies Record<keyof typeof deviceConditions, StatusTone>;

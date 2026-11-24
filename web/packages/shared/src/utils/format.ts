@@ -8,10 +8,10 @@ const rates = ['bit/s', 'Kbit/s', 'Mbit/s', 'Gbit/s', 'Tbit/s', 'Pbit/s', 'Ebit/
 
 // 整数字符串保留大计数精度；显示值有界，原始计数仍用于存储、计算和导出。
 function scaled(value: Quantity, units: string[], base: number): string {
-  if (value === null || value === undefined || value === '') return '未获取';
+  if (value === null || value === undefined || value === '') return '无数据';
   if (typeof value === 'bigint' || (typeof value === 'string' && /^\d+$/.test(value))) {
     const amount = BigInt(value);
-    if (amount < 0n) return '未获取';
+    if (amount < 0n) return '无数据';
     let index = 0,
       divisor = 1n;
     while (amount >= divisor * BigInt(base) && index < units.length - 1) {
@@ -29,7 +29,7 @@ function scaled(value: Quantity, units: string[], base: number): string {
     return `${text} ${units[index]}`;
   }
   let amount = Number(value);
-  if (!Number.isFinite(amount) || amount < 0) return '未获取';
+  if (!Number.isFinite(amount) || amount < 0) return '无数据';
   let index = 0;
   while (amount >= base && index < units.length - 1) {
     amount /= base;

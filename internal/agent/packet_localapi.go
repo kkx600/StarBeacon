@@ -117,7 +117,7 @@ func registerLocalPackets(m *http.ServeMux, wal *WAL, auth *httpapi.Auth) {
 		defer file.Close()
 		decoded, err := os.CreateTemp(wal.packetArchives.Spool.Dir, ".packet-download-")
 		if err != nil {
-			httpapi.Fail(w, r, 503, "packet_staging_unavailable", "原包下载暂存不可用")
+			httpapi.Fail(w, r, 503, "packet_staging_unavailable", "原包下载暂存服务异常，请稍后重试")
 			return
 		}
 		defer decoded.Close()

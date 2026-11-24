@@ -22,7 +22,7 @@ const codes: Record<string, string> = {
   engine_observation_cancelled: '观测已取消，等待下一次核对',
   engine_observation_pending: '尚无有效的原生观测',
   engine_observation_not_configured: '未登记完整的进程、配置、规则和控制接口',
-  rule_operation_in_progress: '规则或采集配置事务执行中，当前观察窗口等待重新核对',
+  rule_operation_in_progress: '规则或采集配置事务正在运行，结束后重新核对观测窗口',
   rule_recovery_required: '规则恢复材料尚未核实，停止后续发布',
   engine_process_unverified: '无法核实登记进程及其完整规则来源',
   registered_rules_unavailable: '登记规则文件不可读取',

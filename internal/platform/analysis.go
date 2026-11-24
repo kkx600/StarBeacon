@@ -50,7 +50,7 @@ func (a *API) createAnalysis(w http.ResponseWriter, r *http.Request) {
 	}
 	user := httpapi.Principal(r)
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "分析数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "分析数据服务异常，请稍后重试")
 		return
 	}
 	key := r.Header.Get("Idempotency-Key")
@@ -64,11 +64,11 @@ func (a *API) createAnalysis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if input.ProviderID != "" && (a.Jobs == nil || (a.JobsReady != nil && !a.JobsReady())) {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "模型分析执行服务暂不可用，统计报告仍可生成")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "模型分析执行服务异常，请稍后重试。仍可生成统计报告")
 		return
 	}
 	if a.ES == nil {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "统计服务暂不可用，未提交模型调用")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "统计服务异常，模型调用未提交。请稍后重试")
 		return
 	}
 	ctx, stop := context.WithTimeout(r.Context(), 12*time.Second)

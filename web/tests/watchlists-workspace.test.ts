@@ -429,7 +429,7 @@ describe('名单表单与单表目录交互', () => {
     await click('关闭');
     expect(w.emitted('close')).toHaveLength(1);
     await w.setProps({ unconfirmed: false, sensors: [], sensorsError: '探针读取失败' });
-    expect(body().text()).toContain('当前注册不可用');
+    expect(body().text()).toContain('当前注册无法选择');
     await click('刷新探针');
     expect(w.emitted('refreshSensors')).toHaveLength(1);
     await w.setProps({ sensorsError: '', busy: true });
@@ -469,7 +469,7 @@ describe('名单表单与单表目录交互', () => {
     await body().get('#watchlist-test-values').setValue('192.0.2.10');
     await click('执行核验');
     await vi.waitFor(() => expect(body().text()).toContain('材料匹配'));
-    expect(body().text()).toContain('名单当前未生效');
+    expect(body().text()).toContain('名单当前无效');
     await click('关闭');
     expect(w.findComponent(WatchlistPreview).exists()).toBe(false);
   });
@@ -648,7 +648,7 @@ describe('独立修订与材料输入边界', () => {
       result = await watchlistPreview(input),
       w = mount(WatchlistPreviewResultView, { props: { result }, global: { plugins: [registerAnt] } });
     wrappers.push(w);
-    expect(w.text()).toContain('处于有效期内且已启用');
+    expect(w.text()).toContain('处于启用状态且在有效期内');
     expect(w.text()).toContain('不授予设备执行权限');
     const broad = {
       ...input,

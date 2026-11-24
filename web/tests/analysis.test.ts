@@ -344,7 +344,10 @@ describe('分析详情与来源', () => {
     });
     expect(document.body.querySelector('script')).toBeNull();
     expect(document.body.textContent).toContain('<script>untrusted</script>');
-    expect(document.body.textContent).toContain('未获取 / 未获取 / 未获取');
+    const usageLabel = [...document.body.querySelectorAll('.analysis-metadata dt')].find(
+      label => label.textContent === '输入 Token / 输出 Token / 总 Token',
+    );
+    expect(usageLabel?.nextElementSibling?.textContent?.trim()).toBe('无数据');
     expect(document.body.textContent).not.toContain('0 ms');
     expect(document.body.textContent).toContain('上次成功读取');
     await wrapper.setProps({
@@ -499,7 +502,7 @@ describe('智能助手交互', () => {
     const wrapper = mount(AssistantWorkspace, { global, attachTo: document.body });
     await flushPromises();
     expect(wrapper.text()).toContain('暂无启用的模型提供方');
-    expect(wrapper.text()).toContain('模型分析执行服务暂不可用');
+    expect(wrapper.text()).toContain('模型分析执行服务异常');
     await click('模型配置');
     expect(router.currentRoute.value.path).toBe('/ai/models');
     await click('对话记录');

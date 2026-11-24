@@ -258,7 +258,7 @@ describe('模型验证详情与工作区', () => {
     await flushPromises();
     expect(document.body.textContent).toContain('0 / 4 / 4');
     expect(document.body.textContent).toContain('130 ms');
-    expect(document.body.textContent).toContain('未获取');
+    expect(document.body.textContent).toContain('无数据');
     await wrapper.setProps({
       record: {
         ...provider,
@@ -269,10 +269,12 @@ describe('模型验证详情与工作区', () => {
         },
       },
     });
-    expect(document.body.textContent).toContain('当前配置尚未验证');
-    expect(document.body.textContent).toContain('未获取 / 未获取 / 未获取');
+    expect(document.body.textContent).toContain('当前配置待验证');
+    expect(
+      document.querySelector('.ant-descriptions-row:last-child .ant-descriptions-item-content')?.textContent?.trim(),
+    ).toBe('无数据');
     expect(document.body.textContent).not.toContain('0 ms');
-    expect(document.body.textContent).toContain('尚未获取处理说明');
+    expect(document.body.textContent).toContain('未提供处理说明');
     await wrapper.setProps({
       record: { ...provider, check: { ...check, result: { ...check.result, duration_ms: 0 } } },
     });
@@ -286,7 +288,7 @@ describe('模型验证详情与工作区', () => {
     await flushPromises();
     expect(wrapper.emitted('close')).toHaveLength(1);
     await wrapper.setProps({ record: provider });
-    expect(document.body.textContent).toContain('尚未验证');
+    expect(document.body.textContent).toContain('待验证');
     await wrapper.setProps({ record: null });
     expect(document.body.textContent).not.toContain(provider.name);
     expect(checkTones).toEqual({
@@ -303,13 +305,13 @@ describe('模型验证详情与工作区', () => {
     const wrapper = mount(ModelsWorkspace, { global, attachTo: document.body });
     await flushPromises();
     expect(wrapper.findAll('.ant-table')).toHaveLength(1);
-    expect(wrapper.text()).toContain('连接正常');
+    expect(wrapper.text()).toContain('已验证');
     await click('配置');
     await click('保存配置');
     await vi.waitFor(() => expect(message.success).toHaveBeenCalledWith('模型配置已保存'));
     await click('连接验证');
     await click('开始验证');
-    await vi.waitFor(() => expect(message.success).toHaveBeenCalledWith('模型连接验证通过'));
+    await vi.waitFor(() => expect(message.success).toHaveBeenCalledWith('模型连接已验证'));
     document.querySelector<HTMLButtonElement>('.ant-modal [aria-label="模型连接验证的说明"]')!.click();
     await vi.waitFor(() => expect(document.body.textContent).toContain('安全研判评测另行执行'));
     (document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();
@@ -325,14 +327,14 @@ describe('模型验证详情与工作区', () => {
     });
     await click('刷新');
     expect(wrapper.text()).toContain('停用');
-    expect(wrapper.text()).toContain('尚未验证');
+    expect(wrapper.text()).toContain('待验证');
     expect(button('连接验证').disabled).toBe(true);
   });
   it('未启用、空状态和读取／保存／验证异常保留可恢复入口', async () => {
     request.mockResolvedValueOnce({ items: [], available: false });
     const wrapper = mount(ModelsWorkspace, { global, attachTo: document.body });
     await flushPromises();
-    expect(wrapper.text()).toContain('模型凭据服务尚未启用');
+    expect(wrapper.text()).toContain('模型凭据服务未启用');
     expect(wrapper.text()).toContain('暂无模型提供方');
     expect(button('创建提供方').disabled).toBe(true);
     request.mockRejectedValueOnce(new Error('模型服务超时'));

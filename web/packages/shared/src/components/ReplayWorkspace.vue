@@ -328,7 +328,7 @@ onScopeDispose(() => {
       :loading="pending"
       :error="error"
       :empty="items.length === 0"
-      description="暂无重放样本，请导入用于规则验证或故障定位的 PCAP 或 HTTP Raw。"
+      description="暂无重放样本，请导入用于规则验证或问题排查的 PCAP 或 HTTP Raw。"
       @retry="refresh()"
     >
       <ListTable

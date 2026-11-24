@@ -160,12 +160,12 @@ describe('联动设备目录和配置核对', () => {
     expect(usableDevice(row)).toBe(true);
     expect(deviceState(row)).toBe('具备提交条件');
     for (const [change, label] of [
-      [{ sensor_status: 'disabled' }, '探针已停用'],
+      [{ sensor_status: 'disabled' }, '探针处于停用状态'],
       [{ sensor_status: 'offline' }, '探针离线或心跳过期'],
-      [{ observation: 'pending' }, '等待设备核验'],
+      [{ observation: 'pending' }, '设备待验证'],
       [{ observation: 'stale' }, '设备观测已过期'],
-      [{ status: 'unavailable' }, '设备不可用'],
-      [{ status: 'unverified' }, '身份待核验'],
+      [{ status: 'unavailable' }, '设备异常'],
+      [{ status: 'unverified' }, '待验证'],
       [{ task_supported: false }, '执行能力不完整'],
       [{ host_observed_at: new Date(Date.now() - 36000).toISOString() }, '探针观测已过期'],
     ] as const) {

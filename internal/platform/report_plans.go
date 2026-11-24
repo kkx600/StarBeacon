@@ -25,7 +25,7 @@ func planFailure(w http.ResponseWriter, r *http.Request, err error) {
 
 func (a *API) reportPlans(w http.ResponseWriter, r *http.Request) {
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划数据服务异常，请稍后重试")
 		return
 	}
 	items, err := a.DB.ReportPlans(r.Context(), httpapi.Principal(r))
@@ -44,7 +44,7 @@ func (a *API) saveReportPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil || (input.Spec.Enabled && (a.Jobs == nil || (a.JobsReady != nil && !a.JobsReady()))) {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划执行服务暂不可用，可保存停用计划")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划执行服务异常，请稍后重试。可保存停用计划")
 		return
 	}
 	item, err := a.DB.SaveReportPlan(r.Context(), httpapi.Principal(r), input, a.Jobs, a.Vault, httpapi.RequestID(r))
@@ -61,7 +61,7 @@ func (a *API) reportPlanRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "analysis_unavailable", "报告计划数据服务异常，请稍后重试")
 		return
 	}
 	page, err := a.DB.ReportPlanRuns(r.Context(), httpapi.Principal(r), r.PathValue("id"), r.URL.Query().Get("before"), limit)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
 import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
@@ -27,7 +28,7 @@ function action(kind: 'edit' | 'members', id: string) {
     ><template #bodyCell="{ column, record }">
       <StatusTag
         v-if="column.key === 'active'"
-        :tone="record.active ? 'success' : 'neutral'"
+        :tone="record.active ? statusTerms.启用 : statusTerms.停用"
         :value="record.active ? '启用' : '停用'"
       />
       <button v-else-if="column.key === 'members'" class="link-button" @click="action('members', record.id)">

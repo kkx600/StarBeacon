@@ -19,15 +19,14 @@ export interface ResponseAction {
   expires_at: string;
   reason: string;
 }
+export const connectorStates = { ready: '已验证', unverified: '待验证', unavailable: '设备异常' } as const;
 export const responseStates: Record<string, string> = {
   active: '回读时有效',
   revoked: '回读时已解除',
   expired: '回读时已到期',
-  unknown: '状态待核对',
-  pending: '等待核对',
-  ready: '设备已就绪',
-  unverified: '身份待核验',
-  unavailable: '设备不可用',
+  unknown: '结果未知',
+  pending: '待验证',
+  ...connectorStates,
 };
 export function readyConnector(value: ResponseConnector, now = Date.now()) {
   const seen = Date.parse(value?.observed_at),

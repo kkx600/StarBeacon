@@ -15,25 +15,25 @@ const metrics = computed<MetricSpec[]>(() => {
       label: 'CPU 使用率',
       value: formatPercent(health.cpu_percent),
       note: '宿主机观测',
-      missingReason: '未获取宿主机 CPU 指标',
+      missingReason: '宿主机 CPU 指标无数据',
     },
     {
       label: '内存使用率',
       value: formatPercent(health.memory_percent),
       note: '宿主机观测',
-      missingReason: '未获取宿主机内存指标',
+      missingReason: '宿主机内存指标无数据',
     },
     {
       label: '磁盘使用率',
       value: formatPercent(health.disk_percent),
       note: '本地状态目录所在磁盘',
-      missingReason: '未获取本地状态目录的磁盘指标',
+      missingReason: '本地状态目录的磁盘指标无数据',
     },
     {
       label: '待传队列',
       value: health.errors?.includes('wal_unavailable') ? null : health.wal_pending,
       note: '尚未取得持久接收确认',
-      missingReason: '未获取本机待传队列统计',
+      missingReason: '本机待传队列统计无数据',
     },
   ];
 });

@@ -1,3 +1,4 @@
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 export interface RuleSyncSpec {
   name: string;
   enabled: boolean;
@@ -43,31 +44,31 @@ export interface RuleSyncPage {
   next_cursor: string;
 }
 export const syncStates: Record<string, string> = {
-  pending: '等待核对',
+  pending: '排队中',
   validating: '装载检查',
   positive_replay: '正样本重放',
   negative_replay: '反样本重放',
   applying: '等待发布回执',
-  succeeded: '规则已生效',
+  succeeded: '已完成',
   blocked: '同步受阻',
   paused: '同步已暂停',
 };
 export const syncStateTones = {
-  pending: 'neutral',
+  pending: statusTerms.排队中,
   validating: 'info',
   positive_replay: 'info',
   negative_replay: 'info',
   applying: 'info',
-  succeeded: 'success',
+  succeeded: statusTerms.已完成,
   blocked: 'danger',
   paused: 'neutral',
 } as const;
 export const syncCodes: Record<string, string> = {
   applied: '实际规则文件与引擎回读一致',
   sensor_offline: '探针离线，恢复后继续核对',
-  plan_disabled: '计划已停用，后续步骤未提交',
-  owner_unavailable: '批准账号已停用或权限变化',
-  sensor_identity_changed: '探针已停用或注册代次变化',
+  plan_disabled: '计划处于停用状态，后续步骤未提交',
+  owner_unavailable: '批准账号处于停用状态或权限已变化',
+  sensor_identity_changed: '探针处于停用状态或注册代次已变化',
   device_trust_changed: '设备任务信任信息不匹配',
   capability_unavailable: '设备缺少所需执行能力',
   rules_digest_unavailable: '设备未上报有效规则摘要',
@@ -77,7 +78,7 @@ export const syncCodes: Record<string, string> = {
   task_qualification_changed: '发布资格或在途任务条件变化，请核对独立任务回执',
   apply_receipt_unverified: '发布回执缺少有效实际规则回读',
   task_failed: '任务执行失败，请查看任务详情',
-  task_unknown: '执行结果待核实，请先处理独立任务',
+  task_unknown: '执行结果未知，请先处理独立任务',
   task_expired: '未投递任务已过期',
   task_cancelled: '任务已取消',
 };

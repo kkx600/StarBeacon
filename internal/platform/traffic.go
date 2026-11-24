@@ -33,7 +33,7 @@ func (a *API) trafficSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.ES == nil {
-		httpapi.Fail(w, r, 503, "search_unavailable", "流量检索服务暂时不可用")
+		httpapi.Fail(w, r, 503, "search_unavailable", "流量检索服务异常，请稍后重试")
 		return
 	}
 	user := httpapi.Principal(r)
@@ -51,7 +51,7 @@ func (a *API) SearchTraffic(ctx context.Context, user model.Principal, q model.T
 		return traffic.Result{}, err
 	}
 	if a.ES == nil {
-		return traffic.Result{}, errors.New("流量检索服务暂时不可用")
+		return traffic.Result{}, errors.New("流量检索服务异常，请稍后重试")
 	}
 	stored, err := a.ES.SearchTraffic(ctx, user.TenantID, q)
 	if err != nil {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue';
 import { Modal as AModal, InputNumber as AInputNumber, Select as ASelect } from 'ant-design-vue';
@@ -266,7 +267,7 @@ onScopeDispose(() => {
           }}</span>
           <StatusTag
             v-else-if="column.key === 'active'"
-            :tone="record.active ? 'success' : 'neutral'"
+            :tone="record.active ? statusTerms.启用 : statusTerms.停用"
             :value="record.active ? '启用' : '停用'"
           />
           <template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>

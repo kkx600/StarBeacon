@@ -43,7 +43,7 @@ function badge(device: ResponseDevice) {
       ><StatusTag v-if="column.key === 'status'" v-bind="badge(record)" />
       <template v-else-if="column.key === 'ttl'">{{ formatNumber(record.max_ttl_seconds) }} 秒</template
       ><template v-else-if="column.key === 'observed'">{{
-        record.observation === 'pending' ? '尚未核验' : formatTime(record.observed_at)
+        record.observation === 'pending' ? '无数据' : formatTime(record.observed_at)
       }}</template>
       <div v-else-if="column.key === 'actions'" class="table-row-actions">
         <a-button type="link" size="small" @click="emit('view', record)">查看</a-button

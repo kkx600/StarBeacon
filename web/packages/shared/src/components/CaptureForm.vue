@@ -114,10 +114,10 @@ function submit() {
       formatTime(capture.observed_at)
     }}</a-descriptions-item>
     <a-descriptions-item v-if="capture.counters" label="引擎累计流量">{{
-      capture.counters['decoder.bytes'] === undefined ? '尚未观测' : formatBytes(capture.counters['decoder.bytes'])
+      capture.counters['decoder.bytes'] === undefined ? '无数据' : formatBytes(capture.counters['decoder.bytes'])
     }}</a-descriptions-item>
     <a-descriptions-item v-if="capture.counters" label="内核丢包">{{
-      capture.counters['capture.kernel_drops'] ?? '尚未观测'
+      capture.counters['capture.kernel_drops'] ?? '无数据'
     }}</a-descriptions-item>
     <a-descriptions-item v-if="capture.counters_observed_at" label="计数观测时间">{{
       formatTime(capture.counters_observed_at)
@@ -137,7 +137,7 @@ function submit() {
         v-model:value="form.interfaces"
         mode="multiple"
         :options="options"
-        placeholder="选择已启用的非回环 Ethernet 接口"
+        placeholder="选择启用的非回环 Ethernet 接口"
         :disabled="saving"
     /></a-form-item>
     <div class="capture-fields">

@@ -220,7 +220,7 @@ describe('采集器 HTTP 联动', () => {
     const wrapper = mount(ResponseConnectors, { props: { items: [] }, global });
     expect(wrapper.text()).toContain('尚未登记联动设备');
     await wrapper.setProps({ items: [connector()] });
-    expect(wrapper.text()).toContain('设备已就绪');
+    expect(wrapper.text()).toContain('已验证');
     expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1);
     const detail = mount(SensorDetail, { props: { sensor: observed() }, global, attachTo: document.body });
     await click('限时封禁');
@@ -230,7 +230,7 @@ describe('采集器 HTTP 联动', () => {
     vi.useFakeTimers();
     const value = connector();
     const wrapper = mount(ResponseConnectors, { props: { items: [value] }, global });
-    expect(wrapper.text()).toContain('设备已就绪');
+    expect(wrapper.text()).toContain('已验证');
     vi.setSystemTime(new Date(Date.now() + 36000));
     await vi.advanceTimersByTimeAsync(5000);
     expect(wrapper.text()).toContain('观测已过期');
@@ -246,8 +246,8 @@ describe('采集器 HTTP 联动', () => {
     expect(wrapper.emitted('response')?.[0]).toEqual([value, 'response.read']);
     await click('查看');
     expect(document.body.textContent).toContain('封禁到期时间');
-    expect(document.body.textContent).toContain('状态待核对');
-    expect(document.body.textContent).toContain('尚未观测');
+    expect(document.body.textContent).toContain('结果未知');
+    expect(document.body.textContent).toContain('无观测数据');
     await wrapper.setProps({ responseable: false });
     expect(wrapper.text()).not.toContain('回读');
   });

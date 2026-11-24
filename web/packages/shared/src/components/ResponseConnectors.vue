@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '../terms';
 import { formatNumber } from '../utils/format';
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue';
 import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
@@ -51,10 +52,14 @@ onMounted(() => {
 onScopeDispose(() => {
   if (timer) clearInterval(timer);
 });
-const tones: StatusToneMap = { ready: 'success', unavailable: 'danger' };
+const tones: StatusToneMap = {
+  ready: statusTerms.已验证,
+  unverified: statusTerms.待验证,
+  unavailable: statusTerms.异常,
+};
 function condition(record: ResponseConnector) {
   if (record.status === 'ready' && !readyConnector(record, now.value))
-    return { value: '观测已过期', tone: 'neutral' } as const;
+    return { value: '观测已过期', tone: statusTerms.已过期 } as const;
   return { value: responseStates[record.status] ?? '状态待核查', tone: statusTone(tones, record.status) };
 }
 </script>
@@ -81,7 +86,7 @@ function condition(record: ResponseConnector) {
         ><template #bodyCell="{ column, record }"
           ><StatusTag v-if="column.key === 'state'" v-bind="condition(record)" />
           <template v-else-if="column.key === 'time'">{{
-            record.observed_at === '0001-01-01T00:00:00Z' ? '尚未核验' : formatTime(record.observed_at)
+            record.observed_at === '0001-01-01T00:00:00Z' ? '无数据' : formatTime(record.observed_at)
           }}</template><template v-else-if="column.key === 'ttl'">{{ record.max_ttl_seconds }} 秒</template
           ><a-button v-else-if="column.key === 'action'" size="small" type="link" @click="selected = record"
             >查看</a-button
@@ -102,7 +107,7 @@ function condition(record: ResponseConnector) {
             selected.config_sha256
           }}</span></a-descriptions-item
         ><a-descriptions-item label="核验时间">{{
-          selected.observed_at === '0001-01-01T00:00:00Z' ? '尚未核验' : formatTime(selected.observed_at)
+          selected.observed_at === '0001-01-01T00:00:00Z' ? '无数据' : formatTime(selected.observed_at)
         }}</a-descriptions-item
         ><a-descriptions-item label="最长封禁"
           >{{ formatNumber(selected.max_ttl_seconds) }} 秒</a-descriptions-item

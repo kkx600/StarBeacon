@@ -104,7 +104,7 @@ describe('探针注册表单及只读详情', () => {
     expect(anchor).toHaveBeenCalledOnce();
     await wrapper.setProps({ receipt: { ...enrollment, revoked: true } });
     await click('保存令牌文件');
-    expect(document.body.textContent).toContain('注册凭据已不可用');
+    expect(document.body.textContent).toContain('当前注册凭据无法下载');
     expect(create).toHaveBeenCalledOnce();
     await wrapper.setProps({ receipt: enrollment });
     create.mockImplementation(() => {
@@ -133,7 +133,7 @@ describe('探针注册表单及只读详情', () => {
       certificates: [{ ...certificate, revoked_at: now, ca_revocation: 'unknown' }],
     });
     expect(wrapper.text()).toContain('平台已吊销');
-    expect(wrapper.text()).toContain('待核实');
+    expect(wrapper.text()).toContain('结果未知');
     await click('重试CA吊销', wrapper.element);
     await wrapper.setProps({
       certificates: [{ ...certificate, state: 'unknown', fingerprint_sha256: '', serial: '' }],

@@ -107,8 +107,8 @@ export interface LogPage {
 export const sourceStates: Record<string, string> = {
   starting: '启动中',
   listening: '正在接收',
-  unavailable: '监听不可用',
-  degraded: '持久缓冲不可用',
+  unavailable: '监听异常',
+  degraded: '持久缓冲异常',
   stopped: '已停止',
 };
 export const timeQualities: Record<string, string> = {

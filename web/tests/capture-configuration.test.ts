@@ -262,12 +262,11 @@ describe('采集任务回读', () => {
       result: { status: 'unrecognized', revision: '4', applied_settings: {}, config_sha256: 'bad' },
     });
     expect(wrapper.text()).toContain('状态无法识别');
-    expect(wrapper.text()).toContain('尚未观测');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据 / 无数据');
     await wrapper.setProps({ result: { status: 'stopped', interfaces: [], applied_settings: { interfaces: [] } } });
     expect(wrapper.text()).toContain('已停止');
     expect(wrapper.text()).toContain('未采集');
     await wrapper.setProps({ result: { interfaces: [null] } });
-    expect(wrapper.text()).toContain('尚未观测');
+    expect(wrapper.text()).toContain('无数据');
   });
 });

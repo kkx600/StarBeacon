@@ -71,5 +71,5 @@ func retentionFailure(w http.ResponseWriter, r *http.Request, err error) {
 		httpapi.Fail(w, r, 404, "retention_preview_unavailable", "预览已失效或不可访问，请重新预览")
 		return
 	}
-	httpapi.Fail(w, r, 503, "retention_unavailable", "留存策略暂不可用，请稍后重试")
+	httpapi.Fail(w, r, 503, "retention_unavailable", "留存策略服务异常，请稍后重试")
 }

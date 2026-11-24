@@ -158,7 +158,7 @@ export function useSavedSearches(dataset: () => Dataset) {
       !record.active ||
       record.definition.parser_version !== parserVersion
     ) {
-      error.value = '查询已停用、数据集不一致或解析器不兼容，请刷新后核对。';
+      error.value = '查询处于停用状态、数据集不一致或解析器不兼容，请刷新后核对。';
       return undefined;
     }
     resolver?.abort();

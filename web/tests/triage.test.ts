@@ -493,7 +493,7 @@ describe('告警模型研判交互', () => {
     await click('重试');
     expect(request.mock.lastCall?.[0]).toBe(detailPath);
     expect(wrapper.text()).toContain('费用可能已产生');
-    expect(wrapper.text()).toContain('未获得实际调用耗时');
+    expect(wrapper.text()).toContain('无数据');
     expect(wrapper.text()).not.toContain('模型自评分 87');
     request.mockResolvedValueOnce({
       ...triageQueued,

@@ -61,7 +61,7 @@ async function load() {
   const u = session.current.value;
   try {
     if (!u || u.role !== 'admin' || !(await validEvaluation(props.record, u.tenant_id, u.id)))
-      throw new Error('评估记录与当前账号不一致，无法确认处置。');
+      throw new Error('评估记录与当前账号不一致，请刷新后核对评估记录。');
     const result = await session.api.request<unknown>(
       '/decision-evaluations/' + encodeURIComponent(props.record.id) + '/response',
       { signal: read.signal },

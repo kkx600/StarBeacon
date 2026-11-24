@@ -170,7 +170,7 @@ func (a *API) alerts(w http.ResponseWriter, r *http.Request) {
 	u := httpapi.Principal(r)
 	v, e := a.SearchAlerts(r.Context(), u, q)
 	if e != nil {
-		httpapi.Fail(w, r, 503, "search_unavailable", "检索服务暂时不可用")
+		httpapi.Fail(w, r, 503, "search_unavailable", "检索服务异常，请稍后重试")
 		return
 	}
 	httpapi.JSON(w, 200, v)
@@ -181,7 +181,7 @@ func (a *API) SearchAlerts(ctx context.Context, u model.Principal, q model.Searc
 		return model.SearchResult{}, err
 	}
 	if a.ES == nil {
-		return model.SearchResult{}, errors.New("检索服务暂时不可用")
+		return model.SearchResult{}, errors.New("检索服务异常，请稍后重试")
 	}
 	result, err := a.ES.Search(ctx, u.TenantID, q)
 	if u.Role != "admin" {

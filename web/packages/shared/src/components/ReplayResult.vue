@@ -121,7 +121,7 @@ const columns = [
     >
     <a-descriptions-item v-if="metadata" label="链路层 / MAC"
       >{{ metadata.link_type }} ·
-      {{ Array.isArray(metadata.mac_addresses) ? metadata.mac_addresses.join('，') : '未获取' }}
+      {{ Array.isArray(metadata.mac_addresses) ? metadata.mac_addresses.join('，') : '无数据' }}
       <p v-if="metadata.mac_addresses_limited" class="page-description">
         地址数量超过展示上限，仅列出前 32 个 MAC 地址。
       </p></a-descriptions-item

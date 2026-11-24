@@ -181,11 +181,11 @@ describe('Syslog 来源与检索', () => {
     await flushPromises();
     expect(w.emitted('close')).toHaveLength(1);
     for (const [change, label] of [
-      [{ sensor_status: 'disabled' }, '探针已停用'],
+      [{ sensor_status: 'disabled' }, '探针停用'],
       [{ sensor_status: 'offline' }, '探针离线'],
       [{ observation: 'stale' }, '观测已过期'],
-      [{ state: 'unavailable' }, '监听不可用'],
-      [{ state: 'degraded' }, '持久缓冲不可用'],
+      [{ state: 'unavailable' }, '监听异常'],
+      [{ state: 'degraded' }, '持久缓冲异常'],
     ] as const) {
       await w.setProps({ items: [{ ...row, ...change }] });
       expect(w.text()).toContain(label);

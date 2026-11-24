@@ -233,7 +233,7 @@ describe('检测质量交互', () => {
   it('缺测、复位、采样断档和后台停留不补零或保留质量结论', async () => {
     vi.useFakeTimers();
     const wrapper = mount(DetectionQuality, { global });
-    expect(wrapper.text()).toContain('尚未观测');
+    expect(wrapper.text()).toContain('无数据');
     expect(wrapper.find('.ant-table-wrapper').exists()).toBe(false);
     for (const state of ['baseline', 'counter_reset', 'sample_gap', 'stale', 'stopped'] as const) {
       const r = report();
@@ -253,7 +253,7 @@ describe('检测质量交互', () => {
     expect(wrapper.text()).toContain('不可比较');
     await wrapper.setProps({ capture: capture(), online: false });
     expect(wrapper.text()).toContain('探针离线');
-    expect(wrapper.text()).toContain('无法确认引擎是否运行');
+    expect(wrapper.text()).toContain('引擎运行状态无数据');
     expect(wrapper.text()).not.toContain('引擎未运行');
     wrapper.unmount();
     expect(vi.getTimerCount()).toBe(0);

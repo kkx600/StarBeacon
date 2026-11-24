@@ -74,7 +74,7 @@ export function validOverview(value: unknown): value is Overview {
   });
 }
 export function countText(value: string): string {
-  if (!/^\d+$/.test(value)) return '未获取';
+  if (!/^\d+$/.test(value)) return '无数据';
   const count = BigInt(value);
   for (const [unit, scale] of [
     ['万亿', 1000000000000n],

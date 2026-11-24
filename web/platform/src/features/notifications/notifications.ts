@@ -1,4 +1,4 @@
-import type { StatusTone } from '@starbeacon/shared/terms.ts';
+import { statusTerms, type StatusTone } from '@starbeacon/shared/terms.ts';
 
 export type ChannelKind = 'email' | 'wecom' | 'dingtalk' | 'feishu' | 'webhook' | 'syslog_tls' | 'syslog_tcp';
 export type LogStream = 'alerts' | 'operations' | 'logins' | 'quality';
@@ -83,13 +83,13 @@ export const channelNames: Record<ChannelKind, string> = {
   syslog_tcp: 'Syslog TCP',
 };
 export const deliveryNames: Record<DeliveryState, string> = {
-  queued: '等待投递',
-  running: '正在投递',
-  retry: '等待重试',
+  queued: '排队中',
+  running: '运行中',
+  retry: '重试中',
   accepted: '渠道已受理',
   transport_written: '传输已写入',
-  failed: '投递失败',
-  uncertain: '结果待核实',
+  failed: '失败',
+  uncertain: '结果未知',
   suppressed: '已抑制',
   cancelled: '已取消',
 };
@@ -112,18 +112,18 @@ export const severityOptions = [
 export const receiptNames: Record<string, string> = {
   provider_accepted: '服务商确认受理消息',
   smtp_accepted: '邮件服务器确认受理消息',
-  storage_acknowledgment_unavailable: '传输写入完成，未获取日志服务器落盘确认',
+  storage_acknowledgment_unavailable: '传输写入完成，日志服务器未确认落盘',
   provider_rejected: '服务商拒绝消息',
   provider_rate_limited: '服务商限流，按计划重试',
   connection_failed: '未建立连接，按计划重试',
   acknowledgment_lost: '发送后连接中断，需要核实渠道处理结果',
-  provider_result_unknown: '服务商返回超时或故障，处理结果待核实',
-  invalid_acknowledgment: '未获取有效业务回执，需要核实处理结果',
-  smtp_result_unknown: '邮件内容提交结果待核实',
+  provider_result_unknown: '服务商响应超时或异常，处理结果未知',
+  invalid_acknowledgment: '缺少有效业务回执，处理结果未知',
+  smtp_result_unknown: '邮件内容提交结果未知',
   smtp_setup_failed: 'SMTP 建立会话、TLS 或认证失败',
   smtp_rejected: 'SMTP 服务器拒绝投递',
-  transport_result_unknown: '传输未完成，日志接收结果待核实',
-  worker_interrupted: '投递执行中断，需要核实渠道处理结果',
+  transport_result_unknown: '传输未完成，日志接收结果未知',
+  worker_interrupted: '投递中断，渠道处理结果未知',
   tls_verification_failed: '目标 TLS 身份校验失败',
   invalid_config: '渠道配置无效',
   target_denied: '目标不在允许范围内',
@@ -131,13 +131,13 @@ export const receiptNames: Record<string, string> = {
   invalid_recipient: '接收人不在渠道配置范围内',
 };
 export const deliveryTones = {
-  queued: 'neutral',
-  running: 'info',
-  retry: 'warning',
+  queued: statusTerms.排队中,
+  running: statusTerms.运行中,
+  retry: statusTerms.重试中,
   accepted: 'success',
   transport_written: 'success',
-  failed: 'danger',
-  uncertain: 'warning',
+  failed: statusTerms.失败,
+  uncertain: statusTerms.结果未知,
   suppressed: 'neutral',
-  cancelled: 'neutral',
+  cancelled: statusTerms.已取消,
 } as const satisfies Record<DeliveryState, StatusTone>;

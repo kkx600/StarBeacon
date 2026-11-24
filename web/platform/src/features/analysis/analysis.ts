@@ -1,3 +1,4 @@
+import { modelJobStates } from '@starbeacon/shared/types.ts';
 import type { Overview } from '../overview/overview';
 import type { ModelResult } from '../models/models';
 export type AnalysisKind = 'chat' | 'daily' | 'weekly' | 'monthly';
@@ -72,24 +73,15 @@ export const kindNames: Record<AnalysisKind, string> = {
   weekly: '安全周报',
   monthly: '安全月报',
 };
-export const stateNames: Record<string, string> = {
-  queued: '等待分析',
-  running: '分析中',
-  succeeded: '处理完成',
-  failed: '分析失败',
-  refused: '提供方拒答',
-  incomplete: '输出未完成',
-  uncertain: '结果未知',
-  cancelled: '已取消',
-};
+export const stateNames: Record<string, string> = modelJobStates;
 export const analysisCodes: Record<string, string> = {
   awaiting_execution: '作业等待执行',
   statistics_only: '已生成统计报告，未调用模型',
   invalid_analysis_output: '模型输出或来源引用校验未通过',
   authorization_revoked: '作业所有者已失去执行权限',
   provider_revision_changed: '模型配置修订已改变，调用未执行',
-  provider_disabled: '模型提供方已停用，调用未执行',
-  provider_config_unavailable: '模型配置或凭据不可用，调用未执行',
+  provider_disabled: '模型提供方处于停用状态，调用未执行',
+  provider_config_unavailable: '模型配置或凭据异常，调用未执行',
   analysis_input_invalid: '分析输入校验未通过，调用未执行',
   queue_wait_expired: '等待执行超时，调用未执行',
   cancelled_before_execution: '作业在模型调用前取消',

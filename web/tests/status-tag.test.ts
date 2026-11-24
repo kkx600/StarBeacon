@@ -4,12 +4,14 @@ import StatusTag from '../packages/shared/src/components/StatusTag.vue';
 import {
   alertSeverityTones,
   alertWorkflowTones,
+  modelJobTones,
   sensorConnectionTones,
   sensorHealthTones,
   statusTone,
   taskStateTones,
 } from '../packages/shared/src/statusTones';
-import { taskStates } from '../packages/shared/src/types';
+import { toneOf } from '../packages/shared/src/terms';
+import { modelJobStates, taskStates } from '../packages/shared/src/types';
 
 describe('业务状态色调', () => {
   it('分别映射告警严重度和处理状态', () => {
@@ -28,7 +30,22 @@ describe('业务状态色调', () => {
     expect(statusTone(taskStateTones, 'running')).toBe('info');
     expect(statusTone(taskStateTones, 'failed')).toBe('danger');
     expect(statusTone(taskStateTones, 'unknown')).toBe('warning');
-    for (const code of Object.keys(taskStates)) expect(Object.hasOwn(taskStateTones, code), code).toBe(true);
+    for (const [code, label] of Object.entries(taskStates)) {
+      expect(Object.hasOwn(taskStateTones, code), code).toBe(true);
+      const tone = toneOf(label);
+      if (tone) expect(statusTone(taskStateTones, code), label).toBe(tone);
+    }
+  });
+
+  it('模型任务按业务状态键展示标准用语和色调', () => {
+    for (const [code, label] of Object.entries(modelJobStates)) {
+      if (code === 'refused') {
+        expect(label).toBe('提供方拒答');
+        expect(statusTone(modelJobTones, code)).toBe('warning');
+      } else {
+        expect(statusTone(modelJobTones, code), label).toBe(toneOf(label));
+      }
+    }
   });
 
   it('未知状态、显示文案和原型属性使用中性色', () => {

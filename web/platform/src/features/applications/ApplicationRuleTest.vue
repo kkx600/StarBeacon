@@ -155,7 +155,7 @@ onScopeDispose(() => {
           id="application-test-name"
           v-model:value="form.name"
           :maxlength="1024"
-          placeholder="未观测到可留空，不能填写推断值"
+          placeholder="没有观测数据时可留空，不能填写推断值"
       /></a-form-item>
       <template v-if="form.protocol === 'http'">
         <div class="application-test-grid">
@@ -166,7 +166,7 @@ onScopeDispose(() => {
               :options="
                 ['', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'CONNECT', 'TRACE'].map(value => ({
                   value,
-                  label: value || '未观测到',
+                  label: value || '无数据',
                 }))
               "
               @keydown.esc.stop /></a-form-item
@@ -195,7 +195,7 @@ onScopeDispose(() => {
           id="application-test-alpn"
           v-model:value="form.alpn"
           :maxlength="1024"
-          placeholder="逗号分隔，最多 8 个；未观测到可留空"
+          placeholder="逗号分隔，最多 8 个；没有观测数据时可留空"
       /></a-form-item>
       <div class="application-test-actions">
         <a-button @click="close">关闭</a-button

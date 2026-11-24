@@ -198,7 +198,7 @@ function submit() {
           @keydown.esc.stop
         />
         <p v-if="record && 'member_count' in record && record.member_count" class="page-description">
-          当前有 {{ record.member_count }} 台探针，包括已停用的探针。请先迁移或移出全部成员后停用。
+          当前有 {{ record.member_count }} 台探针，包括处于停用状态的探针。请先迁移或移出全部成员后停用。
         </p></a-form-item
       >
       <div class="management-actions">

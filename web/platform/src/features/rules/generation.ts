@@ -1,4 +1,4 @@
-import type { ReplaySample } from '@starbeacon/shared/types.ts';
+import { modelJobStates, type ReplaySample } from '@starbeacon/shared/types.ts';
 import type { ModelResult } from '../models/models';
 import { sampleOrigin } from '@starbeacon/shared/utils/sample.ts';
 
@@ -75,24 +75,15 @@ export const sourceNames: Record<GenerationSource, string> = {
   pcap: 'PCAP 样本',
   http_raw: 'HTTP Raw',
 };
-export const generationStates: Record<string, string> = {
-  queued: '等待生成',
-  running: '生成中',
-  succeeded: '候选已生成',
-  failed: '生成失败',
-  refused: '提供方拒答',
-  incomplete: '输出未完成',
-  uncertain: '结果未知',
-  cancelled: '已取消',
-};
+export const generationStates: Record<string, string> = modelJobStates;
 export const generationCodes: Record<string, string> = {
   awaiting_execution: '作业等待执行',
   request_in_progress: '正在请求模型，结果尚未返回',
   invalid_generation_output: '候选规则格式、SID 或材料引用校验未通过',
   authorization_revoked: '作业所有者已失去执行权限，调用未执行',
   provider_revision_changed: '模型修订已改变，调用未执行',
-  provider_disabled: '模型提供方已停用，调用未执行',
-  provider_config_unavailable: '模型配置或凭据不可用，调用未执行',
+  provider_disabled: '模型提供方处于停用状态，调用未执行',
+  provider_config_unavailable: '模型配置或凭据异常，调用未执行',
   generation_input_invalid: '生成输入或冻结材料不符合要求，调用未执行',
   sample_unavailable: '样本已过期或不可访问，调用未执行',
   queue_wait_expired: '等待执行超时，调用未执行',

@@ -258,7 +258,7 @@ function alerts() {
                 <dd>{{ countText(data.inventory.sensors) }}</dd>
               </div>
               <div>
-                <dt>已停用探针</dt>
+                <dt>停用探针</dt>
                 <dd>{{ countText(data.inventory.disabled) }}</dd>
               </div>
             </dl>

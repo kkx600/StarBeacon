@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { connectorStates } from '../response';
 import { formatNumber } from '../utils/format';
 import { onScopeDispose, shallowRef } from 'vue';
 import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
@@ -27,15 +28,13 @@ onScopeDispose(() => clearInterval(timer));
         ><a-descriptions-item label="探针注册身份"
           ><span class="technical">{{ device.registration_id }}</span></a-descriptions-item
         ><a-descriptions-item label="当前条件">{{ deviceState(device, now) }}</a-descriptions-item
-        ><a-descriptions-item label="设备核验状态">{{
-          device.status === 'ready' ? '身份已核验' : device.status === 'unverified' ? '身份待核验' : '设备不可用'
-        }}</a-descriptions-item
+        ><a-descriptions-item label="设备核验状态">{{ connectorStates[device.status] }}</a-descriptions-item
         ><a-descriptions-item label="接口版本">{{ device.version }}</a-descriptions-item
         ><a-descriptions-item label="配置 SHA-256"
           ><span class="technical device-hash">{{ device.config_sha256 }}</span></a-descriptions-item
         ><a-descriptions-item label="最长封禁">{{ formatNumber(device.max_ttl_seconds) }} 秒</a-descriptions-item
         ><a-descriptions-item label="设备核验时间">{{
-          device.observation === 'pending' ? '尚未核验' : formatTime(device.observed_at)
+          device.observation === 'pending' ? '无数据' : formatTime(device.observed_at)
         }}</a-descriptions-item
         ><a-descriptions-item label="平台接收心跳">{{ formatTime(device.last_seen ?? '') }}</a-descriptions-item
         ><a-descriptions-item label="目录读取时间">{{

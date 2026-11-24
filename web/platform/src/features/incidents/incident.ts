@@ -1,13 +1,13 @@
 import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
-import type { StatusTone } from '@starbeacon/shared/terms.ts';
+import { statusTerms, type StatusTone } from '@starbeacon/shared/terms.ts';
 
-export const incidentStatuses = { open: '待调查', investigating: '调查中', closed: '已结案' } as const;
+export const incidentStatuses = { open: '待处理', investigating: '处理中', closed: '已关闭' } as const;
 export const incidentStatusTones = {
-  open: 'neutral',
-  investigating: 'info',
-  closed: 'success',
+  open: statusTerms.待处理,
+  investigating: statusTerms.处理中,
+  closed: statusTerms.已关闭,
 } as const satisfies Record<keyof typeof incidentStatuses, StatusTone>;
-export const incidentClosureTones = { resolved: 'success', false_positive: 'neutral' } as const;
+export const incidentClosureTones = { resolved: 'success', false_positive: statusTerms.误报 } as const;
 export const incidentCategories = {
   network_intrusion: '网络入侵',
   malware: '恶意软件',

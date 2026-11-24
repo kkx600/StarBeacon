@@ -1,6 +1,6 @@
 import { incidentID, type IncidentRecord } from './incident';
 import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
-import type { StatusTone } from '@starbeacon/shared/terms.ts';
+import { statusTerms, type StatusTone } from '@starbeacon/shared/terms.ts';
 
 export const taskStatuses = {
   open: '待处理',
@@ -10,10 +10,10 @@ export const taskStatuses = {
 } as const;
 export const taskPriorities = { low: '低', medium: '中', high: '高' } as const;
 export const incidentTaskStatusTones = {
-  open: 'neutral',
-  in_progress: 'info',
-  completed: 'success',
-  cancelled: 'neutral',
+  open: statusTerms.待处理,
+  in_progress: statusTerms.处理中,
+  completed: statusTerms.已完成,
+  cancelled: statusTerms.已取消,
 } as const satisfies Record<keyof typeof taskStatuses, StatusTone>;
 export const incidentTaskPriorityTones = {
   low: 'neutral',

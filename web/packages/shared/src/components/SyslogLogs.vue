@@ -151,7 +151,7 @@ watch(
       window.end = localTime(filters.end);
     }
     pending.value = props.state === 'loading';
-    error.value = props.state === 'error' ? '日志检索暂时不可用，请重试。' : '';
+    error.value = props.state === 'error' ? '日志检索服务异常，请稍后重试。' : '';
     items.value = ['empty', 'error', 'loading'].includes(props.state ?? '') ? [] : [...(props.preview ?? [])];
     if (props.state === 'detail' && items.value[0]) void view(items.value[0]);
     else close();

@@ -18,7 +18,7 @@ export const policyStatusTones = {
   abstained: 'neutral',
 } as const;
 export const policyReasons = {
-  policy_inactive: '策略已停用',
+  policy_inactive: '策略处于停用状态',
   triage_not_eligible: '研判未完成、已取消或已到期',
   evidence_outside_window: '材料观测时间超出策略范围',
   source_identity_unavailable: '源 IP 不可用于目标识别',

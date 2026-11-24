@@ -79,7 +79,7 @@ describe('原生进程与规则装载观测', () => {
     expect(wrapper.text()).toContain('不能代替');
     expect(wrapper.find('.ant-descriptions').exists()).toBe(false);
     await wrapper.setProps({ report: { state: 'observed' } });
-    expect(wrapper.text()).toContain('格式不完整');
+    expect(wrapper.text()).toContain('观测数据不完整');
     expect(wrapper.text()).not.toContain('最近观测通过');
     await wrapper.setProps({ report });
     expect(wrapper.text()).toContain('最近观测通过');

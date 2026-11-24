@@ -56,11 +56,11 @@ export const protocolStatus: Record<ProtocolStatus, string> = {
 export const protocolErrors: Record<string, string> = {
   inspection_pending: '协议能力正在核对，请稍后刷新。',
   engine_not_configured: '采集器未配置可核验的检测引擎。',
-  engine_isolation_unavailable: '原生检查的隔离环境不可用，无法确认协议能力。',
+  engine_isolation_unavailable: '原生检查的隔离环境异常，协议能力证据不足。',
   engine_version_mismatch: '检测引擎文件未通过固定版本核验。',
   native_protocol_inventory_unavailable: '未取得完整的原生协议目录，请检查检测引擎及隔离权限。',
   protocol_configuration_unavailable: '无法读取检测配置，不能推断协议启用状态。',
-  protocol_configuration_unsupported: '配置包含未核验引用、插件或无效内容，无法确认有效配置。',
+  protocol_configuration_unsupported: '配置包含未核验引用、插件或无效内容，有效配置待验证。',
   protocol_observation_changed: '检测文件或运行状态在核对期间变化，请刷新后重试。',
   protocol_inspection_cancelled: '协议能力核对未完成，请稍后刷新。',
 };

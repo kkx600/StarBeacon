@@ -59,14 +59,14 @@ func correlationFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, correlation.ErrLimit), errors.Is(err, searchsnapshot.ErrLimit):
 		httpapi.Fail(w, r, 413, "correlation_limit", "规则、窗口分组或证据数量超过上限，请缩小回测范围或增加筛选条件")
 	case errors.Is(err, store.ErrConflict):
-		httpapi.Fail(w, r, 409, "correlation_conflict", "规则已停用、修订或原提交输入已变化，请刷新后核对")
+		httpapi.Fail(w, r, 409, "correlation_conflict", "规则处于停用状态，或修订、原提交输入已变化。请刷新后核对")
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "关联规则修订不存在、已到期或不可访问")
 	case errors.Is(err, errExportBusy):
 		w.Header().Set("Retry-After", "5")
 		httpapi.Fail(w, r, 429, "correlation_busy", "当前检索任务正在使用回测配额，请稍后重试")
 	default:
-		httpapi.Fail(w, r, 503, "correlation_unavailable", "关联回测服务暂不可用或来源未完整返回，未生成部分结果")
+		httpapi.Fail(w, r, 503, "correlation_unavailable", "关联回测服务异常或来源数据不完整。请稍后重试以获取完整结果")
 	}
 }
 

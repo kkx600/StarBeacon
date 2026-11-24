@@ -39,7 +39,7 @@ func (a *API) ruleRollouts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务异常，请稍后重试")
 		return
 	}
 	out, err := a.DB.RuleRollouts(r.Context(), httpapi.Principal(r), q.Get("cursor"), limit)
@@ -55,7 +55,7 @@ func (a *API) ruleRollout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务异常，请稍后重试")
 		return
 	}
 	out, err := a.DB.RuleRollout(r.Context(), httpapi.Principal(r), r.PathValue("id"))
@@ -74,7 +74,7 @@ func (a *API) createRuleRollout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.DB == nil || len(a.Signer) != ed25519.PrivateKeySize || a.Samples == nil {
-		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布执行服务暂不可用")
+		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布执行服务异常，请稍后重试")
 		return
 	}
 	out, err := a.DB.CreateRuleRollout(r.Context(), httpapi.Principal(r), input, httpapi.RequestID(r))
@@ -94,7 +94,7 @@ func (a *API) stopRuleRollout(w http.ResponseWriter, r *http.Request) {
 	}
 	// 停止不依赖任务签名或样本服务，避免这些服务故障时失去停止入口。
 	if a.DB == nil {
-		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务暂不可用")
+		httpapi.Fail(w, r, 503, "rule_rollout_unavailable", "分批发布数据服务异常，请稍后重试")
 		return
 	}
 	out, err := a.DB.StopRuleRollout(r.Context(), httpapi.Principal(r), r.PathValue("id"), input, httpapi.RequestID(r))

@@ -1,3 +1,4 @@
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 
 export interface Enrollment {
@@ -155,23 +156,23 @@ export const enrollmentStates: Record<string, string> = {
   unused: '等待注册',
   signing: '签发中',
   issued: '已签发',
-  unknown: '结果待核实',
-  revoked: '令牌已撤销',
-  expired: '令牌已到期',
+  unknown: '结果未知',
+  revoked: '已撤销',
+  expired: '已过期',
 };
-export const certificateStates: Record<string, string> = { signing: '签发中', issued: '已签发', unknown: '结果待核实' };
+export const certificateStates: Record<string, string> = { signing: '签发中', issued: '已签发', unknown: '结果未知' };
 export const pkiStateTones = {
   created: 'neutral',
   unused: 'neutral',
   signing: 'info',
   issued: 'success',
-  unknown: 'warning',
-  revoked: 'danger',
-  expired: 'neutral',
+  unknown: statusTerms.结果未知,
+  revoked: statusTerms.已撤销,
+  expired: statusTerms.已过期,
 } as const;
 export const revocationStates: Record<string, string> = {
   none: '未申请',
-  pending: '等待确认',
+  pending: '待确认',
   confirmed: '已确认',
-  unknown: '结果待核实',
+  unknown: '结果未知',
 };

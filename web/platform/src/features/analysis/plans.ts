@@ -1,3 +1,4 @@
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { stateNames, type AnalysisRequest } from './analysis';
 import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 
@@ -68,7 +69,7 @@ export function planRunState(run: ReportPlanRun) {
         ? '已取消'
         : '本周期未提交';
 }
-const runTones = { preparing: 'info', failed: 'danger', cancelled: 'neutral' } as const;
+const runTones = { preparing: 'info', failed: statusTerms.失败, cancelled: statusTerms.已取消 } as const;
 export function planRunTone(run: ReportPlanRun) {
   return run.state === 'submitted' ? statusTone(modelJobTones, run.analysis_state) : runTones[run.state];
 }

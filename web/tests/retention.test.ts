@@ -190,7 +190,7 @@ describe('分类留存策略与交互', () => {
     const wrapper = mount(RetentionWorkspace, { global: { plugins: [registerAnt] }, attachTo: document.body });
     await flushPromises();
     expect(document.body.querySelectorAll('.ant-table')).toHaveLength(1);
-    expect(wrapper.text()).toContain('存储流程未接入');
+    expect(wrapper.text()).toContain('相应存储流程未提供');
     await click('配置');
     expect(button('发布策略').disabled).toBe(true);
     wrapper.getComponent(InputNumber).vm.$emit('update:value', 210);

@@ -15,14 +15,14 @@ const fields = computed(() =>
         { label: '操作', value: actionLabel(props.record.action) },
         { label: '操作标识', value: props.record.action },
         { label: '对象', value: props.record.object_id || '未提供' },
-        { label: '来源 IP', value: props.record.source_ip || '未获取' },
-        { label: '客户端', value: props.record.user_agent || '未获取' },
+        { label: '来源 IP', value: props.record.source_ip || '无数据' },
+        { label: '客户端', value: props.record.user_agent || '无数据' },
         { label: '请求标识', value: props.record.request_id || '未提供' },
         { label: '日志标识', value: props.record.id },
         ...(props.record.reason ? [{ label: '操作原因', value: props.record.reason }] : []),
         ...(props.record.success !== undefined
           ? [
-              { label: '凭据验证结果', value: props.record.success ? '验证通过' : '验证失败' },
+              { label: '凭据验证结果', value: props.record.success ? '已验证' : '验证失败' },
               { label: '验证阶段', value: props.record.phase === 'password_verification' ? '密码验证' : '凭据验证' },
             ]
           : []),

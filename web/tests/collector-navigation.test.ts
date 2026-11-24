@@ -209,7 +209,7 @@ describe('采集器管理页面的实际导航', () => {
   it('运行概况保留真实资源与缺测，网卡页只有接口列表', async () => {
     const { wrapper, router } = await app('/overview/status');
     expect(wrapper.text()).toContain('12.0%');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据');
     expect(wrapper.text()).toContain('probe-local');
     expect(request.mock.calls.map(call => call[0])).toEqual(['/health']);
     request.mockClear();

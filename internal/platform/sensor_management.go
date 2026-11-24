@@ -67,7 +67,7 @@ func sensorManagementFailure(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, sensormanagement.ErrOccupied):
 		httpapi.Fail(w, r, 409, "sensor_group_occupied", "分组仍有探针，请先迁移或移出全部成员后停用")
 	case errors.Is(err, sensormanagement.ErrInactive):
-		httpapi.Fail(w, r, 409, "sensor_group_inactive", "目标分组已停用，请刷新分组后选择")
+		httpapi.Fail(w, r, 409, "sensor_group_inactive", "目标分组处于停用状态，请刷新分组后选择")
 	case errors.Is(err, sensormanagement.ErrQuota):
 		httpapi.Fail(w, r, 429, "sensor_management_quota", "探针分组或最近 24 小时的管理操作已达上限")
 	case errors.Is(err, store.ErrConflict):
@@ -75,7 +75,7 @@ func sensorManagementFailure(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, pgx.ErrNoRows):
 		httpapi.Fail(w, r, 404, "not_found", "探针或分组不存在或不可访问")
 	default:
-		httpapi.Fail(w, r, 503, "sensor_management_unavailable", "探针管理数据服务暂不可用；提交结果未确认时请核对原提交")
+		httpapi.Fail(w, r, 503, "sensor_management_unavailable", "探针管理数据服务异常。提交结果未知时，请核对原提交")
 	}
 }
 

@@ -181,7 +181,7 @@ async function submit() {
     return;
   }
   if (!provider.value?.enabled || !provider.value.has_key) {
-    formError.value = '请选择已启用并配置凭据的模型';
+    formError.value = '请选择启用且具备凭据的模型';
     return;
   }
   if (form.source !== 'natural_language' && !sample.value) {
@@ -286,7 +286,7 @@ onScopeDispose(() => {
       <a-alert
         type="warning"
         show-icon
-        message="模型执行服务暂不可用"
+        message="模型执行服务异常，请稍后重试"
         description="当前可查看历史记录，请核对模型凭据、任务队列和服务状态。"
       />
     </div>
@@ -487,7 +487,7 @@ onScopeDispose(() => {
           >
         </div>
         <p class="page-description section-gap">
-          {{ generationCodes[selected.result.code] ?? resultNames[selected.result.code] ?? '尚未获取处理说明' }}
+          {{ generationCodes[selected.result.code] ?? resultNames[selected.result.code] ?? '未提供处理说明' }}
         </p>
         <a-alert
           v-if="selected.state === 'uncertain' || (selected.cancel_requested && generationWorking(selected.state))"

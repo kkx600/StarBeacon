@@ -112,7 +112,7 @@ async function download() {
         </div>
         <p class="page-description section-gap">
           {{
-            analysisCodes[job.result.code] ?? resultNames[job.result.code] ?? '尚未获取处理说明'
+            analysisCodes[job.result.code] ?? resultNames[job.result.code] ?? '未提供处理说明'
           }}。提供方受理和用量以实际返回为准。
         </p>
         <a-alert
@@ -147,7 +147,7 @@ async function download() {
         <a-alert
           v-else-if="!working(job.state)"
           type="info"
-          message="智能总结不可用或未启用，完整统计来源仍可复核。"
+          message="智能总结未返回，完整统计来源仍可复核。"
           show-icon
           class="section-gap"
         />
@@ -166,11 +166,11 @@ async function download() {
             {{
               job.result.usage
                 ? `${job.result.usage.input_tokens} / ${job.result.usage.output_tokens} / ${job.result.usage.total_tokens}`
-                : '未获取 / 未获取 / 未获取'
+                : '无数据'
             }}
           </dd>
           <dt>模型处理耗时</dt>
-          <dd>{{ job.result.duration_ms == null ? '未获取' : `${job.result.duration_ms} ms` }}</dd>
+          <dd>{{ job.result.duration_ms == null ? '无数据' : `${job.result.duration_ms} ms` }}</dd>
           <dt>模型标识</dt>
           <dd>{{ job.result.returned_model ?? (job.request.provider_id || '未调用模型') }}</dd>
           <dt>快照 SHA-256</dt>

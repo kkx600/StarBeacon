@@ -55,7 +55,7 @@ export function details(record: InventoryRecord): { label: string; value: string
   const data = record.data,
     rows = [
       { label: '名称', value: data.name },
-      { label: '状态', value: data.active ? '使用中' : '已停用' },
+      { label: '状态', value: data.active ? '启用' : '停用' },
       { label: '修订', value: String(record.revision) },
     ];
   if (record.kind === 'assets' || record.kind === 'groups')

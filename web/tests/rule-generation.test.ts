@@ -557,7 +557,7 @@ describe('规则生成页面操作', () => {
     const { wrapper } = await workspace();
     expect(wrapper.text()).toContain('暂无规则生成记录');
     expect(button('生成规则').disabled).toBe(true);
-    expect(wrapper.text()).toContain('模型执行服务暂不可用');
+    expect(wrapper.text()).toContain('模型执行服务异常');
     request.mockRejectedValueOnce(new Error('队列信息不可读'));
     await click('刷新记录');
     expect(wrapper.text()).toContain('队列信息不可读');
@@ -572,7 +572,7 @@ describe('规则生成页面操作', () => {
     expect(document.body.textContent).toContain('填写不超过');
     await describeDetection(input.description);
     await click('提交生成');
-    expect(document.body.textContent).toContain('请选择已启用');
+    expect(document.body.textContent).toContain('请选择启用且具备凭据的模型');
     await selectByPlaceholder(wrapper, '选择支持严格 JSON 输出的模型').setValue(analysisProvider.id, 'value');
     await click('提交生成');
     expect(document.body.textContent).toContain('请确认本次检测说明');
@@ -580,7 +580,7 @@ describe('规则生成页面操作', () => {
     request.mockResolvedValueOnce(queued);
     await click('提交生成');
     expect(document.body.textContent).toContain('规则生成结果');
-    expect(document.body.textContent).toContain('等待生成');
+    expect(document.body.textContent).toContain('排队中');
     expect(document.body.textContent).not.toContain('采纳为规则包');
     expect(request.mock.calls.find(call => call[1]?.method === 'POST')?.[1].body).toEqual(input);
     request.mockResolvedValueOnce(completed);

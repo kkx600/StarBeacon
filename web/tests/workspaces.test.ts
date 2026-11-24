@@ -158,7 +158,7 @@ describe('探针列表和诊断', () => {
   it('列表状态操作保持原探针绑定，保存失败明确反馈', async () => {
     const { wrapper } = await workspace(SensorsWorkspace, '/sensors/list');
     expect(wrapper.text()).toContain('10.0%');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据');
     await click('停用');
     await click('确定');
     expect(request.mock.calls.find(call => call[1]?.method === 'PATCH')?.[1].body).toEqual({ active: false });
@@ -202,7 +202,7 @@ describe('探针列表和诊断', () => {
     await click('查看');
     await vi.waitFor(() => expect(document.body.textContent).toContain('尚未上报'));
     expect(document.body.textContent).not.toContain('运行诊断');
-    expect(document.body.textContent).toContain('未获取');
+    expect(document.body.textContent).toContain('无数据');
   });
   it('诊断失败保留幂等键，切换对象取消旧响应，离开页面不显示迟到回执', async () => {
     const wrapper = mount(SensorDetail, { props: { sensor }, global, attachTo: document.body });
@@ -272,7 +272,7 @@ describe('探针列表和诊断', () => {
     expect(document.body.textContent).toContain('外部 EVE 文件');
     expect(document.body.textContent).not.toContain('生效采集网卡');
     await wrapper.setProps({ sensor: { ...sensor, health: {} } });
-    expect(document.body.textContent).toContain('尚未观测');
+    expect(document.body.textContent).toContain('无数据');
     expect(document.body.textContent).not.toContain('历史观测');
   });
 });
@@ -426,7 +426,7 @@ describe('采集器管理', () => {
     expect(wrapper.get('h1').text()).toBe('运行状态');
     expect(wrapper.text()).toContain('CPU 使用率');
     expect(wrapper.text()).toContain('10.0%');
-    expect(wrapper.text()).toContain('未获取');
+    expect(wrapper.text()).toContain('无数据');
     expect(wrapper.findAll('.ant-table')).toHaveLength(0);
   });
   it('网卡只展示一张表，保存明确显示待应用，失败保留配置', async () => {
@@ -506,11 +506,11 @@ describe('采集器管理', () => {
       },
       global,
     });
-    expect(summary.text()).toContain('CPU 指标不可用');
+    expect(summary.text()).toContain('CPU 指标无数据');
     expect(summary.text()).toContain('0.0%');
     const missing = summary.findAll('.metric-item[data-missing]');
     expect(missing.map(item => item.get('.metric-value').text())).toEqual(['—', '—']);
-    expect(missing[1]!.get('.metric-note').text()).toBe('未获取本机待传队列统计');
+    expect(missing[1]!.get('.metric-note').text()).toBe('本机待传队列统计无数据');
   });
 });
 
@@ -599,7 +599,7 @@ describe('告警检索', () => {
       attachTo: document.body,
     });
     expect(document.body.textContent).toContain('当前账号未获原始载荷读取权限');
-    expect(document.body.textContent).toContain('未观测到');
+    expect(document.body.textContent).toContain('无数据');
     detail.unmount();
   });
   it('高级表达式先校验，失败保留输入，等待校验阻止重复查询', async () => {

@@ -33,7 +33,7 @@ const captureStatus = computed(() =>
     ? (captureStates[capture.value.status] ?? '状态无法识别')
     : props.sensor?.health.capture_status === 'eve_reader_only'
       ? '外部 EVE 文件'
-      : '尚未观测',
+      : '无数据',
 );
 let key: string | undefined;
 let keySensor = '';
@@ -146,7 +146,7 @@ onScopeDispose(() => {
         <a-descriptions-item label="部署站点">{{ sensor.site || '未填写' }}</a-descriptions-item>
         <a-descriptions-item label="说明">{{ sensor.description || '未填写' }}</a-descriptions-item>
         <a-descriptions-item label="管理信息修订"
-          >{{ sensor.metadata_revision ?? '未获取' }} ·
+          >{{ sensor.metadata_revision ?? '无数据' }} ·
           {{ formatTime(sensor.metadata_updated_at) }}</a-descriptions-item
         >
         <a-descriptions-item label="探针标识"
@@ -155,13 +155,15 @@ onScopeDispose(() => {
         <a-descriptions-item label="注册身份"
           ><span class="technical">{{ sensor.registration_id }}</span></a-descriptions-item
         >
-        <a-descriptions-item label="主机名">{{ sensor.health.hostname ?? '未获取' }}</a-descriptions-item>
+        <a-descriptions-item label="主机名">{{ sensor.health.hostname ?? '无数据' }}</a-descriptions-item>
         <a-descriptions-item label="最后观测时间">{{ formatTime(sensor.last_seen) }}</a-descriptions-item>
         <a-descriptions-item label="CPU / 内存 / 磁盘"
           >{{ formatPercent(sensor.health.cpu_percent) }} / {{ formatPercent(sensor.health.memory_percent) }} /
           {{ formatPercent(sensor.health.disk_percent) }}</a-descriptions-item
         >
-        <a-descriptions-item label="待传队列">{{ sensor.health.wal_pending ?? '未获取' }} 条</a-descriptions-item>
+        <a-descriptions-item label="待传队列">{{
+          sensor.health.wal_pending == null ? '无数据' : `${sensor.health.wal_pending} 条`
+        }}</a-descriptions-item>
         <a-descriptions-item label="累计接收 / 发送"
           ><span class="technical"
             >{{ formatBytes(sensor.health.rx_bytes) }} / {{ formatBytes(sensor.health.tx_bytes) }}</span
@@ -193,8 +195,8 @@ onScopeDispose(() => {
             capture.applied_settings?.interfaces.join('、') || '未采集'
           }}</a-descriptions-item>
           <a-descriptions-item label="采集配置修订"
-            >期望 {{ capture.revision ?? '未获取' }} / 生效
-            {{ capture.applied_revision ?? '未获取' }}</a-descriptions-item
+            >期望 {{ capture.revision ?? '无数据' }} / 生效
+            {{ capture.applied_revision ?? '无数据' }}</a-descriptions-item
           >
           <a-descriptions-item label="检测观测时间">{{ formatTime(capture.observed_at) }}</a-descriptions-item>
           <a-descriptions-item label="引擎累计流量">{{
@@ -219,7 +221,7 @@ onScopeDispose(() => {
         >
         <a-descriptions-item label="登记规则文件摘要"
           ><span class="capture-digest">{{
-            sensor.health.registered_rules_sha256 || '尚未观测'
+            sensor.health.registered_rules_sha256 || '无数据'
           }}</span></a-descriptions-item
         >
         <a-descriptions-item label="任务能力">{{

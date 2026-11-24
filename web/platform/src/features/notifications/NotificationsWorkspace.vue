@@ -105,7 +105,7 @@ function reset() {
   <a-alert
     v-if="view === 'channels' && !pending && !available && !error"
     type="info"
-    message="通知服务尚未启用，渠道配置暂不可用。"
+    message="通知服务未启用。"
     show-icon
     class="section-gap"
   />

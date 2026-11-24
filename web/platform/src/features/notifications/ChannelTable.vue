@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '@starbeacon/shared/terms.ts';
 import { Popconfirm } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { tablePagination } from '@starbeacon/shared/pagination.ts';
@@ -36,7 +37,7 @@ function severities(record: Channel) {
       <template v-if="column.key === 'kind'">{{ channelNames[record.kind] }}</template>
       <StatusTag
         v-else-if="column.key === 'state'"
-        :tone="record.enabled ? 'success' : 'neutral'"
+        :tone="record.enabled ? statusTerms.启用 : statusTerms.停用"
         :value="record.enabled ? '启用' : '停用'"
       />
       <span v-else-if="column.key === 'streams'" :title="subscribed(record)">{{ subscribed(record) }}</span>

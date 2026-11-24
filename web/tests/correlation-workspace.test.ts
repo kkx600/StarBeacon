@@ -331,7 +331,7 @@ describe('关联目录与窗口回测页面', () => {
     request.mockResolvedValueOnce({ ...rule, active: false });
     await router.push('/detection/correlation/backtest?rule_id=' + rule.id + '&revision=1');
     await flushPromises();
-    await vi.waitFor(() => expect(w.text()).toContain('所选修订已停用'));
+    await vi.waitFor(() => expect(w.text()).toContain('所选修订处于停用状态'));
     await run(w);
     expect(request.mock.calls.filter(c => String(c[0]).endsWith('/backtest'))).toHaveLength(0);
   });

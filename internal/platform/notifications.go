@@ -33,7 +33,7 @@ func notificationFailure(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, secrets.ErrUnavailable):
 		httpapi.Fail(w, r, 503, "credentials_unavailable", "通知凭据密钥未配置或凭据无法校验")
 	default:
-		httpapi.Fail(w, r, 503, "storage_unavailable", "通知服务暂时不可用")
+		httpapi.Fail(w, r, 503, "storage_unavailable", "通知服务异常，请稍后重试")
 	}
 }
 

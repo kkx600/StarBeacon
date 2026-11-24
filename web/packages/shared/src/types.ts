@@ -133,20 +133,20 @@ export const captureStates: Record<CaptureConfig['status'], string> = {
   failed: '启动失败',
 };
 export const captureErrors: Record<string, string> = {
-  capture_filter_compiler_unavailable: 'BPF 编译器不可用，请核对系统依赖及隔离权限',
+  capture_filter_compiler_unavailable: 'BPF 编译器异常，请核对系统依赖及隔离权限',
   capture_filter_resource_limit: 'BPF 编译达到资源上限，请简化过滤条件后重试',
   capture_filter_invalid: 'BPF 捕获过滤器未通过原生编译检查，目标配置未生效；请核对实际采集状态',
-  capture_interface_unavailable: '采集网卡不可用，请核对链路状态',
+  capture_interface_unavailable: '采集网卡异常，请核对链路状态',
   capture_template_invalid: '检测配置模板无效',
   capture_start_failed: '检测进程未启动；原进程恢复结果请以生效配置为准',
   capture_spool_full: '采集缓冲额度已用尽，已停止采集；请处理待传数据及存储容量',
   capture_process_or_configuration_changed: '检测进程或配置与启动记录不一致，需要核对',
   rule_operation_in_progress: '规则事务正在执行，采集配置等待应用',
   rule_recovery_required: '规则恢复记录尚未核实',
-  local_storage_unavailable: '本地持久存储不可用',
+  local_storage_unavailable: '本地持久存储异常',
   registered_rules_unavailable: '登记规则不可读取',
   engine_validation_failed: '检测配置或规则未通过原生装载检查',
-  engine_isolation_unavailable: '原生引擎隔离环境不可用',
+  engine_isolation_unavailable: '原生引擎隔离环境异常',
   engine_resource_limit: '检测配置检查达到资源上限',
   engine_version_mismatch: '检测引擎版本不匹配',
   engine_not_configured: '检测引擎配置不完整',
@@ -213,7 +213,7 @@ export function formatTime(
   value?: string | Date | null,
   options: { fraction?: 'milliseconds' | 'source'; timeZone?: 'UTC' } = {},
 ): string {
-  if (!value) return '未获取';
+  if (!value) return '无数据';
   const date = typeof value === 'string' ? new Date(value) : value;
   if (!Number.isFinite(date.getTime())) return '时间无效';
 
@@ -227,7 +227,7 @@ export function formatTime(
   }
   return `${day} ${time.slice(0, options.fraction === 'milliseconds' ? 12 : 8)}`;
 }
-export const formatPercent = (value?: number | null) => (value == null ? '未获取' : `${value.toFixed(1)}%`);
+export const formatPercent = (value?: number | null) => (value == null ? '无数据' : `${value.toFixed(1)}%`);
 export interface TaskReceipt {
   command_id: string;
   command_sha256: string;
@@ -301,38 +301,48 @@ Object.assign(taskNames, {
   'response.revoke': '解除封禁',
 });
 export const taskStates: Record<string, string> = {
-  queued: '等待投递',
+  queued: '排队中',
   delivered: '已投递',
-  running: '执行中',
-  succeeded: '执行成功',
-  failed: '执行失败',
-  unknown: '待核实',
+  running: '运行中',
+  succeeded: '已完成',
+  failed: '失败',
+  unknown: '结果未知',
   expired: '已过期',
   cancelled: '已取消',
 };
+export const modelJobStates = {
+  queued: '排队中',
+  running: '运行中',
+  succeeded: '已完成',
+  failed: '失败',
+  refused: '提供方拒答',
+  incomplete: '不完整',
+  uncertain: '结果未知',
+  cancelled: '已取消',
+} as const;
 export const taskCodes: Record<string, string> = {
   execution_interrupted: '执行被中断，需核实实际状态',
   command_expired: '任务已过期或设备时钟异常',
   engine_not_configured: '检测引擎未配置',
   engine_version_mismatch: '检测引擎版本不匹配',
   engine_validation_failed: '规则装载检查未通过',
-  local_storage_unavailable: '本地存储不可用',
-  result_unknown: '执行结果无法确认',
+  local_storage_unavailable: '本地存储异常',
+  result_unknown: '执行结果未知',
   invalid_execution_result: '执行结果不符合约定',
-  managed_rules_mismatch: '规则来源无法确认',
+  managed_rules_mismatch: '规则来源证据不足',
   rule_reload_failed_rolled_back: '规则重载失败，已恢复原规则',
 };
 Object.assign(taskCodes, {
-  engine_isolation_unavailable: '检测引擎隔离环境不可用',
+  engine_isolation_unavailable: '检测引擎隔离环境异常',
   engine_resource_limit: '规则装载检查达到执行资源上限',
 });
 Object.assign(taskCodes, {
   response_scope_invalid: '联动目标、范围或期限不符合授权',
-  response_device_unavailable: '联动设备身份、能力或认证不可用',
+  response_device_unavailable: '联动设备身份、能力或认证校验未通过',
 });
 Object.assign(taskCodes, captureErrors, {
   capture_not_managed: '设备未启用托管采集',
-  invalid_capture_configuration: '采集配置或本机网卡不可用',
+  invalid_capture_configuration: '采集配置或本机网卡异常',
   capture_operation_in_progress: '设备正在应用采集配置',
   capture_configuration_changed: '采集配置已变化，请刷新探针状态后核对',
   capture_application_unconfirmed: '期望配置已保存，实际采集状态尚未确认',
@@ -348,14 +358,14 @@ Object.assign(taskCodes, {
   managed_rules_unavailable: '现有规则超出回滚边界',
 });
 Object.assign(taskCodes, {
-  replay_isolation_unavailable: '重放隔离环境不可用',
+  replay_isolation_unavailable: '重放隔离环境异常',
   replay_sample_unavailable: '样本下载或完整性核验失败',
   replay_sample_invalid: 'PCAP 结构或数据包不符合重放边界',
   registered_rules_unavailable: '登记规则快照不可读取',
   replay_engine_failed: '原生引擎重放失败，请查看执行日志',
   replay_timeout: '重放超过执行期限',
   replay_resource_limit: '重放达到资源上限',
-  replay_result_incomplete: '引擎结果不完整，无法确认全部包已处理',
+  replay_result_incomplete: '引擎结果不完整，缺少全部报文已处理的证据',
 });
 export interface SampleOrigin {
   kind: 'http_raw';
@@ -378,15 +388,15 @@ export interface ReplaySample {
 const healthErrors: Record<string, string> = {
   ...captureErrors,
   application_state_unavailable: '应用规则状态无法核对，基础采集继续上报；请保留配置并检查本地持久状态',
-  cpu_unavailable: 'CPU 指标不可用',
-  memory_unavailable: '内存指标不可用',
-  disk_unavailable: '磁盘指标不可用',
-  network_unavailable: '网络指标不可用',
+  cpu_unavailable: 'CPU 指标无数据',
+  memory_unavailable: '内存指标无数据',
+  disk_unavailable: '磁盘指标无数据',
+  network_unavailable: '网络指标无数据',
   network_inventory_unavailable: '网卡清单无法完整观测，请核对设备网络环境',
   task_rejected: '平台任务校验未通过',
   task_history_cleanup_unavailable: '任务历史清理未完成，请核对本地存储；原记录继续保留',
-  wal_unavailable: '本地队列不可用',
-  control_unavailable: '主平台控制连接不可用',
+  wal_unavailable: '本地队列异常',
+  control_unavailable: '主平台控制连接异常',
   eve_source_unavailable: 'EVE 数据读取受阻',
   upload_alerts_unavailable: '告警上报受阻',
   upload_context_unavailable: '协议数据上报受阻',
@@ -399,7 +409,7 @@ export const formatHealthErrors = (errors?: string[]) =>
 Object.assign(taskCodes, {
   invalid_application_package: '应用规则包无效或与注册身份不一致',
   application_state_conflict: '采集器应用规则状态已变化，请刷新后核对',
-  application_storage_unavailable: '本地应用规则持久存储不可用',
+  application_storage_unavailable: '本地应用规则持久存储异常',
   application_service_unavailable: '采集器应用识别服务未就绪',
   application_apply_cancelled: '应用规则安装已取消',
 });
