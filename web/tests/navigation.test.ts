@@ -149,16 +149,18 @@ describe('业务导航与路由契约', () => {
       expected + '?start=2026-10-19T00:00:00Z&end=2026-10-20T00:00:00Z#evidence',
     );
   });
-  it('只读角色不显示管理员及未提供的工作区，管理员可定位全部设计目录', () => {
-    const viewer = navigationForRole(false),
-      admin = navigationForRole(true);
-    expect(admin.flatMap(group => group.children)).toHaveLength(44);
-    expect(
-      viewer
-        .flatMap(group => group.children)
-        .some(item => ['users', 'models', 'mcp', 'decision-policies', 'tenants'].includes(item.key)),
-    ).toBe(false);
-    expect(viewer.flatMap(group => group.children).every(item => item.available)).toBe(true);
+  it('两个角色的侧栏只包含可访问的工程工作区，并进入各自的首个可用视图', () => {
+    const viewer = navigationForRole(false);
+    const admin = navigationForRole(true);
+    expect(admin.flatMap(group => group.children)).toHaveLength(29);
+    for (const [groups, screens] of [
+      [viewer, platformScreens.filter(screen => !screen.admin)],
+      [admin, platformScreens],
+    ] as const) {
+      const items = groups.flatMap(group => group.children);
+      expect(new Set(items.map(item => item.key))).toEqual(new Set(screens.map(screen => screen.workspace)));
+      for (const item of items) expect(item.path).toBe(screens.find(screen => screen.workspace === item.key)?.path);
+    }
     expect(admin.find(group => group.key === 'system')?.children.map(item => item.label)).toContain('平台运维');
   });
   it('页签沿规范路径切换，保留业务条件并支持返回；没有规范路径的视图不改变地址', async () => {
@@ -239,6 +241,12 @@ describe('业务导航与路由契约', () => {
     wrapper.getComponent(Select).vm.$emit('update:value', 'all');
     await flushPromises();
     expect(wrapper.text()).toContain('检测规则');
+    const rows = wrapper.findAll('tr[data-row-key]');
+    expect(rows).toHaveLength(43);
+    const unavailable = rows.filter(row => row.text().includes('当前版本未提供'));
+    expect(unavailable).toHaveLength(15);
+    expect(unavailable.every(row => row.get('button').attributes('disabled') !== undefined)).toBe(true);
+    expect(unavailable.find(row => row.attributes('data-row-key') === 'ai-ops')?.text()).toContain('AI 值守');
     const users = wrapper.findAll('tr').find(row => row.text().includes('账号与权限'))!;
     await users.get('button').trigger('click');
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/system/accounts/users'));
@@ -270,6 +278,18 @@ describe('业务导航与路由契约', () => {
     try {
       await follow('查看系统设置', '/system/settings');
       await follow('返回态势总览', '/overview/dashboard');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+  it('AI 值守的规范地址仍加载当前版本未提供页面', async () => {
+    const router = await routerFor('/ai/ai-ops');
+    const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
+    try {
+      await flushPromises();
+      expect(router.currentRoute.value.meta.admin).toBe(true);
+      expect(wrapper.get('h1').text()).toBe('AI 值守');
+      expect(wrapper.text()).toContain('当前版本未提供此功能');
     } finally {
       wrapper.unmount();
     }

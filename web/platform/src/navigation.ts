@@ -117,16 +117,8 @@ export function navigationForRole(admin: boolean) {
     const children = navigationWorkspaces
       .filter(workspace => workspace.group === group.id)
       .flatMap(workspace => {
-        const screens = platformScreens.filter(screen => screen.workspace === workspace.id && (!screen.admin || admin));
-        if (!screens.length && !admin) return [];
-        return [
-          {
-            key: workspace.id,
-            label: workspace.title,
-            path: screens[0]?.path ?? workspacePath(workspace),
-            available: screens.length > 0,
-          },
-        ];
+        const screen = platformScreens.find(item => item.workspace === workspace.id && (!item.admin || admin));
+        return screen ? [{ key: workspace.id, label: workspace.title, path: screen.path }] : [];
       });
     return children.length ? [{ key: group.id, label: group.title, icon: group.icon, children }] : [];
   });

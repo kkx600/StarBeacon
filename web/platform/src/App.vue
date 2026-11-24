@@ -50,7 +50,7 @@ const items = computed(() =>
     const children = group.children.map(item => ({
       key: 'workspace:' + item.key,
       label: item.label,
-      title: item.available ? item.label : item.label + '（当前版本未提供）',
+      title: item.label,
     }));
     return children.length === 1
       ? { ...children[0]!, icon }

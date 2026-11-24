@@ -309,7 +309,8 @@ describe('应用入口、路由和登录', () => {
     const wrapper = mount(App, { global: { plugins: [registerAnt, router] }, attachTo: document.body });
     await flushPromises();
     const direct = wrapper.findAll('.ant-layout-sider .ant-menu-root > .ant-menu-item').map(item => item.text());
-    expect(direct).toEqual(['通知管理', '安全报告']);
+    expect(direct).toEqual(['事件调查', '通知管理', '安全报告', '探针管理']);
+    expect(wrapper.get('.ant-layout-sider .ant-menu-root').text()).not.toContain('AI 值守');
     expect(wrapper.findAll('.shell-breadcrumb .ant-breadcrumb-link').map(item => item.text())).toEqual(['态势总览']);
     await router.push('/reports/records');
     await flushPromises();
