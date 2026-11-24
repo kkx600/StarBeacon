@@ -639,7 +639,7 @@ describe('应用规则工作区', () => {
     await vi.waitFor(() => expect(w.findComponent(ApplicationRuleForm).exists()).toBe(false));
     await click(w, '验证启用规则');
     expect(w.findComponent(ApplicationRuleTest).exists()).toBe(true);
-    await body().find('form.application-rule-toolbar').trigger('submit');
+    await click(w, '检索');
     await flushPromises();
     expect(w.findComponent(ApplicationRuleTest).exists()).toBe(false);
     user.value = { ...principal, role: 'viewer' };

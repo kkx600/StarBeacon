@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue';
-import {
-  Table as ATable,
-  Modal as AModal,
-  Tag as ATag,
-  Descriptions as ADescriptions,
-  DescriptionsItem as ADescriptionsItem,
-} from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
-import { rolloutStates, rolloutCodes, targetStates, type RuleRollout, type RolloutTarget } from './rollout';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
+import { statusTone } from '@starbeacon/shared/statusTones.ts';
+import {
+  rolloutStates,
+  rolloutCodes,
+  rolloutTargetTones,
+  targetStates,
+  type RuleRollout,
+  type RolloutTarget,
+} from './rollout';
 import { syncStates, syncCodes } from './sync';
 const props = defineProps<{ rollout: RuleRollout; taskPath?: string }>();
 const target = shallowRef<RolloutTarget>();
@@ -19,20 +24,22 @@ watch(
   },
 );
 const columns = [
-  { title: '探针 / 批次', key: 'sensor', width: 240 },
-  { title: '冻结计划', key: 'plan', width: 220 },
-  { title: '执行状态', key: 'state', width: 260 },
-  { title: '操作', key: 'action', width: 110 },
+  { title: '探针编号', dataIndex: ['spec', 'sensor_id'], width: 145, ellipsis: true, className: 'technical' },
+  { title: '批次', key: 'batch', width: 76 },
+  { title: '计划编号', dataIndex: 'plan_id', width: 140, ellipsis: true, className: 'technical' },
+  { title: '冻结计划', dataIndex: ['spec', 'name'], width: 140, ellipsis: true },
+  { title: '批准修订', dataIndex: 'authorized_revision', width: 84, className: 'technical' },
+  { title: '规则包编号', dataIndex: ['spec', 'package_id'], width: 130, ellipsis: true, className: 'technical' },
+  { title: '规则修订', dataIndex: ['spec', 'package_revision'], width: 84, className: 'technical' },
+  { title: '执行状态', key: 'state', width: 128 },
+  { title: '执行说明', key: 'note', width: 195, ellipsis: true },
+  { title: '操作', key: 'action', width: 110, fixed: 'right' as const },
 ];
 const stages = ['装载检查', '正样本重放', '反样本重放', '规则发布'];
-function color(s: string) {
-  return s === 'succeeded'
-    ? 'success'
-    : s === 'blocked'
-      ? 'error'
-      : s === 'stopping' || s === 'stopped'
-        ? 'warning'
-        : 'processing';
+function targetNote(row: RolloutTarget) {
+  return row.run && !row.run.finished_at
+    ? syncStates[row.run.state]
+    : (rolloutCodes[row.code] ?? syncCodes[row.code] ?? row.code);
 }
 function inspect(ordinal: number) {
   target.value = props.rollout.targets?.find(t => t.ordinal === ordinal);
@@ -68,41 +75,28 @@ function inspect(ordinal: number) {
       rollout.stop_reason
     }}</a-descriptions-item>
   </a-descriptions>
-  <div v-if="!target" class="table-wrap">
-    <a-table
-      :columns="columns"
-      :data-source="rollout.targets"
-      :pagination="{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }"
-      row-key="ordinal"
-      :scroll="{ x: 830 }"
-      ><template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'sensor'"
-          ><span>{{ record.spec.sensor_id }}</span
-          ><small class="record-id">{{
-            record.batch === 0 ? '首批' : '第 ' + (record.batch + 1) + ' 批'
-          }}</small></template
-        >
-        <template v-else-if="column.key === 'plan'"
-          ><span>{{ record.spec.name }}</span
-          ><small class="record-id"
-            >批准修订 {{ record.authorized_revision }} · {{ record.spec.package_id }} /
-            {{ record.spec.package_revision }}</small
-          ></template
-        >
-        <template v-else-if="column.key === 'state'"
-          ><a-tag :color="color(record.state)">{{ targetStates[record.state] }}</a-tag
-          ><small class="record-id">{{
-            record.run && !record.run.finished_at
-              ? syncStates[record.run.state]
-              : (rolloutCodes[record.code] ?? syncCodes[record.code] ?? record.code)
-          }}</small></template
-        >
-        <template v-else-if="column.key === 'action'"
-          ><a-button type="link" @click="inspect(record.ordinal)">验证证据</a-button></template
-        >
-      </template></a-table
-    >
-  </div>
+  <ListTable
+    v-if="!target"
+    :columns="columns"
+    :data-source="rollout.targets ?? []"
+    :pagination="tablePagination()"
+    row-key="ordinal"
+    :scroll="{ x: 1232 }"
+    ><template #bodyCell="{ column, record }">
+      <template v-if="column.key === 'batch'">{{
+        record.batch === 0 ? '首批' : '第 ' + (record.batch + 1) + ' 批'
+      }}</template>
+      <StatusTag
+        v-else-if="column.key === 'state'"
+        :tone="statusTone(rolloutTargetTones, record.state)"
+        :value="targetStates[record.state]"
+      />
+      <span v-else-if="column.key === 'note'" :title="targetNote(record)">{{ targetNote(record) }}</span>
+      <button v-else-if="column.key === 'action'" type="button" class="record-link" @click="inspect(record.ordinal)">
+        验证证据
+      </button>
+    </template></ListTable
+  >
   <a-modal v-if="target" open title="目标验证证据" :width="760" :footer="null" @cancel="target = undefined">
     <a-descriptions bordered :column="1"
       ><a-descriptions-item label="目标探针">{{ target.spec.sensor_id }}</a-descriptions-item

@@ -2,6 +2,11 @@
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import WatchlistTable from '@starbeacon/shared/components/WatchlistTable.vue';
 import WatchlistForm from '@starbeacon/shared/components/WatchlistForm.vue';
 import WatchlistDetail from '@starbeacon/shared/components/WatchlistDetail.vue';
@@ -171,6 +176,10 @@ function page(direction: 'next' | 'previous') {
   closeReadOverlays();
   model[direction]();
 }
+function changePageSize(size: number) {
+  closeReadOverlays();
+  model.changePageSize(size);
+}
 watch(
   () =>
     [
@@ -197,55 +206,73 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>保护与观察名单</h1>
-      <p class="page-description">按指定探针、匹配值和有效期维护保护或观察范围，保留每次配置依据。</p>
-    </div>
+  <PageHeader
+    title="保护与观察名单"
+    description="按指定探针、匹配值和有效期维护保护或观察范围，保留每次配置依据。设备动作须核对当前授权、注册身份和有效期。"
+    notice="最多 256 项名单。业务状态按当前时间和所读修订计算，历史默认保留 180 天。原始告警仍可独立检索。"
+  >
     <a-button :loading="model.pending.value" :disabled="model.busy.value" @click="refresh">刷新目录</a-button>
-  </header>
+  </PageHeader>
   <a-alert
-    :type="model.unconfirmed.value ? 'warning' : 'info'"
+    v-if="model.unconfirmed.value"
+    type="warning"
     show-icon
-    :message="
-      model.unconfirmed.value
-        ? '上次名单提交结果尚未确认。请点击“核对原提交”完成核对后，再查看或维护其他名单。'
-        : '名单不删除原始告警。保护范围与观察命中分别保留，任何设备动作仍须核对当前授权、注册身份和有效期。'
-    "
+    message="上次名单提交结果尚未确认。请点击“核对原提交”完成核对后，再查看或维护其他名单。"
     class="section-gap"
   />
-  <form class="watchlists-toolbar panel panel-body" @submit.prevent="search">
-    <a-input
-      v-model:value="filters.keyword"
-      aria-label="筛选名单名称"
-      :maxlength="128"
-      placeholder="名单名称"
-      allow-clear
-    /><a-select
-      v-model:value="filters.kind"
-      aria-label="筛选名单类型"
-      :options="[
-        { value: '', label: '全部类型' },
-        ...Object.entries(watchlistKinds).map(([value, label]) => ({ value, label })),
-      ]"
-    /><a-select
-      v-model:value="filters.active"
-      aria-label="筛选名单配置状态"
-      :options="[
-        { value: '', label: '全部配置状态' },
-        { value: 'true', label: '启用' },
-        { value: 'false', label: '停用' },
-      ]"
-    /><a-button type="primary" html-type="submit" :loading="model.pending.value">查询</a-button
-    ><a-button :disabled="model.pending.value" @click="reset">重置</a-button
-    ><a-button v-if="canEdit" :disabled="model.busy.value" @click="edit(null)">{{
-      model.unconfirmed.value ? '核对原提交' : '创建名单'
-    }}</a-button>
+  <form @submit.prevent="search">
+    <ListFilters label="名单筛选" :columns="4">
+      <label
+        ><span>名单名称</span>
+        <a-input
+          v-model:value="filters.keyword"
+          aria-label="筛选名单名称"
+          :maxlength="128"
+          placeholder="名单名称"
+          allow-clear
+      /></label>
+      <div class="filter-field">
+        <label for="watchlist-kind">类型</label
+        ><a-select
+          id="watchlist-kind"
+          v-model:value="filters.kind"
+          aria-label="筛选名单类型"
+          :options="[
+            { value: '', label: '全部类型' },
+            ...Object.entries(watchlistKinds).map(([value, label]) => ({ value, label })),
+          ]"
+        />
+      </div>
+      <div class="filter-field">
+        <label for="watchlist-status">配置状态</label
+        ><a-select
+          id="watchlist-status"
+          v-model:value="filters.active"
+          aria-label="筛选名单配置状态"
+          :options="[
+            { value: '', label: '全部配置状态' },
+            { value: 'true', label: '启用' },
+            { value: 'false', label: '停用' },
+          ]"
+        />
+      </div>
+      <template #actions
+        ><a-button type="primary" html-type="submit" :loading="model.pending.value">查询</a-button
+        ><a-button :disabled="model.pending.value" @click="reset">重置</a-button
+        ><a-button v-if="canEdit" :disabled="model.busy.value" @click="edit(null)">{{
+          model.unconfirmed.value ? '核对原提交' : '创建名单'
+        }}</a-button></template
+      >
+    </ListFilters>
   </form>
-  <section class="panel">
-    <div class="panel-header">
+  <section class="panel table-panel">
+    <div class="table-toolbar">
       <h2>名单目录</h2>
-      <span>当前 {{ model.page.value.items.length }} 项</span>
+      <MetricBar
+        v-if="!model.pending.value && !model.error.value"
+        embedded
+        :items="[{ label: '本页名单', value: model.page.value.items.length }]"
+      />
     </div>
     <div v-if="model.error.value && model.page.value.items.length" class="panel-body">
       <a-alert type="warning" show-icon message="名单更新失败，当前保留上次读取结果" :description="model.error.value" />
@@ -266,18 +293,18 @@ onScopeDispose(() => {
         @preview="test"
         @state="edit($event, true)"
     /></StatePanel>
-    <div class="watchlists-pagination">
-      <span class="page-description"
-        >状态按所读修订与当前时间计算；历史默认保留 180 天，业务有效期独立。最多 256 项名单。</span
-      ><a-button :disabled="model.pending.value || model.cursors.value.length <= 1" @click="page('previous')"
-        >上一页</a-button
-      ><span>第 {{ model.cursors.value.length }} 页</span
-      ><a-button
-        :disabled="model.pending.value || !!model.error.value || !model.page.value.next_cursor"
-        @click="page('next')"
-        >下一页</a-button
-      >
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="model.cursors.value.length"
+      :page-size="model.query.value.limit"
+      :count="model.pending.value || model.error.value ? undefined : model.page.value.items.length"
+      :has-previous="model.cursors.value.length > 1"
+      :has-next="!model.error.value && !!model.page.value.next_cursor"
+      :disabled="model.pending.value"
+      @previous="page('previous')"
+      @next="page('next')"
+      @update:page-size="changePageSize"
+    />
   </section>
   <WatchlistForm
     v-if="editing"
@@ -318,9 +345,11 @@ onScopeDispose(() => {
         :error="hits.error.value"
         :loaded="hits.loaded.value"
         :pages="hits.cursors.value.length"
+        :page-size="hits.query.value?.limit ?? defaultPageSize"
         @query="(start, end) => hits.load(detailTarget!.id, start, end)"
         @next="hits.next"
         @previous="hits.previous"
+        @update:page-size="hits.changePageSize"
         @retry="hits.retry"
     /></template>
     <template v-if="canEdit" #impact
@@ -348,30 +377,3 @@ onScopeDispose(() => {
     @close="closePreview"
   />
 </template>
-<style scoped>
-.watchlists-toolbar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.watchlists-toolbar > .ant-input-affix-wrapper {
-  width: 240px;
-}
-.watchlists-toolbar > .ant-select {
-  width: 150px;
-}
-.watchlists-pagination {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  padding: 12px;
-}
-.watchlists-pagination > .page-description {
-  flex: 1;
-  min-width: 200px;
-}
-</style>

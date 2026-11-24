@@ -1,6 +1,8 @@
 import { onMounted, onScopeDispose, shallowRef, shallowReadonly, watch } from 'vue';
 import type { Sensor } from '@starbeacon/shared/types.ts';
 import { validSensor } from '@starbeacon/shared/sensors.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 
 export function useSensors() {
@@ -10,6 +12,7 @@ export function useSensors() {
     saving = shallowRef(false);
   const nextCursor = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   let keyword = '',
     groupID = '',
     status = '';
@@ -25,15 +28,16 @@ export function useSensors() {
     error.value = '';
     try {
       const cursor = cursors.value.at(-1) ?? '';
+      const limit = pageSize.value;
       const result = await session.api.request<{ items: Sensor[]; next_cursor?: string }>(
-        '/sensors?' + new URLSearchParams({ cursor, keyword, group_id: groupID, status, limit: '20' }),
+        '/sensors?' + new URLSearchParams({ cursor, keyword, group_id: groupID, status, limit: String(limit) }),
         { signal: active.signal },
       );
       if (!active.signal.aborted) {
         const next = result.next_cursor ?? '';
         if (
           !Array.isArray(result.items) ||
-          result.items.length > 20 ||
+          result.items.length > limit ||
           typeof next !== 'string' ||
           result.items.some(
             (s, i) => !validSensor(s) || s.id <= cursor || (i > 0 && s.id <= result.items[i - 1]!.id),
@@ -82,6 +86,7 @@ export function useSensors() {
       items.value = [];
       nextCursor.value = '';
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       keyword = '';
       groupID = '';
       status = '';
@@ -97,7 +102,7 @@ export function useSensors() {
     void refresh();
   }
   function next() {
-    if (!pending.value && nextCursor.value) {
+    if (!pending.value && !error.value && nextCursor.value) {
       cursors.value = [...cursors.value, nextCursor.value];
       void refresh();
     }
@@ -115,6 +120,8 @@ export function useSensors() {
     saving: shallowReadonly(saving),
     nextCursor: shallowReadonly(nextCursor),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     refresh,
     toggle,
     search,

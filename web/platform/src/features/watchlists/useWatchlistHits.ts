@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import {
   readWatchlistHitPage,
   watchlistHitPath,
@@ -81,7 +82,7 @@ export function useWatchlistHits() {
     read = undefined;
     let scope: WatchlistHitQuery;
     try {
-      scope = watchlistHitQuery(listId, start, end);
+      scope = watchlistHitQuery(listId, start, end, '', query.value?.limit ?? defaultPageSize);
     } catch (cause) {
       query.value = null;
       cursors.value = [''];
@@ -105,6 +106,15 @@ export function useWatchlistHits() {
   function previous() {
     if (pending.value || cursors.value.length <= 1) return;
     cursors.value = cursors.value.slice(0, -1);
+    void refresh();
+  }
+  function changePageSize(limit: number) {
+    const scope = query.value;
+    if (pending.value || !scope || limit === scope.limit) return;
+    query.value = { ...scope, cursor: '', limit };
+    cursors.value = [''];
+    page.value = empty();
+    loaded.value = false;
     void refresh();
   }
   const retry = () => (query.value ? refresh() : Promise.resolve());
@@ -133,6 +143,7 @@ export function useWatchlistHits() {
     load,
     next,
     previous,
+    changePageSize,
     retry,
     clear,
   };

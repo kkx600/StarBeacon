@@ -3,10 +3,14 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('规则管理');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onMounted, onScopeDispose, reactive, shallowRef } from 'vue';
-import { Table as ATable, Modal as AModal, Select as ASelect } from 'ant-design-vue';
+import { Modal as AModal, Select as ASelect } from 'ant-design-vue';
 import type { RulePackage, Sensor } from '@starbeacon/shared/types.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
 import ReplayWorkspace from '@starbeacon/shared/components/ReplayWorkspace.vue';
 import RuleEditor from '@starbeacon/shared/components/RuleEditor.vue';
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue';
@@ -213,12 +217,13 @@ async function check() {
   }
 }
 const columns = [
-  { title: '规则包', key: 'name', width: 220 },
+  { title: '规则包编号', dataIndex: 'id', width: 150, className: 'technical', ellipsis: true },
+  { title: '规则包名称', key: 'name', width: 180, ellipsis: true },
   { title: '修订', dataIndex: 'revision', width: 90 },
   { title: '检测引擎', dataIndex: 'engine_version', width: 110 },
   { title: '包摘要', key: 'hash', width: 210 },
   { title: '保存时间', key: 'time', width: 190 },
-  { title: '操作', key: 'action', width: 270 },
+  { title: '操作', key: 'action', width: 270, fixed: 'right' as const },
 ];
 onMounted(refresh);
 onScopeDispose(() => {
@@ -229,18 +234,22 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">管理不可变规则包修订，核对原生装载检查、样本回放和发布条件。</p>
-    </div>
+  <PageHeader
+    :title="pageTitle"
+    description="管理不可变规则包修订，核对原生装载检查、样本回放和发布条件。"
+    :notice="
+      view === 'packages'
+        ? '旁路规则包支持 alert 检测规则。发布前须完成原生装载检查、样本回放和完整包验收。'
+        : undefined
+    "
+  >
     <a-space v-if="view === 'packages'"
       ><a-button :loading="pending" @click="refresh">刷新</a-button
       ><a-button v-if="session.current.value?.role === 'admin'" type="primary" :disabled="saving" @click="edit()"
         >创建规则包</a-button
       ></a-space
     >
-  </header>
+  </PageHeader>
   <RuleWorkspaceNavigation v-if="route.meta.navWorkspace === 'rules'" :can-manage="canEdit" />
   <WorkspaceTabs
     v-else
@@ -254,16 +263,10 @@ onScopeDispose(() => {
     @change="change"
   />
   <template v-if="view === 'packages'">
-    <a-alert
-      type="info"
-      show-icon
-      message="旁路规则包支持 alert 检测规则。装载检查通过后，仍需完成样本回放与完整包验收。"
-      class="section-gap"
-    />
-    <section class="panel">
-      <div class="panel-header">
+    <section class="panel table-panel">
+      <div class="table-toolbar">
         <h2>规则包</h2>
-        <span>{{ items.length }} 个规则包</span>
+        <MetricBar v-if="!pending && !error" embedded :items="[{ label: '规则包', value: items.length }]" />
       </div>
       <StatePanel
         :loading="pending"
@@ -271,35 +274,37 @@ onScopeDispose(() => {
         :empty="items.length === 0"
         description="暂无规则包，请创建规则包并保存检测规则。"
         @retry="refresh"
-        ><div class="table-wrap">
-          <a-table
-            :columns="columns"
-            :data-source="items"
-            row-key="id"
-            :pagination="{ pageSize: 10, hideOnSinglePage: true }"
-            :scroll="{ x: 1110 }"
-            ><template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'name'"
-                ><button class="link-button" @click="edit(record.id)">{{ record.name }}</button
-                ><small class="record-id technical">{{ record.id }}</small></template
-              >
-              <span v-else-if="column.key === 'hash'" class="technical" :title="record.sha256"
-                >{{ record.sha256.slice(0, 20) }}…</span
-              >
-              <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
-              <template v-else-if="column.key === 'action'"
-                ><a-space
-                  ><a-button type="link" :disabled="saving" @click="edit(record.id)">{{
-                    canEdit ? '编辑规则' : '查看规则'
-                  }}</a-button
-                  ><a-button v-if="canEdit" type="link" @click="inspect(record.id)">装载检查</a-button
-                  ><a-button v-if="canEdit" type="link" @click="publish(record.id)">发布与回滚</a-button></a-space
-                ></template
-              >
-            </template></a-table
-          >
-        </div></StatePanel
       >
+        <ListTable
+          :columns="columns"
+          :data-source="items"
+          row-key="id"
+          :pagination="tablePagination()"
+          :scroll="{ x: 1220 }"
+          ><template #bodyCell="{ column, record }">
+            <button
+              v-if="column.key === 'name'"
+              type="button"
+              class="record-link"
+              :title="record.name"
+              @click="edit(record.id)"
+            >
+              {{ record.name }}
+            </button>
+            <span v-else-if="column.key === 'hash'" class="technical" :title="record.sha256"
+              >{{ record.sha256.slice(0, 20) }}…</span
+            >
+            <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
+            <div v-else-if="column.key === 'action'" class="table-row-actions">
+              <a-button type="link" size="small" :disabled="saving" @click="edit(record.id)">{{
+                canEdit ? '编辑规则' : '查看规则'
+              }}</a-button><a-button v-if="canEdit" type="link" size="small" @click="inspect(record.id)"
+                >装载检查</a-button
+              ><a-button v-if="canEdit" type="link" size="small" @click="publish(record.id)">发布与回滚</a-button>
+            </div>
+          </template></ListTable
+        >
+      </StatePanel>
     </section>
   </template>
   <RuleGenerationWorkspace v-else-if="view === 'generation'" @adopted="refresh" @samples="change('samples')" />
@@ -315,7 +320,13 @@ onScopeDispose(() => {
       @change="changeSyncMode"
     /><RuleRolloutsWorkspace v-if="syncMode === 'rollouts'" /><RuleSyncWorkspace v-else />
   </section>
-  <ReplayWorkspace v-else :api="session.api" @tasks="change('tasks')" :view="view === 'tasks' ? 'tasks' : 'samples'" />
+  <ReplayWorkspace
+    v-else
+    :api="session.api"
+    :principal="session.current.value"
+    @tasks="change('tasks')"
+    :view="view === 'tasks' ? 'tasks' : 'samples'"
+  />
   <a-modal
     v-if="view === 'packages'"
     :title="!canEdit ? '查看规则包' : editing ? '规则包修订' : '创建规则包'"

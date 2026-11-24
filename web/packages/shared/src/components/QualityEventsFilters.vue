@@ -2,13 +2,14 @@
 import { Select as ASelect } from 'ant-design-vue';
 import { qualityEventNames, type QualityFilters } from '../qualityEvents';
 import TimeRangeField from './TimeRangeField.vue';
+import ListFilters from './ListFilters.vue';
 const model = defineModel<QualityFilters>({ required: true });
 defineProps<{ pending: boolean }>();
 const emit = defineEmits<{ query: []; cancel: []; reset: [] }>();
 </script>
 <template>
-  <a-form :model="model" layout="vertical" class="panel quality-event-form" @finish="emit('query')"
-    ><div class="quality-event-fields">
+  <a-form :model="model" layout="horizontal" @finish="emit('query')">
+    <ListFilters label="质量事件筛选" :columns="3">
       <TimeRangeField
         v-model:start="model.start"
         v-model:end="model.end"
@@ -36,34 +37,11 @@ const emit = defineEmits<{ query: []; cancel: []; reset: [] }>();
           :maxlength="64"
           placeholder="留空包含全部注册代次"
       /></a-form-item>
-    </div>
-    <div class="filter-actions">
-      <a-button type="primary" html-type="submit" :loading="pending">查询</a-button
-      ><a-button v-if="pending" @click="emit('cancel')">取消查询</a-button
-      ><a-button :disabled="pending" @click="emit('reset')">重置</a-button
-      ><span class="page-description">每页 20 条 · 最多检索前 10,000 条</span>
-    </div></a-form
-  >
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="pending">查询</a-button
+        ><a-button v-if="pending" @click="emit('cancel')">取消查询</a-button
+        ><a-button :disabled="pending" @click="emit('reset')">重置</a-button>
+      </template>
+    </ListFilters>
+  </a-form>
 </template>
-<style scoped>
-.quality-event-form {
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.quality-event-fields {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 var(--field-gap);
-}
-.quality-event-fields :deep(.ant-form-item) {
-  min-width: 0;
-}
-.quality-event-fields .ant-select {
-  width: 100%;
-}
-@media (max-width: 1200px) {
-  .quality-event-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-</style>

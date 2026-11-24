@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue';
-import {
-  Table as ATable,
-  Modal as AModal,
-  InputNumber as AInputNumber,
-  Select as ASelect,
-  Tag as ATag,
-} from 'ant-design-vue';
+import { Modal as AModal, InputNumber as AInputNumber, Select as ASelect } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
 import { applicationCategories, validRule, type AppChange, type AppRule } from './applicationRules';
@@ -35,13 +34,15 @@ const deployment = useApplicationDeployment();
 let read: AbortController | undefined,
   stopped = false;
 const columns = [
-  { title: '规则名称', key: 'name', width: 200 },
-  { title: '应用产品 / 类别', key: 'product', width: 200 },
+  { title: '规则编号', dataIndex: 'id', width: 140, className: 'technical', ellipsis: true },
+  { title: '规则名称', key: 'name', width: 175, ellipsis: true },
+  { title: '应用产品', dataIndex: ['definition', 'product_name'], width: 160, ellipsis: true },
+  { title: '类别', key: 'category', width: 100 },
   { title: '协议范围', key: 'protocols', width: 135 },
-  { title: '修订', dataIndex: 'revision', width: 75 },
+  { title: '修订', dataIndex: 'revision', width: 75, className: 'technical' },
   { title: '状态', key: 'active', width: 80 },
-  { title: '保存时间', key: 'created', width: 175 },
-  { title: '操作', key: 'actions', width: 180 },
+  { title: '保存时间', key: 'created', width: 175, className: 'technical' },
+  { title: '操作', key: 'actions', width: 155, fixed: 'right' as const },
 ];
 function closeDetail() {
   read?.abort();
@@ -74,6 +75,10 @@ function search() {
 function refresh() {
   closeOverlays();
   void model.refresh();
+}
+function changePageSize(size: number) {
+  closeOverlays();
+  model.changePageSize(size);
 }
 function page(direction: 'next' | 'previous') {
   closeOverlays();
@@ -187,40 +192,49 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <a-alert
-    type="info"
-    show-icon
-    message="维护并验证产品名称规则；编辑或停用后须通过签名任务部署到指定探针。协议事件保留独立分类依据；应用字节计量仍需流计量关联，不能从名称命中推算流量。"
-    class="section-gap"
-  />
-  <form class="application-rule-toolbar" @submit.prevent="search">
-    <a-input
-      v-model:value="filter.keyword"
-      aria-label="应用识别规则名称"
-      placeholder="规则名称"
-      :maxlength="128"
-    /><a-select
-      v-model:value="filter.active"
-      aria-label="应用识别规则状态"
-      :options="[
-        { value: '', label: '全部状态' },
-        { value: 'true', label: '启用' },
-        { value: 'false', label: '停用' },
-      ]"
-    /><a-button html-type="submit" :disabled="model.pending.value">检索</a-button
-    ><a-button :loading="model.pending.value" @click="refresh">刷新</a-button
-    ><a-button :disabled="model.pending.value" @click="test(null)">验证启用规则</a-button
-    ><a-button v-if="canEdit" :disabled="deployment.busy.value || model.busy.value" @click="deploy">{{
-      deployment.unconfirmed.value ? '核对应用部署' : '部署到探针'
-    }}</a-button
-    ><a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{
-      model.unconfirmed.value ? '核对原提交' : '创建规则'
-    }}</a-button>
+  <form @submit.prevent="search">
+    <ListFilters label="应用识别规则筛选" :columns="3">
+      <label
+        ><span>规则名称</span>
+        <a-input v-model:value="filter.keyword" aria-label="应用识别规则名称" placeholder="规则名称" :maxlength="128"
+      /></label>
+      <div class="filter-field">
+        <label for="application-rule-status">状态</label
+        ><a-select
+          id="application-rule-status"
+          v-model:value="filter.active"
+          aria-label="应用识别规则状态"
+          :options="[
+            { value: '', label: '全部状态' },
+            { value: 'true', label: '启用' },
+            { value: 'false', label: '停用' },
+          ]"
+        />
+      </div>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :disabled="model.pending.value">检索</a-button>
+        <a-button :loading="model.pending.value" @click="refresh">刷新</a-button>
+      </template>
+    </ListFilters>
   </form>
-  <section class="panel">
-    <div class="panel-header">
-      <h2>应用识别规则</h2>
-      <span>当前页 {{ model.page.value.items.length }} 条</span>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
+        <h2>应用识别规则</h2>
+        <PageHelp title="应用识别规则">
+          <p>编辑或停用后，通过签名任务部署到指定探针。应用字节计量来自流计量关联，产品匹配提供分类依据。</p>
+          <p>最多支持 128 条规则，历史修订默认保留 180 天，当前配置持续保留。</p>
+        </PageHelp>
+      </div>
+      <div class="filter-actions">
+        <a-button :disabled="model.pending.value" @click="test(null)">验证启用规则</a-button>
+        <a-button v-if="canEdit" :disabled="deployment.busy.value || model.busy.value" @click="deploy">{{
+          deployment.unconfirmed.value ? '核对应用部署' : '部署到探针'
+        }}</a-button>
+        <a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{
+          model.unconfirmed.value ? '核对原提交' : '创建规则'
+        }}</a-button>
+      </div>
     </div>
     <StatePanel
       :loading="model.pending.value"
@@ -233,59 +247,57 @@ onScopeDispose(() => {
       "
       @retry="model.refresh"
     >
-      <a-table
-        :data-source="model.page.value.items"
-        :columns="columns"
-        row-key="id"
-        :pagination="false"
-        size="small"
-        :scroll="{ x: 1045 }"
+      <ListTable :data-source="model.page.value.items" :columns="columns" :scroll="{ x: 1195 }"
         ><template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'name'"
-            ><strong>{{ record.name }}</strong>
-            <div class="page-description technical">{{ record.id }}</div></template
+          <button
+            v-if="column.key === 'name'"
+            type="button"
+            class="record-link"
+            :title="record.name"
+            @click="inspect(record)"
           >
-          <template v-else-if="column.key === 'product'"
-            >{{ record.definition.product_name }}
-            <div class="page-description">
-              {{ applicationCategories[record.definition.category_id as keyof typeof applicationCategories] }}
-            </div></template
-          >
-          <template v-else-if="column.key === 'protocols'"
-            ><a-tag v-for="protocol in record.definition.protocols" :key="protocol" color="blue">{{
-              protocol.toUpperCase()
-            }}</a-tag></template
-          >
-          <template v-else-if="column.key === 'active'"
-            ><a-tag :color="record.active ? 'green' : 'default'">{{ record.active ? '启用' : '停用' }}</a-tag></template
-          >
+            {{ record.name }}
+          </button>
+          <template v-else-if="column.key === 'category'">{{
+            applicationCategories[record.definition.category_id as keyof typeof applicationCategories]
+          }}</template>
+          <span v-else-if="column.key === 'protocols'" class="technical">{{
+            record.definition.protocols.map(protocol => protocol.toUpperCase()).join('、')
+          }}</span>
+          <StatusTag
+            v-else-if="column.key === 'active'"
+            :tone="record.active ? 'success' : 'neutral'"
+            :value="record.active ? '启用' : '停用'"
+          />
           <template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>
           <template v-else-if="column.key === 'actions'"
-            ><div class="application-row-actions">
-              <a-button type="link" size="small" @click="inspect(record as AppRule)">查看</a-button
+            ><div class="table-row-actions">
+              <a-button type="link" size="small" @click="inspect(record)">查看</a-button
               ><a-button
                 v-if="canEdit"
                 type="link"
                 size="small"
                 :disabled="model.busy.value || model.unconfirmed.value"
-                @click="edit(record as AppRule)"
+                @click="edit(record)"
                 >编辑</a-button
-              ><a-button type="link" size="small" @click="test(record as AppRule)">验证</a-button>
+              ><a-button type="link" size="small" @click="test(record)">验证</a-button>
             </div></template
           >
-        </template></a-table
+        </template></ListTable
       >
     </StatePanel>
-    <div class="application-pagination">
-      <span class="page-description">规则修订历史默认保留 180 天，当前配置持续保留；最多 128 条规则。</span
-      ><a-button :disabled="model.pending.value || model.cursors.value.length < 2" @click="page('previous')"
-        >上一页</a-button
-      ><a-button
-        :disabled="model.pending.value || !!model.error.value || !model.page.value.next_cursor"
-        @click="page('next')"
-        >下一页</a-button
-      >
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="model.cursors.value.length"
+      :page-size="model.pageSize.value"
+      :count="model.pending.value || model.error.value ? undefined : model.page.value.items.length"
+      :has-previous="model.cursors.value.length > 1"
+      :has-next="!model.error.value && !!model.page.value.next_cursor"
+      :disabled="model.pending.value"
+      @previous="page('previous')"
+      @next="page('next')"
+      @update:page-size="changePageSize"
+    />
   </section>
   <ApplicationRuleForm
     v-if="editing"
@@ -377,33 +389,11 @@ onScopeDispose(() => {
   </a-modal>
 </template>
 <style scoped>
-.application-rule-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.application-rule-toolbar > .ant-input {
-  width: 220px;
-}
-.application-rule-toolbar > .ant-select {
-  width: 130px;
-}
-.application-row-actions,
-.application-pagination,
 .application-revision {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-.application-pagination {
-  justify-content: flex-end;
-  padding: 12px;
-}
-.application-pagination > span {
-  flex: 1;
-  min-width: 180px;
 }
 .application-detail {
   display: grid;

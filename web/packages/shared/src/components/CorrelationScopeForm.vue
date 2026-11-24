@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { correlationRequestError, type CorrelationRequest } from '../correlation';
+import ListFilters from './ListFilters.vue';
+import PageHelp from './PageHelp.vue';
 const props = defineProps<{
   revision: number;
   windowSeconds: number;
@@ -43,65 +45,42 @@ function run() {
   localError.value = correlationRequestError(query);
   if (!localError.value) emit('run', query);
 }
-function changed() {
+function change(key: 'start' | 'end', value: string) {
+  scope[key] = value;
   localError.value = '';
   emit('change');
 }
 </script>
 <template>
-  <section class="panel panel-body">
-    <a-form :model="scope" layout="vertical" :disabled="pending || disabled" @finish="run"
-      ><div class="correlation-scope">
-        <a-form-item label="回测开始时间" html-for="correlation-start" required
-          ><a-input
-            id="correlation-start"
-            v-model:value="scope.start"
-            type="datetime-local"
-            step="1"
-            @update:value="changed" /></a-form-item
-        ><a-form-item label="回测结束时间" html-for="correlation-end" required
-          ><a-input
-            id="correlation-end"
-            v-model:value="scope.end"
-            type="datetime-local"
-            step="1"
-            @update:value="changed"
-        /></a-form-item>
-        <div class="correlation-scope-actions">
-          <a-button type="primary" html-type="submit" :loading="pending" :disabled="disabled || pending"
-            >运行回测</a-button
-          ><a-button v-if="pending" :disabled="false" @click="emit('cancel')">停止等待</a-button>
-        </div>
-      </div></a-form
-    ><a-alert v-if="localError || error" type="error" show-icon :message="error || localError" class="section-gap" />
-    <p class="page-description">
-      起止时间按本机时区显示，查询使用 UTC 半开区间；单次范围最多一小时。{{ windowSeconds }} 秒固定窗口按 UTC
-      对齐，首尾不完整窗口不计入阈值结果。
-    </p>
-  </section>
+  <a-form :model="scope" layout="horizontal" :disabled="pending || disabled" @finish="run">
+    <ListFilters label="回测时间筛选" :columns="3">
+      <a-form-item label="回测开始时间" html-for="correlation-start" required
+        ><a-input
+          id="correlation-start"
+          :value="scope.start"
+          type="datetime-local"
+          step="1"
+          @update:value="change('start', $event)" /></a-form-item
+      ><a-form-item label="回测结束时间" html-for="correlation-end" required
+        ><a-input
+          id="correlation-end"
+          :value="scope.end"
+          type="datetime-local"
+          step="1"
+          @update:value="change('end', $event)"
+      /></a-form-item>
+      <template #actions>
+        <PageHelp title="回测时间"
+          ><p>
+            单次范围最多一小时。输入采用本机时区，查询结束时刻不计入。{{ windowSeconds }} 秒窗口以 UTC
+            对齐，阈值只按完整窗口计算。
+          </p></PageHelp
+        >
+        <a-button type="primary" html-type="submit" :loading="pending" :disabled="disabled || pending"
+          >运行回测</a-button
+        ><a-button v-if="pending" :disabled="false" @click="emit('cancel')">停止等待</a-button>
+      </template>
+    </ListFilters>
+  </a-form>
+  <a-alert v-if="localError || error" type="error" show-icon :message="error || localError" class="section-gap" />
 </template>
-<style scoped>
-.correlation-scope {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  column-gap: 12px;
-  align-items: end;
-}
-.correlation-scope .ant-form-item {
-  margin-bottom: 8px;
-}
-.correlation-scope-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-@media (max-width: 1100px) {
-  .correlation-scope {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .correlation-scope-actions {
-    grid-column: 1/-1;
-  }
-}
-</style>

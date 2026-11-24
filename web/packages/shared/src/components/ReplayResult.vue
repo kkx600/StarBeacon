@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Descriptions as ADescriptions, Table as ATable } from 'ant-design-vue';
+import { Descriptions as ADescriptions } from 'ant-design-vue';
 import { sampleOrigin } from '../utils/sample';
 import { formatBytes } from '../utils/format';
-import { formatTime } from '../types';
+import { formatTime, type MetricSpec } from '../types';
+import ListTable from './ListTable.vue';
+import MetricBar from './MetricBar.vue';
+import PageHelp from './PageHelp.vue';
+import { tablePagination } from '../pagination';
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{ result: Record<string, unknown>; local?: boolean }>();
 const completed = computed(() => props.result.replay === 'completed');
@@ -29,17 +33,24 @@ const handshakeLimits: Record<string, string> = {
   flow_limit: '超过 32,768 个流的评估上限',
   tuple_reuse_or_simultaneous_open: '存在五元组复用或同时打开',
 };
-const alerts = computed(() =>
+type ReplayMatch = Record<string, unknown> & { key: number };
+const alerts = computed<ReplayMatch[]>(() =>
   Array.isArray(props.result.alerts) ? props.result.alerts.map((row, index) => ({ ...row, key: index })) : [],
 );
+const metrics = computed<MetricSpec[]>(() => [
+  { label: '处理包数', value: String(props.result.packets_processed ?? '—'), missingReason: '包数未确认' },
+  { label: '命中总数', value: String(props.result.alert_count ?? '—'), missingReason: '命中数未确认' },
+  { label: '耗时', value: String(props.result.duration_ms ?? '—'), suffix: 'ms', missingReason: '耗时未确认' },
+]);
 const packetTime = (value: unknown) =>
   formatTime(typeof value === 'string' ? value : null, { fraction: 'milliseconds' });
 const columns = [
-  { title: 'SID / 修订', key: 'rule', width: 120 },
-  { title: '规则名称', dataIndex: 'signature', width: 230 },
-  { title: '源 → 目的', key: 'address', width: 280 },
-  { title: '数据包序号', dataIndex: 'pcap_cnt', width: 130 },
-  { title: '捕获时间', key: 'time', width: 190 },
+  { title: 'SID', dataIndex: 'signature_id', width: 100, className: 'technical' },
+  { title: '修订', dataIndex: 'rev', width: 62, className: 'technical' },
+  { title: '规则名称', dataIndex: 'signature', width: 200, ellipsis: true },
+  { title: '源 → 目的', key: 'address', width: 280, ellipsis: true },
+  { title: '数据包序号', dataIndex: 'pcap_cnt', width: 124, className: 'technical' },
+  { title: '捕获时间', key: 'time', width: 195, className: 'technical' },
 ];
 </script>
 <template>
@@ -65,11 +76,8 @@ const columns = [
     description="三次握手、地址及包时间由离线封装生成。请求字节保持原样，无合成 HTTP 响应；结果不能证明真实网络通信或攻击成功。"
     class="section-gap"
   />
+  <MetricBar :items="metrics" />
   <a-descriptions bordered :column="1" size="small" class="section-gap">
-    <a-descriptions-item label="包数 / 命中 / 耗时"
-      >{{ result.packets_processed ?? '未确认' }} / {{ result.alert_count ?? '未确认' }} /
-      {{ result.duration_ms ?? '未确认' }} ms</a-descriptions-item
-    >
     <a-descriptions-item label="样本摘要"
       ><span class="technical">{{ result.sample_sha256 ?? '未确认' }}</span></a-descriptions-item
     >
@@ -123,21 +131,15 @@ const columns = [
     未命中不能证明流量安全；TLS
     密文、截断、缺少握手、校验和与重组深度均可能影响检测结果。重放结果不自动授予规则发布资格。
   </p>
-  <h2>命中明细</h2>
-  <p class="page-description section-gap">最多展示前 30 条命中，命中总数及最多 200 条规则汇总保存在执行回执中。</p>
-  <div class="table-wrap">
-    <a-table
-      :columns="columns"
-      :data-source="alerts"
-      size="small"
-      :pagination="{ pageSize: 5, hideOnSinglePage: true, showSizeChanger: false }"
-      :scroll="{ x: 960 }"
-      ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'rule'">{{ record.signature_id }} / {{ record.rev }}</template
-        ><span v-else-if="column.key === 'address'" class="technical"
-          >{{ record.src_ip }}:{{ record.src_port }} → {{ record.dest_ip }}:{{ record.dest_port }}</span
-        ><template v-else-if="column.key === 'time'">{{ packetTime(record.timestamp) }}</template></template
-      ></a-table
-    >
+  <div class="heading-with-help">
+    <h2>命中明细</h2>
+    <PageHelp title="命中明细"><p>最多展示前 30 条命中，命中总数及最多 200 条规则汇总保存在执行回执中。</p></PageHelp>
   </div>
+  <ListTable :columns="columns" :data-source="alerts" row-key="key" :pagination="tablePagination()" :scroll="{ x: 961 }"
+    ><template #bodyCell="{ column, record }"
+      ><span v-if="column.key === 'address'" class="technical"
+        >{{ record.src_ip }}:{{ record.src_port }} → {{ record.dest_ip }}:{{ record.dest_port }}</span
+      ><template v-else-if="column.key === 'time'">{{ packetTime(record.timestamp) }}</template></template
+    ></ListTable
+  >
 </template>

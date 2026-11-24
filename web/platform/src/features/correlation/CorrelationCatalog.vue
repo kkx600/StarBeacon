@@ -3,6 +3,10 @@ import { computed, onScopeDispose, ref, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
 import { Select as ASelect } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
 import CorrelationRuleTable from '@starbeacon/shared/components/CorrelationRuleTable.vue';
 import CorrelationRuleForm from '@starbeacon/shared/components/CorrelationRuleForm.vue';
 import CorrelationRuleDetail from '@starbeacon/shared/components/CorrelationRuleDetail.vue';
@@ -94,51 +98,61 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>关联规则</h1>
-      <p class="page-description">按唯一告警、实体字段和固定时间窗口核对活动模式，保留规则修订。</p>
-    </div>
+  <PageHeader
+    title="关联规则"
+    description="按唯一告警、实体字段和固定时间窗口核对活动模式。"
+    notice="按需回测使用固定修订。最多 128 条规则，历史修订默认保留 180 天，当前配置受引用保护。"
+  >
     <a-button :loading="model.pending.value" @click="model.refresh">刷新目录</a-button>
-  </header>
-  <a-alert
-    type="info"
-    show-icon
-    message="当前提供固定修订的按需窗口回测。规则保存与阈值命中不启用实时关联，不生成告警或设备动作。"
-    class="section-gap"
-  />
-  <form class="correlation-toolbar panel-body panel" @submit.prevent="model.search(keyword, active)">
-    <a-input
-      v-model:value="keyword"
-      aria-label="筛选关联规则名称"
-      placeholder="规则名称"
-      :maxlength="128"
-      allow-clear
-    /><a-select
-      v-model:value="active"
-      aria-label="筛选回测状态"
-      :options="[
-        { value: '', label: '全部状态' },
-        { value: 'true', label: '允许回测' },
-        { value: 'false', label: '停用' },
-      ]"
-    /><a-button type="primary" html-type="submit" :loading="model.pending.value">查询</a-button
-    ><a-button
-      :disabled="model.pending.value"
-      @click="
-        keyword = '';
-        active = '';
-        model.search('', '');
-      "
-      >重置</a-button
-    ><a-button v-if="canEdit" :disabled="model.busy.value" @click="create">{{
-      model.unconfirmed.value ? '核对原提交' : '创建关联规则'
-    }}</a-button>
+  </PageHeader>
+  <form @submit.prevent="model.search(keyword, active)">
+    <ListFilters label="关联规则筛选" :columns="3">
+      <label
+        ><span>规则名称</span>
+        <a-input
+          v-model:value="keyword"
+          aria-label="筛选关联规则名称"
+          placeholder="规则名称"
+          :maxlength="128"
+          allow-clear
+      /></label>
+      <div class="filter-field">
+        <label for="correlation-catalog-status">回测状态</label
+        ><a-select
+          id="correlation-catalog-status"
+          v-model:value="active"
+          aria-label="筛选回测状态"
+          :options="[
+            { value: '', label: '全部状态' },
+            { value: 'true', label: '允许回测' },
+            { value: 'false', label: '停用' },
+          ]"
+        />
+      </div>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="model.pending.value">查询</a-button
+        ><a-button
+          :disabled="model.pending.value"
+          @click="
+            keyword = '';
+            active = '';
+            model.search('', '');
+          "
+          >重置</a-button
+        ><a-button v-if="canEdit" :disabled="model.busy.value" @click="create">{{
+          model.unconfirmed.value ? '核对原提交' : '创建关联规则'
+        }}</a-button>
+      </template>
+    </ListFilters>
   </form>
-  <section class="panel">
-    <div class="panel-header">
+  <section class="panel table-panel">
+    <div class="table-toolbar">
       <h2>规则目录</h2>
-      <span>当前 {{ model.page.value.items.length }} 项</span>
+      <MetricBar
+        v-if="!model.pending.value && !model.error.value"
+        embedded
+        :items="[{ label: '本页规则', value: model.page.value.items.length }]"
+      />
     </div>
     <StatePanel
       :loading="model.pending.value"
@@ -154,17 +168,18 @@ onScopeDispose(() => {
         @edit="edit"
         @backtest="backtest"
     /></StatePanel>
-    <div class="correlation-pagination">
-      <span class="page-description">历史修订默认保留 180 天，当前配置受引用保护；最多 128 条规则。</span
-      ><a-button :disabled="model.pending.value || model.cursors.value.length <= 1" @click="model.previous"
-        >上一页</a-button
-      ><span>第 {{ model.cursors.value.length }} 页</span
-      ><a-button
-        :disabled="model.pending.value || !!model.error.value || !model.page.value.next_cursor"
-        @click="model.next"
-        >下一页</a-button
-      >
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="model.cursors.value.length"
+      :page-size="model.pageSize.value"
+      :count="model.pending.value || model.error.value ? undefined : model.page.value.items.length"
+      :has-previous="model.cursors.value.length > 1"
+      :has-next="!model.error.value && !!model.page.value.next_cursor"
+      :disabled="model.pending.value"
+      @previous="model.previous"
+      @next="model.next"
+      @update:page-size="model.changePageSize"
+    />
   </section>
   <CorrelationRuleForm
     v-if="editing"
@@ -188,30 +203,3 @@ onScopeDispose(() => {
     @close="closeDetail"
   />
 </template>
-<style scoped>
-.correlation-toolbar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.correlation-toolbar > .ant-input-affix-wrapper {
-  width: 240px;
-}
-.correlation-toolbar > .ant-select {
-  width: 150px;
-}
-.correlation-pagination {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  padding: 12px;
-}
-.correlation-pagination > .page-description {
-  flex: 1;
-  min-width: 200px;
-}
-</style>

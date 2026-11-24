@@ -1,5 +1,7 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   correlationChangeError as changeError,
@@ -17,6 +19,7 @@ export function useCorrelationRules() {
     keyword = shallowRef(''),
     active = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const busy = shallowRef(false),
     unconfirmed = shallowRef(false),
     mutationError = shallowRef('');
@@ -31,18 +34,18 @@ export function useCorrelationRules() {
     read = controller;
     pending.value = true;
     error.value = '';
-    const tenant = session.current.value?.tenant_id ?? '',
-      cursor = cursors.value.at(-1) ?? '',
-      state = active.value;
-    const query = new URLSearchParams({ limit: '20', cursor, keyword: keyword.value, active: state });
+    const tenant = session.current.value?.tenant_id ?? '';
+    const scope = {
+      limit: pageSize.value,
+      cursor: cursors.value.at(-1) ?? '',
+      keyword: keyword.value,
+      active: active.value,
+    };
+    const query = new URLSearchParams({ ...scope, limit: String(scope.limit) });
     try {
       const value = await session.api.request<unknown>('/correlation-rules?' + query, { signal: controller.signal });
       if (controller.signal.aborted) return;
-      const checked = await readCorrelationPage(
-        value,
-        { limit: 20, cursor, keyword: keyword.value, active: state },
-        tenant,
-      );
+      const checked = await readCorrelationPage(value, scope, tenant);
       if (!controller.signal.aborted) page.value = checked;
     } catch (e) {
       if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '关联规则读取失败。';
@@ -142,6 +145,7 @@ export function useCorrelationRules() {
     keyword.value = '';
     active.value = '';
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
     void refresh();
   }
   watch(
@@ -168,6 +172,8 @@ export function useCorrelationRules() {
     keyword: shallowReadonly(keyword),
     active: shallowReadonly(active),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     busy: shallowReadonly(busy),
     unconfirmed: shallowReadonly(unconfirmed),
     mutationError: shallowReadonly(mutationError),

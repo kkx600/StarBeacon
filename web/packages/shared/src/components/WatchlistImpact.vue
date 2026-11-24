@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { formatNumber } from '../utils/format';
 import { computed, reactive, watch } from 'vue';
-import { Table as ATable, InputNumber as AInputNumber } from 'ant-design-vue';
+import { InputNumber as AInputNumber } from 'ant-design-vue';
 import StatePanel from './StatePanel.vue';
 import MetricBar from './MetricBar.vue';
+import ListTable from './ListTable.vue';
+import ListFilters from './ListFilters.vue';
+import TimeRangeField from './TimeRangeField.vue';
+import PageHelp from './PageHelp.vue';
+import StatusTag from './StatusTag.vue';
+import WatchlistMatchCell from './WatchlistMatchCell.vue';
+import { tablePagination } from '../pagination';
+import { alertSeverityTones, statusTone } from '../statusTones';
 import {
   localWatchlistTime,
   watchlistHitFields,
@@ -39,11 +47,13 @@ const valueColumns = [
   { title: '命中数', key: 'count', width: 120 },
 ];
 const sampleColumns = [
+  { title: '告警编号', dataIndex: 'event_id', width: 142, ellipsis: true, className: 'technical' },
   { title: '告警观测时间', key: 'observed', width: 190 },
   { title: '命中字段 / 值', key: 'matches', width: 260 },
   { title: '告警规则', key: 'rule', width: 240 },
   { title: '严重级别', key: 'severity', width: 100 },
-  { title: '探针 / 注册代次', key: 'sensor', width: 190 },
+  { title: '探针编号', dataIndex: 'sensor_id', width: 130, ellipsis: true, className: 'technical' },
+  { title: '注册代次', dataIndex: 'registration_id', width: 130, ellipsis: true, className: 'technical' },
 ];
 const fieldLabels = computed(() =>
   (props.result?.fields ?? []).map(field => watchlistHitFields[field as keyof typeof watchlistHitFields] ?? field),
@@ -73,14 +83,22 @@ watch(
 </script>
 <template>
   <section aria-label="观察名单历史影响预览">
-    <a-alert
-      type="info"
-      show-icon
-      message="预览只核对已入索引的告警，不登记命中、不回填历史、不授予设备动作。TLS SNI 与 DNS 查询名没有检索字段，不在预览范围。"
-      class="section-gap"
-    />
-    <a-form :model="form" layout="vertical" class="panel panel-body watchlist-impact-form" @finish="run"
-      ><div class="watchlist-impact-fields">
+    <div class="heading-with-help section-gap">
+      <h2>历史影响预览</h2>
+      <PageHelp title="历史影响预览"
+        ><p>只核对已入索引的告警和已支持的检索字段。历史核对与命中登记、设备动作分别管理。</p>
+        <p>TLS SNI 与 DNS 查询名暂无可供预览的检索字段。</p></PageHelp
+      >
+    </div>
+    <a-form :model="form" layout="horizontal" @finish="run">
+      <ListFilters label="历史影响筛选" :columns="2">
+        <TimeRangeField
+          v-model:start="form.start"
+          v-model:end="form.end"
+          id-prefix="watchlist-impact"
+          required
+          end-hint="结束时刻不包含在查询内，窗口最多 31 天。"
+        />
         <a-form-item label="修订号" html-for="watchlist-impact-revision" required extra="按所选修订当时的定义核对。"
           ><a-input-number
             id="watchlist-impact-revision"
@@ -91,23 +109,13 @@ watch(
             :precision="0"
             :disabled="pending"
         /></a-form-item>
-        <a-form-item label="开始时间（本地时间）" html-for="watchlist-impact-start" required
-          ><a-input id="watchlist-impact-start" v-model:value="form.start" type="datetime-local" step="1"
-        /></a-form-item>
-        <a-form-item
-          label="结束时间（本地时间）"
-          html-for="watchlist-impact-end"
-          required
-          extra="结束时刻不包含在查询内，窗口最多 31 天。"
-          ><a-input id="watchlist-impact-end" v-model:value="form.end" type="datetime-local" step="1"
-        /></a-form-item>
-      </div>
-      <div class="filter-actions">
-        <a-button type="primary" html-type="submit" :loading="pending" :disabled="pending || !validRevision"
-          >执行预览</a-button
-        >
-      </div></a-form
-    >
+        <template #actions>
+          <a-button type="primary" html-type="submit" :loading="pending" :disabled="pending || !validRevision"
+            >执行预览</a-button
+          >
+        </template>
+      </ListFilters>
+    </a-form>
     <a-alert
       v-if="incomplete"
       type="error"
@@ -134,55 +142,42 @@ watch(
           <div class="watchlist-impact-context">
             <span>参与字段</span>
             <span class="watchlist-impact-tags"
-              ><span v-for="label in fieldLabels" :key="label" class="status status-neutral">{{ label }}</span></span
-            >
+              ><StatusTag v-for="label in fieldLabels" :key="label" tone="neutral" :value="label"
+            /></span>
             <small>实际查询的已索引字段</small>
           </div>
         </div>
         <h3 class="watchlist-impact-title">每值命中数</h3>
-        <div class="table-wrap">
-          <a-table :columns="valueColumns" :data-source="result.values" row-key="value" :pagination="false" size="small"
-            ><template #bodyCell="{ column, record }">
-              <span v-if="column.key === 'value'" class="technical watchlist-impact-value">{{ record.value }}</span>
-              <span v-else-if="column.key === 'count'" class="technical watchlist-impact-count">{{
-                formatNumber(record.count)
-              }}</span>
-            </template></a-table
-          >
-        </div>
+        <ListTable :columns="valueColumns" :data-source="result.values" row-key="value" :pagination="tablePagination()"
+          ><template #bodyCell="{ column, record }">
+            <span v-if="column.key === 'value'" class="technical watchlist-impact-value">{{ record.value }}</span>
+            <span v-else-if="column.key === 'count'" class="technical watchlist-impact-count">{{
+              formatNumber(record.count)
+            }}</span>
+          </template></ListTable
+        >
         <h3 class="watchlist-impact-title">告警样本</h3>
         <p v-if="!result.samples.length" class="page-description">当次核对没有可展示的样本。</p>
-        <div v-else class="table-wrap">
-          <a-table
-            :columns="sampleColumns"
-            :data-source="result.samples"
-            row-key="event_id"
-            :pagination="false"
-            :scroll="{ x: 980 }"
-            size="small"
-            ><template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'observed'">{{ formatTime(record['@timestamp']) }}</template>
-              <ul v-else-if="column.key === 'matches'" class="watchlist-impact-matches">
-                <li v-for="match in record.matches" :key="match.field + '/' + match.value">
-                  <span class="status status-neutral">{{
-                    watchlistHitFields[match.field as keyof typeof watchlistHitFields]
-                  }}</span><span class="technical watchlist-impact-value">{{ match.value }}</span>
-                </li>
-              </ul>
-              <template v-else-if="column.key === 'rule'"
-                ><span v-if="record.rule_name">{{ record.rule_name }}</span
-                ><span v-else class="page-description">规则名称未记录</span></template
-              >
-              <span v-else-if="column.key === 'severity'" class="status" :class="'status-' + record.severity">{{
-                watchlistSeverities[record.severity as keyof typeof watchlistSeverities]
-              }}</span>
-              <template v-else-if="column.key === 'sensor'"
-                ><span class="technical">{{ record.sensor_id }}</span
-                ><small class="technical watchlist-impact-sub">{{ record.registration_id }}</small></template
-              >
-            </template></a-table
-          >
-        </div>
+        <ListTable
+          v-else
+          :columns="sampleColumns"
+          :data-source="result.samples"
+          row-key="event_id"
+          :pagination="tablePagination()"
+          :scroll="{ x: 1192 }"
+          ><template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'observed'">{{ formatTime(record['@timestamp']) }}</template>
+            <WatchlistMatchCell v-else-if="column.key === 'matches'" :matches="record.matches" />
+            <template v-else-if="column.key === 'rule'"
+              ><span v-if="record.rule_name">{{ record.rule_name }}</span
+              ><span v-else class="page-description">规则名称未记录</span></template
+            >
+            <StatusTag
+              v-else-if="column.key === 'severity'"
+              :tone="statusTone(alertSeverityTones, record.severity)"
+              :value="watchlistSeverities[record.severity]"
+            /> </template
+        ></ListTable>
         <p class="page-description watchlist-impact-footnote">
           预览结果为当次核对的快照，不随后续告警更新；本次未登记任何命中，也未授予执行许可。
         </p>
@@ -192,21 +187,6 @@ watch(
   </section>
 </template>
 <style scoped>
-.watchlist-impact-form {
-  margin-bottom: var(--section-gap);
-  padding-top: var(--panel-inset);
-}
-.watchlist-impact-fields {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 var(--field-gap);
-}
-.watchlist-impact-fields .ant-form-item {
-  min-width: 0;
-}
-.watchlist-impact-fields .ant-input-number {
-  width: 100%;
-}
 .watchlist-impact-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -245,26 +225,6 @@ watch(
 .watchlist-impact-count {
   display: block;
   text-align: right;
-}
-.watchlist-impact-matches {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: var(--label-gap);
-}
-.watchlist-impact-matches > li {
-  display: grid;
-  gap: var(--label-gap);
-  min-width: 0;
-}
-.watchlist-impact-matches .status {
-  justify-self: start;
-}
-.watchlist-impact-sub {
-  display: block;
-  margin-top: var(--label-gap);
-  font-size: 12px;
 }
 .watchlist-impact-footnote {
   margin-top: var(--section-gap);

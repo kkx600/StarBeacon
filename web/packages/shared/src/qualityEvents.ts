@@ -1,5 +1,6 @@
 import { instant } from './utils/instant';
 import { qualityCounters, readQuality, type QualityReport } from './detectionQuality';
+import { defaultPageSize, pageSizeOptions } from './pagination';
 
 export const qualityEventNames = {
   limitation: '检测区间存在限制',
@@ -29,12 +30,13 @@ export interface QualityPage {
   items: QualityEvent[];
   total: string;
   page: number;
-  page_size: 20;
+  page_size: number;
 }
 export interface QualityQuery {
   start: string;
   end: string;
   page: string;
+  limit?: string;
   sensor_id?: string;
   registration_id?: string;
   kind?: string;
@@ -51,7 +53,7 @@ const digest = (v: unknown): v is string => typeof v === 'string' && /^[a-f0-9]{
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 export const localQualityTime = (value: Date) =>
   new Date(value.getTime() - value.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
-export function qualityQuery(form: QualityFilters, page = 1): QualityQuery {
+export function qualityQuery(form: QualityFilters, page = 1, limit = defaultPageSize): QualityQuery {
   const start = new Date(form.start),
     end = new Date(form.end),
     sensor = form.sensor.trim(),
@@ -65,7 +67,8 @@ export function qualityQuery(form: QualityFilters, page = 1): QualityQuery {
     end.getTime() - start.getTime() > 31 * 86400000 ||
     !Number.isInteger(page) ||
     page < 1 ||
-    page > 500 ||
+    !pageSizeOptions.some(size => size === limit) ||
+    page > 10000 / limit ||
     (sensor && !id(sensor)) ||
     (registration && (!id(registration) || !sensor)) ||
     (form.kind && !(form.kind in qualityEventNames))
@@ -75,6 +78,7 @@ export function qualityQuery(form: QualityFilters, page = 1): QualityQuery {
     start: start.toISOString(),
     end: end.toISOString(),
     page: String(page),
+    ...(limit !== defaultPageSize ? { limit: String(limit) } : {}),
     ...(sensor ? { sensor_id: sensor } : {}),
     ...(registration ? { registration_id: registration } : {}),
     ...(form.kind ? { kind: form.kind } : {}),
@@ -88,7 +92,8 @@ export function readQualityPage(value: unknown, q: QualityQuery, tenant: string)
   };
   const start = instant(q.start),
     end = instant(q.end),
-    page = Number(q.page);
+    page = Number(q.page),
+    limit = Number(q.limit ?? defaultPageSize);
   if (
     !id(tenant) ||
     start === null ||
@@ -97,15 +102,16 @@ export function readQualityPage(value: unknown, q: QualityQuery, tenant: string)
     end - start > 2678400000000000n ||
     !Number.isInteger(page) ||
     page < 1 ||
-    page > 500 ||
+    !pageSizeOptions.some(size => size === limit) ||
+    page > 10000 / limit ||
     !object(value) ||
     !Array.isArray(value.items) ||
-    value.items.length > 20 ||
+    value.items.length > limit ||
     typeof value.total !== 'string' ||
     !/^(0|[1-9][0-9]{0,18})$/.test(value.total) ||
     BigInt(value.total) > 9223372036854775807n ||
     value.page !== page ||
-    value.page_size !== 20
+    value.page_size !== limit
   )
     return fail();
   const seen = new Set<string>();
@@ -192,11 +198,12 @@ export function readQualityPage(value: unknown, q: QualityQuery, tenant: string)
     }
     seen.add(row.id);
   }
-  const offset = BigInt(page - 1) * 20n,
+  const size = BigInt(limit),
+    offset = BigInt(page - 1) * size,
     total = BigInt(value.total);
   if (
     (value.items.length > 0 && total < offset + BigInt(value.items.length)) ||
-    value.items.length !== Number(total > offset ? (total - offset > 20n ? 20n : total - offset) : 0n)
+    value.items.length !== Number(total > offset ? (total - offset > size ? size : total - offset) : 0n)
   )
     return fail();
   for (let i = 1; i < value.items.length; i++) {

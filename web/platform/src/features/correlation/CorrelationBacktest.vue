@@ -2,6 +2,7 @@
 import { onScopeDispose, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
 import CorrelationScopeForm from '@starbeacon/shared/components/CorrelationScopeForm.vue';
 import CorrelationResultTable from '@starbeacon/shared/components/CorrelationResultTable.vue';
 import {
@@ -142,19 +143,13 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>窗口回测</h1>
-      <p class="page-description">对固定告警快照计算窗口计数或不同值数量，逐项核对来源与证据。</p>
-    </div>
+  <PageHeader
+    title="窗口回测"
+    description="对固定告警快照计算窗口计数或不同值数量，逐项核对来源与证据。"
+    notice="回测结果限于快照中已入库的告警，供人工核对。检测覆盖与设备处置需要独立验证。"
+  >
     <a-button @click="router.push('/detection/correlation/rules')">返回规则目录</a-button>
-  </header>
-  <a-alert
-    type="info"
-    show-icon
-    message="回测只描述已经进入检索快照的告警。未观察到阈值不代表流量安全，来源覆盖尚未证明；结果不生成告警或设备处置。"
-    class="section-gap"
-  />
+  </PageHeader>
   <StatePanel
     :loading="loading"
     :error="error"
@@ -187,8 +182,8 @@ onScopeDispose(() => {
         @change="criteriaChanged"
       />
       <a-alert v-if="notice" type="info" show-icon :message="notice" class="section-gap" />
-      <section class="panel correlation-result">
-        <div class="panel-header">
+      <section class="panel table-panel correlation-result">
+        <div class="table-toolbar">
           <h2>回测结果</h2>
           <span v-if="result">{{ formatTime(result.observed_at) }}</span>
         </div>

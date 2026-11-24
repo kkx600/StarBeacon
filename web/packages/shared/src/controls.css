@@ -133,7 +133,8 @@ strong {
   flex: 1;
   min-width: 0;
 }
-.filter-grid .ant-select {
+.filter-grid .ant-select,
+.filter-grid .ant-input-number {
   width: 100%;
 }
 .filter-grid > .ant-form-item {
@@ -195,6 +196,14 @@ strong {
 }
 .table-toolbar .muted {
   font-size: 12px;
+}
+.table-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--label-gap);
+}
+.list-table .table-row-actions .ant-btn-sm {
+  height: 24px;
 }
 :is(.list-table.ant-table-wrapper, .table-panel .ant-table-wrapper) .ant-table-pagination {
   margin: var(--section-gap) var(--panel-inset);

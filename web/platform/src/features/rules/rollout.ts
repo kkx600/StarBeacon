@@ -66,6 +66,23 @@ export const targetStates: Record<string, string> = {
   blocked: '目标受阻',
   stopped: '未继续提交',
 };
+export const rolloutStateTones = {
+  pending: 'neutral',
+  running: 'info',
+  observing: 'info',
+  stopping: 'warning',
+  succeeded: 'success',
+  stopped: 'neutral',
+  blocked: 'danger',
+} as const;
+export const rolloutTargetTones = {
+  queued: 'neutral',
+  active: 'info',
+  observing: 'info',
+  succeeded: 'success',
+  stopped: 'neutral',
+  blocked: 'danger',
+} as const;
 export const rolloutCodes: Record<string, string> = {
   observing: '等待完整观察时间及窗口后的心跳和原生观测',
   waiting_for_results: '等待独立任务回执',

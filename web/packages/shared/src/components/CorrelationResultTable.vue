@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
-import {
-  Table as ATable,
-  Modal as AModal,
-  Descriptions as ADescriptions,
-  DescriptionsItem as ADescriptionsItem,
-  Tag as ATag,
-} from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import {
   correlationFields,
   correlationStates,
@@ -15,6 +9,11 @@ import {
   type CorrelationWindow,
 } from '../correlation';
 import { formatTime } from '../types';
+import ListTable from './ListTable.vue';
+import MetricBar from './MetricBar.vue';
+import StatusTag from './StatusTag.vue';
+import { tablePagination } from '../pagination';
+import { statusTone, type StatusToneMap } from '../statusTones';
 const props = defineProps<{ result: CorrelationResult; definition: CorrelationDefinition; detailID?: string }>(),
   emit = defineEmits<{ close: [] }>();
 const selected = shallowRef<CorrelationWindow | null>(null),
@@ -29,14 +28,23 @@ watch(
 );
 const rows = computed(() => props.result.windows),
   columns = [
-    { title: '窗口时间', key: 'time', width: 210 },
-    { title: '接入探针 / 注册代次', key: 'sensor', width: 220 },
-    { title: '分组值', dataIndex: 'group_value', width: 200 },
+    { title: '窗口编号', dataIndex: 'detection_id', width: 150, ellipsis: true, className: 'technical' },
+    { title: '窗口开始', key: 'start', width: 172, className: 'technical' },
+    { title: '窗口结束', key: 'end', width: 172, className: 'technical' },
+    { title: '探针编号', dataIndex: 'sensor_id', width: 142, ellipsis: true, className: 'technical' },
+    { title: '注册代次', dataIndex: 'sensor_registration_id', width: 142, ellipsis: true, className: 'technical' },
+    { title: '分组值', dataIndex: 'group_value', width: 160, ellipsis: true, className: 'technical' },
     { title: '告警条数', dataIndex: 'count', width: 100 },
     { title: '计量值 / 阈值', key: 'metric', width: 145 },
-    { title: '窗口状态', key: 'status', width: 180 },
+    { title: '计量缺失', dataIndex: 'missing_metric', width: 92 },
+    { title: '窗口状态', key: 'status', width: 150 },
     { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
   ];
+const windowTones = {
+  threshold_observed: 'warning',
+  threshold_not_observed: 'neutral',
+  partial_window: 'info',
+} as const satisfies StatusToneMap;
 function close() {
   selected.value = null;
   copyError.value = '';
@@ -53,59 +61,44 @@ async function copy(value: string) {
 }
 </script>
 <template>
-  <div class="correlation-totals">
-    <span
-      >唯一告警 <strong>{{ result.unique_events }}</strong></span
-    ><span
-      >回测输入去重 <strong>{{ result.duplicate_events }}</strong></span
-    ><span
-      >分组字段缺失 <strong>{{ result.missing_group }}</strong></span
-    ><span
-      >观察到阈值 <strong>{{ result.threshold_windows }}</strong> 个窗口</span
-    ><span
-      >边界窗口 <strong>{{ result.partial_windows }}</strong></span
-    >
-  </div>
-  <div class="table-wrap">
-    <a-table
-      :columns="columns"
-      :data-source="rows"
-      row-key="detection_id"
-      :pagination="{ pageSize: 20, showSizeChanger: false }"
-      size="small"
-      :scroll="{ x: 1155 }"
-      ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'time'"
-          >{{ formatTime(record.start) }}
-          <div class="page-description">至 {{ formatTime(record.end) }}</div></template
-        ><template v-else-if="column.key === 'sensor'"
-          ><span class="technical correlation-wrap">{{ record.sensor_id }}</span>
-          <div class="page-description technical correlation-wrap">{{ record.sensor_registration_id }}</div></template
-        ><span v-else-if="column.dataIndex === 'group_value'" class="technical correlation-wrap">{{
-          record.group_value
-        }}</span
-        ><template v-else-if="column.key === 'metric'"
-          >{{ record.metric_value }} / {{ definition.threshold }}
-          <div v-if="record.missing_metric" class="page-description">
-            {{ record.missing_metric }} 条计量值未知
-          </div></template
-        ><a-tag
-          v-else-if="column.key === 'status'"
-          :color="record.status === 'threshold_observed' ? 'warning' : undefined"
-          >{{ correlationStates[record.status] }}</a-tag
-        ><a-button
-          v-else-if="column.key === 'action'"
-          type="link"
-          size="small"
-          @click="
-            selected = record as CorrelationWindow;
-            copyError = '';
-          "
-          >查看证据</a-button
-        ></template
-      ><template #emptyText><span>快照中没有可计入窗口的告警，此结果不代表流量安全。</span></template></a-table
-    >
-  </div>
+  <MetricBar
+    embedded
+    :items="[
+      { label: '唯一告警', value: result.unique_events },
+      { label: '回测输入去重', value: result.duplicate_events },
+      { label: '分组字段缺失', value: result.missing_group },
+      { label: '观察到阈值的窗口', value: result.threshold_windows, tone: 'warning' },
+      { label: '边界窗口', value: result.partial_windows },
+    ]"
+  />
+  <ListTable
+    :columns="columns"
+    :data-source="rows"
+    row-key="detection_id"
+    :pagination="tablePagination()"
+    :scroll="{ x: 1525 }"
+    ><template #bodyCell="{ column, record }"
+      ><template v-if="column.key === 'start'">{{ formatTime(record.start) }}</template>
+      <template v-else-if="column.key === 'end'">{{ formatTime(record.end) }}</template>
+      <template v-else-if="column.key === 'metric'">{{ record.metric_value }} / {{ definition.threshold }}</template>
+      <StatusTag
+        v-else-if="column.key === 'status'"
+        :tone="statusTone(windowTones, record.status)"
+        :value="correlationStates[record.status]"
+      />
+      <button
+        v-else-if="column.key === 'action'"
+        type="button"
+        class="record-link"
+        @click="
+          selected = record;
+          copyError = '';
+        "
+      >
+        查看证据
+      </button></template
+    ><template #emptyText><span>快照中没有可计入窗口的告警，此结果不代表流量安全。</span></template></ListTable
+  >
   <a-modal
     v-if="selected"
     :open="true"
@@ -120,9 +113,9 @@ async function copy(value: string) {
       class="section-gap"
     /><a-descriptions bordered :column="1" size="small"
       ><a-descriptions-item label="窗口状态"
-        ><a-tag :color="selected.status === 'threshold_observed' ? 'warning' : undefined">{{
-          correlationStates[selected.status]
-        }}</a-tag></a-descriptions-item
+        ><StatusTag
+          :tone="statusTone(windowTones, selected.status)"
+          :value="correlationStates[selected.status]" /></a-descriptions-item
       ><a-descriptions-item label="探针 / 注册代次"
         >{{ selected.sensor_id }} / {{ selected.sensor_registration_id }}</a-descriptions-item
       ><a-descriptions-item :label="correlationFields[definition.group_by]">{{
@@ -170,16 +163,6 @@ async function copy(value: string) {
 <style scoped>
 :deep(.ant-descriptions-item-content) {
   overflow-wrap: anywhere;
-}
-.correlation-totals {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-}
-.correlation-totals strong {
-  font-variant-numeric: tabular-nums;
 }
 .correlation-wrap {
   overflow-wrap: anywhere;

@@ -7,10 +7,12 @@ import PageHeader from './PageHeader.vue';
 import QualityEventsPanel from '../../../web/packages/shared/src/components/QualityEventsPanel.vue';
 import QualityEventsFilters from '../../../web/packages/shared/src/components/QualityEventsFilters.vue';
 import type { QualityPage } from '../../../web/packages/shared/src/qualityEvents';
+import { defaultPageSize } from '../../../web/packages/shared/src/pagination';
 import { qualityObservation } from '../data/detectionQuality';
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>(),
   route = useRoute();
+const pageSize = ref(defaultPageSize);
 const form = ref({
   start: '2026-10-18T08:00:00',
   end: '2026-10-18T09:00:00',
@@ -45,9 +47,11 @@ const original: QualityPage = {
   total: '1',
 };
 const result = computed(() => {
-  if (['empty', 'loading', 'error'].includes(props.state)) return { ...original, items: [], total: '0' };
+  if (['empty', 'loading', 'error'].includes(props.state))
+    return { ...original, items: [], total: '0', page_size: pageSize.value };
   const p = structuredClone(original),
     row = p.items[0]!;
+  p.page_size = pageSize.value;
   if (route.query.result === 'reminder') row.signal.reminder = true;
   if (route.query.result === 'clear') {
     row.signal = {
@@ -62,6 +66,10 @@ const result = computed(() => {
   }
   return p;
 });
+function changePage(_page: number, size: number) {
+  pageSize.value = size;
+  emit('state', 'data');
+}
 </script>
 <template>
   <PageHeader title="质量事件" description="按探针、注册代次和时间窗口核对检测区间历史。"
@@ -84,6 +92,6 @@ const result = computed(() => {
     attempted
     :initial-i-d="state === 'detail' || state === 'action' ? 'a'.repeat(64) : undefined"
     @retry="emit('state', 'data')"
-    @page="emit('state', 'data')"
+    @page="changePage"
   />
 </template>

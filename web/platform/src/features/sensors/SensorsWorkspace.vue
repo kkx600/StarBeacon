@@ -6,6 +6,10 @@ import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
 import type { Sensor } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
 import SensorTable from './SensorTable.vue';
 import SensorDetail from './SensorDetail.vue';
 import CaptureDialog from './CaptureDialog.vue';
@@ -42,12 +46,13 @@ const sensors = useSensors(),
   groups = useSensorGroups(),
   mutation = useSensorMutation();
 const tasksWorkspace = ref<InstanceType<typeof TaskWorkspace> | null>(null);
-const { items, pending, error, saving, cursors, nextCursor } = sensors;
+const { items, pending, error, saving, cursors, nextCursor, pageSize } = sensors;
 const {
   page: groupPage,
   pending: groupPending,
   error: groupError,
   cursors: groupCursors,
+  pageSize: groupPageSize,
   choices,
   choicesPending,
   choicesError,
@@ -160,78 +165,79 @@ watch(admin, value => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">查看连接、资源和版本，维护当前租户的探针分组与部署信息。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button
-        v-if="!['identity', 'quality'].includes(view)"
-        :loading="view === 'groups' ? groupPending : pending"
-        @click="refresh"
-        >刷新</a-button
-      ><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button
-      ><a-button
-        v-else-if="view === 'groups' && admin"
-        type="primary"
-        :disabled="busy"
-        @click="edit({ kind: 'group', record: null })"
-        >创建分组</a-button
-      >
-    </div>
-  </header>
+  <PageHeader :title="pageTitle" description="查看连接、资源和版本，维护当前租户的探针分组与部署信息。">
+    <a-button
+      v-if="!['identity', 'quality'].includes(view)"
+      :loading="view === 'groups' ? groupPending : pending"
+      @click="refresh"
+      >刷新</a-button
+    ><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button
+    ><a-button
+      v-else-if="view === 'groups' && admin"
+      type="primary"
+      :disabled="busy"
+      @click="edit({ kind: 'group', record: null })"
+      >创建分组</a-button
+    >
+  </PageHeader>
   <WorkspaceTabs :active="view" :items="views" label="探针管理功能" @change="changeView" />
   <a-alert v-if="actionError && !formOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <template v-if="view === 'devices'">
     <a-form
       :model="filters"
-      layout="inline"
-      class="panel sensor-filters"
+      layout="horizontal"
       @finish="sensors.search(filters.keyword, filters.groupID, filters.status)"
     >
-      <a-form-item label="关键词"
-        ><a-input
-          v-model:value="filters.keyword"
-          aria-label="探针关键词"
-          :maxlength="128"
-          placeholder="名称、标识或站点"
-          class="sensor-keyword"
-      /></a-form-item>
-      <a-form-item label="探针分组"
-        ><a-select
-          v-model:value="filters.groupID"
-          aria-label="筛选探针分组"
-          :options="filterGroups"
-          :loading="choicesPending"
-          class="sensor-select"
-          show-search
-          option-filter-prop="label"
-      /></a-form-item>
-      <a-form-item label="连接状态"
-        ><a-select
-          v-model:value="filters.status"
-          aria-label="筛选探针状态"
-          class="sensor-select"
-          :options="[
-            { value: '', label: '全部状态' },
-            { value: 'online', label: '在线' },
-            { value: 'offline', label: '离线' },
-            { value: 'disabled', label: '停用' },
-          ]"
-      /></a-form-item>
-      <a-button type="primary" html-type="submit" :loading="pending">查询</a-button
-      ><a-button :disabled="pending" @click="reset">重置</a-button>
+      <ListFilters label="探针筛选" :columns="4">
+        <a-form-item label="关键词" html-for="sensor-list-keyword"
+          ><a-input
+            id="sensor-list-keyword"
+            v-model:value="filters.keyword"
+            aria-label="探针关键词"
+            :maxlength="128"
+            placeholder="名称、标识或站点"
+        /></a-form-item>
+        <a-form-item label="探针分组" html-for="sensor-list-group"
+          ><a-select
+            id="sensor-list-group"
+            v-model:value="filters.groupID"
+            aria-label="筛选探针分组"
+            :options="filterGroups"
+            :loading="choicesPending"
+            show-search
+            option-filter-prop="label"
+        /></a-form-item>
+        <a-form-item label="连接状态" html-for="sensor-list-status"
+          ><a-select
+            id="sensor-list-status"
+            v-model:value="filters.status"
+            aria-label="筛选探针状态"
+            :options="[
+              { value: '', label: '全部状态' },
+              { value: 'online', label: '在线' },
+              { value: 'offline', label: '离线' },
+              { value: 'disabled', label: '停用' },
+            ]"
+        /></a-form-item>
+        <template #actions>
+          <a-button type="primary" html-type="submit" :loading="pending">查询</a-button>
+          <a-button :disabled="pending" @click="reset">重置</a-button>
+        </template>
+      </ListFilters>
     </a-form>
     <a-alert v-if="choicesError" type="warning" show-icon :message="choicesError" class="section-gap"
       ><template #action
         ><a-button size="small" :loading="choicesPending" @click="groups.loadChoices">刷新分组</a-button></template
       ></a-alert
     >
-    <section class="panel">
-      <div class="panel-header">
+    <section class="panel table-panel">
+      <div class="table-toolbar">
         <h2>探针列表</h2>
-        <span>当前页 {{ items.length }} 台</span>
+        <MetricBar
+          v-if="!pending && !error"
+          embedded
+          :items="[{ label: '本页探针', value: items.length, suffix: '台' }]"
+        />
       </div>
       <StatePanel
         :loading="pending"
@@ -247,50 +253,66 @@ watch(admin, value => {
           @toggle="change"
           @edit="edit({ kind: 'metadata', record: $event })"
       /></StatePanel>
-      <div class="sensor-pagination">
-        <a-button :disabled="pending || cursors.length <= 1" @click="sensors.previous">上一页</a-button
-        ><span>第 {{ cursors.length }} 页</span
-        ><a-button :disabled="pending || !nextCursor" @click="sensors.next">下一页</a-button>
-      </div>
+      <ListPager
+        mode="cursor"
+        :page="cursors.length"
+        :page-size="pageSize"
+        :count="pending || error ? undefined : items.length"
+        :has-previous="cursors.length > 1"
+        :has-next="!error && !!nextCursor"
+        :disabled="pending"
+        @previous="sensors.previous"
+        @next="sensors.next"
+        @update:page-size="sensors.changePageSize"
+      />
     </section>
   </template>
   <template v-else-if="view === 'groups'">
     <a-form
       :model="groupFilters"
-      layout="inline"
-      class="panel sensor-filters"
+      layout="horizontal"
       @finish="groups.search(groupFilters.keyword, groupFilters.active)"
-      ><a-form-item label="分组名称"
-        ><a-input
-          v-model:value="groupFilters.keyword"
-          aria-label="分组关键词"
-          :maxlength="128"
-          class="sensor-keyword" /></a-form-item
-      ><a-form-item label="分组状态"
-        ><a-select
-          v-model:value="groupFilters.active"
-          aria-label="筛选分组状态"
-          class="sensor-select"
-          :options="[
-            { value: '', label: '全部状态' },
-            { value: 'true', label: '启用' },
-            { value: 'false', label: '停用' },
-          ]" /></a-form-item
-      ><a-button type="primary" html-type="submit" :loading="groupPending">查询</a-button
-      ><a-button
-        :disabled="groupPending"
-        @click="
-          groupFilters.keyword = '';
-          groupFilters.active = '';
-          groups.search('', '');
-        "
-        >重置</a-button
-      ></a-form
     >
-    <section class="panel">
-      <div class="panel-header">
+      <ListFilters label="探针分组筛选" :columns="3">
+        <a-form-item label="分组名称" html-for="sensor-group-keyword"
+          ><a-input
+            id="sensor-group-keyword"
+            v-model:value="groupFilters.keyword"
+            aria-label="分组关键词"
+            :maxlength="128" /></a-form-item
+        ><a-form-item label="分组状态" html-for="sensor-group-status"
+          ><a-select
+            id="sensor-group-status"
+            v-model:value="groupFilters.active"
+            aria-label="筛选分组状态"
+            :options="[
+              { value: '', label: '全部状态' },
+              { value: 'true', label: '启用' },
+              { value: 'false', label: '停用' },
+            ]"
+        /></a-form-item>
+        <template #actions>
+          <a-button type="primary" html-type="submit" :loading="groupPending">查询</a-button
+          ><a-button
+            :disabled="groupPending"
+            @click="
+              groupFilters.keyword = '';
+              groupFilters.active = '';
+              groups.search('', '');
+            "
+            >重置</a-button
+          >
+        </template>
+      </ListFilters>
+    </a-form>
+    <section class="panel table-panel">
+      <div class="table-toolbar">
         <h2>探针分组</h2>
-        <span>当前页 {{ groupPage.items.length }} 个</span>
+        <MetricBar
+          v-if="!groupPending && !groupError"
+          embedded
+          :items="[{ label: '本页分组', value: groupPage.items.length, suffix: '个' }]"
+        />
       </div>
       <StatePanel
         :loading="groupPending"
@@ -305,11 +327,18 @@ watch(admin, value => {
           @edit="edit({ kind: 'group', record: $event })"
           @members="members"
       /></StatePanel>
-      <div class="sensor-pagination">
-        <a-button :disabled="groupPending || groupCursors.length <= 1" @click="groups.previous">上一页</a-button
-        ><span>第 {{ groupCursors.length }} 页</span
-        ><a-button :disabled="groupPending || !groupPage.next_cursor" @click="groups.next">下一页</a-button>
-      </div>
+      <ListPager
+        mode="cursor"
+        :page="groupCursors.length"
+        :page-size="groupPageSize"
+        :count="groupPending || groupError ? undefined : groupPage.items.length"
+        :has-previous="groupCursors.length > 1"
+        :has-next="!groupError && !!groupPage.next_cursor"
+        :disabled="groupPending"
+        @previous="groups.previous"
+        @next="groups.next"
+        @update:page-size="groups.changePageSize"
+      />
     </section>
   </template>
   <ProbePKIWorkspace v-else-if="view === 'identity' && admin" :sensor-id="certificateSensor" />
@@ -362,33 +391,3 @@ watch(admin, value => {
     @reload-groups="groups.loadChoices"
   />
 </template>
-<style scoped>
-.sensor-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.sensor-filters .ant-form-item {
-  margin: 0;
-  min-width: 0;
-}
-.sensor-keyword {
-  width: 220px;
-  max-width: 100%;
-}
-.sensor-select {
-  min-width: 150px;
-  max-width: 240px;
-}
-.sensor-pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-</style>

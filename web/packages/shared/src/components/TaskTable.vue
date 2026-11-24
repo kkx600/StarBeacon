@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue';
-import { Table as ATable, Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions } from 'ant-design-vue';
+import type { TableColumnType } from 'ant-design-vue';
 import type { SensorTask, TaskDetailState } from '../types';
 import { formatTime, taskNames, taskStates, taskCodes } from '../types';
 import ReplayResult from './ReplayResult.vue';
@@ -10,6 +11,10 @@ import TaskActions from './TaskActions.vue';
 import { responseStates } from '../response';
 import { basicApplicationState } from '../application';
 import ResponseProtectionSummary from './ResponseProtectionSummary.vue';
+import ListTable from './ListTable.vue';
+import StatusTag from './StatusTag.vue';
+import { tablePagination } from '../pagination';
+import { statusTone, taskStateTones } from '../statusTones';
 type ObservationFields = Record<string, unknown>;
 const ADescriptionsItem = ADescriptions.Item;
 const props = defineProps<{
@@ -46,26 +51,42 @@ const applicationInstalled = computed(() => {
     : null;
 });
 const rows = computed(() => [...props.items]);
-const columns = computed(() =>
+const idColumn = { title: '任务编号', dataIndex: 'id', width: 150, className: 'technical', ellipsis: true };
+const columns = computed<TableColumnType<SensorTask>[]>(() =>
   props.responseCatalog
     ? [
+        idColumn,
         { title: '响应任务', key: 'kind', width: 200 },
-        { title: '执行探针', dataIndex: 'sensor_id', width: 180 },
-        { title: '目标 / 设备', key: 'target', width: 220 },
+        { title: '执行探针', dataIndex: 'sensor_id', width: 160, className: 'technical', ellipsis: true },
+        {
+          title: '目标地址',
+          dataIndex: ['response_action', 'target_ip'],
+          width: 154,
+          className: 'technical',
+          ellipsis: true,
+        },
+        {
+          title: '设备编号',
+          dataIndex: ['response_action', 'device_id'],
+          width: 145,
+          className: 'technical',
+          ellipsis: true,
+        },
         { title: '执行状态', key: 'state', width: 110 },
         { title: '提交时间', key: 'time', width: 190 },
         { title: '租约到期', key: 'leaseExpiry', width: 190 },
-        { title: '操作', key: 'action', width: 220 },
+        { title: '操作', key: 'action', width: 220, fixed: 'right' },
       ]
     : [
+        idColumn,
         { title: '任务', key: 'kind', width: 200 },
-        { title: '探针', dataIndex: 'sensor_id', width: 190 },
+        { title: '探针编号', dataIndex: 'sensor_id', width: 190, className: 'technical', ellipsis: true },
         { title: '状态', key: 'state', width: 110 },
         { title: '提交时间', key: 'time', width: 190 },
         props.local
           ? { title: '平台确认', key: 'ack', width: 100 }
           : { title: '投递次数', dataIndex: 'delivery_count', width: 100 },
-        { title: '操作', key: 'action', width: 180 },
+        { title: '操作', key: 'action', width: 180, fixed: 'right' },
       ],
 );
 function find(id: string) {
@@ -81,65 +102,52 @@ function close() {
   if (props.detail) emit('close');
   else selectedID.value = '';
 }
-const statusClass = (state: string) =>
-  state === 'succeeded'
-    ? 'status-online'
-    : state === 'failed'
-      ? 'status-high'
-      : state === 'unknown'
-        ? 'status-medium'
-        : 'status-unknown';
 </script>
 <template>
-  <div class="table-wrap">
-    <a-table
-      :columns="columns"
-      :data-source="rows"
-      row-key="id"
-      size="small"
-      :pagination="responseCatalog ? false : { pageSize: 10, showSizeChanger: false, hideOnSinglePage: true }"
-      :scroll="{ x: responseCatalog ? 1310 : 970 }"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'kind'"
-          ><button class="link-button" @click="view(record.id)">{{ taskNames[record.kind] ?? record.kind }}</button
-          ><small class="record-id technical">{{ record.id }}</small></template
-        >
-        <span
-          v-else-if="column.key === 'state'"
-          class="status"
-          :class="record.rule_resolution ? 'status-online' : statusClass(record.state)"
-          >{{ record.rule_resolution ? '已核实' : (taskStates[record.state] ?? record.state) }}</span
-        >
-        <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
-        <template v-else-if="column.key === 'target'"
-          ><span class="technical">{{ record.response_action?.target_ip }}</span
-          ><small class="record-id technical">{{ record.response_action?.device_id }}</small></template
-        >
-        <template v-else-if="column.key === 'leaseExpiry'">{{
-          formatTime(record.response_action?.expires_at)
-        }}</template>
-        <template v-else-if="column.key === 'ack'">{{
-          record.origin === 'local' ? '本地任务' : record.acknowledged ? '已确认' : '等待确认'
-        }}</template>
-        <template v-else-if="column.key === 'action'"
-          ><a-space
-            ><a-button type="link" @click="view(record.id)">查看</a-button
-            ><TaskActions
-              v-if="find(record.id)"
-              :task="find(record.id)!"
-              :cancellable="cancellable"
-              :reconcilable="reconcilable"
-              :responseable="responseable"
-              :saving="saving"
-              :local="local"
-              @cancel="emit('cancel', $event)"
-              @reconcile="emit('reconcile', $event)"
-              @response="(task, kind) => emit('response', task, kind)" /></a-space
-        ></template>
-      </template>
-    </a-table>
-  </div>
+  <ListTable
+    :columns="columns"
+    :data-source="rows"
+    row-key="id"
+    :pagination="responseCatalog ? false : tablePagination()"
+    :scroll="{ x: responseCatalog ? 1519 : 1120 }"
+  >
+    <template #bodyCell="{ column, record }">
+      <button
+        v-if="column.key === 'kind'"
+        type="button"
+        class="record-link"
+        :title="taskNames[record.kind] ?? record.kind"
+        @click="view(record.id)"
+      >
+        {{ taskNames[record.kind] ?? record.kind }}
+      </button>
+      <StatusTag
+        v-else-if="column.key === 'state'"
+        :tone="record.rule_resolution ? 'success' : statusTone(taskStateTones, record.state)"
+        :value="record.rule_resolution ? '已核实' : (taskStates[record.state] ?? record.state)"
+      />
+      <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
+      <template v-else-if="column.key === 'leaseExpiry'">{{ formatTime(record.response_action?.expires_at) }}</template>
+      <template v-else-if="column.key === 'ack'">{{
+        record.origin === 'local' ? '本地任务' : record.acknowledged ? '已确认' : '等待确认'
+      }}</template>
+      <div v-else-if="column.key === 'action'" class="table-row-actions">
+        <a-button type="link" size="small" @click="view(record.id)">查看</a-button
+        ><TaskActions
+          v-if="find(record.id)"
+          :task="find(record.id)!"
+          :cancellable="cancellable"
+          :reconcilable="reconcilable"
+          :responseable="responseable"
+          :saving="saving"
+          :local="local"
+          @cancel="emit('cancel', $event)"
+          @reconcile="emit('reconcile', $event)"
+          @response="(task, kind) => emit('response', task, kind)"
+        />
+      </div>
+    </template>
+  </ListTable>
   <a-modal
     title="任务详情"
     :open="detail ? detail.open : selected !== null"

@@ -15,7 +15,7 @@ const props = withDefaults(
 );
 // 组件库的插槽类型未携带传入表格的行与列类型。
 type TableCell = { column: Column; record: Row; text: unknown; index: number };
-defineSlots<{ bodyCell?: (cell: TableCell) => unknown }>();
+defineSlots<{ bodyCell?: (cell: TableCell) => unknown; emptyText?: () => unknown }>();
 </script>
 
 <template>
@@ -23,5 +23,6 @@ defineSlots<{ bodyCell?: (cell: TableCell) => unknown }>();
     <template v-if="$slots.bodyCell" #bodyCell="cell">
       <slot name="bodyCell" v-bind="cell as unknown as TableCell" />
     </template>
+    <template v-if="$slots.emptyText" #emptyText><slot name="emptyText" /></template>
   </ATable>
 </template>

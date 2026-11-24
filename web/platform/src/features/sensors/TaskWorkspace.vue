@@ -5,6 +5,10 @@ import { routeLocationKey, routerKey } from 'vue-router';
 import type { Sensor, SensorTask } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import TaskTable from '@starbeacon/shared/components/TaskTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import { readSensorDirectory } from '@starbeacon/shared/sensors.ts';
 import { readyConnector } from '@starbeacon/shared/response.ts';
@@ -59,6 +63,7 @@ const filters = reactive(defaultResponseFilters()),
   nextCursor = shallowRef(''),
   filterError = shallowRef(''),
   linkedError = shallowRef(false);
+const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, reloadPage);
 function search() {
   try {
     applied.value = responseQuery(filters);
@@ -101,6 +106,9 @@ function applyLinkedFilters() {
 function page(next: boolean) {
   if (pending.value || (next && !nextCursor.value) || (!next && cursors.value.length <= 1)) return;
   cursors.value = next ? [...cursors.value, nextCursor.value] : cursors.value.slice(0, -1);
+  reloadPage();
+}
+function reloadPage() {
   items.value = [];
   nextCursor.value = '';
   void refresh();
@@ -125,7 +133,7 @@ async function refresh(showLoading = true) {
     failures = 0;
   }
   try {
-    const query = { ...applied.value, cursor: cursors.value.at(-1) ?? '' };
+    const query = { ...applied.value, cursor: cursors.value.at(-1) ?? '', limit: pageSize.value };
     const result = await session.api.request<{ items: SensorTask[] }>(
       props.responseOnly
         ? '/response-actions?' + new URLSearchParams(Object.entries(query).map(([k, v]) => [k, String(v)]))
@@ -324,6 +332,7 @@ watch(
     reconcileKeys.clear();
     responseAttempts.clear();
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
     nextCursor.value = '';
     filterError.value = '';
     Object.assign(filters, defaultResponseFilters());
@@ -348,17 +357,19 @@ defineExpose({
 <template>
   <ResponseActionFilters v-if="responseOnly" :model="filters" :pending="pending" @search="search" @reset="reset" />
   <a-alert v-if="responseOnly && filterError" type="error" show-icon :message="filterError" class="section-gap" />
-  <section class="panel">
-    <div class="panel-header">
-      <div>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
         <h2>{{ responseOnly ? '响应记录' : '任务记录' }}</h2>
-        <p class="page-description">
-          {{
-            responseOnly
-              ? '按创建时间检索，每页 20 项，窗口最多 31 天。执行状态以读取时为准；设备回读与真实阻断效果分别核对。'
-              : '列表显示最近 200 项；历史任务可通过处置档案或任务链接查看。'
-          }}
-        </p>
+        <PageHelp :title="responseOnly ? '响应记录' : '任务记录'"
+          ><p>
+            {{
+              responseOnly
+                ? '按创建时间检索，窗口最多 31 天。执行状态以读取时为准，请分别核对设备回读和实际阻断效果。'
+                : '列表显示最近 200 项。历史任务可通过处置档案或任务链接查看。'
+            }}
+          </p></PageHelp
+        >
       </div>
       <a-button
         :loading="pending"
@@ -416,20 +427,18 @@ defineExpose({
         @reconcile="reconcile"
         @response="respond"
     /></StatePanel>
-    <div v-if="responseOnly" class="response-pagination">
-      <a-button :disabled="pending || cursors.length <= 1" @click="page(false)">上一页</a-button
-      ><span>第 {{ cursors.length }} 页 · 当前 {{ items.length }} 项</span
-      ><a-button :disabled="pending || !nextCursor || !!error" @click="page(true)">下一页</a-button>
-    </div>
+    <ListPager
+      v-if="responseOnly"
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error || linkedError ? undefined : items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!nextCursor"
+      :disabled="pending || linkedError"
+      @previous="page(false)"
+      @next="page(true)"
+      @update:page-size="changePageSize"
+    />
   </section>
 </template>
-<style scoped>
-.response-pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-</style>

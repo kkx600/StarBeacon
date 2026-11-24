@@ -1,5 +1,7 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { session } from '../../session';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { cursorQuery, defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { validEnrollmentPage, validCertificatePage, pkiID, type EnrollmentPage, type CertificatePage } from './pki';
 
 export function useProbePKI() {
@@ -10,6 +12,7 @@ export function useProbePKI() {
   const pending = shallowRef(false),
     error = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, load);
   let stopped = false,
     controller: AbortController | undefined;
   function clear() {
@@ -29,7 +32,8 @@ export function useProbePKI() {
       return;
     }
     const selected = mode.value,
-      target = sensor.value;
+      target = sensor.value,
+      limit = pageSize.value;
     pending.value = true;
     clear();
     const timer = setTimeout(() => current.abort(), 10000);
@@ -37,17 +41,16 @@ export function useProbePKI() {
       const raw = await session.api.request<unknown>(
         (selected === 'enrollments'
           ? '/sensor-enrollments'
-          : '/sensors/' + encodeURIComponent(target) + '/certificates') +
-          (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''),
+          : '/sensors/' + encodeURIComponent(target) + '/certificates') + cursorQuery(cursor, limit),
         { signal: current.signal },
       );
       if (stopped || controller !== current) return;
       if (current.signal.aborted) throw new Error('目录读取超时，请重试。');
       if (selected === 'enrollments') {
-        if (!validEnrollmentPage(raw)) throw new Error('注册目录回执不完整，请重试。');
+        if (!validEnrollmentPage(raw, limit)) throw new Error('注册目录回执不完整，请重试。');
         enrollments.value = raw;
       } else {
-        if (!validCertificatePage(raw, target)) throw new Error('证书目录与当前探针不一致，请重试。');
+        if (!validCertificatePage(raw, target, limit)) throw new Error('证书目录与当前探针不一致，请重试。');
         certificates.value = raw;
       }
       if (replace) cursors.value = replace;
@@ -101,6 +104,7 @@ export function useProbePKI() {
     error.value = '';
     pending.value = false;
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
   };
   watch(
     () => [session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/'),
@@ -118,6 +122,8 @@ export function useProbePKI() {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     load,
     select,
     search,

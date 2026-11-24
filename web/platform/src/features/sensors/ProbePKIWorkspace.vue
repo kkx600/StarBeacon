@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
 import PKITable from './PKITable.vue';
 import PKIDetail from './PKIDetail.vue';
 import EnrollmentForm from './EnrollmentForm.vue';
@@ -14,7 +16,7 @@ const props = defineProps<{ sensorId?: string }>();
 const directory = useProbePKI(),
   creation = useProbeEnrollment(),
   revocation = useProbeRevocation();
-const { mode, enrollments, certificates, pending, error, cursors } = directory;
+const { mode, enrollments, certificates, pending, error, cursors, pageSize } = directory;
 const { busy, unconfirmed, receipt, token, draft, error: creationError } = creation;
 const { target: revokeTarget, busy: revoking, unconfirmed: revokeUnconfirmed, error: revokeError, result } = revocation;
 const search = shallowRef(props.sensorId ?? ''),
@@ -82,8 +84,8 @@ function showCertificates(sensor: string) {
 }
 </script>
 <template>
-  <div class="panel pki-toolbar">
-    <div class="pki-mode">
+  <div class="panel table-toolbar section-gap">
+    <div class="filter-actions">
       <a-button
         :type="mode === 'enrollments' ? 'primary' : 'default'"
         :disabled="locked"
@@ -122,26 +124,31 @@ function showCertificates(sensor: string) {
     message="独立 CA 尚未配置。请完成 CA 部署和平台签发授权后创建注册凭据。"
     class="section-gap"
   />
-  <a-form
-    v-if="mode === 'certificates'"
-    layout="inline"
-    class="panel pki-search"
-    @submit.prevent="directory.search(search)"
-    ><a-form-item label="探针标识" required
-      ><a-input
-        v-model:value="search"
-        aria-label="查询证书的探针标识"
-        :maxlength="64"
-        placeholder="填写完整探针标识"
-        :disabled="locked" /></a-form-item
-    ><a-button type="primary" html-type="submit" :loading="pending" :disabled="locked">查询</a-button></a-form
-  >
-  <section class="panel">
-    <div class="panel-header">
-      <h2>{{ mode === 'enrollments' ? '探针注册凭据' : '探针证书目录' }}</h2>
-      <span v-if="mode === 'certificates' && directory.sensor.value" class="technical">{{
-        directory.sensor.value
-      }}</span><a-button
+  <a-form v-if="mode === 'certificates'" layout="horizontal" @submit.prevent="directory.search(search)">
+    <ListFilters label="探针证书筛选" :columns="2">
+      <a-form-item label="探针标识" html-for="pki-list-sensor" required
+        ><a-input
+          id="pki-list-sensor"
+          v-model:value="search"
+          aria-label="查询证书的探针标识"
+          :maxlength="64"
+          placeholder="填写完整探针标识"
+          :disabled="locked"
+      /></a-form-item>
+      <template #actions
+        ><a-button type="primary" html-type="submit" :loading="pending" :disabled="locked">查询</a-button></template
+      >
+    </ListFilters>
+  </a-form>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div>
+        <h2>{{ mode === 'enrollments' ? '探针注册凭据' : '探针证书目录' }}</h2>
+        <span v-if="mode === 'certificates' && directory.sensor.value" class="technical">{{
+          directory.sensor.value
+        }}</span>
+      </div>
+      <a-button
         :disabled="pending || locked || (mode === 'certificates' && !directory.sensor.value)"
         @click="directory.load()"
         >刷新</a-button
@@ -166,11 +173,18 @@ function showCertificates(sensor: string) {
         @revoke="revoke"
         @certificates="showCertificates"
     /></StatePanel>
-    <div class="pki-pagination">
-      <a-button :disabled="pending || locked || cursors.length <= 1" @click="directory.previous">上一页</a-button
-      ><span>第 {{ cursors.length }} 页</span
-      ><a-button :disabled="pending || locked || !nextCursor" @click="directory.next">下一页</a-button>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : rows.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!nextCursor"
+      :disabled="pending || locked || (mode === 'certificates' && !directory.sensor.value)"
+      @previous="directory.previous"
+      @next="directory.next"
+      @update:page-size="directory.changePageSize"
+    />
   </section>
   <EnrollmentForm
     v-if="formOpen"
@@ -195,31 +209,3 @@ function showCertificates(sensor: string) {
     @close="closeRevocation"
   />
 </template>
-<style scoped>
-.pki-toolbar,
-.pki-mode,
-.pki-search,
-.pki-pagination {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.pki-toolbar {
-  justify-content: space-between;
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.pki-search {
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.pki-search .ant-form-item {
-  margin: 0;
-  min-width: 0;
-}
-.pki-pagination {
-  justify-content: flex-end;
-  padding: var(--panel-inset);
-}
-</style>

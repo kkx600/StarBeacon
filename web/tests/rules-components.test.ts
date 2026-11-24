@@ -178,11 +178,35 @@ describe('规则包编辑', () => {
   });
 });
 
+describe('平台重放任务', () => {
+  it('从规范任务页独立读取所选档案并显示重放回执', async () => {
+    const replay = {
+      ...task,
+      state: 'succeeded',
+      retain_until: new Date(Date.now() + 86400000).toISOString(),
+      receipt: { result: { replay: 'completed', match_status: 'matched' } },
+    };
+    request.mockImplementation(async (path: string) =>
+      path === '/tasks/' + replay.id ? replay : { items: path === '/tasks' ? [replay] : [], available: true },
+    );
+    const { router } = await workspace('/detection/rules/tasks');
+    await click('查看');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('重放完成，检测到规则命中'));
+    expect(router.currentRoute.value.query.task).toBe(replay.id);
+    expect(request.mock.calls.filter(call => call[0] === '/tasks/' + replay.id)).toHaveLength(1);
+  });
+});
+
 describe('原生规则装载检查', () => {
+  const probeSelect = (wrapper: Awaited<ReturnType<typeof workspace>>['wrapper']) =>
+    wrapper
+      .findAllComponents(Select)
+      .find(select => select.props('placeholder') === '选择已配置 Suricata 8.0.7 的探针')!;
+
   it('选定探针修订后提交，失败重试不更换幂等标识', async () => {
     const { wrapper } = await workspace();
     await click('装载检查');
-    const select = wrapper.getComponent(Select);
+    const select = probeSelect(wrapper);
     expect(button('提交装载检查').disabled).toBe(true);
     await select.setValue(sensor.id, 'value');
     request.mockRejectedValueOnce(new Error('检查连接超时'));
@@ -212,7 +236,7 @@ describe('原生规则装载检查', () => {
     (document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();
     await flushPromises();
     await click('装载检查');
-    await wrapper.getComponent(Select).setValue(sensor.id, 'value');
+    await probeSelect(wrapper).setValue(sensor.id, 'value');
     const pending = deferred<unknown>();
     request.mockImplementationOnce(() => pending.promise);
     const action = button('提交装载检查');

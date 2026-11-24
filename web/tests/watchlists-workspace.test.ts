@@ -41,6 +41,17 @@ vi.mock('../platform/src/session', () => ({
   },
 }));
 const body = () => new DOMWrapper(document.body);
+async function rowMenu(label: string) {
+  await click('更多');
+  const command = await vi.waitFor(
+    () =>
+      body()
+        .findAll('.ant-dropdown:not(.ant-dropdown-hidden) [role="menuitem"]')
+        .find(item => item.text() === label) ?? expect.fail('缺少名单操作 ' + label),
+  );
+  await command.trigger('click');
+  await flushPromises();
+}
 const directory = [
   { sensor_id: sensor.id, registration_id: sensor.registration_id, name: sensor.name, available: true },
 ];
@@ -452,7 +463,7 @@ describe('名单表单与单表目录交互', () => {
     await vi.waitFor(() => expect(body().text()).toContain('定义 SHA-256'));
     expect(w.findAll('.ant-table-wrapper')).toHaveLength(1);
     await click('关闭');
-    await click('范围核验');
+    await rowMenu('范围核验');
     await vi.waitFor(() => expect(body().text()).toContain('当前范围允许启用'));
     expect(body().text()).toContain('不查询全部历史流量');
     await body().get('#watchlist-test-values').setValue('192.0.2.10');
@@ -465,7 +476,7 @@ describe('名单表单与单表目录交互', () => {
   it('停用入口冻结定义，保存后返回目录；更新失败保留上次结果与真实错误', async () => {
     row = await watchlistRecord({ ...watchlistInput(), active: true });
     const w = await screen();
-    await click('停用');
+    await rowMenu('停用');
     await vi.waitFor(() => expect(w.getComponent(WatchlistForm).props('sensorsPending')).toBe(false));
     expect(w.getComponent(WatchlistForm).props('draft')?.active).toBe(false);
     await click('保存名单');
@@ -493,7 +504,7 @@ describe('名单表单与单表目录交互', () => {
     await vi.waitFor(() => expect(w.findComponent(WatchlistForm).exists()).toBe(false));
     expect(row.revision).toBe(previous.revision + 1);
     expect(w.getComponent(WatchlistTable).props('items')).toEqual([previous]);
-    expect(w.get('.page-header button').classes()).toContain('ant-btn-loading');
+    expect(w.get('.page-header-actions button').classes()).toContain('ant-btn-loading');
     const reads = request.mock.calls.filter(c => String(c[0]).startsWith('/watchlists?')).length;
     await click('刷新目录');
     expect(request.mock.calls.filter(c => String(c[0]).startsWith('/watchlists?'))).toHaveLength(reads);
@@ -542,8 +553,8 @@ describe('名单表单与单表目录交互', () => {
     w.getComponent(WatchlistForm).vm.$emit('save', { ...watchlistInput(), expected_revision: row.revision });
     await vi.waitFor(() => expect(body().text()).toContain('提交回执中断'));
     await click('关闭');
-    const actions = w.findAll('.watchlist-actions button');
-    expect(actions).toHaveLength(4);
+    const actions = w.findAll('.table-row-actions button');
+    expect(actions).toHaveLength(3);
     for (const action of actions)
       expect((action.element as HTMLButtonElement).disabled, `${action.text()}应遵守原提交锁定`).toBe(true);
     expect(w.text()).toContain('请点击“核对原提交”');

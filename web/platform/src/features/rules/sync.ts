@@ -52,6 +52,16 @@ export const syncStates: Record<string, string> = {
   blocked: '同步受阻',
   paused: '同步已暂停',
 };
+export const syncStateTones = {
+  pending: 'neutral',
+  validating: 'info',
+  positive_replay: 'info',
+  negative_replay: 'info',
+  applying: 'info',
+  succeeded: 'success',
+  blocked: 'danger',
+  paused: 'neutral',
+} as const;
 export const syncCodes: Record<string, string> = {
   applied: '实际规则文件与引擎回读一致',
   sensor_offline: '探针离线，恢复后继续核对',

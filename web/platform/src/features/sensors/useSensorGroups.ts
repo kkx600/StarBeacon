@@ -1,12 +1,15 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { session } from '../../session';
 import { validGroupPage, type GroupPage, type SensorGroup } from './management';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 
 export function useSensorGroups() {
   const page = shallowRef<GroupPage>({ items: [], next_cursor: '' }),
     pending = shallowRef(false),
     error = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const choices = shallowRef<SensorGroup[]>([]),
     choicesPending = shallowRef(false),
     choicesError = shallowRef('');
@@ -20,6 +23,7 @@ export function useSensorGroups() {
   async function refresh() {
     if (stopped) return;
     const version = ++epoch;
+    const limit = pageSize.value;
     reader?.abort();
     const controller = new AbortController();
     reader = controller;
@@ -27,11 +31,12 @@ export function useSensorGroups() {
     error.value = '';
     try {
       const value = await session.api.request<unknown>(
-        '/sensor-groups?' + new URLSearchParams({ cursor: cursors.value.at(-1) ?? '', keyword, active, limit: '20' }),
+        '/sensor-groups?' +
+          new URLSearchParams({ cursor: cursors.value.at(-1) ?? '', keyword, active, limit: String(limit) }),
         { signal: controller.signal },
       );
       if (stopped || version !== epoch || controller.signal.aborted) return;
-      if (!validGroupPage(value)) throw new Error('探针分组列表未能完整返回');
+      if (!validGroupPage(value, limit)) throw new Error('探针分组列表未能完整返回');
       page.value = value;
     } catch (e) {
       if (!stopped && version === epoch && !controller.signal.aborted)
@@ -89,7 +94,7 @@ export function useSensorGroups() {
     void refresh();
   }
   function next() {
-    if (!pending.value && page.value.next_cursor) {
+    if (!pending.value && !error.value && page.value.next_cursor) {
       cursors.value = [...cursors.value, page.value.next_cursor];
       void refresh();
     }
@@ -117,6 +122,7 @@ export function useSensorGroups() {
       page.value = { items: [], next_cursor: '' };
       choices.value = [];
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       keyword = '';
       active = '';
       error.value = '';
@@ -136,6 +142,8 @@ export function useSensorGroups() {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     choices: shallowReadonly(choices),
     choicesPending: shallowReadonly(choicesPending),
     choicesError: shallowReadonly(choicesError),

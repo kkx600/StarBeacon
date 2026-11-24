@@ -70,11 +70,11 @@ function validGroup(v: unknown): v is SensorGroup {
     time(v.updated_at)
   );
 }
-export function validGroupPage(v: unknown): v is GroupPage {
+export function validGroupPage(v: unknown, limit = 100): v is GroupPage {
   return (
     record(v) &&
     Array.isArray(v.items) &&
-    v.items.length <= 100 &&
+    v.items.length <= limit &&
     v.items.every(validGroup) &&
     new Set(v.items.map(g => g.id)).size === v.items.length &&
     typeof v.next_cursor === 'string' &&

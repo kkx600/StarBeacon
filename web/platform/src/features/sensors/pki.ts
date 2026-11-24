@@ -1,3 +1,5 @@
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
+
 export interface Enrollment {
   id: string;
   sensor_id: string;
@@ -118,11 +120,12 @@ function validPage<T>(
   value: unknown,
   validate: (item: unknown) => item is T,
   key: (item: T) => string,
+  limit: number,
 ): value is { items: T[]; next_cursor: string } {
   if (
     !object(value) ||
     !Array.isArray(value.items) ||
-    value.items.length > 20 ||
+    value.items.length > limit ||
     !value.items.every(validate) ||
     typeof value.next_cursor !== 'string' ||
     (value.next_cursor !== '' && !pkiID(value.next_cursor))
@@ -132,14 +135,20 @@ function validPage<T>(
   // 标识排序由数据库排序规则决定；保留服务端顺序，核对唯一性与末行游标绑定。
   return (
     new Set(ids).size === ids.length &&
-    (value.next_cursor === '' || (ids.length === 20 && value.next_cursor === ids.at(-1)))
+    (value.next_cursor === '' || (ids.length === limit && value.next_cursor === ids.at(-1)))
   );
 }
-export function validEnrollmentPage(value: unknown): value is EnrollmentPage {
-  return object(value) && typeof value.ca_configured === 'boolean' && validPage(value, validEnrollment, v => v.id);
+export function validEnrollmentPage(value: unknown, limit = defaultPageSize): value is EnrollmentPage {
+  return (
+    object(value) && typeof value.ca_configured === 'boolean' && validPage(value, validEnrollment, v => v.id, limit)
+  );
 }
-export function validCertificatePage(value: unknown, sensor: string): value is CertificatePage {
-  return validPage(value, validCertificate, v => v.id) && value.items.every(v => v.sensor_id === sensor);
+export function validCertificatePage(
+  value: unknown,
+  sensor: string,
+  limit = defaultPageSize,
+): value is CertificatePage {
+  return validPage(value, validCertificate, v => v.id, limit) && value.items.every(v => v.sensor_id === sensor);
 }
 export const enrollmentStates: Record<string, string> = {
   created: '等待注册',
@@ -151,6 +160,15 @@ export const enrollmentStates: Record<string, string> = {
   expired: '令牌已到期',
 };
 export const certificateStates: Record<string, string> = { signing: '签发中', issued: '已签发', unknown: '结果待核实' };
+export const pkiStateTones = {
+  created: 'neutral',
+  unused: 'neutral',
+  signing: 'info',
+  issued: 'success',
+  unknown: 'warning',
+  revoked: 'danger',
+  expired: 'neutral',
+} as const;
 export const revocationStates: Record<string, string> = {
   none: '未申请',
   pending: '等待确认',

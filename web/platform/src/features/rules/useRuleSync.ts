@@ -1,6 +1,8 @@
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue';
 import type { RulePackage, Sensor } from '@starbeacon/shared/types.ts';
 import { readSensorDirectory } from '@starbeacon/shared/sensors.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { cursorQuery, defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import { syncInputError, syncPlanValid, type RuleSyncChange, type RuleSyncPage, type RuleSyncPlan } from './sync';
 
@@ -9,6 +11,7 @@ export function useRuleSync() {
     pending = shallowRef(false),
     error = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const sensors = shallowRef<Sensor[]>([]),
     packages = shallowRef<RulePackage[]>([]),
     choicesPending = shallowRef(false),
@@ -17,8 +20,7 @@ export function useRuleSync() {
     saving = shallowRef(false),
     formError = shallowRef(''),
     unconfirmed = shallowRef<RuleSyncChange>();
-  const canEdit = computed(() => session.current.value?.role === 'admin'),
-    currentCursor = computed(() => cursors.value.at(-1) ?? '');
+  const canEdit = computed(() => session.current.value?.role === 'admin');
   let stopped = false,
     read: AbortController | undefined,
     choices: AbortController | undefined,
@@ -30,19 +32,20 @@ export function useRuleSync() {
     read = call;
     pending.value = true;
     error.value = '';
+    const cursor = cursors.value.at(-1) ?? '',
+      limit = pageSize.value;
     try {
-      const p = await session.api.request<RuleSyncPage>(
-        '/rule-sync-plans' + (currentCursor.value ? '?cursor=' + encodeURIComponent(currentCursor.value) : ''),
-        { signal: call.signal },
-      );
+      const p = await session.api.request<RuleSyncPage>('/rule-sync-plans' + cursorQuery(cursor, limit), {
+        signal: call.signal,
+      });
       if (call.signal.aborted) return;
       if (
         !p ||
         !Array.isArray(p.items) ||
-        p.items.length > 20 ||
+        p.items.length > limit ||
         !p.items.every(syncPlanValid) ||
         new Set(p.items.map(v => v.id)).size !== p.items.length ||
-        p.items.some(v => v.id <= currentCursor.value) ||
+        p.items.some(v => v.id <= cursor) ||
         typeof p.next_cursor !== 'string' ||
         (p.next_cursor !== '' && p.next_cursor !== p.items.at(-1)?.id)
       )
@@ -55,7 +58,7 @@ export function useRuleSync() {
     }
   }
   function next() {
-    if (pending.value || !page.value.next_cursor) return;
+    if (pending.value || error.value || !page.value.next_cursor) return;
     cursors.value = [...cursors.value, page.value.next_cursor];
     void refresh();
   }
@@ -175,6 +178,7 @@ export function useRuleSync() {
       editing.value = undefined;
       page.value = { items: [], next_cursor: '' };
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       void refresh();
     },
   );
@@ -190,6 +194,8 @@ export function useRuleSync() {
     pending,
     error,
     cursors,
+    pageSize,
+    changePageSize,
     sensors,
     packages,
     choicesPending,

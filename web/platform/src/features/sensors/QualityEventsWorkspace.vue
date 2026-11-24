@@ -4,6 +4,7 @@ import QualityEventsFilters from '@starbeacon/shared/components/QualityEventsFil
 import QualityEventsPanel from '@starbeacon/shared/components/QualityEventsPanel.vue';
 import { localQualityTime, qualityQuery, readQualityPage, type QualityPage } from '@starbeacon/shared/qualityEvents.ts';
 import { session } from '../../session';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 const defaults = () => ({
   start: localQualityTime(new Date(Date.now() - 86400000)),
   end: localQualityTime(new Date()),
@@ -13,6 +14,7 @@ const defaults = () => ({
 });
 const form = ref(defaults()),
   result = shallowRef<QualityPage | null>(null),
+  pageSize = shallowRef(defaultPageSize),
   pending = shallowRef(false),
   error = shallowRef(''),
   attempted = shallowRef(false);
@@ -25,14 +27,15 @@ function invalidate() {
   attempted.value = false;
 }
 watch(form, invalidate, { deep: true, flush: 'sync' });
-async function load(page = 1) {
+async function load(page = 1, size = pageSize.value) {
   if (pending.value) return;
   result.value = null;
   error.value = '';
   attempted.value = true;
   let query;
   try {
-    query = qualityQuery(form.value, page);
+    query = qualityQuery(form.value, page, size);
+    pageSize.value = size;
   } catch (e) {
     error.value = (e as Error).message;
     return;
@@ -85,6 +88,7 @@ watch(
   () => {
     invalidate();
     form.value = defaults();
+    pageSize.value = defaultPageSize;
     void load();
   },
   { immediate: true, flush: 'sync' },
@@ -92,12 +96,6 @@ watch(
 onScopeDispose(invalidate);
 </script>
 <template>
-  <a-alert
-    type="info"
-    show-icon
-    message="仅记录托管引擎的区间质量变化与持续状态提醒。采样缺失、计数器复位及外部 EVE 不提供完整检测覆盖结论。事件异步写入；空结果不代表不存在质量问题。"
-    class="section-gap"
-  />
   <QualityEventsFilters v-model="form" :pending="pending" @query="load()" @cancel="cancel" @reset="reset" />
   <QualityEventsPanel
     :result="result"

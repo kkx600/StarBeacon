@@ -3,6 +3,13 @@ import { formatNumber } from './utils/format.ts';
 export const pageSizeOptions = [10, 20, 50, 100] as const;
 export const defaultPageSize = 20;
 
+export function cursorQuery(cursor: string, limit: number): string {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  if (limit !== defaultPageSize) params.set('limit', String(limit));
+  return params.size ? '?' + params : '';
+}
+
 export function totalText(total: number | bigint | string): string {
   return `共 ${formatNumber(BigInt(total))} 条`;
 }

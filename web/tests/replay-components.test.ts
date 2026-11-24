@@ -151,11 +151,14 @@ describe('重放任务提交', () => {
     await click('重放测试');
     await click('执行重放');
     expect(document.body.textContent).toContain('请选择具有离线重放能力');
-    const selects = wrapper.findAllComponents(Select);
-    await selects[0]!.setValue(sensor.id, 'value');
+    const probeSelect = () =>
+      wrapper.findAllComponents(Select).find(select => select.props('placeholder') === '选择具有离线重放能力的探针')!;
+    const packageSelect = () =>
+      wrapper.findAllComponents(Select).find(select => select.props('placeholder') === '选择规则包与修订')!;
+    await probeSelect().setValue(sensor.id, 'value');
     await click('执行重放');
     expect(document.body.textContent).toContain('请选择规则包修订');
-    await selects[1]!.setValue(rulePackage.id, 'value');
+    await packageSelect().setValue(rulePackage.id, 'value');
     request.mockRejectedValueOnce('offline');
     await click('执行重放');
     expect(document.body.textContent).toContain('重放任务提交失败');
@@ -170,7 +173,7 @@ describe('重放任务提交', () => {
     (document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();
     await flushPromises();
     await click('重放测试');
-    await wrapper.findAllComponents(Select)[0]!.setValue(sensor.id, 'value');
+    await probeSelect().setValue(sensor.id, 'value');
     const radios = document.body.querySelectorAll<HTMLInputElement>('.ant-modal input[type=radio]');
     radios[1]!.click();
     await flushPromises();

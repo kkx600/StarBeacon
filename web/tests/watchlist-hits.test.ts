@@ -423,11 +423,16 @@ describe('命中列表交互', () => {
   it('严重级别文案与告警列表一致，字段名用中性标签', async () => {
     const w = await hits();
     expect(w.text()).toContain('高危');
-    expect(w.find('.status-high').exists()).toBe(true);
-    expect(w.find('.status-neutral').text()).toBe('源 IP');
+    expect(w.find('.status-tag[data-tone="danger"]').text()).toBe('高危');
+    expect(w.find('.status-tag[data-tone="neutral"]').text()).toBe('源 IP');
     expect(w.text()).toContain('HTTP API access');
-    expect(w.text()).toContain('按当时修订固化');
-    expect(w.text()).toContain('命中不表示攻击成立');
+    const help = w.get('button[aria-label="观察名单命中的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() => {
+      const content = document.getElementById(help.attributes('aria-controls') ?? '')?.textContent;
+      expect(content).toContain('按当时修订固化');
+      expect(content).toContain('攻击成立须结合独立证据');
+    });
   });
   it('规则名称缺失时给出业务原因而不是空白', async () => {
     const w = await hits({ page: await page({ items: [await hit({ rule_name: '' })] }) });
@@ -512,14 +517,19 @@ describe('历史影响界面', () => {
     expect(w.text()).toContain('1,234');
     expect(w.text()).toContain('命中告警总数');
     // 参与字段只列实际查询的已索引字段；边界提示里出现的 TLS SNI 是说明文案，不计入字段标签。
-    const tags = w.findAll('.watchlist-impact-tags .status').map(tag => tag.text());
+    const tags = w.findAll('.watchlist-impact-tags .status-tag').map(tag => tag.text());
     expect(tags).toEqual(['源 IP', '目的 IP']);
     expect(w.text()).toContain('本次未登记任何命中');
   });
   it('边界提示说明预览不登记命中也不在范围内检索 SNI 与 DNS', async () => {
     const w = await view();
-    expect(w.text()).toContain('不登记命中');
-    expect(w.text()).toContain('TLS SNI 与 DNS 查询名没有检索字段');
+    const help = w.get('button[aria-label="历史影响预览的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() => {
+      const content = document.getElementById(help.attributes('aria-controls') ?? '')?.textContent;
+      expect(content).toContain('历史核对与命中登记、设备动作分别管理');
+      expect(content).toContain('TLS SNI 与 DNS 查询名暂无可供预览的检索字段');
+    });
     expect(w.text()).toContain('点击“执行预览”');
   });
   it('修订越界时禁止提交，合法时带窗口发起预览', async () => {

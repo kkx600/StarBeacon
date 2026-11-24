@@ -1,5 +1,7 @@
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue';
 import { session } from '../../session';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { cursorQuery, defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { syncPlanValid, type RuleSyncPage, type RuleSyncPlan } from './sync';
 import {
   rolloutInputError,
@@ -17,6 +19,7 @@ export function useRuleRollouts() {
     pending = shallowRef(false),
     error = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const detail = shallowRef<RuleRollout>(),
     detailID = shallowRef(''),
     detailPending = shallowRef(false),
@@ -44,17 +47,17 @@ export function useRuleRollouts() {
     listCall = call;
     pending.value = true;
     error.value = '';
-    const cursor = cursors.value.at(-1) ?? '';
+    const cursor = cursors.value.at(-1) ?? '',
+      limit = pageSize.value;
     try {
-      const p = await session.api.request<RolloutPage>(
-        '/rule-rollouts' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''),
-        { signal: call.signal },
-      );
+      const p = await session.api.request<RolloutPage>('/rule-rollouts' + cursorQuery(cursor, limit), {
+        signal: call.signal,
+      });
       if (call.signal.aborted) return;
       if (
         !p ||
         !Array.isArray(p.items) ||
-        p.items.length > 20 ||
+        p.items.length > limit ||
         !p.items.every(r => validRollout(r)) ||
         p.items.some(r => r.id <= cursor) ||
         new Set(p.items.map(r => r.id)).size !== p.items.length ||
@@ -70,7 +73,7 @@ export function useRuleRollouts() {
     }
   }
   function next() {
-    if (pending.value || !page.value.next_cursor) return;
+    if (pending.value || error.value || !page.value.next_cursor) return;
     cursors.value = [...cursors.value, page.value.next_cursor];
     void refresh();
   }
@@ -263,6 +266,7 @@ export function useRuleRollouts() {
       draftEpoch.value++;
       page.value = { items: [], next_cursor: '' };
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       detailID.value = '';
       detail.value = undefined;
       plans.value = [];
@@ -289,6 +293,8 @@ export function useRuleRollouts() {
     pending,
     error,
     cursors,
+    pageSize,
+    changePageSize,
     detail,
     detailID,
     detailPending,

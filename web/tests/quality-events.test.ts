@@ -74,7 +74,7 @@ function fixture(q = query): QualityPage {
     ],
     total: '1',
     page: Number(q.page),
-    page_size: 20,
+    page_size: Number(q.limit ?? 20),
   };
 }
 beforeEach(() => {
@@ -116,6 +116,22 @@ describe('质量事件范围与历史回执', () => {
     ])
       expect(() => qualityQuery({ ...form, ...change })).toThrow();
     expect(() => qualityQuery(form, 501)).toThrow();
+  });
+  it('按选择的每页条数校验回执与一万条检索上限', () => {
+    const form = {
+      start: localQualityTime(new Date(query.start)),
+      end: localQualityTime(new Date(query.end)),
+      sensor: 'probe_owned',
+      registration: 'reg_owned',
+      kind: 'limitation',
+    };
+    const q = qualityQuery(form, 1000, 10);
+    expect(q).toMatchObject({ page: '1000', limit: '10' });
+    const last = { ...fixture(q), total: '9991' };
+    expect(readQualityPage(last, q, 'tenant_owned').items).toHaveLength(1);
+    expect(() => readQualityPage({ ...last, page_size: 20 }, q, 'tenant_owned')).toThrow();
+    expect(() => readQualityPage({ ...last, total: '9992' }, q, 'tenant_owned')).toThrow();
+    expect(() => qualityQuery(form, 1001, 10)).toThrow();
   });
   it.each([
     [
@@ -314,16 +330,13 @@ describe('质量事件交互', () => {
     await wrapper.setProps({ attempted: true });
     expect(wrapper.text()).toContain('空结果不证明检测完整');
     await wrapper.setProps({ error: '索引不可用' });
-    await wrapper.get('button').trigger('click');
+    await wrapper.get('.state-panel button').trigger('click');
     expect(wrapper.emitted('retry')).toHaveLength(1);
     await wrapper.setProps({ error: '', pending: true });
     expect(wrapper.text()).toContain('正在读取');
     await wrapper.setProps({ pending: false, result: { ...fixture(), total: '21' } });
-    await wrapper
-      .findAll('button')
-      .find(b => b.text() === '下一页')!
-      .trigger('click');
-    expect(wrapper.emitted('page')![0]).toEqual([2]);
+    await wrapper.get('.ant-pagination-next').trigger('click');
+    expect(wrapper.emitted('page')![0]).toEqual([2, 20]);
     wrapper.unmount();
   });
   it('查询、变化后取消、重置与超时不沿用旧结果', async () => {

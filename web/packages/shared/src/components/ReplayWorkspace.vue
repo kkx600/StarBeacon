@@ -3,13 +3,16 @@ import { useFeedback } from '../composables/useFeedback';
 import { readSensorDirectory } from '../sensors';
 import { computed, inject, onMounted, onScopeDispose, reactive, shallowRef } from 'vue';
 import { routeLocationKey, routerKey } from 'vue-router';
-import { Table as ATable, Modal as AModal, Select as ASelect, Radio as ARadio } from 'ant-design-vue';
+import { Modal as AModal, Select as ASelect, Radio as ARadio } from 'ant-design-vue';
 import type { ApiClient } from '../api';
 import type { ReplaySample, RulePackage, Sensor, SensorTask, Principal } from '../types';
 import { formatTime } from '../types';
 import StatePanel from './StatePanel.vue';
 import TaskTable from './TaskTable.vue';
 import RuleEditor from './RuleEditor.vue';
+import ListTable from './ListTable.vue';
+import PageHelp from './PageHelp.vue';
+import { tablePagination } from '../pagination';
 import { formatBytes } from '../utils/format';
 import { inspectRules } from '../utils/ruleSyntax';
 import { importError, type ImportKind } from '../utils/sample';
@@ -99,12 +102,14 @@ const replayTasks = computed(() =>
   props.local ? tasks.value : tasks.value.filter(row => row.kind === 'rules.replay'),
 );
 const columns = [
-  { title: '样本名称', key: 'name', width: 240 },
+  { title: '样本编号', dataIndex: 'id', width: 142, ellipsis: true, className: 'technical' },
+  { title: '样本名称', key: 'name', width: 185, ellipsis: true },
+  { title: '样本来源', key: 'origin', width: 152 },
   { title: '格式 / 大小', key: 'size', width: 150 },
   { title: 'SHA-256', key: 'sha', width: 200 },
   { title: '导入时间', key: 'created', width: 190 },
   { title: '保留至', key: 'expires', width: 190 },
-  { title: '操作', key: 'action', width: 120 },
+  { title: '操作', key: 'action', width: 120, fixed: 'right' as const },
 ];
 const size = formatBytes;
 function schedule(failed = false) {
@@ -283,11 +288,17 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <section v-if="view === 'samples'" class="panel">
-    <div class="panel-header">
-      <div>
+  <section v-if="view === 'samples'" class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
         <h2>PCAP 重放</h2>
-        <p class="page-description">导入离线样本，使用登记规则快照或指定规则排查检测问题。</p>
+        <PageHelp title="PCAP 重放">
+          <p>导入离线样本，使用登记规则快照或指定规则排查检测问题。</p>
+          <p>
+            支持 PCAP / PCAPNG（100 MiB）和 HTTP Raw（2 MiB）。样本默认保留 180 天，执行前核验
+            SHA-256。重放仅在隔离环境离线执行。
+          </p>
+        </PageHelp>
       </div>
       <a-space
         ><a-button :loading="pending" @click="refresh()">刷新</a-button
@@ -312,10 +323,6 @@ onScopeDispose(() => {
         :message="local ? '离线重放引擎或隔离环境未配置，请联系管理员。' : '平台样本存储未配置，请联系管理员。'"
         class="section-gap"
       />
-      <p class="page-description">
-        支持 PCAP / PCAPNG（100 MiB）和 HTTP Raw（2 MiB）。样本按保留策略存储，默认 180 天；执行前核验
-        SHA-256。重放不向真实网络发包。
-      </p>
     </div>
     <StatePanel
       :loading="pending"
@@ -323,36 +330,60 @@ onScopeDispose(() => {
       :empty="items.length === 0"
       description="暂无重放样本，请导入用于规则验证或故障定位的 PCAP 或 HTTP Raw。"
       @retry="refresh()"
-      ><div class="table-wrap">
-        <a-table
-          :columns="columns"
-          :data-source="items"
-          row-key="id"
-          size="small"
-          :pagination="{ pageSize: 5, hideOnSinglePage: true, showSizeChanger: false }"
-          :scroll="{ x: 1090 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'name'"
-              ><button class="link-button" :disabled="!available" @click="open(record.id)">{{ record.name }}</button
-              ><small v-if="record.origin?.synthetic" class="page-description">HTTP Raw 合成样本</small
-              ><small class="record-id technical">{{ record.id }}</small></template
-            ><template v-else-if="column.key === 'size'"
-              >{{ record.format.toUpperCase() }} · {{ size(record.size) }}</template
-            ><span v-else-if="column.key === 'sha'" class="technical" :title="record.sha256"
-              >{{ record.sha256.slice(0, 20) }}…</span
-            ><template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template
-            ><template v-else-if="column.key === 'expires'">{{ formatTime(record.expires_at) }}</template
-            ><a-button v-else-if="column.key === 'action'" type="link" :disabled="!available" @click="open(record.id)"
-              >重放测试</a-button
-            ></template
-          ></a-table
-        >
-      </div></StatePanel
     >
+      <ListTable
+        :columns="columns"
+        :data-source="items"
+        row-key="id"
+        :pagination="tablePagination()"
+        :scroll="{ x: 1329 }"
+        ><template #bodyCell="{ column, record }"
+          ><button
+            v-if="column.key === 'name'"
+            type="button"
+            class="link-button record-link"
+            :title="record.name"
+            :disabled="!available"
+            @click="open(record.id)"
+          >
+            {{ record.name }}
+          </button>
+          <template v-else-if="column.key === 'origin'">{{
+            record.origin?.synthetic ? 'HTTP Raw 合成样本' : '—'
+          }}</template>
+          <template v-else-if="column.key === 'size'"
+            >{{ record.format.toUpperCase() }} · {{ size(record.size) }}</template
+          ><span v-else-if="column.key === 'sha'" class="technical" :title="record.sha256"
+            >{{ record.sha256.slice(0, 20) }}…</span
+          ><template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template
+          ><template v-else-if="column.key === 'expires'">{{ formatTime(record.expires_at) }}</template
+          ><button
+            v-else-if="column.key === 'action'"
+            type="button"
+            class="link-button record-link"
+            :disabled="!available"
+            @click="open(record.id)"
+          >
+            重放测试
+          </button></template
+        ></ListTable
+      >
+    </StatePanel>
   </section>
-  <section v-else class="panel">
-    <div class="panel-header">
-      <h2>{{ local ? '任务记录' : '重放任务' }}</h2>
+  <section v-else class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
+        <h2>{{ local ? '任务记录' : '重放任务' }}</h2>
+        <PageHelp :title="local ? '任务记录' : '重放任务'">
+          <p>
+            {{
+              local
+                ? '列表显示最近 200 项本地及平台任务。指定任务链接可独立读取留存档案。'
+                : '查看探针的离线重放执行回执。'
+            }}
+          </p>
+        </PageHelp>
+      </div>
       <a-button
         :loading="pending"
         @click="
@@ -362,9 +393,6 @@ onScopeDispose(() => {
         >刷新任务</a-button
       >
     </div>
-    <p class="panel-body page-description">
-      {{ local ? '列表显示最近 200 项本地及平台任务；指定任务链接独立读取留存档案。' : '选定探针的执行回执' }}
-    </p>
     <div v-if="taskError && tasks.length > 0" class="panel-body">
       <a-alert
         type="warning"

@@ -1,25 +1,29 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue';
-import {
-  Table as ATable,
-  Modal as AModal,
-  Tag as ATag,
-  Descriptions as ADescriptions,
-  DescriptionsItem as ADescriptionsItem,
-} from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { statusTone } from '@starbeacon/shared/statusTones.ts';
 import { useRuleSync } from './useRuleSync';
 import RuleSyncForm from './RuleSyncForm.vue';
-import { syncStates, syncCodes, type RuleSyncPlan } from './sync';
+import { syncStates, syncStateTones, syncCodes, type RuleSyncPlan } from './sync';
 const state = useRuleSync(),
   detail = shallowRef<RuleSyncPlan>();
 const columns = [
-  { title: '计划 / 探针', key: 'name', width: 240 },
-  { title: '批准规则', key: 'package', width: 220 },
-  { title: '状态', key: 'state', width: 170 },
-  { title: '最近更新', key: 'time', width: 180 },
-  { title: '操作', key: 'action', width: 160 },
+  { title: '计划编号', dataIndex: 'id', width: 140, className: 'technical', ellipsis: true },
+  { title: '计划名称', key: 'name', width: 178, ellipsis: true },
+  { title: '探针编号', dataIndex: ['spec', 'sensor_id'], width: 140, className: 'technical', ellipsis: true },
+  { title: '规则包编号', dataIndex: ['spec', 'package_id'], width: 138, className: 'technical', ellipsis: true },
+  { title: '规则修订', dataIndex: ['spec', 'package_revision'], width: 88, className: 'technical' },
+  { title: '授权修订', dataIndex: 'revision', width: 85, className: 'technical' },
+  { title: '配置状态', key: 'state', width: 85 },
+  { title: '执行阶段', key: 'run', width: 145 },
+  { title: '最近更新', key: 'time', width: 175, className: 'technical' },
+  { title: '操作', key: 'action', width: 125, fixed: 'right' as const },
 ];
 const stages = ['装载检查', '正样本重放', '反样本重放', '规则发布'];
 function showDetail(id: string) {
@@ -31,8 +35,13 @@ function configure(id: string) {
 }
 </script>
 <template>
-  <div class="panel-header">
-    <h2>规则自动同步</h2>
+  <div class="panel table-toolbar section-gap">
+    <div class="heading-with-help">
+      <h2>规则自动同步</h2>
+      <PageHelp title="规则自动同步"
+        ><p>平台持续核对获批的固定修订，再由采集器执行。已下发的任务须独立核对结果。</p></PageHelp
+      >
+    </div>
     <a-space
       ><a-button :loading="state.pending.value" @click="state.refresh">刷新</a-button
       ><a-button type="primary" :disabled="state.saving.value || !!state.unconfirmed.value" @click="state.open(null)"
@@ -40,12 +49,6 @@ function configure(id: string) {
       ></a-space
     >
   </div>
-  <a-alert
-    type="info"
-    show-icon
-    message="批准固定修订后，由平台持续核对并通过采集器执行。未知结果需要独立核实；停用不撤销已经下发的任务。"
-    class="section-gap"
-  />
   <a-alert
     v-if="state.unconfirmed.value && state.editing.value === undefined"
     type="warning"
@@ -56,7 +59,7 @@ function configure(id: string) {
       ><a-button :loading="state.saving.value" @click="state.confirm">核对原提交</a-button></template
     ></a-alert
   >
-  <section class="panel">
+  <section class="panel table-panel">
     <StatePanel
       :loading="state.pending.value"
       :error="state.error.value"
@@ -64,52 +67,55 @@ function configure(id: string) {
       description="暂无规则同步计划。创建计划前，请导入正反样本并核对探针执行能力。"
       @retry="state.refresh"
     >
-      <div class="table-wrap">
-        <a-table
-          :columns="columns"
-          :data-source="state.page.value.items"
-          :pagination="false"
-          :scroll="{ x: 970 }"
-          row-key="id"
-          ><template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'name'"
-              ><button class="link-button" @click="showDetail(record.id)">{{ record.spec.name }}</button
-              ><small class="record-id technical">{{ record.spec.sensor_id }}</small></template
+      <ListTable :columns="columns" :data-source="state.page.value.items" :scroll="{ x: 1299 }"
+        ><template #bodyCell="{ column, record }">
+          <button
+            v-if="column.key === 'name'"
+            type="button"
+            class="record-link"
+            :title="record.spec.name"
+            @click="showDetail(record.id)"
+          >
+            {{ record.spec.name }}
+          </button>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="record.spec.enabled ? 'success' : 'neutral'"
+            :value="record.spec.enabled ? '启用' : '停用'"
+          />
+          <StatusTag
+            v-else-if="column.key === 'run'"
+            :tone="statusTone(syncStateTones, record.run?.state)"
+            :value="
+              record.run ? syncStates[record.run.state] : record.processed_revision ? '运行档案已到期' : '等待核对'
+            "
+          />
+          <template v-else-if="column.key === 'time'">{{ formatTime(record.updated_at) }}</template>
+          <div v-else-if="column.key === 'action'" class="table-row-actions">
+            <a-button type="link" size="small" @click="showDetail(record.id)">查看</a-button
+            ><a-button
+              type="link"
+              size="small"
+              :disabled="state.saving.value || !!state.unconfirmed.value"
+              @click="configure(record.id)"
+              >配置</a-button
             >
-            <template v-else-if="column.key === 'package'"
-              ><span>{{ record.spec.package_id }}</span
-              ><small class="record-id"
-                >修订 {{ record.spec.package_revision }} · 授权修订 {{ record.revision }}</small
-              ></template
-            >
-            <template v-else-if="column.key === 'state'"
-              ><a-tag :color="record.spec.enabled ? 'blue' : 'default'">{{
-                record.spec.enabled ? '启用' : '停用'
-              }}</a-tag
-              ><small class="record-id">{{
-                record.run ? syncStates[record.run.state] : record.processed_revision ? '运行档案已到期' : '等待核对'
-              }}</small></template
-            >
-            <template v-else-if="column.key === 'time'">{{ formatTime(record.updated_at) }}</template>
-            <template v-else-if="column.key === 'action'"
-              ><a-button type="link" @click="showDetail(record.id)">查看</a-button
-              ><a-button
-                type="link"
-                :disabled="state.saving.value || !!state.unconfirmed.value"
-                @click="configure(record.id)"
-                >配置</a-button
-              ></template
-            >
-          </template></a-table
-        >
-      </div>
+          </div>
+        </template></ListTable
+      >
     </StatePanel>
-    <div class="sync-pagination">
-      <a-button :disabled="state.pending.value || state.cursors.value.length < 2" @click="state.previous"
-        >上一页</a-button
-      ><span>第 {{ state.cursors.value.length }} 页</span
-      ><a-button :disabled="state.pending.value || !state.page.value.next_cursor" @click="state.next">下一页</a-button>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="state.cursors.value.length"
+      :page-size="state.pageSize.value"
+      :count="state.pending.value || state.error.value ? undefined : state.page.value.items.length"
+      :has-previous="state.cursors.value.length > 1"
+      :has-next="!state.error.value && !!state.page.value.next_cursor"
+      :disabled="state.pending.value"
+      @previous="state.previous"
+      @next="state.next"
+      @update:page-size="state.changePageSize"
+    />
   </section>
   <RuleSyncForm
     v-if="state.editing.value !== undefined"
@@ -171,13 +177,6 @@ function configure(id: string) {
   </a-modal>
 </template>
 <style scoped>
-.sync-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px;
-}
 .sync-steps {
   padding-left: 24px;
 }

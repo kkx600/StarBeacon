@@ -16,7 +16,7 @@ const emit = defineEmits<{
 }>();
 </script>
 <template>
-  <a-space>
+  <div class="table-row-actions">
     <template
       v-if="
         responseable &&
@@ -27,13 +27,15 @@ const emit = defineEmits<{
         ['succeeded', 'unknown', 'failed'].includes(task.state)
       "
     >
-      <a-button type="link" :disabled="saving" @click="emit('response', task, 'response.read')">回读</a-button>
+      <a-button type="link" size="small" :disabled="saving" @click="emit('response', task, 'response.read')"
+        >回读</a-button
+      >
       <a-popconfirm
         :title="'解除原封禁任务的独立租约？目标 ' + task.response_action.target_ip + '；其他租约保持有效。'"
         ok-text="提交解除"
         cancel-text="取消"
         @confirm="emit('response', task, 'response.revoke')"
-        ><a-button type="link" :disabled="saving">解除</a-button></a-popconfirm
+        ><a-button type="link" size="small" :disabled="saving">解除</a-button></a-popconfirm
       >
     </template>
     <a-popconfirm
@@ -42,7 +44,7 @@ const emit = defineEmits<{
       ok-text="确定"
       cancel-text="取消"
       @confirm="emit('cancel', task)"
-      ><a-button type="link" :disabled="saving">取消</a-button></a-popconfirm
+      ><a-button type="link" size="small" :disabled="saving">取消</a-button></a-popconfirm
     >
     <a-popconfirm
       v-if="reconcilable && !local && task.kind === 'rules.apply' && task.state === 'unknown' && !task.rule_resolution"
@@ -50,7 +52,7 @@ const emit = defineEmits<{
       ok-text="提交核实"
       cancel-text="取消"
       @confirm="emit('reconcile', task)"
-      ><a-button type="link" :disabled="saving">核实规则</a-button></a-popconfirm
+      ><a-button type="link" size="small" :disabled="saving">核实规则</a-button></a-popconfirm
     >
-  </a-space>
+  </div>
 </template>

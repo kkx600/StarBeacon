@@ -2,6 +2,7 @@ import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
 import {
   readWatchlistPage,
+  emptyWatchlistQuery,
   readWatchlistReceipt,
   watchlistChangeError,
   type WatchlistChange,
@@ -14,7 +15,7 @@ export function useWatchlists() {
   const page = shallowRef<WatchlistPage>({ items: [], next_cursor: '' }),
     pending = shallowRef(false),
     error = shallowRef(''),
-    query = shallowRef<WatchlistQuery>({ cursor: '', keyword: '', kind: '', active: '', limit: 20 }),
+    query = shallowRef<WatchlistQuery>(emptyWatchlistQuery()),
     cursors = shallowRef(['']);
   const busy = shallowRef(false),
     unconfirmed = shallowRef(false),
@@ -64,7 +65,7 @@ export function useWatchlists() {
     }
   }
   function search(keyword: string, active: string, kind: string) {
-    query.value = { cursor: '', keyword: keyword.trim(), active, kind, limit: 20 };
+    query.value = { ...query.value, cursor: '', keyword: keyword.trim(), active, kind };
     cursors.value = [''];
     page.value = { items: [], next_cursor: '' };
     void refresh();
@@ -78,6 +79,13 @@ export function useWatchlists() {
   function previous() {
     if (pending.value || cursors.value.length <= 1) return;
     cursors.value = cursors.value.slice(0, -1);
+    page.value = { items: [], next_cursor: '' };
+    void refresh();
+  }
+  function changePageSize(limit: number) {
+    if (pending.value || limit === query.value.limit) return;
+    query.value = { ...query.value, cursor: '', limit };
+    cursors.value = [''];
     page.value = { items: [], next_cursor: '' };
     void refresh();
   }
@@ -161,7 +169,7 @@ export function useWatchlists() {
     mutationError.value = '';
     page.value = { items: [], next_cursor: '' };
     cursors.value = [''];
-    query.value = { cursor: '', keyword: '', kind: '', active: '', limit: 20 };
+    query.value = emptyWatchlistQuery();
     error.value = '';
     pending.value = false;
     if (session.current.value) void refresh();
@@ -197,6 +205,7 @@ export function useWatchlists() {
     search,
     next,
     previous,
+    changePageSize,
     save,
     confirm,
     clearError,
