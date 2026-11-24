@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch, type ShallowRef } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import type { IncidentRecord } from './incident';
 import {
@@ -18,6 +19,7 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
     pending = shallowRef(false),
     error = shallowRef(''),
     cursors = shallowRef(['']),
+    pageSize = shallowRef(defaultPageSize),
     status = shallowRef('');
   const selected = shallowRef<IncidentNoteRecord | null>(null),
     detailPending = shallowRef(false),
@@ -44,7 +46,8 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
   async function refresh() {
     if (stopped || !readsOpen || !parent.value) return;
     const id = parent.value.id,
-      token = ++epoch;
+      token = ++epoch,
+      limit = pageSize.value;
     listRead?.abort();
     const controller = new AbortController();
     listRead = controller;
@@ -52,11 +55,13 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
     error.value = '';
     try {
       const result = await session.api.request<unknown>(
-        path(id) + '?' + new URLSearchParams({ status: status.value, before: cursors.value.at(-1) ?? '' }),
+        path(id) +
+          '?' +
+          new URLSearchParams({ status: status.value, before: cursors.value.at(-1) ?? '', limit: String(limit) }),
         { signal: controller.signal },
       );
       if (stopped || token !== epoch) return;
-      if (!validNotePage(result, id)) throw new Error('调查笔记列表未能完整返回');
+      if (!validNotePage(result, id, limit)) throw new Error('调查笔记列表未能完整返回');
       page.value = result;
     } catch (e) {
       if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '调查笔记读取失败';
@@ -70,7 +75,7 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
     void refresh();
   }
   function next() {
-    if (!pending.value && page.value.next_cursor) {
+    if (!pending.value && !error.value && page.value.next_cursor) {
       cursors.value = [...cursors.value, page.value.next_cursor];
       void refresh();
     }
@@ -80,6 +85,12 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
       cursors.value = cursors.value.slice(0, -1);
       void refresh();
     }
+  }
+  function changePageSize(size: number) {
+    if (pending.value || size === pageSize.value) return;
+    pageSize.value = size;
+    cursors.value = [''];
+    void refresh();
   }
   function clearSelection() {
     detailEpoch++;
@@ -264,6 +275,7 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
       page.value = { items: [], next_cursor: '' };
       status.value = '';
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       pending.value = false;
       busy.value = false;
       unconfirmed.value = false;
@@ -284,6 +296,7 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
     status: shallowReadonly(status),
     selected: shallowReadonly(selected),
     detailPending: shallowReadonly(detailPending),
@@ -300,6 +313,7 @@ export function useIncidentNotes(parent: ShallowRef<IncidentRecord | null>) {
     search,
     next,
     previous,
+    changePageSize,
     select,
     clearSelection,
     loadHistory,

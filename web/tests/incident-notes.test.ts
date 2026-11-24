@@ -204,7 +204,7 @@ describe('调查笔记异步读取与原提交确认', () => {
     const { state } = host();
     await flushPromises();
     expect(request).toHaveBeenCalledWith(
-      root + '?status=&before=',
+      root + '?status=&before=&limit=20',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     const rows = Array.from({ length: 20 }, (_, i) => ({ ...incidentNote, id: 'case_note_' + i }));
@@ -515,7 +515,7 @@ describe('调查笔记表单与独立工作区', () => {
     expect(reopened.findComponent(Select).props('value')).toBe('withdrawn');
     expect(request.mock.calls.filter(([path]) => path.startsWith(root + '?'))).toHaveLength(count + 1);
     expect(request.mock.calls.filter(([path]) => path.startsWith(root + '?')).at(-1)?.[0]).toBe(
-      root + '?status=withdrawn&before=',
+      root + '?status=withdrawn&before=&limit=20',
     );
     expect(reopened.props('state').page.value.items[0]?.spec.status).toBe('withdrawn');
   });
@@ -587,7 +587,7 @@ describe('调查笔记表单与独立工作区', () => {
     expect(opened.findComponent(Select).props('value')).toBe('');
     expect(
       request.mock.calls.filter(([path]) => path.startsWith('/incidents/' + other.id + '/notes?')).at(-1)?.[0],
-    ).toBe('/incidents/' + other.id + '/notes?status=&before=');
+    ).toBe('/incidents/' + other.id + '/notes?status=&before=&limit=20');
     expect(opened.props('state').page.value.items).toEqual([otherNote]);
     expect(document.querySelector('.ant-modal')?.textContent).toContain(otherNote.spec.title);
   });

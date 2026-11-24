@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, shallowRef, watch, shallowReadonly } from 'vue';
 import type { SearchRequest, SearchResult } from '@starbeacon/shared/types.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import { definitionFromQuery } from '../search/savedSearch';
 
@@ -20,7 +21,7 @@ export function useAlerts(initial?: { start?: string; end?: string }) {
     start: fixed.value?.start ?? new Date(now.getTime() - 86400000).toISOString(),
     end: fixed.value?.end ?? now.toISOString(),
     page: 1,
-    page_size: 20,
+    page_size: defaultPageSize,
     keyword: '',
     source_ip: '',
     destination_ip: '',
@@ -29,7 +30,7 @@ export function useAlerts(initial?: { start?: string; end?: string }) {
     path: '',
     severity: '',
   });
-  const result = shallowRef<SearchResult>({ items: [], total: 0, page: 1, page_size: 20 }),
+  const result = shallowRef<SearchResult>({ items: [], total: 0, page: 1, page_size: defaultPageSize }),
     pending = shallowRef(true),
     error = shallowRef('');
   const windowHours = shallowRef(initialInherited ? 0 : 24);
@@ -68,13 +69,13 @@ export function useAlerts(initial?: { start?: string; end?: string }) {
           : new Date(end.getTime() - windowHours.value * 3600000).toISOString(),
       end: windowHours.value === 0 ? fixed.value!.end : end.toISOString(),
       page: 1,
-      page_size: 20,
+      page_size: query.value.page_size,
     };
   }
   function applyQuery(value: SearchRequest, hours: number) {
     windowHours.value = hours;
     fixed.value = hours === 0 ? { start: value.start, end: value.end } : null;
-    query.value = { ...value, page: 1, page_size: 20 };
+    query.value = { ...value, page: 1, page_size: query.value.page_size };
   }
   function page(value: number, size: number) {
     query.value = { ...query.value, page: value, page_size: size };
@@ -94,7 +95,8 @@ export function useAlerts(initial?: { start?: string; end?: string }) {
   watch(
     () => [session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/'),
     () => {
-      result.value = { items: [], total: 0, page: 1, page_size: 20 };
+      result.value = { items: [], total: 0, page: 1, page_size: defaultPageSize };
+      query.value = { ...query.value, page_size: defaultPageSize };
       fixed.value = null;
       windowHours.value = 24;
       search(

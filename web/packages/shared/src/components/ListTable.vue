@@ -9,6 +9,7 @@ const props = withDefaults(
     rowSelection?: TableProps<Row>['rowSelection'];
     scroll?: TableProps<Row>['scroll'];
     pagination?: TableProps<Row>['pagination'];
+    loading?: TableProps<Row>['loading'];
   }>(),
   { rowKey: 'id', pagination: false },
 );

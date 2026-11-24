@@ -1,4 +1,13 @@
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
+
 export const incidentStatuses = { open: '待调查', investigating: '调查中', closed: '已结案' } as const;
+export const incidentStatusTones = {
+  open: 'neutral',
+  investigating: 'info',
+  closed: 'success',
+} as const satisfies Record<keyof typeof incidentStatuses, StatusTone>;
+export const incidentClosureTones = { resolved: 'success', false_positive: 'neutral' } as const;
 export const incidentCategories = {
   network_intrusion: '网络入侵',
   malware: '恶意软件',
@@ -146,15 +155,15 @@ export function validIncidentRecord(v: unknown): v is IncidentRecord {
     a => validIncidentRef(a) && object(a) && incidentID(a.sensor_id) && date(a.event_time) && date(a.observed_at),
   );
 }
-export function validIncidentPage(v: unknown): v is IncidentPage {
+export function validIncidentPage(v: unknown, limit = defaultPageSize): v is IncidentPage {
   return (
     object(v) &&
     Array.isArray(v.items) &&
-    v.items.length <= 20 &&
+    v.items.length <= limit &&
     v.items.every(validIncidentRecord) &&
     new Set(v.items.map(i => i.id)).size === v.items.length &&
     typeof v.next_cursor === 'string' &&
-    (v.next_cursor === '' || (v.items.length === 20 && v.next_cursor === v.items[19]?.id))
+    (v.next_cursor === '' || (v.items.length === limit && v.next_cursor === v.items.at(-1)?.id))
   );
 }
 export function validIncidentHistory(v: unknown, id: string): v is IncidentPage {

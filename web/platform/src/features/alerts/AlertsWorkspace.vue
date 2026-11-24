@@ -5,6 +5,8 @@ import { shallowRef, watch } from 'vue';
 import type { Alert } from '@starbeacon/shared/types.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
 import AlertFilters from './AlertFilters.vue';
 import AlertTable from './AlertTable.vue';
 import AlertDetail from './AlertDetail.vue';
@@ -31,19 +33,11 @@ watch(
 );
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">检索已入库的原始检测事件，核对来源、时间和通信元数据。</p>
-    </div>
-    <div class="query-toolbar">
-      <SavedSearchTools dataset="alerts" :current="definition" :disabled="pending" @apply="apply" /><SearchExportButton
-        dataset="alerts"
-        :query="appliedQuery"
-        :disabled="pending || !!error"
-      /><a-button :loading="pending" @click="refresh">刷新</a-button>
-    </div>
-  </header>
+  <PageHeader :title="pageTitle" description="检索已入库的原始检测事件，核对来源、时间和通信元数据。">
+    <SavedSearchTools dataset="alerts" :current="definition" :disabled="pending" @apply="apply" />
+    <SearchExportButton dataset="alerts" :query="appliedQuery" :disabled="pending || !!error" />
+    <a-button :loading="pending" @click="refresh">刷新</a-button>
+  </PageHeader>
   <AlertFilters
     :advanced="advanced"
     :key="[session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/')"
@@ -59,12 +53,14 @@ watch(
     show-icon
     class="section-gap"
   />
-  <section class="panel">
-    <div class="panel-header">
-      <h2>告警列表</h2>
-      <span>{{ result.total }} 条</span>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div>
+        <h2>告警列表</h2>
+        <span class="muted">{{ formatTime(range.start) }} — {{ formatTime(range.end) }}</span>
+      </div>
+      <MetricBar v-if="!pending && !error" embedded :items="[{ label: '匹配告警', value: result.total }]" />
     </div>
-    <p class="muted alert-window">{{ formatTime(range.start) }} — {{ formatTime(range.end) }}</p>
     <StatePanel
       :loading="pending"
       :error="error"
@@ -76,17 +72,3 @@ watch(
   </section>
   <AlertDetail :alert="selected" @close="selected = null" />
 </template>
-<style scoped>
-.alert-window {
-  font-size: 12px;
-  margin: 0 0 8px;
-  padding-inline: var(--panel-inset);
-  overflow-wrap: anywhere;
-}
-.query-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--related-gap, 8px);
-}
-</style>

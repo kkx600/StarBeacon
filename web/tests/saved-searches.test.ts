@@ -592,7 +592,13 @@ describe('保存查询表单和条件复用', () => {
     await wrapper.setProps({ error: '服务暂不可用' });
     await flushPromises();
     expect(document.activeElement?.getAttribute('aria-label')).toBe('保存查询校验信息');
-    expect(document.body.textContent).toContain('团队共享仅共享查询定义');
+    const help = document.querySelector<HTMLButtonElement>('button[aria-label="保存查询的说明"]');
+    expect(help).not.toBeNull();
+    help!.click();
+    await vi.waitFor(() => {
+      const content = document.getElementById(help!.getAttribute('aria-controls') ?? '');
+      expect(content?.textContent).toContain('团队成员按各自权限执行共享查询');
+    });
   });
   it('编辑显式替换条件，未知结果锁定原输入并只允许核对原提交', async () => {
     const current = { ...definition(), terms: { ...emptyTerms(), path: '/current' } },
@@ -723,7 +729,7 @@ describe('保存查询表单和条件复用', () => {
 });
 
 describe('保存查询工作区交互', () => {
-  it('个人目录查看与应用使用独立弹窗，页面不增加第二张表', async () => {
+  it('个人目录表格位于独立弹窗，查看与应用使用当前记录', async () => {
     const value = record();
     request.mockImplementation((path: string) =>
       Promise.resolve(path.startsWith('/saved-searches?') ? { items: [value], next_cursor: '' } : resolution(value)),
@@ -736,7 +742,8 @@ describe('保存查询工作区交互', () => {
     expect(request).not.toHaveBeenCalled();
     await click('已保存查询');
     expect(document.body.textContent).toContain('办公出口查询');
-    expect(document.querySelectorAll('.ant-table')).toHaveLength(0);
+    expect(wrapper.find('table').exists()).toBe(false);
+    expect(document.querySelectorAll('.ant-modal [aria-label="保存查询列表"] table')).toHaveLength(1);
     await click('查看');
     expect(document.body.textContent).toContain('核对请求行为');
     await click('返回列表');
@@ -819,7 +826,11 @@ describe('保存查询工作区交互', () => {
       attachTo: document.body,
     });
     await click('已保存查询');
-    await wrapper.findAllComponents(Select).at(-1)!.setValue('', 'value');
+    const active = wrapper
+      .findAllComponents(Select)
+      .find(component => component.props('id') === 'saved-library-active');
+    expect(active).toBeDefined();
+    await active!.setValue('', 'value');
     request.mockResolvedValueOnce({ items: [future, inactive], next_cursor: '' });
     await click('筛选');
     await click('查看');

@@ -1,4 +1,5 @@
 import type { Principal, SearchRequest } from '@starbeacon/shared/types.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { instant } from '@starbeacon/shared/utils/instant.ts';
 import type { TrafficQuery } from '../traffic/traffic';
 
@@ -205,14 +206,15 @@ export function validSavedPage(
   dataset: Dataset,
   filter: SavedListFilter,
   cursor: string,
+  limit = defaultPageSize,
 ): value is SavedPage {
   if (
     !object(value) ||
     !Array.isArray(value.items) ||
-    value.items.length > 20 ||
+    value.items.length > limit ||
     typeof value.next_cursor !== 'string' ||
     (value.next_cursor !== '' &&
-      (!savedID(value.next_cursor) || value.items.length !== 20 || value.next_cursor !== value.items.at(-1)?.id))
+      (!savedID(value.next_cursor) || value.items.length !== limit || value.next_cursor !== value.items.at(-1)?.id))
   )
     return false;
   let previous = cursor;

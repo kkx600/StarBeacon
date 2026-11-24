@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   incidentID,
@@ -18,7 +19,8 @@ export function useIncidents() {
   const page = shallowRef<IncidentPage>({ items: [], next_cursor: '' }),
     pending = shallowRef(false),
     error = shallowRef(''),
-    cursors = shallowRef(['']);
+    cursors = shallowRef(['']),
+    pageSize = shallowRef(defaultPageSize);
   const selected = shallowRef<IncidentRecord | null>(null),
     detailPending = shallowRef(false),
     detailError = shallowRef(''),
@@ -50,6 +52,7 @@ export function useIncidents() {
   async function refresh() {
     if (stopped) return;
     const epoch = ++listEpoch;
+    const limit = pageSize.value;
     listRead?.abort();
     const controller = new AbortController();
     listRead = controller;
@@ -57,11 +60,12 @@ export function useIncidents() {
     error.value = '';
     try {
       const result = await session.api.request<unknown>(
-        '/incidents?' + new URLSearchParams({ status, severity, before: cursors.value.at(-1) ?? '' }),
+        '/incidents?' +
+          new URLSearchParams({ status, severity, before: cursors.value.at(-1) ?? '', limit: String(limit) }),
         { signal: controller.signal },
       );
       if (stopped || epoch !== listEpoch) return;
-      if (!validIncidentPage(result)) throw new Error('事件列表未能完整返回');
+      if (!validIncidentPage(result, limit)) throw new Error('事件列表未能完整返回');
       page.value = result;
     } catch (e) {
       if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '事件列表读取失败';
@@ -77,7 +81,7 @@ export function useIncidents() {
     void refresh();
   }
   function next() {
-    if (!pending.value && page.value.next_cursor) {
+    if (!pending.value && !error.value && page.value.next_cursor) {
       cursors.value = [...cursors.value, page.value.next_cursor];
       void refresh();
     }
@@ -87,6 +91,12 @@ export function useIncidents() {
       cursors.value = cursors.value.slice(0, -1);
       void refresh();
     }
+  }
+  function changePageSize(size: number) {
+    if (pending.value || size === pageSize.value) return;
+    pageSize.value = size;
+    cursors.value = [''];
+    void refresh();
   }
   async function select(id: string) {
     if (stopped) return;
@@ -279,6 +289,7 @@ export function useIncidents() {
       page.value = { items: [], next_cursor: '' };
       assignees.value = [];
       cursors.value = [''];
+      pageSize.value = defaultPageSize;
       busy.value = false;
       unconfirmed.value = false;
       pending.value = false;
@@ -294,6 +305,7 @@ export function useIncidents() {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
     selected: shallowReadonly(selected),
     detailPending: shallowReadonly(detailPending),
     detailError: shallowReadonly(detailError),
@@ -312,6 +324,7 @@ export function useIncidents() {
     search,
     next,
     previous,
+    changePageSize,
     select,
     reloadDetail: () => (selectedID ? select(selectedID) : Promise.resolve()),
     clearSelection,

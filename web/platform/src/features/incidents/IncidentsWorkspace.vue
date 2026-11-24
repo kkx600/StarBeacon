@@ -3,8 +3,15 @@ import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { ref, shallowRef, watch } from 'vue';
 import { session } from '../../session';
 import { useRoute, useRouter } from 'vue-router';
-import { Select as ASelect, Tag as ATag, Table as ATable } from 'ant-design-vue';
+import { Select as ASelect } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { alertSeverityTones } from '@starbeacon/shared/statusTones.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import IncidentForm from './IncidentForm.vue';
 import IncidentDetail from './IncidentDetail.vue';
@@ -15,6 +22,7 @@ import { useIncidentTasks } from './useIncidentTasks';
 import {
   validIncidentRef,
   incidentStatuses,
+  incidentStatusTones,
   incidentCategories,
   incidentSeverities,
   type IncidentRecord,
@@ -31,6 +39,7 @@ const {
   pending,
   error,
   cursors,
+  pageSize,
   selected,
   detailPending,
   detailError,
@@ -98,12 +107,14 @@ async function reloadTaskParent() {
   }
 }
 const columns = [
-  { title: '事件标题', key: 'title', ellipsis: true, width: 260 },
-  { title: '状态', key: 'state', width: 120 },
-  { title: '分类 / 严重度', key: 'category', width: 180 },
-  { title: '责任人', key: 'owner', width: 170 },
-  { title: '建立时间', key: 'created', width: 190 },
-  { title: '操作', key: 'actions', width: 90 },
+  { title: '事件编号', dataIndex: 'id', width: 132, ellipsis: true, className: 'technical' },
+  { title: '事件标题', key: 'title', width: 190, ellipsis: true },
+  { title: '状态', key: 'state', width: 90 },
+  { title: '分类', key: 'category', width: 110 },
+  { title: '严重度', key: 'severity', width: 80 },
+  { title: '责任人', key: 'owner', width: 115, ellipsis: true },
+  { title: '建立时间', key: 'created', width: 175, className: 'technical' },
+  { title: '操作', key: 'actions', width: 68, fixed: 'right' as const },
 ];
 function openNotes() {
   if (notes.busy.value) return;
@@ -187,65 +198,63 @@ if (validIncidentRef(initial)) {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>事件调查</h1>
-      <p class="page-description">关联检测事实与人工线索，记录责任分派、调查笔记、协作任务和可复核的结案依据。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button :loading="pending" @click="state.refresh">刷新</a-button
-      ><a-button v-if="noteUnconfirmed" @click="openNotes">核对笔记提交</a-button
-      ><a-button v-if="taskUnconfirmed" @click="openTasks">核对任务提交</a-button
-      ><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button
-      ><a-button
-        v-else
-        type="primary"
-        @click="
-          seed = undefined;
-          openEditor(null);
-        "
-        >建立事件</a-button
-      >
-    </div>
-  </header>
+  <PageHeader title="事件调查" description="关联检测事实与人工线索，记录责任分派、调查笔记、协作任务和结案依据。">
+    <a-button :loading="pending" @click="state.refresh">刷新</a-button
+    ><a-button v-if="noteUnconfirmed" @click="openNotes">核对笔记提交</a-button
+    ><a-button v-if="taskUnconfirmed" @click="openTasks">核对任务提交</a-button
+    ><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button
+    ><a-button
+      v-else
+      type="primary"
+      @click="
+        seed = undefined;
+        openEditor(null);
+      "
+      >建立事件</a-button
+    >
+  </PageHeader>
   <a-form
     :model="{ status, severity }"
-    class="panel incident-filters"
-    layout="inline"
+    :disabled="pending"
+    layout="horizontal"
     @finish="state.search(status, severity)"
-    ><a-form-item label="调查状态"
-      ><a-select
-        v-model:value="status"
-        aria-label="筛选调查状态"
-        class="incident-select"
-        :options="[
-          { value: '', label: '全部状态' },
-          ...Object.entries(incidentStatuses).map(([value, label]) => ({ value, label })),
-        ]" /></a-form-item
-    ><a-form-item label="严重度"
-      ><a-select
-        v-model:value="severity"
-        aria-label="筛选严重度"
-        class="incident-select"
-        :options="[
-          { value: '', label: '全部严重度' },
-          ...Object.entries(incidentSeverities).map(([value, label]) => ({ value, label })),
-        ]" /></a-form-item
-    ><a-button type="primary" html-type="submit" :loading="pending">查询</a-button
-    ><a-button
-      :disabled="pending"
-      @click="
-        status = '';
-        severity = '';
-        state.search('', '');
-      "
-      >重置</a-button
-    ></a-form
   >
-  <section class="panel">
-    <div class="panel-header">
+    <ListFilters label="事件筛选" :columns="3">
+      <a-form-item label="调查状态" html-for="incident-list-status"
+        ><a-select
+          id="incident-list-status"
+          v-model:value="status"
+          :options="[
+            { value: '', label: '全部状态' },
+            ...Object.entries(incidentStatuses).map(([value, label]) => ({ value, label })),
+          ]" /></a-form-item
+      ><a-form-item label="严重度" html-for="incident-list-severity"
+        ><a-select
+          id="incident-list-severity"
+          v-model:value="severity"
+          :options="[
+            { value: '', label: '全部严重度' },
+            ...Object.entries(incidentSeverities).map(([value, label]) => ({ value, label })),
+          ]"
+      /></a-form-item>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="pending">查询</a-button>
+        <a-button
+          :disabled="pending"
+          @click="
+            status = '';
+            severity = '';
+            state.search('', '');
+          "
+          >重置</a-button
+        >
+      </template>
+    </ListFilters>
+  </a-form>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
       <h2>安全事件</h2>
-      <span>当前页 {{ page.items.length }} 条</span>
+      <MetricBar v-if="!pending && !error" embedded :items="[{ label: '本页事件', value: page.items.length }]" />
     </div>
     <StatePanel
       :loading="pending"
@@ -253,52 +262,51 @@ if (validIncidentRef(initial)) {
       :empty="!page.items.length"
       description="当前条件下没有安全事件。可关联告警建立调查，或登记人工线索。"
       @retry="state.refresh"
-      ><a-table
-        size="middle"
-        row-key="id"
-        :data-source="page.items"
-        :columns="columns"
-        :pagination="false"
-        :scroll="{ x: 1010 }"
-        ><template #bodyCell="{ column, record }"
-          ><template v-if="column.key === 'title'"
-            ><a-button type="link" class="incident-title-button" @click="showDetail(record.id)">{{
-              record.spec.title
-            }}</a-button>
-            <div class="muted technical">{{ record.id }}</div></template
-          ><a-tag
-            v-else-if="column.key === 'state'"
-            :color="
-              record.spec.status === 'closed' ? 'green' : record.spec.status === 'investigating' ? 'blue' : 'orange'
-            "
-            >{{ incidentStatuses[record.spec.status as keyof typeof incidentStatuses] }}</a-tag
-          ><template v-else-if="column.key === 'category'"
-            >{{ incidentCategories[record.spec.category as keyof typeof incidentCategories] }} ·
-            <a-tag
-              :color="
-                record.spec.severity === 'critical'
-                  ? 'red'
-                  : record.spec.severity === 'high'
-                    ? 'orange'
-                    : record.spec.severity === 'medium'
-                      ? 'gold'
-                      : 'green'
-              "
-              >{{ incidentSeverities[record.spec.severity as keyof typeof incidentSeverities] }}</a-tag
-            ></template
-          ><template v-else-if="column.key === 'owner'">{{ record.owner_name || '待分派' }}</template
-          ><template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template
-          ><a-button v-else-if="column.key === 'actions'" type="link" @click="showDetail(record.id)"
-            >查看</a-button
-          ></template
-        ></a-table
-      ></StatePanel
     >
-    <div class="incident-pagination">
-      <a-button :disabled="pending || cursors.length <= 1" @click="state.previous">上一页</a-button
-      ><span>第 {{ cursors.length }} 页</span
-      ><a-button :disabled="pending || !page.next_cursor" @click="state.next">下一页</a-button>
-    </div>
+      <ListTable :data-source="page.items" :columns="columns" :scroll="{ x: 960 }">
+        <template #bodyCell="{ column, record }">
+          <button
+            v-if="column.key === 'title'"
+            type="button"
+            class="record-link"
+            :title="record.spec.title"
+            @click="showDetail(record.id)"
+          >
+            {{ record.spec.title }}
+          </button>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="incidentStatusTones[record.spec.status]"
+            :value="incidentStatuses[record.spec.status]"
+          />
+          <template v-else-if="column.key === 'category'">{{ incidentCategories[record.spec.category] }}</template>
+          <StatusTag
+            v-else-if="column.key === 'severity'"
+            :tone="alertSeverityTones[record.spec.severity]"
+            :value="incidentSeverities[record.spec.severity]"
+          />
+          <span v-else-if="column.key === 'owner'" :title="record.owner_name || undefined">{{
+            record.owner_name || '待分派'
+          }}</span>
+          <template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>
+          <button v-else-if="column.key === 'actions'" type="button" class="record-link" @click="showDetail(record.id)">
+            查看
+          </button>
+        </template>
+      </ListTable>
+    </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : page.items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!page.next_cursor"
+      :disabled="pending"
+      @previous="state.previous"
+      @next="state.next"
+      @update:page-size="state.changePageSize"
+    />
   </section>
   <IncidentDetail
     v-if="detailOpen"
@@ -361,38 +369,3 @@ if (validIncidentRef(initial)) {
     @existing="showDetail"
   />
 </template>
-<style scoped>
-.incident-filters {
-  display: flex;
-  gap: var(--related-gap);
-  flex-wrap: wrap;
-  align-items: center;
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.incident-filters .ant-form-item {
-  margin: 0;
-}
-.incident-select {
-  min-width: 150px;
-}
-.incident-pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-}
-.incident-title-button {
-  max-width: 100%;
-  padding: 0;
-  white-space: normal;
-  text-align: left;
-  height: auto;
-  overflow-wrap: anywhere;
-}
-.technical {
-  overflow-wrap: anywhere;
-  font-size: 12px;
-}
-</style>

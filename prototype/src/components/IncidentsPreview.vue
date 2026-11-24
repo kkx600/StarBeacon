@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import HelpNote from './HelpNote.vue';
-import { tablePagination } from '../../../web/packages/shared/src/pagination';
+import { defaultPageSize, tablePagination } from '../../../web/packages/shared/src/pagination';
 import { computed, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { PreviewState } from '../models';
@@ -87,7 +87,9 @@ const records = shallowRef([example]),
 const page = shallowRef({ items: [example], next_cursor: '' }),
   pending = shallowRef(false),
   error = shallowRef(''),
-  cursors = shallowRef(['']);
+  cursors = shallowRef(['']),
+  pageSize = shallowRef(defaultPageSize),
+  status = shallowRef('');
 const selected = shallowRef<IncidentTaskRecord | null>(null),
   detailPending = shallowRef(false),
   detailError = shallowRef(''),
@@ -99,10 +101,12 @@ const selected = shallowRef<IncidentTaskRecord | null>(null),
 const busy = shallowRef(false),
   unconfirmed = shallowRef(false),
   actionError = shallowRef('');
-let filter = '',
-  attempt: IncidentTaskAttempt | undefined;
+let attempt: IncidentTaskAttempt | undefined;
 function refresh() {
-  page.value = { items: records.value.filter(row => !filter || row.spec.status === filter), next_cursor: '' };
+  page.value = {
+    items: records.value.filter(row => !status.value || row.spec.status === status.value),
+    next_cursor: '',
+  };
   pending.value = false;
   error.value = '';
   return Promise.resolve();
@@ -147,6 +151,8 @@ const taskState: IncidentTasksState = {
   pending,
   error,
   cursors,
+  pageSize,
+  status,
   selected,
   detailPending,
   detailError,
@@ -160,8 +166,11 @@ const taskState: IncidentTasksState = {
   actionError,
   refresh,
   search(value: string) {
-    filter = value;
+    status.value = value;
     void refresh();
+  },
+  changePageSize(value: number) {
+    pageSize.value = value;
   },
   next() {},
   previous() {},
@@ -204,7 +213,8 @@ watch(
     formOpen.value = props.state === 'action' && !['tasks', 'notes'].includes(String(route.query.panel));
     taskOpen.value = route.query.panel === 'tasks';
     notesOpen.value = route.query.panel === 'notes';
-    filter = '';
+    status.value = '';
+    pageSize.value = defaultPageSize;
     records.value =
       route.query.task_state === 'empty'
         ? []

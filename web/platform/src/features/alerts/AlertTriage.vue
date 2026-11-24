@@ -4,12 +4,14 @@ import { computed, onMounted, onScopeDispose, reactive, ref, shallowRef, watch }
 import { Descriptions as ADescriptions, Select as ASelect, Checkbox as ACheckbox } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { session } from '../../session';
 import { router } from '../../router';
-import { checkClass, resultNames } from '../models/models';
+import { resultNames } from '../models/models';
 import {
   triageCodes,
   triageStates,
+  triageStateTones,
   triageVerdicts,
   triageOutcomes,
   triageRecommendations,
@@ -248,10 +250,8 @@ onScopeDispose(() => {
         <template v-if="selected">
           <a-descriptions bordered size="small" :column="{ xs: 1, sm: 2 }">
             <a-descriptions-item label="作业状态"
-              ><span class="status" :class="checkClass(selected.state)">{{
-                triageStates[selected.state]
-              }}</span></a-descriptions-item
-            >
+              ><StatusTag :tone="triageStateTones[selected.state]" :value="triageStates[selected.state]"
+            /></a-descriptions-item>
             <a-descriptions-item label="模型修订"
               >{{
                 providers.find(row => row.id === selected!.request.provider_id)?.name || selected.request.provider_id
@@ -303,9 +303,7 @@ onScopeDispose(() => {
               <strong>{{ triageVerdicts[selected.answer.verdict] }}</strong><span>{{
                 triageOutcomes[selected.answer.outcome]
               }}</span
-              ><span class="status status-unknown"
-                >模型自评分 {{ (selected.answer.confidence * 100).toFixed(1) }}%</span
-              >
+              ><StatusTag tone="neutral" :value="`模型自评分 ${(selected.answer.confidence * 100).toFixed(1)}%`" />
             </div>
             <p class="triage-text">{{ selected.answer.reason }}</p>
             <p>

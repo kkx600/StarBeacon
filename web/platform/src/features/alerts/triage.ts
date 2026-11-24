@@ -1,4 +1,5 @@
 import type { ModelResult } from '../models/models';
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
 
 export const triageStates = {
   queued: '等待研判',
@@ -36,6 +37,16 @@ export const triageCodes: Record<string, string> = {
   cancelled_before_execution: '作业在模型调用前取消',
 };
 export type TriageState = keyof typeof triageStates;
+export const triageStateTones = {
+  queued: 'neutral',
+  running: 'info',
+  succeeded: 'success',
+  failed: 'danger',
+  refused: 'warning',
+  incomplete: 'warning',
+  uncertain: 'warning',
+  cancelled: 'neutral',
+} as const satisfies Record<TriageState, StatusTone>;
 export interface TriageRequest {
   event_id: string;
   raw_sha256: string;

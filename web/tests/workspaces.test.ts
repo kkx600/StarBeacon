@@ -16,6 +16,7 @@ import AlertFilters from '../platform/src/features/alerts/AlertFilters.vue';
 import AdvancedFilter from '../platform/src/features/alerts/AdvancedFilter.vue';
 import AlertDetail from '../platform/src/features/alerts/AlertDetail.vue';
 import AlertTable from '../platform/src/features/alerts/AlertTable.vue';
+import ListPager from '../packages/shared/src/components/ListPager.vue';
 import CollectorWorkspace from '../collector/src/features/network/CollectorWorkspace.vue';
 import CaptureForm from '../packages/shared/src/components/CaptureForm.vue';
 import InterfaceTable from '../collector/src/features/network/InterfaceTable.vue';
@@ -577,10 +578,11 @@ describe('告警检索', () => {
     request.mockResolvedValueOnce({ items: [alert], total: 11000, page: 1, page_size: 20 });
     await click('刷新');
     expect(wrapper.text()).toContain('10,000');
-    const table = wrapper.getComponent(AlertTable);
-    table.vm.$emit('page', 2, 50);
+    const { length: requestsBeforeResize } = request.mock.calls;
+    wrapper.getComponent(AlertTable).getComponent(ListPager).vm.$emit('change', 1, 50);
     await flushPromises();
-    expect(request.mock.lastCall?.[1].body).toMatchObject({ page: 2, page_size: 50 });
+    expect(request).toHaveBeenCalledTimes(requestsBeforeResize + 1);
+    expect(request.mock.lastCall?.[1].body).toMatchObject({ page: 1, page_size: 50 });
     const detail = mount(AlertDetail, {
       props: {
         alert: {

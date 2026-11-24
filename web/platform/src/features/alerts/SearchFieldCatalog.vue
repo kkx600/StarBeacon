@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
-import { Modal as AModal, Table as ATable } from 'ant-design-vue';
+import { Modal as AModal } from 'ant-design-vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import { defaultPageSize, pageOf } from '@starbeacon/shared/pagination.ts';
 import type { SearchField } from './filterCompletion';
 const props = defineProps<{
   open: boolean;
@@ -12,6 +16,8 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ close: []; retry: []; insert: [name: string] }>();
 const keyword = shallowRef('');
+const page = shallowRef(1),
+  pageSize = shallowRef(defaultPageSize);
 const columns = [
   { title: '字段', dataIndex: 'name', width: 200 },
   { title: '业务含义', dataIndex: 'label', width: 160 },
@@ -30,6 +36,7 @@ watch(
     keyword.value = '';
   },
 );
+watch([keyword, () => props.dataset], () => (page.value = 1));
 </script>
 <template>
   <a-modal
@@ -39,26 +46,20 @@ watch(
     :footer="null"
     @cancel="emit('close')"
   >
-    <a-input
-      v-model:value="keyword"
-      aria-label="查找检索字段"
-      placeholder="字段、别名或业务含义"
-      allow-clear
-      class="section-gap"
-    />
+    <ListFilters label="字段检索" :columns="1">
+      <a-input v-model:value="keyword" aria-label="查找检索字段" placeholder="字段、别名或业务含义" allow-clear />
+    </ListFilters>
     <a-alert v-if="error" :message="error" type="error" show-icon class="section-gap"
       ><template #action
         ><a-button size="small" :loading="loading" @click="emit('retry')">重试</a-button></template
       ></a-alert
     >
-    <a-table
-      :data-source="matches"
+    <ListTable
+      :data-source="pageOf(matches, page, pageSize)"
       :columns="columns"
       :loading="loading"
-      :pagination="{ pageSize: 10, showSizeChanger: false }"
       :scroll="{ x: 840 }"
       row-key="name"
-      size="small"
     >
       <template #bodyCell="{ column, record }">
         <button
@@ -74,6 +75,7 @@ watch(
           record[column.dataIndex].join('、') || '—'
         }}</span>
       </template>
-    </a-table>
+    </ListTable>
+    <ListPager v-model:page="page" v-model:page-size="pageSize" :total="matches.length" :disabled="loading" />
   </a-modal>
 </template>

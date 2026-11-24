@@ -1,4 +1,6 @@
 import { incidentID, type IncidentRecord } from './incident';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
 
 export const taskStatuses = {
   open: '待处理',
@@ -7,6 +9,17 @@ export const taskStatuses = {
   cancelled: '已取消',
 } as const;
 export const taskPriorities = { low: '低', medium: '中', high: '高' } as const;
+export const incidentTaskStatusTones = {
+  open: 'neutral',
+  in_progress: 'info',
+  completed: 'success',
+  cancelled: 'neutral',
+} as const satisfies Record<keyof typeof taskStatuses, StatusTone>;
+export const incidentTaskPriorityTones = {
+  low: 'neutral',
+  medium: 'warning',
+  high: 'danger',
+} as const satisfies Record<keyof typeof taskPriorities, StatusTone>;
 export interface IncidentTaskSpec {
   title: string;
   description: string;
@@ -127,11 +140,11 @@ export function validTaskRecord(v: unknown, parent: string): v is IncidentTaskRe
     return false;
   return v.spec.assignee_id === '' ? v.assignee_name === '' : !!v.assignee_name && text(v.assignee_name, 64);
 }
-export function validTaskPage(v: unknown, parent: string): v is IncidentTaskPage {
+export function validTaskPage(v: unknown, parent: string, limit = defaultPageSize): v is IncidentTaskPage {
   if (
     !object(v) ||
     !Array.isArray(v.items) ||
-    v.items.length > 20 ||
+    v.items.length > limit ||
     !v.items.every(r => validTaskRecord(r, parent)) ||
     new Set(v.items.map(r => r.id)).size !== v.items.length ||
     typeof v.next_cursor !== 'string'
@@ -140,7 +153,7 @@ export function validTaskPage(v: unknown, parent: string): v is IncidentTaskPage
   const rows = v.items as IncidentTaskRecord[];
   return (
     rows.every((r, i) => i === 0 || Date.parse(r.created_at) <= Date.parse(rows[i - 1]!.created_at)) &&
-    (v.next_cursor === '' || (rows.length === 20 && v.next_cursor === rows[19]?.id))
+    (v.next_cursor === '' || (rows.length === limit && v.next_cursor === rows.at(-1)?.id))
   );
 }
 export function validTaskHistory(v: unknown, parent: string, id: string): v is IncidentTaskPage {

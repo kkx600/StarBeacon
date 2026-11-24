@@ -2,8 +2,6 @@
 import { computed, nextTick, ref, shallowRef, watch } from 'vue';
 import {
   Modal as AModal,
-  Table as ATable,
-  Tag as ATag,
   Select as ASelect,
   Descriptions as ADescriptions,
   Timeline as ATimeline,
@@ -11,9 +9,14 @@ import {
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { session } from '../../session';
 import type { IncidentRecord } from './incident';
-import { noteStatuses, type IncidentNoteInput, type IncidentNoteRecord } from './incidentNote';
+import { noteStatuses, noteStatusTones, type IncidentNoteInput, type IncidentNoteRecord } from './incidentNote';
 import IncidentNoteForm from './IncidentNoteForm.vue';
 import type { IncidentNotesState } from './useIncidentNotes';
 
@@ -31,6 +34,7 @@ const {
   pending,
   error,
   cursors,
+  pageSize,
   status,
   selected,
   detailPending,
@@ -68,11 +72,12 @@ watch(
   { flush: 'post' },
 );
 const columns = [
-  { title: '笔记标题', key: 'title', width: 280 },
-  { title: '状态', key: 'status', width: 110 },
-  { title: '作者', dataIndex: 'author_name', key: 'author', width: 150 },
-  { title: '记录时间', key: 'recorded', width: 190 },
-  { title: '操作', key: 'actions', width: 80 },
+  { title: '笔记编号', dataIndex: 'id', width: 155, ellipsis: true, className: 'technical' },
+  { title: '笔记标题', key: 'title', width: 270, ellipsis: true },
+  { title: '状态', key: 'status', width: 105 },
+  { title: '作者', dataIndex: 'author_name', width: 155, ellipsis: true },
+  { title: '记录时间', key: 'recorded', width: 185, className: 'technical' },
+  { title: '操作', key: 'actions', width: 68, fixed: 'right' as const },
 ];
 function restore() {
   const original = props.state.pendingInput();
@@ -134,13 +139,21 @@ if (unconfirmed.value) restore();
 <template>
   <a-modal
     :open="true"
-    :title="mode === 'form' ? (editingID ? '编辑调查笔记' : '建立调查笔记') : '调查笔记'"
     :width="1000"
     :closable="!busy"
     :keyboard="!busy"
     :mask-closable="false"
     @cancel="emit('close')"
   >
+    <template #title>
+      <span v-if="mode === 'form'">{{ editingID ? '编辑调查笔记' : '建立调查笔记' }}</span>
+      <span v-else class="heading-with-help">
+        调查笔记
+        <PageHelp title="调查笔记">
+          <p>笔记对当前租户具备事件调查权限的管理员可见，作者可修改或撤回。修订按事件留存策略管理。</p>
+        </PageHelp>
+      </span>
+    </template>
     <div class="note-parent section-gap">
       <strong>{{ parent.spec.title }}</strong><span class="muted"
         >事件修订 {{ parent.revision }} · {{ parent.id }}</span
@@ -168,28 +181,37 @@ if (unconfirmed.value) restore();
       <a-alert type="error" show-icon :message="actionError" />
     </div>
     <template v-if="mode === 'list'">
-      <div class="note-toolbar section-gap">
-        <a-select
-          :value="status"
-          aria-label="筛选调查笔记状态"
-          :options="[
-            { value: '', label: '全部状态' },
-            ...Object.entries(noteStatuses).map(([value, label]) => ({ value, label })),
-          ]"
-          @change="
-            value => {
-              if (typeof value === 'string') props.state.search(value);
-            }
-          "
-        /><a-button :loading="pending || parentPending" :disabled="busy" @click="emit('reloadParent')"
-          >刷新事件与笔记</a-button
-        ><a-button
-          type="primary"
-          :disabled="busy || parentPending || !!parentError || parent.spec.status === 'closed'"
-          @click="create"
-          >建立笔记</a-button
-        >
-      </div>
+      <ListFilters label="调查笔记筛选" :columns="2">
+        <div class="filter-field">
+          <label for="incident-note-status">状态</label>
+          <a-select
+            id="incident-note-status"
+            :value="status"
+            :disabled="pending || busy"
+            aria-label="筛选调查笔记状态"
+            :options="[
+              { value: '', label: '全部状态' },
+              ...Object.entries(noteStatuses).map(([value, label]) => ({ value, label })),
+            ]"
+            @change="
+              value => {
+                if (typeof value === 'string') props.state.search(value);
+              }
+            "
+          />
+        </div>
+        <template #actions>
+          <a-button :loading="pending || parentPending" :disabled="busy" @click="emit('reloadParent')"
+            >刷新事件与笔记</a-button
+          >
+          <a-button
+            type="primary"
+            :disabled="busy || parentPending || !!parentError || parent.spec.status === 'closed'"
+            @click="create"
+            >建立笔记</a-button
+          >
+        </template>
+      </ListFilters>
       <StatePanel
         :loading="pending"
         :error="error"
@@ -197,35 +219,41 @@ if (unconfirmed.value) restore();
         description="当前条件下没有调查笔记。可记录已观察事实、来源及待核实的问题。"
         @retry="props.state.refresh"
       >
-        <a-table
-          row-key="id"
-          size="middle"
-          :data-source="page.items"
-          :columns="columns"
-          :pagination="false"
-          :scroll="{ x: 810 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'title'"
-              ><a-button type="link" class="note-title" @click="show(record.id)">{{ record.spec.title }}</a-button>
-              <div class="technical muted">{{ record.id }}</div></template
-            ><a-tag v-else-if="column.key === 'status'" :color="record.spec.status === 'active' ? 'blue' : 'default'">{{
-              noteStatuses[record.spec.status as keyof typeof noteStatuses]
-            }}</a-tag
-            ><template v-else-if="column.key === 'recorded'">{{ formatTime(record.recorded_at) }}</template
-            ><a-button v-else-if="column.key === 'actions'" type="link" @click="show(record.id)"
-              >查看</a-button
-            ></template
-          ></a-table
-        >
+        <ListTable :data-source="page.items" :columns="columns" :scroll="{ x: 938 }">
+          <template #bodyCell="{ column, record }">
+            <button
+              v-if="column.key === 'title'"
+              type="button"
+              class="record-link"
+              :title="record.spec.title"
+              @click="show(record.id)"
+            >
+              {{ record.spec.title }}
+            </button>
+            <StatusTag
+              v-else-if="column.key === 'status'"
+              :tone="noteStatusTones[record.spec.status]"
+              :value="noteStatuses[record.spec.status]"
+            />
+            <template v-else-if="column.key === 'recorded'">{{ formatTime(record.recorded_at) }}</template>
+            <button v-else-if="column.key === 'actions'" type="button" class="record-link" @click="show(record.id)">
+              查看
+            </button>
+          </template>
+        </ListTable>
       </StatePanel>
-      <p class="muted note-policy">
-        笔记对当前租户具备事件调查权限的管理员可见；仅作者本人可以修改或撤回，修订按事件留存策略管理。
-      </p>
-      <div class="note-pagination">
-        <a-button :disabled="pending || cursors.length <= 1" @click="props.state.previous">上一页</a-button
-        ><span>第 {{ cursors.length }} 页</span
-        ><a-button :disabled="pending || !page.next_cursor" @click="props.state.next">下一页</a-button>
-      </div>
+      <ListPager
+        mode="cursor"
+        :page="cursors.length"
+        :page-size="pageSize"
+        :count="pending || error ? undefined : page.items.length"
+        :has-previous="cursors.length > 1"
+        :has-next="!error && !!page.next_cursor"
+        :disabled="pending || busy"
+        @previous="props.state.previous"
+        @next="props.state.next"
+        @update:page-size="props.state.changePageSize"
+      />
     </template>
     <IncidentNoteForm
       v-else-if="mode === 'form'"
@@ -247,9 +275,9 @@ if (unconfirmed.value) restore();
           ><a-descriptions-item label="笔记标识"
             ><span class="technical">{{ selected.id }}</span></a-descriptions-item
           ><a-descriptions-item label="笔记状态"
-            ><a-tag :color="selected.spec.status === 'active' ? 'blue' : 'default'">{{
-              noteStatuses[selected.spec.status]
-            }}</a-tag></a-descriptions-item
+            ><StatusTag
+              :tone="noteStatusTones[selected.spec.status]"
+              :value="noteStatuses[selected.spec.status]" /></a-descriptions-item
           ><a-descriptions-item label="原始作者">{{ selected.author_name }}</a-descriptions-item
           ><a-descriptions-item label="建立时间">{{ formatTime(selected.created_at) }}</a-descriptions-item
           ><a-descriptions-item label="最近记录"
@@ -265,7 +293,7 @@ if (unconfirmed.value) restore();
             {{ parent.spec.status === 'closed' ? '按固化期限保留' : '活动事件的笔记及历史受保护' }}</a-descriptions-item
           ></a-descriptions
         >
-        <div class="note-toolbar section-gap">
+        <div class="filter-actions section-gap">
           <a-button type="primary" :disabled="busy || parentPending || !!parentError || !canEdit" @click="edit"
             >编辑笔记</a-button
           ><a-button :loading="historyPending" @click="props.state.loadHistory()">读取历史</a-button>
@@ -317,38 +345,12 @@ if (unconfirmed.value) restore();
   gap: 4px;
   overflow-wrap: anywhere;
 }
-.note-toolbar,
-.note-pagination {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-}
-.note-toolbar {
-  margin-top: var(--related-gap);
-}
-.note-toolbar :deep(.ant-select) {
-  min-width: 150px;
-}
-.note-pagination {
-  justify-content: flex-end;
-  margin-top: var(--related-gap);
-}
 .note-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .note-title {
   white-space: normal;
-  overflow-wrap: anywhere;
-}
-.note-title.ant-btn {
-  padding: 0;
-  height: auto;
-  text-align: left;
-}
-.note-policy {
-  margin: var(--related-gap) 0;
   overflow-wrap: anywhere;
 }
 .note-history-title {

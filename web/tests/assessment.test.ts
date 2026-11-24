@@ -148,7 +148,9 @@ describe('告警研判交互', () => {
     await click('查看研判记录');
     expect(wrapper.findAll('.ant-table')).toHaveLength(1);
     expect(wrapper.text()).toContain('误报');
-    expect(wrapper.text()).toContain('人工研判记录');
+    await click('说明与证据');
+    expect(document.body.textContent).toContain(change.spec.note);
+    expect(document.body.textContent).toContain('case:owned');
     await click('刷新记录');
     await click('返回研判');
     expect(wrapper.findAll('.ant-table')).toHaveLength(0);

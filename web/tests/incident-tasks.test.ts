@@ -277,7 +277,7 @@ describe('协作任务请求生命周期', () => {
     const { state } = host();
     await flushPromises();
     expect(request).toHaveBeenCalledWith(
-      root + '?status=&before=',
+      root + '?status=&before=&limit=20',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(state.page.value.items).toHaveLength(1);

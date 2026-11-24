@@ -1,6 +1,12 @@
 import { incidentID, type IncidentRecord } from './incident';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
 
 export const noteStatuses = { active: '有效', withdrawn: '已撤回' } as const;
+export const noteStatusTones = { active: 'info', withdrawn: 'neutral' } as const satisfies Record<
+  keyof typeof noteStatuses,
+  StatusTone
+>;
 export interface IncidentNoteSpec {
   title: string;
   body: string;
@@ -97,11 +103,11 @@ export function validNoteRecord(v: unknown, parent: string): v is IncidentNoteRe
     instant(v.expires_at) > instant(v.recorded_at)
   );
 }
-export function validNotePage(v: unknown, parent: string): v is IncidentNotePage {
+export function validNotePage(v: unknown, parent: string, limit = defaultPageSize): v is IncidentNotePage {
   if (
     !object(v) ||
     !Array.isArray(v.items) ||
-    v.items.length > 20 ||
+    v.items.length > limit ||
     !v.items.every(r => validNoteRecord(r, parent)) ||
     new Set(v.items.map(r => r.id)).size !== v.items.length ||
     typeof v.next_cursor !== 'string'
@@ -110,7 +116,7 @@ export function validNotePage(v: unknown, parent: string): v is IncidentNotePage
   const rows = v.items as IncidentNoteRecord[];
   return (
     rows.every((r, i) => i === 0 || instant(r.created_at) <= instant(rows[i - 1]!.created_at)) &&
-    (v.next_cursor === '' || (rows.length === 20 && v.next_cursor === rows[19]!.id))
+    (v.next_cursor === '' || (rows.length === limit && v.next_cursor === rows.at(-1)?.id))
   );
 }
 export function validNoteHistory(v: unknown, parent: string, id: string): v is IncidentNotePage {

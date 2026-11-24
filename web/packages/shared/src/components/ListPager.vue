@@ -28,6 +28,7 @@ const props = withDefaults(
   },
 );
 const emit = defineEmits<{
+  change: [page: number, pageSize: number];
   'update:page': [page: number];
   'update:pageSize': [pageSize: number];
   previous: [];
@@ -43,16 +44,14 @@ const summary = computed(() => {
 });
 
 function changePage(page: number, pageSize: number) {
-  if (pageSize !== props.pageSize) {
-    emit('update:pageSize', pageSize);
-    emit('update:page', 1);
-    return;
-  }
-  emit('update:page', page);
+  const sizeChanged = pageSize !== props.pageSize;
+  const nextPage = sizeChanged ? 1 : page;
+  if (sizeChanged) emit('update:pageSize', pageSize);
+  emit('update:page', nextPage);
+  emit('change', nextPage, pageSize);
 }
 function changeSize(value: unknown) {
-  emit('update:pageSize', Number(value));
-  emit('update:page', 1);
+  changePage(1, Number(value));
 }
 </script>
 

@@ -381,7 +381,13 @@ describe('流量过滤交互', () => {
     await wrapper.get('input[aria-label="流标识"]').setValue('18446744073709551615');
     await click('高级检索');
     expect(request).toHaveBeenCalledWith('/traffic/fields', expect.anything());
-    expect(wrapper.text()).toContain('作用于协议事件索引');
+    const help = wrapper.get('button[aria-label="高级过滤表达式的说明"]');
+    await help.trigger('click');
+    await vi.waitFor(() => {
+      const content = document.getElementById(help.attributes('aria-controls') ?? '');
+      expect(content?.textContent).toContain('作用于协议事件索引');
+    });
+    await help.trigger('keydown', { key: 'Escape' });
     await click('字段目录');
     expect(document.body.textContent).toContain('流量检索字段');
     await click('http.path');

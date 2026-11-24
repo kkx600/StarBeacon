@@ -2,8 +2,6 @@
 import { nextTick, ref, shallowRef, watch } from 'vue';
 import {
   Modal as AModal,
-  Table as ATable,
-  Tag as ATag,
   Select as ASelect,
   Descriptions as ADescriptions,
   Timeline as ATimeline,
@@ -11,8 +9,19 @@ import {
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import type { IncidentAssignee, IncidentRecord } from './incident';
-import { taskPriorities, taskStatuses, type IncidentTaskInput, type IncidentTaskRecord } from './incidentTask';
+import {
+  incidentTaskPriorityTones,
+  incidentTaskStatusTones,
+  taskPriorities,
+  taskStatuses,
+  type IncidentTaskInput,
+  type IncidentTaskRecord,
+} from './incidentTask';
 import IncidentTaskForm from './IncidentTaskForm.vue';
 import type { IncidentTasksState } from './useIncidentTasks';
 
@@ -33,6 +42,8 @@ const {
   pending,
   error,
   cursors,
+  pageSize,
+  status,
   selected,
   detailPending,
   detailError,
@@ -55,21 +66,20 @@ watch(
 );
 const feedback = useFeedback(),
   mode = ref<'list' | 'detail' | 'form'>('list'),
-  status = ref(''),
   viewID = ref(''),
   editingID = ref('');
 const editing = shallowRef<IncidentTaskRecord | null>(null),
   draft = shallowRef<IncidentTaskInput>(),
   form = ref<{ submit: () => void } | null>(null),
   formEpoch = ref(0);
-const colors = { open: 'orange', in_progress: 'blue', completed: 'green', cancelled: 'default' } as const;
 const columns = [
-  { title: '任务标题', key: 'title', width: 240 },
-  { title: '状态', key: 'state', width: 110 },
-  { title: '优先级', key: 'priority', width: 100 },
-  { title: '负责人', dataIndex: 'assignee_name', key: 'owner', width: 150 },
-  { title: '截止时间', key: 'due', width: 185 },
-  { title: '操作', key: 'actions', width: 80 },
+  { title: '任务编号', dataIndex: 'id', width: 135, ellipsis: true, className: 'technical' },
+  { title: '任务标题', key: 'title', width: 240, ellipsis: true },
+  { title: '状态', key: 'state', width: 100 },
+  { title: '优先级', key: 'priority', width: 75 },
+  { title: '负责人', key: 'owner', width: 135, ellipsis: true },
+  { title: '截止时间', key: 'due', width: 185, className: 'technical' },
+  { title: '操作', key: 'actions', width: 68, fixed: 'right' as const },
 ];
 function restore() {
   const original = props.state.pendingInput();
@@ -166,24 +176,37 @@ if (unconfirmed.value) restore();
       <a-alert type="error" show-icon :message="actionError" />
     </div>
     <template v-if="mode === 'list'">
-      <div class="task-toolbar section-gap">
-        <a-select
-          v-model:value="status"
-          aria-label="筛选协作任务状态"
-          :options="[
-            { value: '', label: '全部状态' },
-            ...Object.entries(taskStatuses).map(([value, label]) => ({ value, label })),
-          ]"
-          @change="props.state.search(status)"
-        /><a-button :loading="pending || parentPending" :disabled="busy" @click="emit('reloadParent')"
-          >刷新事件与任务</a-button
-        ><a-button
-          type="primary"
-          :disabled="busy || parentPending || !!parentError || parent.spec.status === 'closed'"
-          @click="create"
-          >建立任务</a-button
-        >
-      </div>
+      <ListFilters label="协作任务筛选" :columns="2">
+        <div class="filter-field">
+          <label for="incident-task-status">状态</label>
+          <a-select
+            id="incident-task-status"
+            :value="status"
+            :disabled="pending || busy"
+            aria-label="筛选协作任务状态"
+            :options="[
+              { value: '', label: '全部状态' },
+              ...Object.entries(taskStatuses).map(([value, label]) => ({ value, label })),
+            ]"
+            @change="
+              value => {
+                if (typeof value === 'string') props.state.search(value);
+              }
+            "
+          />
+        </div>
+        <template #actions>
+          <a-button :loading="pending || parentPending" :disabled="busy" @click="emit('reloadParent')"
+            >刷新事件与任务</a-button
+          >
+          <a-button
+            type="primary"
+            :disabled="busy || parentPending || !!parentError || parent.spec.status === 'closed'"
+            @click="create"
+            >建立任务</a-button
+          >
+        </template>
+      </ListFilters>
       <StatePanel
         :loading="pending"
         :error="error"
@@ -191,39 +214,51 @@ if (unconfirmed.value) restore();
         description="当前条件下没有协作任务。可分派调查工作，记录处理进展与完成依据。"
         @retry="props.state.refresh"
       >
-        <a-table
-          row-key="id"
-          size="middle"
-          :data-source="page.items"
-          :columns="columns"
-          :pagination="false"
-          :scroll="{ x: 865 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'title'"
-              ><a-button type="link" class="task-title" @click="show(record.id)">{{ record.spec.title }}</a-button>
-              <div class="technical muted">{{ record.id }}</div></template
-            ><a-tag v-else-if="column.key === 'state'" :color="colors[record.spec.status as keyof typeof colors]">{{
-              taskStatuses[record.spec.status as keyof typeof taskStatuses]
-            }}</a-tag
-            ><a-tag
+        <ListTable :data-source="page.items" :columns="columns" :scroll="{ x: 938 }">
+          <template #bodyCell="{ column, record }">
+            <button
+              v-if="column.key === 'title'"
+              type="button"
+              class="record-link"
+              :title="record.spec.title"
+              @click="show(record.id)"
+            >
+              {{ record.spec.title }}
+            </button>
+            <StatusTag
+              v-else-if="column.key === 'state'"
+              :tone="incidentTaskStatusTones[record.spec.status]"
+              :value="taskStatuses[record.spec.status]"
+            />
+            <StatusTag
               v-else-if="column.key === 'priority'"
-              :color="record.spec.priority === 'high' ? 'red' : record.spec.priority === 'medium' ? 'orange' : 'blue'"
-              >{{ taskPriorities[record.spec.priority as keyof typeof taskPriorities] }}</a-tag
-            ><template v-else-if="column.key === 'owner'">{{ record.assignee_name || '待分派' }}</template
-            ><template v-else-if="column.key === 'due'">{{
+              :tone="incidentTaskPriorityTones[record.spec.priority]"
+              :value="taskPriorities[record.spec.priority]"
+            />
+            <span v-else-if="column.key === 'owner'" :title="record.assignee_name || undefined">{{
+              record.assignee_name || '待分派'
+            }}</span>
+            <template v-else-if="column.key === 'due'">{{
               record.spec.due_at ? formatTime(record.spec.due_at) : '未设置'
-            }}</template
-            ><a-button v-else-if="column.key === 'actions'" type="link" @click="show(record.id)"
-              >查看</a-button
-            ></template
-          ></a-table
-        >
+            }}</template>
+            <button v-else-if="column.key === 'actions'" type="button" class="record-link" @click="show(record.id)">
+              查看
+            </button>
+          </template>
+        </ListTable>
       </StatePanel>
-      <div class="task-pagination">
-        <a-button :disabled="pending || cursors.length <= 1" @click="props.state.previous">上一页</a-button
-        ><span>第 {{ cursors.length }} 页</span
-        ><a-button :disabled="pending || !page.next_cursor" @click="props.state.next">下一页</a-button>
-      </div>
+      <ListPager
+        mode="cursor"
+        :page="cursors.length"
+        :page-size="pageSize"
+        :count="pending || error ? undefined : page.items.length"
+        :has-previous="cursors.length > 1"
+        :has-next="!error && !!page.next_cursor"
+        :disabled="pending || busy"
+        @previous="props.state.previous"
+        @next="props.state.next"
+        @update:page-size="props.state.changePageSize"
+      />
     </template>
     <IncidentTaskForm
       v-else-if="mode === 'form'"
@@ -249,9 +284,9 @@ if (unconfirmed.value) restore();
           ><a-descriptions-item label="任务标识"
             ><span class="technical">{{ selected.id }}</span></a-descriptions-item
           ><a-descriptions-item label="任务状态"
-            ><a-tag :color="colors[selected.spec.status]">{{
-              taskStatuses[selected.spec.status]
-            }}</a-tag></a-descriptions-item
+            ><StatusTag
+              :tone="incidentTaskStatusTones[selected.spec.status]"
+              :value="taskStatuses[selected.spec.status]" /></a-descriptions-item
           ><a-descriptions-item label="优先级">{{ taskPriorities[selected.spec.priority] }}</a-descriptions-item
           ><a-descriptions-item label="负责人">{{ selected.assignee_name || '待分派' }}</a-descriptions-item
           ><a-descriptions-item label="截止时间">{{
@@ -270,7 +305,7 @@ if (unconfirmed.value) restore();
             formatTime(selected.expires_at)
           }}</a-descriptions-item></a-descriptions
         >
-        <div class="task-toolbar section-gap">
+        <div class="filter-actions section-gap">
           <a-button
             :disabled="
               busy || parentPending || !!parentError || parent.spec.status === 'closed' || selected.revision >= 1000
@@ -324,23 +359,6 @@ if (unconfirmed.value) restore();
   gap: 4px;
   overflow-wrap: anywhere;
 }
-.task-toolbar,
-.task-pagination {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-}
-.task-toolbar {
-  margin-top: var(--related-gap);
-}
-.task-toolbar :deep(.ant-select) {
-  min-width: 150px;
-}
-.task-pagination {
-  justify-content: flex-end;
-  margin-top: var(--related-gap);
-}
 .task-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -348,11 +366,6 @@ if (unconfirmed.value) restore();
 .task-title {
   white-space: normal;
   overflow-wrap: anywhere;
-}
-.task-title.ant-btn {
-  padding: 0;
-  height: auto;
-  text-align: left;
 }
 .technical {
   overflow-wrap: anywhere;

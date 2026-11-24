@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Table, Select as ASelect, Checkbox as ACheckbox } from 'ant-design-vue';
+import { Popover as APopover, Select as ASelect, Checkbox as ACheckbox } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { alertWorkflowTones } from '@starbeacon/shared/statusTones.ts';
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
 import {
   assessmentStatuses,
   assessmentVerdicts,
@@ -35,11 +40,21 @@ watch(
   },
 );
 const disabled = computed(() => pending.value || busy.value || unconfirmed.value || !!error.value || !current.value);
+const verdictTones = {
+  unreviewed: 'neutral',
+  suspicious: 'warning',
+  false_positive: 'neutral',
+  confirmed: 'danger',
+} as const satisfies Record<AssessmentSpec['verdict'], StatusTone>;
 const columns = [
-  { title: '修订 / 时间', key: 'revision', width: 180 },
-  { title: '处理状态 / 结论', key: 'state', width: 210 },
-  { title: '操作人 / 认领人', key: 'owner', width: 160 },
-  { title: '研判说明 / 证据引用', key: 'note', width: 300 },
+  { title: '修订', dataIndex: 'revision', width: 64, className: 'technical' },
+  { title: '记录时间', key: 'updated', width: 176, className: 'technical' },
+  { title: '处理状态', key: 'status', width: 96 },
+  { title: '研判结论', key: 'verdict', width: 96 },
+  { title: '攻击结果', key: 'outcome', width: 144 },
+  { title: '操作人', dataIndex: 'analyst', width: 110, ellipsis: true },
+  { title: '认领人', key: 'owner', width: 110, ellipsis: true },
+  { title: '操作', key: 'note', width: 114, fixed: 'right' as const },
 ];
 async function save() {
   if (disabled.value || !current.value) return;
@@ -71,12 +86,6 @@ onMounted(() => {
 });
 </script>
 <template>
-  <a-alert
-    type="info"
-    message="人工研判记录用于协作与复核，不改变原始告警、不抑制规则、不执行设备封禁。攻击结果必须依据独立证据确认。"
-    show-icon
-    class="section-gap"
-  />
   <template v-if="historyOpen">
     <div class="filter-actions section-gap">
       <a-button @click="back">返回研判</a-button
@@ -96,40 +105,36 @@ onMounted(() => {
       description="暂无研判记录，保存后可查看每次操作的结论和依据。"
       @retry="state.loadHistory()"
     >
-      <div class="table-wrap">
-        <Table :columns="columns" :data-source="history" row-key="revision" :pagination="false" :scroll="{ x: 850 }"
-          ><template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'revision'"
-              ><strong>修订 {{ record.revision }}</strong
-              ><small class="muted block">{{ formatTime(record.updated_at) }}</small></template
-            >
-            <template v-else-if="column.key === 'state'"
-              ><span
-                class="status"
-                :class="
-                  record.spec.verdict === 'false_positive'
-                    ? 'status-neutral'
-                    : record.spec.verdict === 'confirmed'
-                      ? 'status-danger'
-                      : 'status-warning'
-                "
-                >{{ assessmentVerdicts[record.spec.verdict as keyof typeof assessmentVerdicts] }}</span
-              ><small class="block"
-                >{{ assessmentStatuses[record.spec.status as keyof typeof assessmentStatuses] }} ·
-                {{ assessmentOutcomes[record.spec.outcome as keyof typeof assessmentOutcomes] }}</small
-              ></template
-            >
-            <template v-else-if="column.key === 'owner'"
-              >{{ record.analyst
-              }}<small class="muted block">认领：{{ record.owner_name || '未认领' }}</small></template
-            >
-            <template v-else-if="column.key === 'note'"
-              ><p class="assessment-note">{{ record.spec.note }}</p>
-              <small v-for="ref in record.spec.evidence" :key="ref" class="technical block">{{ ref }}</small></template
-            >
-          </template></Table
-        >
-      </div>
+      <ListTable :columns="columns" :data-source="history" row-key="revision" :scroll="{ x: 910 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'updated'">{{ formatTime(record.updated_at) }}</template>
+          <StatusTag
+            v-else-if="column.key === 'status'"
+            :tone="alertWorkflowTones[record.spec.status]"
+            :value="assessmentStatuses[record.spec.status]"
+          />
+          <StatusTag
+            v-else-if="column.key === 'verdict'"
+            :tone="verdictTones[record.spec.verdict]"
+            :value="assessmentVerdicts[record.spec.verdict]"
+          />
+          <template v-else-if="column.key === 'outcome'">{{ assessmentOutcomes[record.spec.outcome] }}</template>
+          <span v-else-if="column.key === 'owner'" :title="record.owner_name || undefined">{{
+            record.owner_name || '未认领'
+          }}</span>
+          <a-popover v-else-if="column.key === 'note'" trigger="click" placement="left" title="研判说明与证据">
+            <template #content>
+              <div class="assessment-evidence">
+                <p class="assessment-note">{{ record.spec.note }}</p>
+                <ul v-if="record.spec.evidence.length" class="technical">
+                  <li v-for="reference in record.spec.evidence" :key="reference">{{ reference }}</li>
+                </ul>
+              </div>
+            </template>
+            <button type="button" class="record-link">说明与证据</button>
+          </a-popover>
+        </template>
+      </ListTable>
       <a-button v-if="next" :loading="historyPending" class="section-gap" @click="state.loadHistory(next)"
         >加载更早记录</a-button
       >
@@ -144,6 +149,9 @@ onMounted(() => {
           ? `修订 ${current.revision} · ${formatTime(current.updated_at)} · ${current.analyst}`
           : '尚未保存研判'
       }}</span>
+      <PageHelp title="告警研判">
+        <p>人工研判记录保存人工判断、证据引用和认领情况。攻击结果须依据独立证据确认。</p>
+      </PageHelp>
     </div>
     <a-alert
       v-if="error && current"
@@ -246,9 +254,9 @@ onMounted(() => {
   overflow-wrap: anywhere;
   margin: 0;
 }
-.block {
-  display: block;
-  overflow-wrap: anywhere;
-  margin-top: 4px;
+.assessment-evidence {
+  max-width: min(400px, 70vw);
+  max-height: 40vh;
+  overflow: auto;
 }
 </style>

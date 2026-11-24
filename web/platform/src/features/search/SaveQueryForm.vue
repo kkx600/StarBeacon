@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { Checkbox as ACheckbox, Modal as AModal, Select as ASelect } from 'ant-design-vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
 import { session } from '../../session';
 import {
   changeError,
@@ -110,7 +111,6 @@ function submit() {
 <template>
   <a-modal
     :open="true"
-    :title="initial.expected_revision ? '编辑保存查询' : '保存当前查询'"
     :width="680"
     :footer="null"
     :closable="!busy"
@@ -118,12 +118,15 @@ function submit() {
     :mask-closable="false"
     @cancel="emit('close')"
   >
-    <a-alert
-      type="info"
-      show-icon
-      message="保存查询条件和时间窗口。团队共享仅共享查询定义，不授予数据权限。"
-      class="section-gap"
-    />
+    <template #title>
+      <span class="heading-with-help">
+        {{ initial.expected_revision ? '编辑保存查询' : '保存当前查询' }}
+        <PageHelp title="保存查询">
+          <p>保存的内容包括查询条件和时间窗口。团队成员按各自权限执行共享查询。</p>
+          <p>相对窗口在每次应用时重新计算，固定窗口使用保存的起止时间。</p>
+        </PageHelp>
+      </span>
+    </template>
     <a-alert
       v-if="unconfirmed"
       type="warning"
@@ -170,7 +173,6 @@ function submit() {
         >使用当前页面的查询条件和时间窗口</a-checkbox
       >
       <QuerySummary :definition="definition" />
-      <p class="page-description">相对窗口在每次应用时重新计算。固定窗口保持原起止时间，列表分页不作为保存条件。</p>
       <div class="query-actions">
         <a-button :disabled="busy" @click="emit('close')">关闭</a-button
         ><a-button v-if="unconfirmed" type="primary" :disabled="busy" :loading="busy" @click="emit('confirm')"

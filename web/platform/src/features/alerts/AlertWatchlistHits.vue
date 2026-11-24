@@ -2,6 +2,7 @@
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue';
 import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { readWatchlistAlertHits, watchlistHitFields, type WatchlistAlertHits } from '@starbeacon/shared/watchlists.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
@@ -111,10 +112,9 @@ onScopeDispose(() => {
           <a-descriptions-item label="命中字段与值"
             ><ul class="alert-watchlist-matches">
               <li v-for="match in hit.matches" :key="match.field + '/' + match.value">
-                <span class="status status-neutral">{{ watchlistHitFields[match.field] }}</span><span
-                  class="technical"
-                  >{{ match.value }}</span
-                >
+                <StatusTag tone="neutral" :value="watchlistHitFields[match.field]" /><span class="technical">{{
+                  match.value
+                }}</span>
               </li>
             </ul></a-descriptions-item
           >

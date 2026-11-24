@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import {
   Modal as AModal,
-  Tag as ATag,
   Descriptions as ADescriptions,
   Tabs as ATabs,
   Timeline as ATimeline,
@@ -14,7 +13,15 @@ const ADescriptionsItem = ADescriptions.Item,
   ACollapsePanel = ACollapse.Panel;
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
-import { incidentStatuses, incidentCategories, incidentSeverities, type IncidentRecord } from './incident';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import {
+  incidentStatuses,
+  incidentStatusTones,
+  incidentClosureTones,
+  incidentCategories,
+  incidentSeverities,
+  type IncidentRecord,
+} from './incident';
 defineProps<{
   record: IncidentRecord | null;
   pending: boolean;
@@ -35,12 +42,7 @@ function changeTab(value: unknown) {
     <StatePanel :loading="pending" :error="error" @retry="emit('reload')">
       <template v-if="record">
         <div class="incident-detail-actions">
-          <a-tag
-            :color="
-              record.spec.status === 'closed' ? 'green' : record.spec.status === 'investigating' ? 'blue' : 'orange'
-            "
-            >{{ incidentStatuses[record.spec.status] }}</a-tag
-          >
+          <StatusTag :tone="incidentStatusTones[record.spec.status]" :value="incidentStatuses[record.spec.status]" />
           <div class="filter-actions">
             <a-button @click="emit('notes')">调查笔记</a-button><a-button @click="emit('tasks')">协作任务</a-button
             ><a-button type="primary" @click="emit('edit')">{{
@@ -82,7 +84,10 @@ function changeTab(value: unknown) {
             </div>
             <template v-if="record.spec.closure"
               ><h3>结案材料</h3>
-              <a-tag>{{ record.spec.closure.reason === 'resolved' ? '确认处置完成' : '确认误报' }}</a-tag>
+              <StatusTag
+                :tone="incidentClosureTones[record.spec.closure.reason]"
+                :value="record.spec.closure.reason === 'resolved' ? '确认处置完成' : '确认误报'"
+              />
               <dl class="incident-closure">
                 <template
                   v-for="[label, value] in [
@@ -133,7 +138,10 @@ function changeTab(value: unknown) {
                         <div class="technical">{{ source.raw_sha256 }}</div>
                       </div>
                       <template v-if="entry.spec.closure"
-                        ><a-tag>{{ entry.spec.closure.reason === 'resolved' ? '确认处置完成' : '确认误报' }}</a-tag>
+                        ><StatusTag
+                          :tone="incidentClosureTones[entry.spec.closure.reason]"
+                          :value="entry.spec.closure.reason === 'resolved' ? '确认处置完成' : '确认误报'"
+                        />
                         <dl class="incident-closure">
                           <template
                             v-for="[label, value] in [

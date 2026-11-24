@@ -247,6 +247,18 @@ describe('事件调查请求与并发边界', () => {
     state.search('investigating', 'high');
     await flushPromises();
     expect(request.mock.lastCall?.[0]).toContain('status=investigating&severity=high');
+    request.mockResolvedValueOnce({ items: rows.slice(0, 10), next_cursor: rows[9]!.id });
+    state.changePageSize(10);
+    await flushPromises();
+    expect(state.page.value.items).toHaveLength(10);
+    expect(state.error.value).toBe('');
+    state.next();
+    await flushPromises();
+    expect(state.cursors.value).toEqual(['', rows[9]!.id]);
+    state.changePageSize(50);
+    await flushPromises();
+    expect(state.cursors.value).toEqual(['']);
+    expect(request.mock.lastCall?.[0]).toBe('/incidents?status=investigating&severity=high&before=&limit=50');
     const old = deferred<unknown>();
     request.mockReturnValueOnce(old.promise);
     const pending = state.refresh();

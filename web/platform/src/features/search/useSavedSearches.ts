@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   canEditSaved,
@@ -19,7 +20,8 @@ import {
 export function useSavedSearches(dataset: () => Dataset) {
   const page = shallowRef<SavedPage>({ items: [], next_cursor: '' }),
     filter = shallowRef<SavedListFilter>({ keyword: '', visibility: '', active: 'true' }),
-    cursors = shallowRef(['']);
+    cursors = shallowRef(['']),
+    pageSize = shallowRef(defaultPageSize);
   const loading = shallowRef(false),
     busy = shallowRef(false),
     resolving = shallowRef(false),
@@ -41,12 +43,13 @@ export function useSavedSearches(dataset: () => Dataset) {
     error.value = '';
     const requested = { ...filter.value },
       cursor = cursors.value.at(-1)!,
-      currentDataset = dataset();
-    const parameters = new URLSearchParams({ ...requested, dataset: currentDataset, cursor, limit: '20' });
+      currentDataset = dataset(),
+      limit = pageSize.value;
+    const parameters = new URLSearchParams({ ...requested, dataset: currentDataset, cursor, limit: String(limit) });
     try {
       const value = await session.api.request<unknown>('/saved-searches?' + parameters, { signal: controller.signal });
       if (controller.signal.aborted || stopped) return;
-      if (!validSavedPage(value, principal, currentDataset, requested, cursor))
+      if (!validSavedPage(value, principal, currentDataset, requested, cursor, limit))
         throw new Error('查询目录未能完整返回，请刷新后重试。');
       page.value = value;
     } catch (e) {
@@ -71,6 +74,12 @@ export function useSavedSearches(dataset: () => Dataset) {
   function previous() {
     if (loading.value || cursors.value.length < 2) return;
     cursors.value = cursors.value.slice(0, -1);
+    return load();
+  }
+  function changePageSize(size: number) {
+    if (loading.value || busy.value || resolving.value || size === pageSize.value) return;
+    pageSize.value = size;
+    cursors.value = [''];
     return load();
   }
   async function save(input: SavedChange) {
@@ -200,6 +209,7 @@ export function useSavedSearches(dataset: () => Dataset) {
     attempt = undefined;
     page.value = { items: [], next_cursor: '' };
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
     filter.value = { keyword: '', visibility: '', active: 'true' };
     loading.value = busy.value = resolving.value = unconfirmed.value = false;
     error.value = mutationError.value = '';
@@ -217,6 +227,7 @@ export function useSavedSearches(dataset: () => Dataset) {
     page: shallowReadonly(page),
     filter: shallowReadonly(filter),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
     loading: shallowReadonly(loading),
     busy: shallowReadonly(busy),
     resolving: shallowReadonly(resolving),
@@ -227,6 +238,7 @@ export function useSavedSearches(dataset: () => Dataset) {
     search,
     next,
     previous,
+    changePageSize,
     save,
     confirm,
     pendingInput,

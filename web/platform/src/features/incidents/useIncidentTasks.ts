@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch, type ShallowRef } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import type { IncidentRecord } from './incident';
 import {
@@ -17,7 +18,9 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
   const page = shallowRef<IncidentTaskPage>({ items: [], next_cursor: '' }),
     pending = shallowRef(false),
     error = shallowRef(''),
-    cursors = shallowRef(['']);
+    cursors = shallowRef(['']),
+    pageSize = shallowRef(defaultPageSize),
+    status = shallowRef('');
   const selected = shallowRef<IncidentTaskRecord | null>(null),
     detailPending = shallowRef(false),
     detailError = shallowRef('');
@@ -32,8 +35,7 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
   let stopped = false,
     epoch = 0,
     detailEpoch = 0,
-    historyEpoch = 0,
-    status = '';
+    historyEpoch = 0;
   let listRead: AbortController | undefined,
     detailRead: AbortController | undefined,
     historyRead: AbortController | undefined,
@@ -43,7 +45,8 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
   async function refresh() {
     if (stopped || !parent.value) return;
     const id = parent.value.id,
-      token = ++epoch;
+      token = ++epoch,
+      limit = pageSize.value;
     listRead?.abort();
     const controller = new AbortController();
     listRead = controller;
@@ -51,11 +54,13 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
     error.value = '';
     try {
       const result = await session.api.request<unknown>(
-        path(id) + '?' + new URLSearchParams({ status, before: cursors.value.at(-1) ?? '' }),
+        path(id) +
+          '?' +
+          new URLSearchParams({ status: status.value, before: cursors.value.at(-1) ?? '', limit: String(limit) }),
         { signal: controller.signal },
       );
       if (stopped || token !== epoch) return;
-      if (!validTaskPage(result, id)) throw new Error('协作任务列表未能完整返回');
+      if (!validTaskPage(result, id, limit)) throw new Error('协作任务列表未能完整返回');
       page.value = result;
     } catch (e) {
       if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '协作任务读取失败';
@@ -64,12 +69,12 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
     }
   }
   function search(value: string) {
-    status = value;
+    status.value = value;
     cursors.value = [''];
     void refresh();
   }
   function next() {
-    if (!pending.value && page.value.next_cursor) {
+    if (!pending.value && !error.value && page.value.next_cursor) {
       cursors.value = [...cursors.value, page.value.next_cursor];
       void refresh();
     }
@@ -79,6 +84,12 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
       cursors.value = cursors.value.slice(0, -1);
       void refresh();
     }
+  }
+  function changePageSize(size: number) {
+    if (pending.value || size === pageSize.value) return;
+    pageSize.value = size;
+    cursors.value = [''];
+    void refresh();
   }
   function clearSelection() {
     detailEpoch++;
@@ -216,8 +227,9 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
     if (!attempt) actionError.value = '';
   }
   watch(
-    () => `${parent.value?.id ?? ''}/${parent.value?.revision ?? ''}`,
-    () => {
+    [() => parent.value?.id ?? '', () => parent.value?.revision ?? 0] as const,
+    ([id], [previousID]) => {
+      if (id !== previousID) status.value = '';
       epoch++;
       listRead?.abort();
       page.value = { items: [], next_cursor: '' };
@@ -239,6 +251,9 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
       mutation = undefined;
       attempt = undefined;
       page.value = { items: [], next_cursor: '' };
+      status.value = '';
+      cursors.value = [''];
+      pageSize.value = defaultPageSize;
       pending.value = false;
       busy.value = false;
       unconfirmed.value = false;
@@ -259,6 +274,8 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    status: shallowReadonly(status),
     selected: shallowReadonly(selected),
     detailPending: shallowReadonly(detailPending),
     detailError: shallowReadonly(detailError),
@@ -274,6 +291,7 @@ export function useIncidentTasks(parent: ShallowRef<IncidentRecord | null>) {
     search,
     next,
     previous,
+    changePageSize,
     select,
     clearSelection,
     loadHistory,

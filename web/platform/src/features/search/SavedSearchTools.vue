@@ -2,6 +2,11 @@
 import { computed, reactive, shallowRef, watch } from 'vue';
 import { Modal as AModal, Select as ASelect } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
 import {
@@ -20,8 +25,8 @@ const props = defineProps<{ dataset: Dataset; current: SavedDefinition; disabled
 const emit = defineEmits<{ apply: [value: SavedResolution] }>();
 const {
   page,
-  filter,
   cursors,
+  pageSize,
   loading,
   busy,
   resolving,
@@ -32,6 +37,7 @@ const {
   search,
   next,
   previous,
+  changePageSize,
   save,
   confirm,
   pendingInput,
@@ -47,6 +53,20 @@ const listForm = reactive({
   visibility: '' as '' | 'personal' | 'team',
   active: 'true' as '' | 'true' | 'false',
 });
+const savedStatus = {
+  enabled: { value: '启用', tone: 'success' },
+  disabled: { value: '停用', tone: 'neutral' },
+} as const;
+const columns = [
+  { title: '查询编号', dataIndex: 'id', width: 144, ellipsis: true, className: 'technical' },
+  { title: '查询名称', dataIndex: 'name', width: 150, ellipsis: true },
+  { title: '可见范围', key: 'visibility', width: 86 },
+  { title: '查询状态', key: 'status', width: 176 },
+  { title: '时间范围', key: 'window', width: 160, ellipsis: true },
+  { title: '修订', dataIndex: 'revision', width: 60, className: 'technical' },
+  { title: '更新时间', key: 'updated', width: 170, className: 'technical' },
+  { title: '操作', key: 'actions', width: 174, fixed: 'right' as const },
+];
 const locked = computed(() => busy.value || resolving.value),
   draft = computed(() => (unconfirmed.value ? pendingInput() : undefined));
 async function openLibrary() {
@@ -113,19 +133,23 @@ watch(
   <a-modal
     v-if="library"
     :open="true"
-    title="已保存查询"
-    :width="820"
+    :width="1168"
     :footer="null"
     :mask-closable="false"
     :closable="!locked"
     :keyboard="!locked"
     @cancel="library = false"
   >
-    <p class="page-description">
-      {{ dataset === 'alerts' ? '告警' : '协议记录' }}查询 · 个人查询仅自己可见，团队查询按当前账号权限执行。
-    </p>
-    <a-form :model="listForm" layout="vertical" @finish="search({ ...listForm })"
-      ><div class="saved-query-filters">
+    <template #title>
+      <span class="heading-with-help">
+        已保存查询
+        <PageHelp title="已保存查询">
+          <p>{{ dataset === 'alerts' ? '告警' : '协议记录' }}查询。个人查询仅自己可见，团队查询按当前账号权限执行。</p>
+        </PageHelp>
+      </span>
+    </template>
+    <a-form :model="listForm" layout="horizontal" @finish="search({ ...listForm })">
+      <ListFilters label="保存查询筛选" :columns="4">
         <a-form-item label="查询名称" html-for="saved-library-keyword"
           ><a-input
             id="saved-library-keyword"
@@ -156,13 +180,13 @@ watch(
             ]"
             @keydown.esc.stop
         /></a-form-item>
-      </div>
-      <div class="query-actions">
-        <a-button html-type="submit" :disabled="loading || locked">筛选</a-button
-        ><a-button :disabled="loading || locked" @click="resetFilter">重置</a-button
-        ><a-button :loading="loading" :disabled="locked" @click="load">刷新查询</a-button>
-      </div></a-form
-    >
+        <template #actions>
+          <a-button type="primary" html-type="submit" :disabled="loading || locked">筛选</a-button>
+          <a-button :disabled="loading || locked" @click="resetFilter">重置</a-button>
+          <a-button :loading="loading" :disabled="locked" @click="load">刷新查询</a-button>
+        </template>
+      </ListFilters>
+    </a-form>
     <StatePanel
       :loading="loading"
       :error="error"
@@ -170,22 +194,25 @@ watch(
       description="当前条件下没有保存查询。完成检索后可保存常用条件。"
       @retry="load"
     >
-      <ul class="saved-query-list" aria-label="保存查询列表">
-        <li v-for="record in page.items" :key="record.id">
-          <div class="saved-query-content">
-            <strong>{{ record.name }}</strong><span class="query-state"
-              >{{ record.visibility === 'personal' ? '仅自己' : '团队共享' }} · {{ record.active ? '启用' : '停用' }} ·
-              {{ savedWindowLabel(record.definition.window) }}</span
-            >
-            <p v-if="record.description">{{ record.description }}</p>
-            <small
-              >修订 {{ record.revision }} · {{ formatTime(record.updated_at)
-              }}<span v-if="record.definition.parser_version !== parserVersion" class="query-incompatible">
-                · 解析器不兼容</span
-              ></small
-            >
-          </div>
-          <div class="query-row-actions">
+      <ListTable :columns="columns" :data-source="page.items" :scroll="{ x: 1120 }" aria-label="保存查询列表">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'visibility'">{{
+            record.visibility === 'personal' ? '仅自己' : '团队共享'
+          }}</template>
+          <template v-else-if="column.key === 'status'">
+            <StatusTag v-bind="record.active ? savedStatus.enabled : savedStatus.disabled" />
+            <StatusTag
+              v-if="record.definition.parser_version !== parserVersion"
+              class="query-compatibility"
+              tone="warning"
+              value="解析器不兼容"
+            />
+          </template>
+          <span v-else-if="column.key === 'window'" :title="savedWindowLabel(record.definition.window)">{{
+            savedWindowLabel(record.definition.window)
+          }}</span>
+          <template v-else-if="column.key === 'updated'">{{ formatTime(record.updated_at) }}</template>
+          <div v-else-if="column.key === 'actions'" class="query-row-actions">
             <a-button
               size="small"
               :disabled="locked"
@@ -206,16 +233,21 @@ watch(
               >编辑</a-button
             >
           </div>
-        </li>
-      </ul>
+        </template>
+      </ListTable>
     </StatePanel>
-    <div class="query-pagination">
-      <span>第 {{ cursors.length }} 页 · 本页 {{ page.items.length }} 个查询</span>
-      <div class="query-actions">
-        <a-button :disabled="loading || locked || cursors.length < 2" @click="previous">上一页</a-button
-        ><a-button :disabled="loading || locked || !!error || !page.next_cursor" @click="next">下一页</a-button>
-      </div>
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="loading || error ? undefined : page.items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!page.next_cursor"
+      :disabled="loading || locked"
+      @previous="previous"
+      @next="next"
+      @update:page-size="changePageSize"
+    />
   </a-modal>
   <a-modal
     v-if="detail"
@@ -287,63 +319,13 @@ watch(
   flex-wrap: wrap;
   gap: var(--related-gap, 8px);
 }
-.saved-query-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0 12px;
-  margin-top: 12px;
-}
-.saved-query-list {
-  list-style: none;
-  padding: 0;
-  margin: 16px 0;
-}
-.saved-query-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-}
-.saved-query-content {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.saved-query-content strong {
-  display: block;
-  color: var(--text);
-}
-.saved-query-content p {
-  margin: 4px 0;
-}
-.query-state,
-.saved-query-content small {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-}
-.query-incompatible {
-  color: var(--danger);
-}
 .query-row-actions {
-  flex-shrink: 0;
+  flex-wrap: nowrap;
 }
-.query-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+.query-row-actions :deep(.ant-btn-sm) {
+  height: 22px;
 }
-@media (max-width: 1100px) {
-  .saved-query-list li {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-  .query-row-actions {
-    flex-shrink: 1;
-  }
+.query-compatibility {
+  margin-inline-start: var(--label-gap);
 }
 </style>

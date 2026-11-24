@@ -68,6 +68,7 @@ describe('列表分页条：页码分页', () => {
     wrapper.getComponent(Pagination).vm.$emit('change', 4, 50);
     expect(wrapper.emitted('update:pageSize')).toEqual([[50]]);
     expect(wrapper.emitted('update:page')).toEqual([[1]]);
+    expect(wrapper.emitted('change')).toEqual([[1, 50]]);
   });
 
   it('未给出总数时按 0 条显示', () => {

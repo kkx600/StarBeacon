@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
 import SearchFieldCatalog from './SearchFieldCatalog.vue';
 import { insertSearchField, suggestFields } from './filterCompletion';
 import { useSearchFields } from './useSearchFields';
@@ -114,8 +115,16 @@ watch(suggestions, items => {
 <template>
   <div class="advanced-filter">
     <div class="advanced-label">
-      <label :for="inputId">高级过滤表达式</label
-      ><a-button size="small" :disabled="disabled" @click="open = true">字段目录</a-button>
+      <div class="heading-with-help">
+        <label :for="inputId">高级过滤表达式</label>
+        <PageHelp title="高级过滤表达式">
+          <p>
+            作用于{{ dataset === 'context' ? '协议事件' : '告警' }}索引。支持
+            and／or／not、括号、比较、contains、in、端口范围及原始字符串。尚未提供原生逐包检索。
+          </p>
+        </PageHelp>
+      </div>
+      <a-button size="small" :disabled="disabled" @click="open = true">字段目录</a-button>
     </div>
     <a-textarea
       :id="inputId"
@@ -156,9 +165,7 @@ watch(suggestions, items => {
       </button>
     </div>
     <p :id="`${inputId}-help`" class="page-description">
-      作用于{{ dataset === 'context' ? '协议事件' : '告警' }}索引。支持
-      and／or／not、括号、比较、contains、in、端口范围及原始字符串。输入字段前缀可补全，Ctrl＋空格查看建议，方向键选择，Esc
-      关闭。尚未提供原生逐包检索。
+      输入字段前缀可补全。Ctrl＋空格查看建议，方向键选择，Esc 关闭。
     </p>
     <a-alert v-if="insertionError" :message="insertionError" type="warning" show-icon />
     <SearchFieldCatalog
