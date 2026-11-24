@@ -7,6 +7,8 @@ export const router = createRouter({
   routes: [
     { path: '/', redirect: '/overview/dashboard' },
     { path: '/login', component: () => import('./views/LoginView.vue') },
+    { path: '/system/accounts', redirect: '/system/settings/users' },
+    { path: '/system/accounts/users', redirect: '/system/settings/users' },
     ...platformRoutes(),
     {
       path: '/:pathMatch(.*)*',

@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons-vue';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
-import SettingsWorkspace from '../../../web/platform/src/features/settings/SettingsWorkspace.vue';
+import FeatureDirectory from '../../../web/platform/src/features/settings/FeatureDirectory.vue';
 import type { BusinessRecord, PageSpec, PreviewState } from '../models';
 import { pageById } from '../data/catalog';
 import { defaultSensorThresholds, type SensorThresholds } from '../data/sensorHealth';
@@ -551,7 +551,7 @@ watch(
       </div>
 
       <div v-else class="settings-features">
-        <SettingsWorkspace />
+        <FeatureDirectory embedded />
       </div>
 
       <footer v-if="current.savable && !busy" class="settings-footer">
@@ -737,16 +737,12 @@ watch(
   padding: var(--section-gap) var(--panel-inset);
   border-top: 1px solid var(--line);
 }
-/* 功能目录直接复用工程组件；它自带的标题和外框与本页重复，在这里收起。 */
-.settings-features :deep(.page-header) {
-  display: none;
-}
 .settings-features :deep(.panel) {
   margin: 0;
   border: 0;
   border-radius: 0;
 }
-.settings-features :deep(.settings-filters) {
+.settings-features :deep(.filter-panel) {
   border-bottom: 1px solid var(--line);
 }
 @media (max-width: 1180px) {

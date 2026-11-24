@@ -58,7 +58,7 @@ class AlignmentTests(unittest.TestCase):
 
     def test_nested_navigation_cannot_hide_system_routes(self):
         declared = alignment.platform_navigation_routes(ROOT)
-        self.assertTrue({"/system", "/system/settings", "/system/accounts/users", "/system/audit/logins", "/response/policies", "/ai/mcp"}.issubset(declared))
+        self.assertTrue({"/system", "/system/settings", "/system/settings/users", "/system/audit/logins", "/response/policies", "/ai/mcp"}.issubset(declared))
         routes = alignment.load(ROOT, "tests/acceptance/routes.json")
         routes["platform"].remove("/system/settings")
         with self.assertRaises(ValueError):

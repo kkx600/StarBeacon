@@ -85,6 +85,12 @@ strong {
   padding: var(--related-gap) var(--panel-inset);
   margin-bottom: var(--related-gap);
 }
+.filter-panel[data-embedded] {
+  margin-bottom: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
 .filter-grid {
   display: grid;
   grid-template-columns: minmax(240px, 1.4fr) minmax(170px, 1fr) minmax(190px, 1fr) auto;

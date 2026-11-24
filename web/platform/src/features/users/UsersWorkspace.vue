@@ -4,7 +4,7 @@ import { ref, shallowRef } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
-import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
 import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
 import ListPager from '@starbeacon/shared/components/ListPager.vue';
@@ -87,51 +87,56 @@ async function confirm() {
 }
 </script>
 <template>
-  <PageHeader title="用户管理" description="维护本租户的账号、角色与启用状态，权限变更同步撤销目标用户的既有会话。">
-    <a-button :loading="pending" @click="state.refresh">刷新</a-button
-    ><a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button
-    ><a-button v-else type="primary" @click="openEditor(null)">创建用户</a-button>
-  </PageHeader>
-  <a-form :model="{ role, active }" layout="horizontal" @finish="state.search(role, active)">
-    <ListFilters :columns="2" label="用户管理筛选">
-      <a-form-item label="用户角色" html-for="user-role"
-        ><a-select
-          id="user-role"
-          v-model:value="role"
-          aria-label="筛选用户角色"
-          :options="[
-            { value: '', label: '全部角色' },
-            ...Object.entries(userRoles).map(([value, label]) => ({ value, label })),
-          ]" /></a-form-item
-      ><a-form-item label="账号状态" html-for="user-active"
-        ><a-select
-          id="user-active"
-          v-model:value="active"
-          aria-label="筛选账号状态"
-          :options="[
-            { value: '', label: '全部状态' },
-            { value: 'true', label: '启用' },
-            { value: 'false', label: '停用' },
-          ]"
-      /></a-form-item>
-      <template #actions>
-        <a-button type="primary" html-type="submit" :loading="pending">查询</a-button
-        ><a-button
-          :disabled="pending"
-          @click="
-            role = '';
-            active = '';
-            state.search('', '');
-          "
-          >重置</a-button
-        >
-      </template>
-    </ListFilters>
-  </a-form>
-  <section class="panel">
-    <div class="panel-header">
-      <h2>租户用户</h2>
-    </div>
+  <section class="panel table-panel" aria-label="用户管理">
+    <header class="table-toolbar">
+      <div>
+        <h2>用户管理</h2>
+        <PageHelp title="用户管理">
+          <p>维护本租户的账号、角色与启用状态。权限变更后，目标用户需要重新登录。</p>
+        </PageHelp>
+      </div>
+      <div class="table-row-actions">
+        <a-button :loading="pending" @click="state.refresh">刷新</a-button>
+        <a-button v-if="unconfirmed" type="primary" @click="restoreAttempt">核对原提交</a-button>
+        <a-button v-else type="primary" @click="openEditor(null)">创建用户</a-button>
+      </div>
+    </header>
+    <a-form :model="{ role, active }" layout="horizontal" @finish="state.search(role, active)">
+      <ListFilters :columns="2" label="用户管理筛选" embedded>
+        <a-form-item label="用户角色" html-for="users-filter-role"
+          ><a-select
+            id="users-filter-role"
+            v-model:value="role"
+            aria-label="筛选用户角色"
+            :options="[
+              { value: '', label: '全部角色' },
+              ...Object.entries(userRoles).map(([value, label]) => ({ value, label })),
+            ]" /></a-form-item
+        ><a-form-item label="账号状态" html-for="users-filter-active"
+          ><a-select
+            id="users-filter-active"
+            v-model:value="active"
+            aria-label="筛选账号状态"
+            :options="[
+              { value: '', label: '全部状态' },
+              { value: 'true', label: '启用' },
+              { value: 'false', label: '停用' },
+            ]"
+        /></a-form-item>
+        <template #actions>
+          <a-button type="primary" html-type="submit" :loading="pending">查询</a-button
+          ><a-button
+            :disabled="pending"
+            @click="
+              role = '';
+              active = '';
+              state.search('', '');
+            "
+            >重置</a-button
+          >
+        </template>
+      </ListFilters>
+    </a-form>
     <StatePanel
       :loading="pending"
       :error="error"

@@ -2382,7 +2382,7 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/system/accounts/users?state=data",
+          "url": "/system/settings/users?state=data",
           "image": "users/data.jpg"
         }
       ]

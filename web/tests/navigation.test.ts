@@ -6,7 +6,6 @@ import { Menu, Select } from 'ant-design-vue';
 import { registerAnt } from '../packages/shared/src/ant';
 import NavigationMenu from '../packages/shared/src/components/NavigationMenu.vue';
 import WorkspaceTabs from '../packages/shared/src/components/WorkspaceTabs.vue';
-import SettingsWorkspace from '../platform/src/features/settings/SettingsWorkspace.vue';
 import UnavailableView from '../platform/src/views/UnavailableView.vue';
 import {
   navigationGroups,
@@ -102,13 +101,13 @@ describe('业务导航与路由契约', () => {
   it('十二个业务分组与四十四个原型工作区都有稳定入口，深层页面确实由父子路由匹配', async () => {
     expect(navigationGroups).toHaveLength(12);
     expect(navigationWorkspaces).toHaveLength(44);
-    const router = await routerFor('/system/accounts/users');
+    const router = await routerFor('/system/settings/users');
     expect(router.currentRoute.value.matched.map(record => record.path)).toEqual([
       '/system',
-      '/system/accounts',
-      '/system/accounts/users',
+      '/system/settings',
+      '/system/settings/users',
     ]);
-    expect(router.currentRoute.value.meta).toMatchObject({ navGroup: 'system', navWorkspace: 'users', admin: true });
+    expect(router.currentRoute.value.meta).toMatchObject({ navGroup: 'system', navWorkspace: 'settings', admin: true });
     for (const screen of platformScreens) {
       const target = router.resolve(screen.path);
       expect(target.matched.at(-1)?.components?.default).toBeTruthy();
@@ -117,7 +116,7 @@ describe('业务导航与路由契约', () => {
     }
     for (const workspace of navigationWorkspaces)
       expect(router.resolve(workspacePath(workspace)).matched.length).toBeGreaterThan(0);
-    for (const path of ['/system', '/system/accounts', '/detection', '/detection/rules']) {
+    for (const path of ['/system', '/system/settings', '/detection', '/detection/rules']) {
       await router.push(path);
       expect(router.currentRoute.value.matched.at(-1)?.components?.default).toBeTruthy();
     }
@@ -139,7 +138,6 @@ describe('业务导航与路由契约', () => {
     ['/sensors', '/sensors/list'],
     ['/system', '/system/settings'],
     ['/system/operations', '/system/operations/health'],
-    ['/system/accounts', '/system/accounts/users'],
     ['/system/governance', '/system/governance/retention'],
     ['/system/audit', '/system/audit/operations'],
     ['/system/data-sources', '/system/data-sources/syslog'],
@@ -152,7 +150,7 @@ describe('业务导航与路由契约', () => {
   it('两个角色的侧栏只包含可访问的工程工作区，并进入各自的首个可用视图', () => {
     const viewer = navigationForRole(false);
     const admin = navigationForRole(true);
-    expect(admin.flatMap(group => group.children)).toHaveLength(29);
+    expect(admin.flatMap(group => group.children)).toHaveLength(28);
     for (const [groups, screens] of [
       [viewer, platformScreens.filter(screen => !screen.admin)],
       [admin, platformScreens],
@@ -213,30 +211,38 @@ describe('业务导航与路由契约', () => {
   });
   it('展开祖先分组、切换与折叠不会丢失当前选中工作区', async () => {
     const items = [
-      { key: 'group:system', label: '系统管理', children: [{ key: 'workspace:users', label: '账号与权限' }] },
+      { key: 'group:system', label: '系统管理', children: [{ key: 'workspace:settings', label: '系统设置' }] },
       { key: 'other', label: '其他', icon: () => h('span') },
     ];
-    const wrapper = mount(NavigationMenu, { props: { items, current: 'workspace:users' }, global });
+    const wrapper = mount(NavigationMenu, { props: { items, current: 'workspace:settings' }, global });
     expect(wrapper.getComponent(Menu).props('openKeys')).toEqual(['group:system']);
     await wrapper.setProps({ collapsed: true });
     expect(wrapper.getComponent(Menu).props('openKeys')).toEqual([]);
     await wrapper.setProps({ collapsed: false });
-    expect(wrapper.getComponent(Menu).props('selectedKeys')).toEqual(['workspace:users']);
-    wrapper.getComponent(Menu).vm.$emit('click', { key: 'workspace:users' });
-    expect(wrapper.emitted('navigate')).toEqual([['workspace:users']]);
+    expect(wrapper.getComponent(Menu).props('selectedKeys')).toEqual(['workspace:settings']);
+    wrapper.getComponent(Menu).vm.$emit('click', { key: 'workspace:settings' });
+    expect(wrapper.emitted('navigate')).toEqual([['workspace:settings']]);
     await wrapper.setProps({ current: 'missing' });
     expect(wrapper.getComponent(Menu).props('openKeys')).toEqual([]);
     wrapper.unmount();
   });
-  it('系统设置只链接可用功能，查询与空结果不会生成虚假配置操作', async () => {
+  it('系统设置从分类进入真实用户管理及功能目录，隐藏尚未交付的设置分类', async () => {
     const router = await routerFor('/system/settings');
-    const wrapper = mount(SettingsWorkspace, { global: { plugins: [registerAnt, router] } });
+    const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
+    await flushPromises();
+    const categories = wrapper.get('nav[aria-label="设置分类"]');
+    expect(categories.findAll('a').map(link => link.text())).toEqual(['用户管理', '功能目录']);
+    expect(categories.get('[aria-current="page"]').text()).toBe('用户管理');
+    expect(wrapper.get('section[aria-label="用户管理"] h2').text()).toBe('用户管理');
+    expect(request.mock.calls.some(([path]) => String(path).startsWith('/users?'))).toBe(true);
+    await categories.get('a[href="/system/settings?section=features"]').trigger('click');
+    await vi.waitFor(() => expect(wrapper.get('section[aria-label="功能目录"] h2').text()).toBe('功能目录'));
     expect(wrapper.findAll('.ant-table-wrapper')).toHaveLength(1);
     expect(wrapper.text()).toContain('当前版本未提供');
     const disabled = wrapper.findAll('button').filter(button => button.attributes('disabled') !== undefined);
     expect(disabled.length).toBeGreaterThan(0);
     await wrapper.get('input').setValue('不存在的设置');
-    expect(wrapper.text()).toContain('没有匹配的设置项');
+    expect(wrapper.text()).toContain('没有匹配的功能');
     await wrapper.get('input').setValue('');
     wrapper.getComponent(Select).vm.$emit('update:value', 'all');
     await flushPromises();
@@ -244,12 +250,13 @@ describe('业务导航与路由契约', () => {
     const rows = wrapper.findAll('tr[data-row-key]');
     expect(rows).toHaveLength(43);
     const unavailable = rows.filter(row => row.text().includes('当前版本未提供'));
-    expect(unavailable).toHaveLength(15);
+    expect(unavailable).toHaveLength(16);
     expect(unavailable.every(row => row.get('button').attributes('disabled') !== undefined)).toBe(true);
     expect(unavailable.find(row => row.attributes('data-row-key') === 'ai-ops')?.text()).toContain('AI 值守');
-    const users = wrapper.findAll('tr').find(row => row.text().includes('账号与权限'))!;
-    await users.get('button').trigger('click');
-    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/system/accounts/users'));
+    expect(unavailable.find(row => row.attributes('data-row-key') === 'users')?.text()).toContain('认证与授权');
+    await categories.get('a[href="/system/settings/users"]').trigger('click');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/system/settings/users'));
+    await vi.waitFor(() => expect(wrapper.get('section[aria-label="用户管理"] h2').text()).toBe('用户管理'));
     wrapper.unmount();
   });
   it('尚未提供的目录清楚说明范围，系统设置与总览返回目标有效', async () => {

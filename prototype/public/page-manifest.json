@@ -362,7 +362,8 @@
       "title": "系统设置",
       "group": "system",
       "pages": [
-        "system-settings"
+        "system-settings",
+        "users"
       ]
     },
     {
@@ -400,10 +401,9 @@
     },
     {
       "id": "users",
-      "title": "账号与权限",
+      "title": "认证与授权",
       "group": "system",
       "pages": [
-        "users",
         "authentication",
         "roles",
         "api-keys"
@@ -5639,7 +5639,7 @@
     },
     {
       "id": "authentication",
-      "workspace": "账号与权限",
+      "workspace": "认证与授权",
       "title": "登录与会话",
       "group": "system",
       "kind": "table",
@@ -5688,7 +5688,7 @@
     },
     {
       "id": "roles",
-      "workspace": "账号与权限",
+      "workspace": "认证与授权",
       "title": "角色与权限",
       "group": "system",
       "kind": "table",
@@ -5786,7 +5786,7 @@
     },
     {
       "id": "api-keys",
-      "workspace": "账号与权限",
+      "workspace": "认证与授权",
       "title": "服务身份与 API 密钥",
       "group": "system",
       "kind": "table",
@@ -6710,7 +6710,7 @@
     },
     {
       "id": "users",
-      "workspace": "账号与权限",
+      "workspace": "系统设置",
       "title": "用户管理",
       "group": "system",
       "kind": "table",
@@ -6723,37 +6723,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/system/accounts/users?state=data",
+          "url": "/system/settings/users?state=data",
           "image": "users/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/system/accounts/users?state=empty",
+          "url": "/system/settings/users?state=empty",
           "image": "users/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/system/accounts/users?state=detail",
+          "url": "/system/settings/users?state=detail",
           "image": "users/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/system/accounts/users?state=action",
+          "url": "/system/settings/users?state=action",
           "image": "users/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/system/accounts/users?state=loading",
+          "url": "/system/settings/users?state=loading",
           "image": "users/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/system/accounts/users?state=error",
+          "url": "/system/settings/users?state=error",
           "image": "users/error.jpg"
         }
       ]

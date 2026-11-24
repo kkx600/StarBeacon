@@ -878,7 +878,7 @@
         "migrations/00029_recovery_audit.sql"
       ],
       "pages": [
-        "platform:/system/accounts/users"
+        "platform:/system/settings/users"
       ],
       "tests": [
         "internal/accounts/account_test.go",
@@ -1251,7 +1251,8 @@
       ],
       "pages": [
         "platform:/system/settings",
-        "platform:/system/accounts/users",
+        "platform:/system/settings/users",
+        "platform:/system/settings?section=features",
         "platform:/system/operations/health",
         "platform:/system/governance/retention",
         "platform:/system/audit/operations",

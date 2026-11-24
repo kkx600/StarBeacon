@@ -298,7 +298,7 @@
       "id": "settings",
       "title": "系统设置",
       "group": "system",
-      "pages": ["system-settings"]
+      "pages": ["system-settings", "users"]
     },
     {
       "id": "data-sources",
@@ -320,9 +320,9 @@
     },
     {
       "id": "users",
-      "title": "账号与权限",
+      "title": "认证与授权",
       "group": "system",
-      "pages": ["users", "authentication", "roles", "api-keys"]
+      "pages": ["authentication", "roles", "api-keys"]
     },
     {
       "id": "tenants",
@@ -649,10 +649,11 @@
     },
     {
       "id": "users",
-      "workspace": "users",
-      "path": "/system/accounts/users",
+      "workspace": "settings",
+      "path": "/system/settings/users",
       "title": "用户管理",
-      "module": "users",
+      "module": "settings",
+      "view": "users",
       "admin": true
     },
     {

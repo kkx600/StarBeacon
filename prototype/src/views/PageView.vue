@@ -74,7 +74,11 @@ const special = {
 </script>
 <template>
   <div v-if="page" class="page-surface" :data-page-id="page.id" :data-page-state="state">
-    <nav v-if="workspace && workspace.pages.length > 1" class="workspace-views" :aria-label="`${workspace.title}功能`">
+    <nav
+      v-if="workspace && workspace.id !== 'settings' && workspace.pages.length > 1"
+      class="workspace-views"
+      :aria-label="`${workspace.title}功能`"
+    >
       <a-tabs :active-key="parentPage" @change="openWorkspacePage"
         ><a-tab-pane v-for="id in workspace.pages" :key="id" :tab="pageById.get(id)?.title" /><a-tab-pane
           v-if="workspace.id === 'sensors'"

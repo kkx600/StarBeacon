@@ -7,6 +7,7 @@ export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/page/overview' },
+    { path: '/system/accounts/users', redirect: '/system/settings/users' },
     ...platformScreens
       .filter(screen => pageById.has(screen.id))
       .map(screen => ({

@@ -224,7 +224,7 @@ describe('应用入口、路由和登录', () => {
     ['/reports/records', '报告记录'],
     ['/system/governance/retention', '数据留存'],
     ['/incidents/investigation', '事件调查'],
-    ['/system/accounts/users', '用户管理'],
+    ['/system/settings/users', '用户管理'],
     ['/unknown', '页面不存在'],
   ])('平台地址 %s 可直接打开并展示 %s', async (path, title) => {
     const { session } = await import('../platform/src/session'),
@@ -290,13 +290,25 @@ describe('应用入口、路由和登录', () => {
       { default: App } = await import('../platform/src/App.vue');
     const user = session.current as ShallowRef<Principal | null>;
     user.value = principal;
-    await router.push('/system/settings');
+    for (const oldPath of ['/system/accounts', '/system/accounts/users']) {
+      await router.push(oldPath + '?source=bookmark#users');
+      expect(router.currentRoute.value.fullPath).toBe('/system/settings/users?source=bookmark#users');
+    }
     const wrapper = mount(App, { global: { plugins: [registerAnt, router] }, attachTo: document.body });
     await flushPromises();
     expect(wrapper.get('h1').text()).toBe('系统设置');
     user.value = { ...principal, role: 'viewer' };
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/sensors/list'));
-    expect(wrapper.text()).not.toContain('账号与权限');
+    expect(wrapper.find('nav[aria-label="设置分类"]').exists()).toBe(false);
+    for (const adminPath of [
+      '/system/settings',
+      '/system/settings/users',
+      '/system/settings?section=features',
+      '/system/accounts/users',
+    ]) {
+      await router.push(adminPath);
+      expect(router.currentRoute.value.path).toBe('/sensors/list');
+    }
     wrapper.unmount();
   });
   it('单工作区保持直接导航，同名层级不生成重复面包屑', async () => {
