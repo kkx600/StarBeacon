@@ -12,8 +12,9 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons-vue';
 import type { PageSpec, PreviewState } from '../models';
-import PageHeader from '../components/PageHeader.vue';
-import StatePanel from '../components/StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import RecordForm from '../components/RecordForm.vue';
 const message = useFeedback();
@@ -113,7 +114,10 @@ function close() {
 }
 </script>
 <template>
-  <PageHeader title="智能对话" description="围绕当前权限范围检索证据、解释判断并生成分析建议。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="智能对话"
+    description="围绕当前权限范围检索证据、解释判断并生成分析建议。"
     ><a-button type="primary" @click="formOpen = true"><PlusOutlined />创建对话</a-button></PageHeader
   >
   <div class="chat-layout panel">
@@ -148,7 +152,12 @@ function close() {
         />
       </div>
       <HelpNote message="对话与工具结果均为合成演示，不调用真实模型。安全判断需要证据，处置动作另行授权。" />
-      <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+      <StatePanel
+        v-if="state === 'loading' || state === 'error'"
+        :loading="state === 'loading'"
+        :error="state === 'error'"
+        @retry="emit('state', 'data')"
+      />
       <div v-else class="chat-messages" aria-live="polite">
         <div v-if="state === 'empty' || !messages.length" class="chat-welcome">
           <span class="assistant-avatar large"><RobotOutlined /></span>

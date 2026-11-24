@@ -37,6 +37,22 @@ describe('通用工作区状态', () => {
     await wrapper.setProps({ empty: false });
     expect(wrapper.text()).toBe('业务内容');
   });
+  it('空状态保留标题、说明和动作，服务错误使用独立事件', async () => {
+    const wrapper = mount(StatePanel, {
+      props: { empty: true, title: '暂无用户', description: '创建后可查看账号', action: '新建用户' },
+      global,
+    });
+    expect(wrapper.get('[role=heading]').text()).toBe('暂无用户');
+    expect(wrapper.text()).toContain('创建后可查看账号');
+    await button(wrapper, '新建用户').trigger('click');
+    expect(wrapper.emitted('action')).toHaveLength(1);
+    expect(wrapper.emitted('retry')).toBeUndefined();
+    await wrapper.setProps({ error: true, title: undefined, action: undefined });
+    expect(wrapper.get('[role=alert]').text()).toContain('服务异常，请稍后重试。');
+    await button(wrapper, '重试').trigger('click');
+    expect(wrapper.emitted('retry')).toHaveLength(1);
+    expect(wrapper.emitted('action')).toHaveLength(1);
+  });
   it('页签按当前值展示且提供可访问的导航标记', async () => {
     const wrapper = mount(WorkspaceTabs, {
       props: {

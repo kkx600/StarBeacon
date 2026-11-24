@@ -10,9 +10,10 @@ import type { SensorTask, TaskDetailState } from '../../../web/packages/shared/s
 import type { PreviewState } from '../models';
 import { goJSONDigest } from '../../../web/packages/shared/src/utils/goJSONDigest';
 import { validResponseProtection, type ResponseProtection } from '../../../web/packages/shared/src/responseProtection';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import ListPager from '../../../web/packages/shared/src/components/ListPager.vue';
-import StatePanel from './StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>(),
   message = useFeedback();
@@ -177,7 +178,11 @@ function example() {
 }
 </script>
 <template>
-  <PageHeader title="响应动作" description="集中核对限时封禁、租约回读与解除任务，追溯执行位置、目标和独立设备回执。" />
+  <PageHeader
+    :help-entries="helpEntries"
+    title="响应动作"
+    description="集中核对限时封禁、租约回读与解除任务，追溯执行位置、目标和独立设备回执。"
+  />
   <HelpNote
     message="以下为合成示例，展示工程端相同的筛选、任务列表和详情组件。名单核对记录也为合成材料，不构成真实授权，不连接设备或提交响应动作。"
   />
@@ -203,8 +208,12 @@ function example() {
     </div>
     <StatePanel
       v-if="['empty', 'loading', 'error'].includes(state)"
-      :state="state as 'empty' | 'loading' | 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      empty
       :description="state === 'empty' ? '当前条件下没有响应动作，请调整时间、目标或状态。' : undefined"
+      @retry="emit('state', 'data')"
+      action="重新加载"
       @action="emit('state', 'data')"
     />
     <TaskTable

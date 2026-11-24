@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { palette } from '../theme';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { Modal, type TableColumnType } from 'ant-design-vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -17,10 +17,11 @@ import { metricsFor } from '../data/fixtures';
 import { compareCells, formatCell } from '../composables/formatRecord';
 import { useRecords, exportCsv, exportJson } from '../composables/useRecords';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { recordStatusTone } from '../data/statuses';
-import StatePanel from './StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import RecordDetail from './RecordDetail.vue';
 import DecisionResponseDialog from './DecisionResponseDialog.vue';
 import RecordForm from './RecordForm.vue';
@@ -44,6 +45,7 @@ const emit = defineEmits<{ state: [value: PreviewState] }>();
 const { records, save, updateStatus } = useRecords(props.page);
 const router = useRouter(),
   route = useRoute();
+const filterId = useId();
 const query = ref('');
 const filterStatus = ref<string>();
 const scope = ref('全部网络域');
@@ -409,7 +411,13 @@ function batch() {
 }
 </script>
 <template>
-  <PageHeader v-if="!embedded" :title="page.title" :description="page.description" :notice="page.notice">
+  <PageHeader
+    :help-entries="helpEntries"
+    v-if="!embedded"
+    :title="page.title"
+    :description="page.description"
+    :notice="page.notice"
+  >
     <a-space wrap>
       <SavedQueries v-if="['alert', 'session'].includes(page.family)" :snapshot="querySnapshot" @apply="applySaved" />
       <a-button v-if="page.family !== 'decision-evaluation'" @click="exportCsv(page, filtered)"
@@ -436,21 +444,28 @@ function batch() {
   <MetricBar v-if="metrics.length && state !== 'loading' && state !== 'error'" :items="metrics" />
   <slot name="before" />
   <ListFilters :wide="page.family === 'sensor'">
-    <label
+    <label :for="filterId + '--keyword'"
       ><span>关键词</span
       ><a-input
+        :id="filterId + '--keyword'"
         v-model:value="query"
         :placeholder="`名称、编号或${page.columns[1]?.title ?? '字段'}`"
         allow-clear
         @press-enter="search"
     /></label>
-    <label
+    <label :for="filterId + '--status'"
       ><span>状态</span
-      ><a-select v-model:value="filterStatus" placeholder="全部状态" allow-clear :options="statusOptions"
+      ><a-select
+        :id="filterId + '--status'"
+        v-model:value="filterStatus"
+        placeholder="全部状态"
+        allow-clear
+        :options="statusOptions"
     /></label>
-    <label v-if="page.family === 'sensor'"
+    <label v-if="page.family === 'sensor'" :for="filterId + '--health'"
       ><span>健康</span
       ><a-select
+        :id="filterId + '--health'"
         v-model:value="healthFilter"
         placeholder="全部健康状态"
         allow-clear
@@ -458,9 +473,10 @@ function batch() {
           [...new Set(displayRecords.map(record => String(record.health)))].map(value => ({ value, label: value }))
         "
     /></label>
-    <label v-if="page.family !== 'sensor-group' && page.family !== 'decision-evaluation'"
+    <label v-if="page.family !== 'sensor-group' && page.family !== 'decision-evaluation'" :for="filterId + '--domain'"
       ><span>网络域</span
       ><a-select
+        :id="filterId + '--domain'"
         v-model:value="scope"
         :options="['全部网络域', '总部网络域', '研发网络域', '分支网络域'].map(value => ({ value, label: value }))"
     /></label>
@@ -475,25 +491,34 @@ function batch() {
       /></a-button>
     </template>
     <template v-if="advanced" #advanced>
-      <label><span>源 IP</span><a-input v-model:value="source" placeholder="例如 198.51.100.24" /></label>
-      <label><span>目的 IP</span><a-input v-model:value="destination" placeholder="例如 10.20.1.15" /></label>
-      <label
+      <label :for="filterId + '--source'"
+        ><span>源 IP</span><a-input :id="filterId + '--source'" v-model:value="source" placeholder="例如 198.51.100.24"
+      /></label>
+      <label :for="filterId + '--destination'"
+        ><span>目的 IP</span
+        ><a-input :id="filterId + '--destination'" v-model:value="destination" placeholder="例如 10.20.1.15"
+      /></label>
+      <label :for="filterId + '--protocol'"
         ><span>协议</span
         ><a-select
+          :id="filterId + '--protocol'"
           v-model:value="protocol"
           placeholder="全部协议"
           allow-clear
           :options="['HTTP', 'TLS', 'DNS', 'TCP', 'UDP', 'SMB'].map(value => ({ value, label: value }))"
       /></label>
-      <label
+      <label :for="filterId + '--method'"
         ><span>请求方法</span
         ><a-select
+          :id="filterId + '--method'"
           v-model:value="method"
           placeholder="全部方法"
           allow-clear
           :options="['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'].map(value => ({ value, label: value }))"
       /></label>
-      <label><span>Path 路径</span><a-input v-model:value="path" placeholder="例如 /admin/login" /></label>
+      <label :for="filterId + '--path'"
+        ><span>Path 路径</span><a-input :id="filterId + '--path'" v-model:value="path" placeholder="例如 /admin/login"
+      /></label>
       <TimeRangeField v-model:preset="timeWindow" :presets="timeWindows" />
     </template>
   </ListFilters>
@@ -510,7 +535,7 @@ function batch() {
           }}
         </h2>
         <span v-if="page.family === 'sensor'" class="muted tabular">遥测快照 2026-09-30 09:45:00</span>
-        <a-tag v-if="selectedKeys.length" class="selection-count">已选 {{ selectedKeys.length }} 项</a-tag>
+        <span v-if="selectedKeys.length" class="muted">已选 {{ selectedKeys.length }} 项</span>
       </div>
       <a-space>
         <a-button
@@ -534,10 +559,15 @@ function batch() {
         </a-popover>
       </a-space>
     </div>
-    <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+    <StatePanel
+      v-if="state === 'loading' || state === 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      @retry="emit('state', 'data')"
+    />
     <StatePanel
       v-else-if="!filtered.length"
-      state="empty"
+      empty
       :title="hasFilters ? '暂无符合条件的记录' : page.emptyTitle"
       :description="hasFilters ? '没有匹配当前条件的记录。请调整筛选或清除条件。' : page.emptyDescription"
       :action="
@@ -606,7 +636,7 @@ function batch() {
             :stroke-color="palette.primary"
           />
           <span v-else-if="column.kind === 'percent'" class="tabular">{{ formatCell(text, column) }}</span>
-          <span v-else-if="column.key === 'actions'" class="row-actions">
+          <span v-else-if="column.key === 'actions'" class="table-row-actions">
             <a-button type="link" size="small" @click="view(record)">查看</a-button>
             <a-button
               v-if="page.family === 'packet-archive'"

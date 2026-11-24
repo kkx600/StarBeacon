@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTerms } from '../../../web/packages/shared/src/terms.ts';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
@@ -22,8 +26,9 @@ import ApplicationRuleTest from '../../../web/platform/src/features/applications
 import ApplicationDeploymentForm from '../../../web/platform/src/features/applications/ApplicationDeploymentForm.vue';
 import type { AppSnapshot, AppTarget } from '../../../web/platform/src/features/applications/applicationDeployment';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 const message = useFeedback();
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>();
@@ -47,12 +52,13 @@ const deploying = ref(false),
   deploymentSelected = ref(''),
   deploymentTask = ref('');
 const columns = [
-  { title: '规则名称', key: 'name', width: 225 },
-  { title: '应用产品 / 类别', key: 'product', width: 200 },
+  { title: '规则编号', dataIndex: 'id', width: 150, ellipsis: true, className: 'mono' },
+  { title: '规则名称', dataIndex: 'name', width: 215, ellipsis: true },
+  { title: '应用产品 / 类别', key: 'product', width: 225, ellipsis: true },
   { title: '协议范围', key: 'protocols', width: 150 },
   { title: '修订', dataIndex: 'revision', width: 70 },
   { title: '状态', key: 'active', width: 90 },
-  { title: '操作', key: 'action', width: 180 },
+  { title: '操作', key: 'action', width: 160, fixed: 'right' as const },
 ];
 const items = computed(() =>
   props.state === 'empty'
@@ -348,7 +354,10 @@ onMounted(async () => {
 });
 </script>
 <template>
-  <PageHeader title="应用识别规则" description="维护产品名称条件、不可变修订与可见元数据输入验证。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="应用识别规则"
+    description="维护产品名称条件、不可变修订与可见元数据输入验证。"
     ><a-button :disabled="!ready || busy" @click="test()">验证启用规则</a-button
     ><a-button :disabled="!ready || busy" @click="deploy">部署到探针</a-button
     ><a-button type="primary" :disabled="!ready || busy" @click="create()">创建规则</a-button></PageHeader
@@ -356,15 +365,21 @@ onMounted(async () => {
   <HelpNote
     message="全部为合成示例；操作只保存在当前原型页面内存中。此页面演示规则验证与指定探针快照部署，不调用工程接口。候选或冲突不表示产品准确率或应用字节计量。"
   />
-  <section class="panel table-panel">
-    <form class="table-toolbar" @submit.prevent>
-      <h2>应用识别规则</h2>
+  <ListFilters label="应用识别规则条件" :columns="2">
+    <label for="application-preview-keyword">
+      <span>规则名称</span>
       <a-input
+        id="application-preview-keyword"
         v-model:value="keyword"
-        placeholder="规则名称"
         aria-label="应用识别规则名称"
-        style="width: 220px"
-      /><a-select
+        placeholder="规则名称"
+        allow-clear
+      />
+    </label>
+    <label for="application-preview-active">
+      <span>配置状态</span>
+      <a-select
+        id="application-preview-active"
         v-model:value="active"
         aria-label="应用识别规则状态"
         :options="[
@@ -372,54 +387,52 @@ onMounted(async () => {
           { value: 'true', label: '启用' },
           { value: 'false', label: '停用' },
         ]"
-        style="width: 130px"
-      /><span class="muted">当前筛选 {{ items.length }} 条</span>
-    </form>
-    <StatePanel v-if="!ready || state === 'loading'" state="loading" />
+      />
+    </label>
+    <template #actions
+      ><span class="muted">当前筛选 {{ items.length }} 条</span></template
+    >
+  </ListFilters>
+  <section class="panel table-panel">
+    <StatePanel v-if="!ready || state === 'loading'" loading />
     <StatePanel
       v-else-if="loadError || state === 'error'"
-      state="error"
-      :description="loadError || '示例错误状态；工程服务没有被调用。'"
-      @action="emit('state', 'data')"
+      :error="loadError || '示例错误状态；工程服务没有被调用。'"
+      @retry="emit('state', 'data')"
     />
     <StatePanel
       v-else-if="!items.length"
-      state="empty"
+      empty
       :title="keyword || active ? '没有符合筛选条件的规则' : '暂无应用识别规则'"
       :description="keyword || active ? '请调整条件后重新检索。' : '配置规则后可验证产品名称条件与排除依据。'"
       :action="keyword || active ? '重置筛选' : '创建规则'"
       @action="emptyAction"
     />
-    <a-table
+    <ListTable
       v-else
       :data-source="items"
       :columns="columns"
       row-key="id"
       :pagination="tablePagination()"
-      :scroll="{ x: 1015 }"
-      size="small"
+      :scroll="{ x: 1060 }"
       ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'name'"
-          ><b>{{ record.name }}</b
-          ><small class="row-id">{{ record.id }}</small></template
-        ><template v-else-if="column.key === 'product'"
-          >{{ record.definition.product_name
-          }}<small class="row-id">{{
-            applicationCategories[record.definition.category_id as keyof typeof applicationCategories]
-          }}</small></template
-        ><template v-else-if="column.key === 'protocols'"
-          ><a-tag v-for="protocol in record.definition.protocols" :key="protocol" color="blue">{{
-            protocol.toUpperCase()
-          }}</a-tag></template
-        ><a-tag v-else-if="column.key === 'active'" :color="record.active ? 'green' : 'default'">{{
-          record.active ? '启用' : '停用'
-        }}</a-tag>
-        <div v-else-if="column.key === 'action'" class="application-preview-actions">
-          <a-button type="link" size="small" @click="inspect(record as AppRule)">查看</a-button
-          ><a-button type="link" size="small" @click="create(record as AppRule)">编辑</a-button
-          ><a-button type="link" size="small" @click="test(record as AppRule)">验证</a-button>
+        ><span v-if="column.key === 'product'" :title="record.definition.product_name"
+          >{{ record.definition.product_name }} ·
+          {{ applicationCategories[record.definition.category_id as keyof typeof applicationCategories] }}</span
+        ><template v-else-if="column.key === 'protocols'">{{
+          record.definition.protocols.map((protocol: string) => protocol.toUpperCase()).join('、')
+        }}</template
+        ><StatusTag
+          v-else-if="column.key === 'active'"
+          :value="record.active ? '启用' : '停用'"
+          :tone="record.active ? statusTerms.启用 : statusTerms.停用"
+        />
+        <div v-else-if="column.key === 'action'" class="table-row-actions">
+          <a-button type="link" size="small" @click="inspect(record)">查看</a-button
+          ><a-button type="link" size="small" @click="create(record)">编辑</a-button
+          ><a-button type="link" size="small" @click="test(record)">验证</a-button>
         </div></template
-      ></a-table
+      ></ListTable
     >
   </section>
   <ApplicationRuleForm
@@ -492,7 +505,6 @@ onMounted(async () => {
   </a-modal>
 </template>
 <style scoped>
-.application-preview-actions,
 .application-preview-revision {
   display: flex;
   gap: 8px;

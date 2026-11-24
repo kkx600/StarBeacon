@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import HelpNote from './HelpNote.vue';
 import { computed, ref, shallowRef, watch } from 'vue';
 import { Descriptions as ADescriptions, Modal as AModal } from 'ant-design-vue';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import ChannelForm from '../../../web/platform/src/features/notifications/ChannelForm.vue';
 import ChannelTable from '../../../web/platform/src/features/notifications/ChannelTable.vue';
@@ -125,7 +127,7 @@ function save(_change: ChannelChange) {
 }
 </script>
 <template>
-  <PageHeader :title="title" description="维护明确的订阅范围，核对渠道受理与传输结果。"
+  <PageHeader :help-entries="helpEntries" :title="title" description="维护明确的订阅范围，核对渠道受理与传输结果。"
     ><a-button
       v-if="page !== 'delivery-logs'"
       type="primary"
@@ -139,18 +141,30 @@ function save(_change: ChannelChange) {
   <HelpNote
     message="以下为合成示例，仅用于演示订阅范围与投递回执。此处不保存连接信息或发送通知。渠道受理、传输写入与实际送达分别记录；检测质量事件须显式订阅。"
   />
-  <a-form layout="inline" class="panel notification-preview-filter" @finish="emit('state', 'data')"
-    ><a-form-item :label="page === 'delivery-logs' ? '投递标识' : '渠道名称'"
-      ><a-input v-model:value="keyword" :maxlength="128" placeholder="输入查询关键词" /></a-form-item
-    ><a-button type="primary" html-type="submit">查询</a-button
-    ><a-button
-      @click="
-        keyword = '';
-        emit('state', 'data');
-      "
-      >重置</a-button
-    ></a-form
-  >
+  <form @submit.prevent="emit('state', 'data')">
+    <ListFilters label="通知筛选" :columns="1">
+      <label for="notification-preview-keyword">
+        <span>{{ page === 'delivery-logs' ? '投递标识' : '渠道名称' }}</span>
+        <a-input
+          id="notification-preview-keyword"
+          v-model:value="keyword"
+          :maxlength="128"
+          placeholder="输入查询关键词"
+          allow-clear
+        />
+      </label>
+      <template #actions>
+        <a-button type="primary" html-type="submit">查询</a-button>
+        <a-button
+          @click="
+            keyword = '';
+            emit('state', 'data');
+          "
+          >重置</a-button
+        >
+      </template>
+    </ListFilters>
+  </form>
   <section class="panel">
     <StatePanel
       :loading="state === 'loading'"
@@ -214,16 +228,3 @@ function save(_change: ChannelChange) {
     </div></a-modal
   >
 </template>
-<style scoped>
-.notification-preview-filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.notification-preview-filter .ant-form-item {
-  margin: 0;
-}
-</style>

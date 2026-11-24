@@ -15,8 +15,9 @@ import { packetRows, createFixtures, hasPacketEvidence } from '../data/fixtures'
 import { pageById } from '../data/catalog';
 import { exportCsv } from '../composables/useRecords';
 import { compilePreviewFilter } from '../composables/previewFilter';
-import PageHeader from '../components/PageHeader.vue';
-import StatePanel from '../components/StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import PacketWorkbench from '../components/PacketWorkbench.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
@@ -174,7 +175,7 @@ function close() {
 }
 </script>
 <template>
-  <PageHeader :title="page.title" :description="page.description"
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description"
     ><a-space wrap
       ><a-button @click="help = true"><QuestionCircleOutlined />语法帮助</a-button
       ><a-button
@@ -284,10 +285,15 @@ function close() {
         ></a-space
       >
     </div>
-    <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+    <StatePanel
+      v-if="state === 'loading' || state === 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      @retry="emit('state', 'data')"
+    />
     <StatePanel
       v-else-if="state === 'empty'"
-      state="empty"
+      empty
       title="没有匹配的检索结果"
       description="请调整时间、网络域或表达式。未捕获、未投影和过期数据不会作为零风险依据。"
       action="清除条件"
@@ -330,7 +336,7 @@ function close() {
     </div>
     <PacketWorkbench v-if="hasPacketEvidence(selectedRecord)" :packets="packetRows" /><StatePanel
       v-else
-      state="empty"
+      empty
       title="未提供关联原生会话"
       description="当前合成记录只有协议元数据。不能将无关会话作为调查证据。"
       action="返回检索"

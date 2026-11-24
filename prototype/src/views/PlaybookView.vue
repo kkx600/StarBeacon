@@ -11,8 +11,9 @@ import {
 } from '@ant-design/icons-vue';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import type { PageSpec, PreviewState } from '../models';
-import PageHeader from '../components/PageHeader.vue';
-import StatePanel from '../components/StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
@@ -273,7 +274,7 @@ watch(
 </script>
 
 <template>
-  <PageHeader :title="page.title" :description="page.description">
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description">
     <a-space>
       <a-button @click="aiOpen = true"><RobotOutlined />AI 生成编排</a-button>
       <a-button @click="validate"><CheckOutlined />校验</a-button>
@@ -284,10 +285,15 @@ watch(
   <HelpNote message="可以让 AI 按一句话描述生成步骤草稿，也可以自己添加、删除、调序并逐步配置。" />
   <HelpNote message="联动插件和旁路阻断会改变设备或网络，执行前都要核对保护名单；取消流程不等于设备动作已经回滚。" />
 
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <StatePanel
     v-else-if="state === 'empty'"
-    state="empty"
+    empty
     title="尚未配置响应剧本"
     description="用 AI 生成一份草稿，或从空白开始添加步骤。"
     action="创建剧本"

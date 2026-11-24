@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
@@ -9,8 +10,9 @@ import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.v
 import { inspectRules } from '../../../web/packages/shared/src/utils/ruleSyntax';
 import { formatBytes } from '../../../web/packages/shared/src/utils/format';
 import { exampleRule } from '../data/fixtures';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { taskTones } from '../data/statuses';
@@ -56,24 +58,38 @@ const target = ref('总部核心探针'),
   mode = ref('package'),
   rule = ref(exampleRule),
   selected = ref(sampleRows.value[0]!);
-const items = computed(() => (props.state === 'empty' ? [] : props.tasks ? taskRows.value : sampleRows.value));
+type ReplayRow = (typeof sampleRows.value)[number] | (typeof taskRows.value)[number];
+const items = computed<ReplayRow[]>(() =>
+  props.state === 'empty' ? [] : props.tasks ? taskRows.value : sampleRows.value,
+);
+function openRow(record: ReplayRow, view: 'detail' | 'test') {
+  if ('status' in record) {
+    showTask(record);
+    return;
+  }
+  selected.value = record;
+  if (view === 'detail') detail.value = true;
+  else testing.value = true;
+}
 const columns = computed(() =>
   props.tasks
     ? [
+        { title: '任务编号', dataIndex: 'id', width: 150, ellipsis: true, className: 'mono' },
         { title: '重放任务', key: 'name', width: 220 },
         { title: '执行探针', dataIndex: 'sensor', width: 160 },
         { title: '规则来源', dataIndex: 'source', width: 200 },
         { title: '状态', key: 'status', width: 130 },
         { title: '创建时间', dataIndex: 'time', width: 180 },
-        { title: '操作', key: 'action', width: 100 },
+        { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
       ]
     : [
+        { title: '样本编号', dataIndex: 'id', width: 160, ellipsis: true, className: 'mono' },
         { title: '样本名称', key: 'name', width: 250 },
         { title: '格式 / 大小', key: 'size', width: 150 },
         { title: '摘要状态', dataIndex: 'sha', width: 200 },
         { title: '导入时间', dataIndex: 'created', width: 180 },
         { title: '保留至', dataIndex: 'expires', width: 180 },
-        { title: '操作', key: 'action', width: 110 },
+        { title: '操作', key: 'action', width: 110, fixed: 'right' as const },
       ],
 );
 watch(
@@ -169,6 +185,7 @@ function goSamples() {
 </script>
 <template>
   <PageHeader
+    :help-entries="helpEntries"
     v-if="!embedded"
     :title="tasks ? '重放任务' : '重放样本'"
     :description="
@@ -204,10 +221,15 @@ function goSamples() {
       <h2>{{ tasks ? '重放任务' : '样本列表' }}</h2>
       <span class="muted">{{ tasks ? '本地与平台来源分别标识' : '默认保留 180 天 · 单文件上限 100 MiB' }}</span>
     </div>
-    <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+    <StatePanel
+      v-if="state === 'loading' || state === 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      @retry="emit('state', 'data')"
+    />
     <StatePanel
       v-else-if="!items.length"
-      state="empty"
+      empty
       :title="tasks ? '暂无重放任务' : '暂无重放样本'"
       :description="
         tasks
@@ -217,32 +239,31 @@ function goSamples() {
       :action="tasks ? '选择样本' : '导入 PCAP'"
       @action="tasks ? goSamples() : (importing = true)"
     />
-    <a-table
+    <ListTable
       v-else
       :columns="columns"
       :data-source="items"
       row-key="id"
       :pagination="tablePagination()"
-      :scroll="{ x: tasks ? 990 : 1070 }"
-      size="middle"
+      :scroll="{ x: tasks ? 1140 : 1230 }"
       ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'name'"
-          ><button class="record-link" @click="tasks ? showTask(record) : ((selected = record), (detail = true))">
-            {{ record.name }}</button
-          ><small class="row-id">{{ record.id }}</small></template
-        ><template v-else-if="column.key === 'size'">{{ record.format }} · {{ formatBytes(record.size) }}</template
+        ><button
+          v-if="column.key === 'name'"
+          class="record-link"
+          :title="record.name"
+          @click="openRow(record, 'detail')"
+        >
+          {{ record.name }}</button
+        ><template v-else-if="column.key === 'size' && 'size' in record"
+          >{{ record.format }} · {{ formatBytes(record.size) }}</template
         ><StatusTag
-          v-else-if="column.key === 'status'"
+          v-else-if="column.key === 'status' && 'status' in record"
           :value="record.status"
           :tone="statusTone(taskTones, record.status)"
-        /><a-button
-          v-else-if="column.key === 'action'"
-          type="link"
-          size="small"
-          @click="tasks ? showTask(record) : ((selected = record), (testing = true))"
-          >{{ tasks ? '查看' : '重放测试' }}</a-button
-        ></template
-      ></a-table
+        /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="openRow(record, 'test')">{{
+          tasks ? '查看' : '重放测试'
+        }}</a-button></template
+      ></ListTable
     >
   </section>
   <a-modal :open="importing" title="导入 PCAP" ok-text="保存样本信息" @cancel="close" @ok="upload"
@@ -291,11 +312,10 @@ function goSamples() {
   <a-modal :open="detail" :title="tasks ? '重放任务详情' : '重放样本详情'" :width="780" :footer="null" @cancel="close"
     ><StatePanel
       v-if="tasks && taskLinkError"
-      state="error"
+      :error="taskLinkError"
       title="无法读取示例任务"
-      :description="taskLinkError"
       action="关闭"
-      @action="close"
+      @retry="close"
     /><template v-else-if="tasks && currentTask.status === '示例报告'"
       ><a-alert
         message="工程任务详情独立于近期列表读取。执行截止与记录保留分别展示，未确认和结果未知的本地记录受清理保护；本原型仅演示档案。"
@@ -323,7 +343,7 @@ function goSamples() {
       </p></template
     ><StatePanel
       v-else-if="tasks"
-      state="empty"
+      empty
       title="尚无原生执行结果"
       description="此草稿只保存在原型内存中，包数、命中、耗时与执行日志均无数据。"
       action="关闭"

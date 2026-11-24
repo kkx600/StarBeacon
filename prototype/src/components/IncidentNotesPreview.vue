@@ -1,17 +1,14 @@
 <script setup lang="ts">
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import { computed, shallowRef, toRaw, useTemplateRef, watch } from 'vue';
-import {
-  Modal as AModal,
-  Table as ATable,
-  Tag as ATag,
-  Descriptions as ADescriptions,
-  Timeline as ATimeline,
-} from 'ant-design-vue';
+import { Modal as AModal, Descriptions as ADescriptions, Timeline as ATimeline } from 'ant-design-vue';
 import type { IncidentRecord } from '../../../web/platform/src/features/incidents/incident';
 import {
   noteStatuses,
+  noteStatusTones,
   noteSpecError,
   validNoteRecord,
   type IncidentNoteAttempt,
@@ -52,11 +49,12 @@ const actor = 'admin_example',
   );
 const history = computed(() => versions.get(selected.value?.id ?? '') ?? []);
 const columns = [
+  { title: '笔记编号', dataIndex: 'id', width: 150, ellipsis: true, className: 'mono' },
   { title: '笔记标题', key: 'title', width: 280 },
   { title: '状态', key: 'status', width: 110 },
   { title: '作者', dataIndex: 'author_name', width: 150 },
   { title: '记录时间', key: 'time', width: 190 },
-  { title: '操作', key: 'actions', width: 80 },
+  { title: '操作', key: 'actions', width: 80, fixed: 'right' as const },
 ];
 function example(): IncidentNoteRecord {
   const withdrawn = props.scenario === 'withdrawn',
@@ -290,27 +288,29 @@ function close() {
         :empty="!records.length"
         description="当前示例范围内没有调查笔记。"
         @retry="readRetried = true"
-        ><a-table
+        ><ListTable
           :data-source="records"
           :columns="columns"
           row-key="id"
           :pagination="tablePagination()"
-          :scroll="{ x: 810 }"
+          :scroll="{ x: 960 }"
           ><template #bodyCell="{ column, record }"
-            ><a-button
+            ><button
               v-if="column.key === 'title'"
-              type="link"
-              class="note-title"
+              class="record-link"
+              :title="record.spec.title"
               @click="inspect(record as IncidentNoteRecord)"
-              >{{ record.spec.title }}</a-button
-            ><a-tag v-else-if="column.key === 'status'" :color="record.spec.status === 'active' ? 'blue' : undefined">{{
-              noteStatuses[record.spec.status as keyof typeof noteStatuses]
-            }}</a-tag
-            ><span v-else-if="column.key === 'time'">{{ formatTime(record.recorded_at) }}</span
-            ><a-button v-else-if="column.key === 'actions'" type="link" @click="inspect(record as IncidentNoteRecord)"
+            >
+              {{ record.spec.title }}</button
+            ><StatusTag
+              v-else-if="column.key === 'status'"
+              :value="noteStatuses[record.spec.status]"
+              :tone="noteStatusTones[record.spec.status]"
+            /><span v-else-if="column.key === 'time'">{{ formatTime(record.recorded_at) }}</span
+            ><a-button v-else-if="column.key === 'actions'" type="link" size="small" @click="inspect(record)"
               >查看</a-button
             ></template
-          ></a-table
+          ></ListTable
         ></StatePanel
       ></template
     >
@@ -333,9 +333,9 @@ function close() {
         ><a-descriptions-item label="笔记标识"
           ><span class="technical">{{ selected.id }}</span></a-descriptions-item
         ><a-descriptions-item label="笔记状态"
-          ><a-tag :color="selected.spec.status === 'active' ? 'blue' : undefined">{{
-            noteStatuses[selected.spec.status]
-          }}</a-tag></a-descriptions-item
+          ><StatusTag
+            :value="noteStatuses[selected.spec.status]"
+            :tone="noteStatusTones[selected.spec.status]" /></a-descriptions-item
         ><a-descriptions-item label="原始作者">{{ selected.author_name }}</a-descriptions-item
         ><a-descriptions-item label="建立时间">{{ formatTime(selected.created_at) }}</a-descriptions-item
         ><a-descriptions-item label="最近记录"

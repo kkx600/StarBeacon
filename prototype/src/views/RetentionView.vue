@@ -7,9 +7,10 @@ import { computed, ref, watch } from 'vue';
 import { DownloadOutlined, SettingOutlined, LockOutlined } from '@ant-design/icons-vue';
 import type { PageSpec, PreviewState } from '../models';
 import { useRecords, exportCsv } from '../composables/useRecords';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import ModalFooter from '../components/ModalFooter.vue';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { configurationTones } from '../data/statuses';
@@ -87,7 +88,10 @@ function submit() {
 }
 </script>
 <template>
-  <PageHeader title="留存与证据保全" description="按租户与数据类别管理期限，变更前核对容量、清理影响与保全范围。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="留存与证据保全"
+    description="按租户与数据类别管理期限，变更前核对容量、清理影响与保全范围。"
     ><a-space
       ><a-button @click="exportCsv(page, records)"><DownloadOutlined />导出策略</a-button
       ><a-button type="primary" @click="edit(records[0]!.id)"><SettingOutlined />调整留存策略</a-button></a-space
@@ -108,11 +112,12 @@ function submit() {
         </div>
         <StatePanel
           v-if="state === 'loading' || state === 'error'"
-          :state="state"
-          @action="emit('state', 'data')"
+          :loading="state === 'loading'"
+          :error="state === 'error'"
+          @retry="emit('state', 'data')"
         /><StatePanel
           v-else-if="state === 'empty'"
-          state="empty"
+          empty
           title="尚未产生业务数据"
           description="默认留存策略已经适用；接入数据源后将显示占用与保全数量。"
           action="查看默认策略"

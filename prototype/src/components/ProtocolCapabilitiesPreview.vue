@@ -3,8 +3,9 @@ import HelpNote from './HelpNote.vue';
 import { computed, shallowRef } from 'vue';
 import { Modal as AModal } from 'ant-design-vue';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import ProtocolCapabilities from '../../../web/packages/shared/src/components/ProtocolCapabilities.vue';
 import ProtocolCapabilityDetails from '../../../web/packages/shared/src/components/ProtocolCapabilityDetails.vue';
 import ProtocolCapabilitiesDialog from '../../../web/packages/shared/src/components/ProtocolCapabilitiesDialog.vue';
@@ -32,7 +33,10 @@ const report = computed(() =>
 );
 </script>
 <template>
-  <PageHeader title="协议能力" description="按探针、检测引擎和配置摘要，核对六层协议能力及显式检测限额。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="协议能力"
+    description="按探针、检测引擎和配置摘要，核对六层协议能力及显式检测限额。"
     ><a-button @click="qualityOpen = true">检测质量</a-button
     ><a-button @click="emit('state', 'action')">查看协议能力</a-button></PageHeader
   >
@@ -42,7 +46,7 @@ const report = computed(() =>
       <h2>协议能力目录</h2>
       <span class="muted">总部核心探针 · 总部站点</span>
     </div>
-    <div><StatePanel v-if="state === 'loading'" state="loading" /><ProtocolCapabilities v-else :report="report" /></div>
+    <div><StatePanel v-if="state === 'loading'" loading /><ProtocolCapabilities v-else :report="report" /></div>
   </section>
   <ProtocolCapabilitiesDialog
     :open="state === 'action'"

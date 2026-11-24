@@ -131,23 +131,6 @@ h2 {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.state-panel {
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  text-align: center;
-  color: var(--muted);
-}
-.state-panel h3,
-.state-panel p {
-  margin: 0;
-  line-height: 1.6;
-  max-width: 65ch;
-}
 .detail-content {
   max-height: 68vh;
   overflow: auto;

@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { shallowRef } from 'vue';
-import { Modal as AModal, Table as ATable, Tabs as ATabs } from 'ant-design-vue';
+import { Modal as AModal, Tabs as ATabs } from 'ant-design-vue';
 import MCPResourceGuide from '../../../web/platform/src/features/mcp/MCPResourceGuide.vue';
 const ATabPane = ATabs.TabPane;
 const open = shallowRef(false),
@@ -41,7 +42,7 @@ function openDirectory() {
       description="以下为静态接入目录，不代表当前身份已发现或获准使用全部工具和资源。原型不建立 MCP 会话，不读取真实业务数据。" /><a-tabs
       v-model:active-key="tab"
       ><a-tab-pane key="tools" tab="工具目录"
-        ><a-table
+        ><ListTable
           :data-source="rows"
           :columns="columns"
           row-key="name"

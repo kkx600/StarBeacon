@@ -9,8 +9,9 @@ import PKIDetail from '../../../web/platform/src/features/sensors/PKIDetail.vue'
 import EnrollmentForm from '../../../web/platform/src/features/sensors/EnrollmentForm.vue';
 import PKIRevocationDialog from '../../../web/platform/src/features/sensors/PKIRevocationDialog.vue';
 import type { RevocationTarget } from '../../../web/platform/src/features/sensors/useProbeRevocation';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>();
 const route = useRoute(),
@@ -75,7 +76,10 @@ function revokeExample() {
 }
 </script>
 <template>
-  <PageHeader title="注册与证书" description="核对生产探针注册凭据、签发记录和证书吊销状态。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="注册与证书"
+    description="核对生产探针注册凭据、签发记录和证书吊销状态。"
     ><a-button @click="emit('state', 'data')">刷新</a-button
     ><a-button
       v-if="mode === 'enrollments'"
@@ -94,15 +98,18 @@ function revokeExample() {
     <a-button :type="mode === 'enrollments' ? 'primary' : 'default'" @click="select('enrollments')">注册凭据</a-button
     ><a-button :type="mode === 'certificates' ? 'primary' : 'default'" @click="select('certificates')"
       >证书目录</a-button
-    ><a-tag v-if="mode === 'certificates'">{{ certificate.sensor_id }}</a-tag>
+    ><span v-if="mode === 'certificates'" class="mono">{{ certificate.sensor_id }}</span>
   </div>
   <section class="panel">
     <StatePanel
       v-if="['empty', 'error', 'loading'].includes(state)"
-      :state="state as 'empty' | 'error' | 'loading'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      empty
       :title="state === 'empty' ? '暂无' + (mode === 'enrollments' ? '注册凭据' : '托管证书') : undefined"
       :description="state === 'empty' ? '核对当前探针和目录范围。开发证书不进入托管证书目录。' : undefined"
       action="重新加载"
+      @retry="emit('state', 'data')"
       @action="emit('state', 'data')"
     /><PKITable
       v-else

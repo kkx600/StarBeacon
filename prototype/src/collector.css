@@ -78,12 +78,6 @@
   font-weight: 500;
   overflow-wrap: anywhere;
 }
-.collector-filter {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) 200px auto;
-  gap: 12px;
-  max-width: 740px;
-}
 .collector-footnote {
   font-size: 12px;
   color: var(--muted);
@@ -121,9 +115,6 @@
   display: flex;
   margin-top: var(--section-gap);
   line-height: 1.8;
-}
-.collector-shell .ant-table-cell {
-  overflow-wrap: anywhere;
 }
 .collector-catalog {
   margin-top: var(--section-gap);

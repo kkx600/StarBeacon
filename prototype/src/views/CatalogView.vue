@@ -6,7 +6,8 @@ import { useRouter } from 'vue-router';
 import { SearchOutlined, ArrowRightOutlined, PictureOutlined, LinkOutlined } from '@ant-design/icons-vue';
 import { groups, pages, states } from '../data/catalog';
 import { workspaces, workspaceForPage } from '../data/navigation';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import { collectorPages } from '../data/collector';
 const catalogMode = ref('platform');
@@ -39,7 +40,10 @@ const systemPages = [
 ];
 </script>
 <template>
-  <PageHeader title="页面目录" description="浏览全页面原型，逐页检查有数据、无数据、详情、操作、加载与失败状态。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="页面目录"
+    description="浏览全页面原型，逐页检查有数据、无数据、详情、操作、加载与失败状态。"
     ><a-button type="primary" @click="router.push('/page/overview')">进入态势总览<ArrowRightOutlined /></a-button
   ></PageHeader>
   <MetricBar

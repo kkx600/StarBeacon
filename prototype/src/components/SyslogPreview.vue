@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HelpNote from './HelpNote.vue';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import { computed, reactive } from 'vue';
 import { emptySourceQuery } from '../../../web/packages/shared/src/syslog';
 import SyslogSourceFilters from '../../../web/packages/shared/src/components/SyslogSourceFilters.vue';
@@ -8,7 +9,7 @@ import SyslogSources from '../../../web/packages/shared/src/components/SyslogSou
 import SyslogLogs from '../../../web/packages/shared/src/components/SyslogLogs.vue';
 import type { PreviewState } from '../models';
 import { syslogSource, syslogLog } from '../data/syslog';
-import StatePanel from './StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 const props = defineProps<{ state: PreviewState; logs?: boolean; local?: boolean }>(),
   emit = defineEmits<{ state: [state: PreviewState] }>();
 const filters = reactive(emptySourceQuery());
@@ -27,6 +28,7 @@ function change(value: string) {
     @state="change"
   /><template v-else>
     <PageHeader
+      :help-entries="helpEntries"
       v-if="!local"
       title="Syslog 接收"
       description="核对采集器的固定日志来源、接收状态与持久缓冲，不以日志正文声明设备或租户身份。"
@@ -50,8 +52,12 @@ function change(value: string) {
       </div>
       <StatePanel
         v-if="['loading', 'error', 'empty'].includes(state)"
-        :state="state as 'loading' | 'error' | 'empty'"
+        :loading="state === 'loading'"
+        :error="state === 'error'"
+        empty
         description="当前条件下没有 Syslog 来源。请调整筛选，或配置采集器来源文件后核对心跳。"
+        @retry="emit('state', 'data')"
+        action="重新加载"
         @action="emit('state', 'data')"
       /><SyslogSources
         v-else

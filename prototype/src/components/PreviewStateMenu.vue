@@ -23,3 +23,11 @@ function selectState({ key }: { key: string | number }) {
     </template>
   </a-dropdown>
 </template>
+
+<style scoped>
+@media (max-width: 1180px) {
+  .preview-state-prefix {
+    display: none;
+  }
+}
+</style>

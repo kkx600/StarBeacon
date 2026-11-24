@@ -9,10 +9,11 @@ import { createFixtures } from '../data/fixtures';
 import { exportJson, useRecords } from '../composables/useRecords';
 import { sensorThresholds as thresholds } from '../composables/useSensorHealth';
 import { sensorMetrics } from '../data/sensorHealth';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import ChartPanel from '../components/ChartPanel.vue';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { alertTones, severityTones } from '../data/statuses';
@@ -137,7 +138,7 @@ function close() {
 }
 </script>
 <template>
-  <PageHeader title="态势总览" description="聚焦当前风险、观测覆盖与处置进度。"
+  <PageHeader :help-entries="helpEntries" title="态势总览" description="聚焦当前风险、观测覆盖与处置进度。"
     ><a-space
       ><a-select
         v-model:value="domain"
@@ -155,10 +156,15 @@ function close() {
     ></PageHeader
   >
   <MetricBar v-if="state !== 'loading' && state !== 'error'" :items="metrics" />
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <StatePanel
     v-else-if="empty"
-    state="empty"
+    empty
     title="尚未形成态势数据"
     description="接入网络探针或授权数据源后，将显示告警、资产风险和观测覆盖。"
     action="接入数据源"

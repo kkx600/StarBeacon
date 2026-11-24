@@ -5,14 +5,15 @@ import { DownloadOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import TimeRangeField from '../../../web/packages/shared/src/components/TimeRangeField.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 import { retentionPolicy } from '../composables/systemSettings';
 
@@ -137,7 +138,7 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
 </script>
 
 <template>
-  <PageHeader :title="page.title" :description="page.description">
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description">
     <a-space wrap :size="16">
       <span class="traffic-policy-now">
         留存策略：{{ retentionPolicy }}
@@ -154,7 +155,12 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
   />
   <HelpNote message="本页为合成示例，数字不代表实测结果。" />
 
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <template v-else>
     <MetricBar :items="metrics" />
 
@@ -188,7 +194,7 @@ const settingsLink = { path: '/page/system-settings', query: { section: 'traffic
       </div>
       <StatePanel
         v-if="!rows.length"
-        state="empty"
+        empty
         title="没有找到会话"
         description="当前时间范围内没有会话记录。请确认探针在线，或放宽时间范围。"
         action="查看留存策略"

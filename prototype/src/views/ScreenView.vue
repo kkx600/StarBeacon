@@ -12,7 +12,7 @@ import { sensorThresholds as thresholds } from '../composables/useSensorHealth';
 import { healthFor, sensorMetrics } from '../data/sensorHealth';
 import ChartPanel from '../components/ChartPanel.vue';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { healthTones, severityTones } from '../data/statuses';
@@ -159,11 +159,12 @@ function fullscreen() {
     </header>
     <MetricBar v-if="state !== 'loading' && state !== 'error'" :items="metrics" dark /><StatePanel
       v-if="state === 'loading' || state === 'error'"
-      :state="state"
-      @action="emit('state', 'data')"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      @retry="emit('state', 'data')"
     /><StatePanel
       v-else-if="state === 'empty'"
-      state="empty"
+      empty
       title="尚未形成态势数据"
       description="接入网络探针与授权数据源后显示风险与运营状态。"
       action="接入数据源"

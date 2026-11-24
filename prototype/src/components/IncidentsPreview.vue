@@ -1,16 +1,24 @@
 <script setup lang="ts">
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { defaultPageSize, tablePagination } from '../../../web/packages/shared/src/pagination';
 import { computed, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import IncidentNotesPreview from './IncidentNotesPreview.vue';
 import IncidentDetail from '../../../web/platform/src/features/incidents/IncidentDetail.vue';
 import IncidentForm from '../../../web/platform/src/features/incidents/IncidentForm.vue';
 import IncidentTasksModal from '../../../web/platform/src/features/incidents/IncidentTasksModal.vue';
-import type { IncidentRecord, IncidentInput } from '../../../web/platform/src/features/incidents/incident';
+import {
+  incidentStatuses,
+  incidentStatusTones,
+  type IncidentRecord,
+  type IncidentInput,
+} from '../../../web/platform/src/features/incidents/incident';
 import type {
   IncidentTaskRecord,
   IncidentTaskInput,
@@ -251,11 +259,12 @@ watch(
   { immediate: true },
 );
 const columns = [
+  { title: '事件编号', dataIndex: 'id', width: 150, ellipsis: true, className: 'mono' },
   { title: '事件标题', key: 'title', width: 300 },
   { title: '状态', key: 'status', width: 120 },
   { title: '责任人', dataIndex: 'owner_name', width: 170 },
   { title: '建立时间', key: 'time', width: 190 },
-  { title: '操作', key: 'actions', width: 100 },
+  { title: '操作', key: 'actions', width: 100, fixed: 'right' as const },
 ];
 const empty = computed(() => ['empty', 'loading', 'error'].includes(props.state));
 function saveCase(input: IncidentInput) {
@@ -295,7 +304,10 @@ function closeNotes() {
 }
 </script>
 <template>
-  <PageHeader title="事件调查" description="关联检测事实与人工线索，记录责任分派、协作任务和可复核的结案依据。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="事件调查"
+    description="关联检测事实与人工线索，记录责任分派、协作任务和可复核的结案依据。"
     ><a-button @click="emit('state', 'data')">刷新</a-button
     ><a-button
       type="primary"
@@ -314,36 +326,43 @@ function closeNotes() {
   <section class="panel">
     <StatePanel
       v-if="empty"
-      :state="state as 'empty' | 'loading' | 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      empty
       title="安全事件"
       description="当前条件下没有可读取的事件调查。"
       action="重新加载"
+      @retry="emit('state', 'data')"
       @action="emit('state', 'data')"
-    /><a-table
+    /><ListTable
       v-else
       :data-source="[parent]"
       :columns="columns"
       row-key="id"
       :pagination="tablePagination()"
-      :scroll="{ x: 880 }"
+      :scroll="{ x: 1030 }"
       ><template #bodyCell="{ column, record }"
-        ><a-button
+        ><button
           v-if="column.key === 'title'"
-          type="link"
+          class="record-link"
+          :title="record.spec.title"
           @click="
             detailOpen = true;
             formOpen = false;
             taskOpen = false;
             notesOpen = false;
           "
-          >{{ record.spec.title }}</a-button
-        ><a-tag v-else-if="column.key === 'status'" :color="record.spec.status === 'closed' ? 'green' : 'blue'">{{
-          record.spec.status === 'closed' ? '已结案' : '处理中'
-        }}</a-tag
-        ><span v-else-if="column.key === 'time'">2026-10-18 09:00:00</span
+        >
+          {{ record.spec.title }}</button
+        ><StatusTag
+          v-else-if="column.key === 'status'"
+          :value="incidentStatuses[record.spec.status]"
+          :tone="incidentStatusTones[record.spec.status]"
+        /><span v-else-if="column.key === 'time'">2026-10-18 09:00:00</span
         ><a-button
           v-else-if="column.key === 'actions'"
           type="link"
+          size="small"
           @click="
             detailOpen = true;
             formOpen = false;
@@ -352,7 +371,7 @@ function closeNotes() {
           "
           >查看</a-button
         ></template
-      ></a-table
+      ></ListTable
     >
   </section>
   <IncidentDetail

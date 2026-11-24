@@ -2,7 +2,7 @@
 import HelpNote from './HelpNote.vue';
 import { computed, shallowRef, watch } from 'vue';
 import type { PreviewState } from '../models';
-import StatePanel from './StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import ResponseConnectors from '../../../web/packages/shared/src/components/ResponseConnectors.vue';
 import ResponseConfigCheckDialog from '../../../web/packages/shared/src/components/ResponseConfigCheckDialog.vue';
 import type { ResponseConnector } from '../../../web/packages/shared/src/response';
@@ -54,9 +54,9 @@ function close() {
 <template>
   <StatePanel
     v-if="['loading', 'error'].includes(state)"
-    :state="state as 'loading' | 'error'"
-    :description="state === 'error' ? '设备目录未能读取，当前认证与配置状态未知。请刷新核对。' : undefined"
-    @action="emit('state', 'data')"
+    :loading="state === 'loading'"
+    :error="state === 'error' && '设备目录未能读取，当前认证与配置状态未知。请刷新核对。'"
+    @retry="emit('state', 'data')"
   /><template v-else
     ><HelpNote
       message="以下为合成目录，与工程端使用相同的设备列表、详情及本地配置核对组件，不读取本机文件或连接设备。" />

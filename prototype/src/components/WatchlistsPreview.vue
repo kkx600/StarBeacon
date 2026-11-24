@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import HelpNote from './HelpNote.vue';
 import { computed, onScopeDispose, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Select as ASelect } from 'ant-design-vue';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import WatchlistTable from '../../../web/packages/shared/src/components/WatchlistTable.vue';
 import WatchlistForm from '../../../web/packages/shared/src/components/WatchlistForm.vue';
 import WatchlistDetail from '../../../web/packages/shared/src/components/WatchlistDetail.vue';
@@ -299,7 +301,10 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <PageHeader title="保护与观察名单" description="核对名单用途、固定探针范围、业务有效期和历史修订。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="保护与观察名单"
+    description="核对名单用途、固定探针范围、业务有效期和历史修订。"
     ><a-button @click="emit('state', 'data')">刷新</a-button
     ><a-button type="primary" :disabled="loading || forbidden || busy" @click="create">{{
       unconfirmed ? '核对原提交' : '创建名单'
@@ -317,10 +322,11 @@ onScopeDispose(() => {
     description="原合成请求与输入已保留，请点击核对原提交继续确认。"
     class="section-gap"
   />
-  <section class="panel watchlist-filter">
-    <form class="watchlist-query" @submit.prevent="search">
+  <form @submit.prevent="search">
+    <ListFilters label="名单筛选" :columns="3">
       <label for="preview-watchlist-keyword"
-        >名单名称<a-input
+        ><span>名单名称</span
+        ><a-input
           id="preview-watchlist-keyword"
           v-model:value="keyword"
           aria-label="筛选名单名称"
@@ -328,7 +334,8 @@ onScopeDispose(() => {
           placeholder="名单名称"
           allow-clear /></label
       ><label for="preview-watchlist-kind"
-        >名单类型<a-select
+        ><span>名单类型</span
+        ><a-select
           id="preview-watchlist-kind"
           v-model:value="kind"
           :options="[
@@ -336,7 +343,8 @@ onScopeDispose(() => {
             ...Object.entries(watchlistKinds).map(([value, label]) => ({ value, label })),
           ]" /></label
       ><label for="preview-watchlist-active"
-        >配置状态<a-select
+        ><span>配置状态</span
+        ><a-select
           id="preview-watchlist-active"
           v-model:value="active"
           aria-label="筛选名单配置状态"
@@ -345,21 +353,21 @@ onScopeDispose(() => {
             { value: 'true', label: '启用' },
             { value: 'false', label: '停用' },
           ]" /></label
-      ><a-space
+      ><template #actions
         ><a-button html-type="submit" type="primary">查询</a-button
-        ><a-button @click="resetFilters">重置</a-button></a-space
+        ><a-button @click="resetFilters">重置</a-button></template
       >
-    </form>
-  </section>
+    </ListFilters>
+  </form>
   <section class="panel">
     <StatePanel
       v-if="loading || pageError"
-      :state="loading ? 'loading' : 'error'"
-      :description="pageError"
-      @action="emit('state', 'data')"
+      :loading="loading"
+      :error="pageError"
+      @retry="emit('state', 'data')"
     /><StatePanel
       v-else-if="!filtered.length"
-      state="empty"
+      empty
       title="暂无名单"
       description="当前示例范围内没有匹配记录，可调整筛选或创建停用名单。"
       action="创建名单"
@@ -417,23 +425,3 @@ onScopeDispose(() => {
     @close="close"
   />
 </template>
-<style scoped>
-.watchlist-filter {
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.watchlist-query {
-  display: flex;
-  gap: var(--related-gap);
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-.watchlist-query label {
-  display: grid;
-  gap: var(--label-gap);
-  min-width: 0;
-}
-.watchlist-filter :deep(.ant-select) {
-  min-width: 160px;
-}
-</style>

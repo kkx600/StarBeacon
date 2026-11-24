@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import { computed, h, reactive, ref, watch, type Component } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -33,12 +34,13 @@ import {
   retentionPolicy,
   storageTiers,
 } from '../composables/systemSettings';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import HelpNote from '../components/HelpNote.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { configurationTones } from '../data/statuses';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
 
 // 系统设置：所有对全员生效的配置集中在这里，业务页面只读显示当前值并链接回对应分类。
@@ -307,7 +309,7 @@ watch(
 </script>
 
 <template>
-  <PageHeader :title="page.title" :description="page.description" />
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description" />
   <HelpNote :message="current.help" />
 
   <div class="settings-layout">
@@ -325,23 +327,27 @@ watch(
         <router-link v-else-if="section === 'automation'" to="/page/decision-policies">管理决策策略</router-link>
       </header>
 
-      <StatePanel v-if="busy" :state="state === 'loading' ? 'loading' : 'error'" @action="emit('state', 'data')" />
+      <StatePanel
+        v-if="busy"
+        :loading="state === 'loading'"
+        :error="state === 'error'"
+        @retry="emit('state', 'data')"
+      />
 
       <template v-else-if="section === 'users'">
         <StatePanel
           v-if="!userRows.length"
-          state="empty"
+          empty
           title="还没有用户"
           description="新建用户后，账号会出现在这里。"
           action="新建用户"
           @action="createUser"
         />
-        <a-table
+        <ListTable
           v-else
           :columns="userColumns"
           :data-source="userRows"
           row-key="id"
-          size="small"
           :scroll="{ x: 920 }"
           :pagination="tablePagination()"
         >
@@ -361,7 +367,7 @@ watch(
               >编辑</a-button
             >
           </template>
-        </a-table>
+        </ListTable>
       </template>
 
       <div v-else-if="section === 'automation'" class="settings-body">
@@ -375,11 +381,10 @@ watch(
           </a-form-item>
         </a-form>
         <h3 class="settings-subhead">各场景的级别</h3>
-        <a-table
+        <ListTable
           :columns="sceneColumns"
           :data-source="automationDraft.scenes"
           row-key="name"
-          size="small"
           :scroll="{ x: 760 }"
           :pagination="false"
         >
@@ -396,7 +401,7 @@ watch(
               text
             }}</span>
           </template>
-        </a-table>
+        </ListTable>
       </div>
 
       <template v-else-if="section === 'bypass'">
@@ -428,18 +433,17 @@ watch(
           </div>
           <StatePanel
             v-if="!policyRows.length"
-            state="empty"
+            empty
             title="还没有阻断策略"
             description="新建并启用策略后，命中的连接才会被阻断。"
             action="新建策略"
             @action="createPolicy"
           />
-          <a-table
+          <ListTable
             v-else
             :columns="policyColumns"
             :data-source="policyRows"
             row-key="id"
-            size="small"
             :scroll="{ x: 930 }"
             :pagination="tablePagination()"
           >
@@ -460,7 +464,7 @@ watch(
                 {{ record.status === '启用' ? '停用' : '启用' }}
               </a-button>
             </template>
-          </a-table>
+          </ListTable>
         </div>
       </template>
 

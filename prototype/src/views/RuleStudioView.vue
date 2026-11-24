@@ -8,8 +8,9 @@ import type { PageSpec, PreviewState } from '../models';
 import RuleEditor from '../../../web/packages/shared/src/components/RuleEditor.vue';
 import { inspectRules } from '../../../web/packages/shared/src/utils/ruleSyntax';
 import { exampleRule } from '../data/fixtures';
-import PageHeader from '../components/PageHeader.vue';
-import StatePanel from '../components/StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import RecordForm from '../components/RecordForm.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 const message = useFeedback();
@@ -84,7 +85,10 @@ function close() {
 }
 </script>
 <template>
-  <PageHeader title="AI 规则生成" description="从需求与样例形成候选规则，再完成验证、回放与签名发布。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="AI 规则生成"
+    description="从需求与样例形成候选规则，再完成验证、回放与签名发布。"
     ><a-button @click="router.push('/page/rules')">规则中心</a-button></PageHeader
   >
   <HelpNote
@@ -95,7 +99,12 @@ function close() {
     class="rule-steps"
     :items="[{ title: '提供需求与证据' }, { title: '生成候选规则' }, { title: '测试与回放' }, { title: '灰度发布' }]"
   />
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <div v-else class="rule-studio-grid">
     <section class="panel">
       <div class="panel-heading">
@@ -160,7 +169,7 @@ function close() {
       </div>
       <StatePanel
         v-if="!generated"
-        state="empty"
+        empty
         title="尚未生成候选规则"
         description="提供自然语言目标、PCAP 或 HTTP Raw 样例后，生成可审核的规则草稿。"
         action="生成候选规则"
@@ -200,7 +209,7 @@ function close() {
             </div>
             <StatePanel
               v-else
-              state="empty"
+              empty
               title="暂无测试报告"
               description="候选需要完成语法、样本回放与资源验证。"
               action="显示示例测试"

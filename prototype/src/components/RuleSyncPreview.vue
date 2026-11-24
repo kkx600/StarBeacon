@@ -1,15 +1,20 @@
 <script setup lang="ts">
+import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
+import { statusTerms } from '../../../web/packages/shared/src/terms.ts';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from './HelpNote.vue';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
+import { statusTone } from '../../../web/packages/shared/src/statusTones.ts';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { computed, shallowRef, watch } from 'vue';
 import type { Sensor } from '../../../web/packages/shared/src/types';
 import type { PreviewState } from '../models';
 import type { RuleSyncChange, RuleSyncPlan } from '../../../web/platform/src/features/rules/sync';
-import { syncStates, syncCodes } from '../../../web/platform/src/features/rules/sync';
+import { syncStates, syncCodes, syncStateTones } from '../../../web/platform/src/features/rules/sync';
 import RuleSyncForm from '../../../web/platform/src/features/rules/RuleSyncForm.vue';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import { prototypePath } from '../data/navigation';
 const message = useFeedback();
 const props = defineProps<{ state: PreviewState }>(),
@@ -84,11 +89,14 @@ const packages = [
 ];
 const items = computed(() => (props.state === 'empty' ? [] : records.value));
 const columns = [
-  { title: '计划 / 探针', key: 'name', width: 240 },
+  { title: '计划编号', dataIndex: 'id', width: 135, ellipsis: true, className: 'mono' },
+  { title: '计划名称', key: 'name', width: 220 },
+  { title: '探针编号', dataIndex: ['spec', 'sensor_id'], width: 148, ellipsis: true, className: 'mono' },
   { title: '批准规则', key: 'package', width: 220 },
-  { title: '状态', key: 'state', width: 170 },
-  { title: '最近更新', key: 'time', width: 180 },
-  { title: '操作', key: 'action', width: 160 },
+  { title: '配置状态', key: 'enabled', width: 90 },
+  { title: '运行状态', key: 'state', width: 120 },
+  { title: '最近更新', key: 'time', width: 162 },
+  { title: '操作', key: 'action', width: 125, fixed: 'right' as const },
 ];
 watch(
   () => props.state,
@@ -116,7 +124,10 @@ function save(c: RuleSyncChange) {
 }
 </script>
 <template>
-  <PageHeader title="规则自动同步" description="管理批准规则修订的同步计划，核对各阶段独立任务与实际执行结果。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="规则自动同步"
+    description="管理批准规则修订的同步计划，核对各阶段独立任务与实际执行结果。"
     ><router-link :to="{ path: prototypePath('rule-rollouts'), query: { state: 'data' } }"
       ><a-button>分批发布</a-button></router-link
     ><a-button @click="emit('state', 'data')">刷新</a-button
@@ -128,37 +139,53 @@ function save(c: RuleSyncChange) {
   <section class="panel">
     <StatePanel
       v-if="['empty', 'error', 'loading'].includes(state)"
-      :state="state as 'empty' | 'error' | 'loading'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      empty
       :title="state === 'empty' ? '暂无规则同步计划' : undefined"
       :description="state === 'empty' ? '创建计划前，请导入正反样本并核对探针执行能力。' : undefined"
       :action="state === 'empty' ? '创建同步计划' : '重新加载'"
-      @action="state === 'empty' ? (editing = null) : emit('state', 'data')"
+      @action="editing = null"
+      @retry="emit('state', 'data')"
     />
-    <a-table
+    <ListTable
       v-else
       :columns="columns"
       :data-source="items"
       row-key="id"
       :pagination="tablePagination()"
-      :scroll="{ x: 970 }"
+      :scroll="{ x: 1220 }"
       ><template #bodyCell="{ column, record }"
-        ><template v-if="column.key === 'name'"
-          ><a-button type="link" @click="detail = record">{{ record.spec.name }}</a-button
-          ><small class="record-id">{{ record.spec.sensor_id }}</small></template
+        ><button
+          v-if="column.key === 'name'"
+          type="button"
+          class="record-link"
+          :title="record.spec.name"
+          @click="detail = record"
+        >
+          {{ record.spec.name }}</button
         ><template v-else-if="column.key === 'package'"
-          >{{ record.spec.package_id
-          }}<small class="record-id"
-            >修订 {{ record.spec.package_revision }} · 授权修订 {{ record.revision }}</small
-          ></template
-        ><template v-else-if="column.key === 'state'"
-          ><a-tag :color="record.spec.enabled ? 'blue' : 'default'">{{ record.spec.enabled ? '启用' : '停用' }}</a-tag
-          ><small class="record-id">{{ record.run ? syncStates[record.run.state] : '待复核' }}</small></template
-        ><template v-else-if="column.key === 'time'">2026-10-17 09:00:00</template
+          >{{ record.spec.package_id }} · 修订 {{ record.spec.package_revision }}</template
+        ><StatusTag
+          v-else-if="column.key === 'enabled'"
+          :value="record.spec.enabled ? '启用' : '停用'"
+          :tone="record.spec.enabled ? statusTerms.启用 : statusTerms.停用"
+        /><StatusTag
+          v-else-if="column.key === 'state'"
+          :value="record.run ? syncStates[record.run.state] : record.processed_revision ? '已过期' : '排队中'"
+          :tone="
+            record.run
+              ? statusTone(syncStateTones, record.run.state)
+              : record.processed_revision
+                ? statusTerms.已过期
+                : statusTerms.排队中
+          "
+        /><template v-else-if="column.key === 'time'">2026-10-17 09:00:00</template
         ><template v-else-if="column.key === 'action'"
-          ><a-button type="link" @click="detail = record">查看</a-button
-          ><a-button type="link" @click="editing = record">配置</a-button></template
+          ><a-button type="link" size="small" @click="detail = record">查看</a-button
+          ><a-button type="link" size="small" @click="editing = record">配置</a-button></template
         ></template
-      ></a-table
+      ></ListTable
     >
   </section>
   <RuleSyncForm
@@ -203,18 +230,3 @@ function save(c: RuleSyncChange) {
     ></a-modal
   >
 </template>
-
-<style scoped>
-.record-id {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-.ant-btn-link {
-  height: auto;
-  padding: 0;
-  white-space: normal;
-  text-align: left;
-}
-</style>

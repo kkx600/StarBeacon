@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import HelpNote from './HelpNote.vue';
 import { shallowRef, watch } from 'vue';
 import { Modal as AModal, Select as ASelect } from 'ant-design-vue';
@@ -31,16 +32,17 @@ watch(
 <template>
   <a-modal title="检测质量" :open="open" :width="860" @cancel="emit('close')"
     ><HelpNote message="当前为合成示例，不表示设备实测结果。" />
-    <div class="quality-example-control section-gap">
-      <label for="quality-example-state">观测状态</label
-      ><a-select
-        id="quality-example-state"
-        aria-label="示例观测状态"
-        :value="mode"
-        :options="options"
-        @change="value => select(value as Mode)"
-      />
-    </div>
+    <ListFilters label="观测示例" :columns="1" embedded>
+      <label for="quality-example-state"
+        ><span>观测状态</span
+        ><a-select
+          id="quality-example-state"
+          aria-label="示例观测状态"
+          :value="mode"
+          :options="options"
+          @change="value => select(value as Mode)"
+      /></label>
+    </ListFilters>
     <a-alert
       v-if="mode === 'refresh_error'"
       type="warning"
@@ -53,13 +55,3 @@ watch(
     ></a-modal
   >
 </template>
-<style scoped>
-.quality-example-control {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.quality-example-control .ant-select {
-  width: 180px;
-}
-</style>

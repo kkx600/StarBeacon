@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import TimeRangeField from '../../../web/packages/shared/src/components/TimeRangeField.vue';
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import HelpNote from './HelpNote.vue';
-import { computed, shallowRef, watch } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import DiscoveryPanel from '../../../web/packages/shared/src/components/DiscoveryPanel.vue';
 import InventoryForm from '../../../web/platform/src/features/inventory/InventoryForm.vue';
 import type { InventoryData } from '../../../web/platform/src/features/inventory/inventory';
@@ -11,6 +14,8 @@ import type { DiscoveryResult, DiscoveryAddress } from '../../../web/packages/sh
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>(),
   route = useRoute();
+const start = ref('2026-10-18T08:00:00'),
+  end = ref('2026-10-18T09:00:00');
 const query = {
   network_id: 'network_example',
   network_revision: 3,
@@ -111,15 +116,25 @@ watch(
 );
 </script>
 <template>
-  <PageHeader title="资产被动发现" description="按探针与网段核对流量地址观测，确认身份后登记资产。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="资产被动发现"
+    description="按探针与网段核对流量地址观测，确认身份后登记资产。"
     ><router-link to="/page/assets"><a-button>资产目录</a-button></router-link></PageHeader
   >
   <HelpNote
-    message="本页面使用合成示例，复用工程观测与登记组件。地址计数不等于设备数或独立会话数，也不证明完整捕获覆盖；原型不查询流量或登记实际资产。"
+    message="本页面使用合成示例，复用工程观测与登记组件。单次查询最多返回 512 个地址，每租户每分钟最多 6 次查询。地址计数不等于设备数或独立会话数，也不证明完整捕获覆盖；原型不查询流量或登记实际资产。"
   />
   <a-alert v-if="saved" type="success" show-icon message="示例资产已登记。" class="section-gap" />
-  <a-form layout="vertical" class="panel discovery-preview-form" @finish="emit('state', 'data')"
-    ><div class="discovery-preview-fields">
+  <a-form layout="horizontal" @finish="emit('state', 'data')">
+    <ListFilters label="被动发现筛选" :columns="3">
+      <TimeRangeField
+        id-prefix="preview-discovery"
+        v-model:start="start"
+        v-model:end="end"
+        required
+        end-hint="结束时刻不包含在查询内，窗口最多 24 小时。"
+      />
       <a-form-item label="探针" html-for="preview-discovery-sensor" required
         ><a-select
           id="preview-discovery-sensor"
@@ -135,23 +150,14 @@ watch(
         html-for="preview-discovery-prefix"
         required
         extra="可缩小到已选网段的子网段，使用标准 CIDR。"
-        ><a-input id="preview-discovery-prefix" default-value="192.0.2.0/24" /></a-form-item
-      ><a-form-item label="开始时间（本地时间）" html-for="preview-discovery-start" required
-        ><a-input id="preview-discovery-start" type="datetime-local" default-value="2026-10-18T08:00:00" /></a-form-item
-      ><a-form-item
-        label="结束时间（本地时间）"
-        html-for="preview-discovery-end"
-        required
-        extra="结束时刻不包含在查询内，窗口最多 24 小时。"
-        ><a-input id="preview-discovery-end" type="datetime-local" default-value="2026-10-18T09:00:00"
+        ><a-input id="preview-discovery-prefix" default-value="192.0.2.0/24"
       /></a-form-item>
-    </div>
-    <div class="filter-actions">
-      <a-button type="primary" html-type="submit" :loading="state === 'loading'">执行发现</a-button
-      ><a-button @click="emit('state', 'data')">刷新目录</a-button
-      ><span class="page-description">每次最多 512 个地址 · 每租户每分钟 6 次</span>
-    </div></a-form
-  >
+      <template #actions>
+        <a-button type="primary" html-type="submit" :loading="state === 'loading'">执行发现</a-button>
+        <a-button @click="emit('state', 'data')">刷新目录</a-button>
+      </template>
+    </ListFilters>
+  </a-form>
   <DiscoveryPanel
     :result="result"
     :pending="state === 'loading'"
@@ -184,31 +190,3 @@ watch(
     "
   />
 </template>
-<style scoped>
-.filter-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--related-gap);
-}
-.discovery-preview-form {
-  padding: var(--panel-inset);
-  margin-bottom: var(--section-gap);
-}
-.discovery-preview-fields {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 var(--field-gap);
-}
-.discovery-preview-fields .ant-form-item {
-  min-width: 0;
-}
-.discovery-preview-fields .ant-select {
-  width: 100%;
-}
-@media (max-width: 1200px) {
-  .discovery-preview-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-</style>

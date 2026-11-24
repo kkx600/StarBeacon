@@ -4,11 +4,12 @@ import { PlusOutlined, RobotOutlined, PlayCircleOutlined, SafetyCertificateOutli
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { PageSpec, PreviewState } from '../models';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { configurationTones } from '../data/statuses';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 
 // 联动插件：由采集器访问内网的防火墙、EDR 等设备。简单设备填模板，复杂设备写脚本。
@@ -216,7 +217,7 @@ watch(
 </script>
 
 <template>
-  <PageHeader :title="page.title" :description="page.description">
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description">
     <a-space wrap>
       <a-button @click="aiOpen = true"><RobotOutlined />AI 生成插件</a-button>
       <a-button type="primary" @click="open()"><PlusOutlined />新建插件</a-button>
@@ -231,10 +232,15 @@ watch(
     <div class="table-toolbar">
       <div><h2>插件</h2></div>
     </div>
-    <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+    <StatePanel
+      v-if="state === 'loading' || state === 'error'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      @retry="emit('state', 'data')"
+    />
     <StatePanel
       v-else-if="!rows.length"
-      state="empty"
+      empty
       title="还没有联动插件"
       description="为防火墙、EDR 等设备添加插件后，才能拉取它们的告警或执行封禁。"
       action="新建插件"

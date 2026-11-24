@@ -4,12 +4,13 @@ import { PauseCircleOutlined, PlayCircleOutlined, CheckOutlined, CloseOutlined }
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import type { MetricSpec, PageSpec, PreviewState } from '../models';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { responseTones } from '../data/statuses';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import HelpNote from '../components/HelpNote.vue';
 import { automationLevel } from '../composables/systemSettings';
 
@@ -189,7 +190,7 @@ function togglePause() {
 </script>
 
 <template>
-  <PageHeader :title="page.title" :description="page.description">
+  <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description">
     <a-space wrap :size="16">
       <span class="aiops-level-now">
         自动化级别：{{ automationLevel }}
@@ -205,7 +206,12 @@ function togglePause() {
   <HelpNote message="保护名单、限时和可撤销在每一级自动化下都生效。" />
   <HelpNote message="本页为合成示例，不调用模型，也不向设备下发任务。" />
 
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <template v-else>
     <a-alert
       v-if="paused"
@@ -223,7 +229,7 @@ function togglePause() {
       <template v-if="view === '待确认'">
         <StatePanel
           v-if="!pending.length"
-          state="empty"
+          empty
           title="没有待确认的方案"
           description="AI 给出的处置方案会出现在这里。"
           action="查看处置流水"

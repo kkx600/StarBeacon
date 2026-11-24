@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { statusTerms } from '../../../web/packages/shared/src/terms.ts';
 import HelpNote from './HelpNote.vue';
 import { useFeedback } from '../../../web/packages/shared/src/composables/useFeedback';
 import { computed, ref, watch } from 'vue';
@@ -10,7 +11,7 @@ import { formatCell } from '../composables/formatRecord';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { evidenceStatusTone, recordStatusTone } from '../data/statuses';
 import PacketWorkbench from './PacketWorkbench.vue';
-import StatePanel from './StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import SensorDetail from './SensorDetail.vue';
 import PcapDetail from './PcapDetail.vue';
 import AlertTriage from './AlertTriage.vue';
@@ -211,7 +212,7 @@ function addNote() {
               <PacketWorkbench :packets="packetRows" compact /></template
             ><StatePanel
               v-else
-              state="empty"
+              empty
               title="未提供关联原生会话"
               description="此条合成告警尚无对应 PCAP 样例。当前元数据可查看，但不能用无关会话作为证据。"
               action="查看告警信息"
@@ -274,7 +275,10 @@ function addNote() {
                       ({ target }: { target: { checked: boolean } }) =>
                         target.checked ? completed.push(task) : completed.splice(completed.indexOf(task), 1)
                     "
-                    >{{ task }}</a-checkbox><a-tag>{{ completed.includes(task) ? '已完成' : '待处理' }}</a-tag>
+                    >{{ task }}</a-checkbox><StatusTag
+                    :value="completed.includes(task) ? '已完成' : '待处理'"
+                    :tone="completed.includes(task) ? statusTerms.已完成 : statusTerms.待处理"
+                  />
                 </div>
                 <h3>调查笔记</h3>
                 <a-textarea

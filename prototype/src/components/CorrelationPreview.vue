@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
 import HelpNote from './HelpNote.vue';
 import { computed, ref, shallowRef, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
@@ -18,8 +19,9 @@ import {
 import { goJSONDigest } from '../../../web/packages/shared/src/utils/goJSONDigest';
 import { correlationRule, correlationQuery, correlationResult, correlationEmpty } from '../data/correlation';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
-import StatePanel from './StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 const props = defineProps<{ state: PreviewState; backtest: boolean }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>(),
   router = useRouter();
@@ -132,6 +134,7 @@ watch(() => [props.state, props.backtest], applyState, { immediate: true });
 </script>
 <template>
   <PageHeader
+    :help-entries="helpEntries"
     :title="backtest ? '窗口回测' : '关联规则'"
     :description="backtest ? '核对固定告警快照中的窗口计量、分组边界与证据。' : '维护告警窗口计量条件及不可变修订。'"
     ><a-button v-if="!backtest" type="primary" @click="create()">创建关联规则</a-button
@@ -140,15 +143,21 @@ watch(() => [props.state, props.backtest], applyState, { immediate: true });
   <HelpNote
     message="全部为合成示例；不调用工程 API。窗口回测只描述已进入快照的告警，来源覆盖未经证明；不启用实时关联，不生成告警或设备动作。"
   />
-  <section v-if="!backtest" class="panel">
-    <form class="table-toolbar" @submit.prevent>
-      <h2>规则目录</h2>
+  <ListFilters v-if="!backtest" label="关联规则条件" :columns="2">
+    <label for="correlation-preview-keyword">
+      <span>规则名称</span>
       <a-input
+        id="correlation-preview-keyword"
         v-model:value="keyword"
         aria-label="筛选关联规则名称"
         placeholder="规则名称"
-        style="width: 220px"
-      /><a-select
+        allow-clear
+      />
+    </label>
+    <label for="correlation-preview-active">
+      <span>回测状态</span>
+      <a-select
+        id="correlation-preview-active"
         v-model:value="active"
         aria-label="筛选回测状态"
         :options="[
@@ -156,13 +165,18 @@ watch(() => [props.state, props.backtest], applyState, { immediate: true });
           { value: 'true', label: '允许回测' },
           { value: 'false', label: '停用' },
         ]"
-        style="width: 150px"
       />
-    </form>
+    </label>
+  </ListFilters>
+  <section v-if="!backtest" class="panel">
     <StatePanel
       v-if="state === 'loading' || state === 'error' || !items.length"
-      :state="state === 'loading' ? 'loading' : state === 'error' ? 'error' : 'empty'"
-      :description="state === 'error' ? '示例读取失败状态，工程服务未被调用。' : '当前条件下没有关联规则。'"
+      :loading="state === 'loading'"
+      :error="state === 'error' && '示例读取失败状态，工程服务未被调用。'"
+      empty
+      :description="'当前条件下没有关联规则。'"
+      @retry="emit('state', 'data')"
+      action="重新加载"
       @action="emit('state', 'data')"
     /><CorrelationRuleTable
       v-else
@@ -211,8 +225,12 @@ watch(() => [props.state, props.backtest], applyState, { immediate: true });
       </div>
       <StatePanel
         v-if="state === 'loading' || state === 'error' || !showResult"
-        :state="state === 'loading' ? 'loading' : state === 'error' ? 'error' : 'empty'"
+        :loading="state === 'loading'"
+        :error="state === 'error'"
+        empty
         description="当前没有可交付的回测结果，失败不展示部分事实。"
+        @retry="emit('state', 'data')"
+        action="重新加载"
         @action="emit('state', 'data')"
       /><CorrelationResultTable
         v-else

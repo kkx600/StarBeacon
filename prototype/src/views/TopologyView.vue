@@ -9,9 +9,10 @@ import type { PageSpec, PreviewState } from '../models';
 import { pageById } from '../data/catalog';
 import { createFixtures } from '../data/fixtures';
 import { exportJson } from '../composables/useRecords';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import ChartPanel from '../components/ChartPanel.vue';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { recordStatusTone } from '../data/statuses';
 import RecordForm from '../components/RecordForm.vue';
@@ -82,7 +83,10 @@ function close() {
 }
 </script>
 <template>
-  <PageHeader title="风险拓扑" description="结合业务依赖和观测通信定位风险范围，关系保留来源与有效时间。"
+  <PageHeader
+    :help-entries="helpEntries"
+    title="风险拓扑"
+    description="结合业务依赖和观测通信定位风险范围，关系保留来源与有效时间。"
     ><a-space
       ><a-select
         v-model:value="scope"
@@ -95,10 +99,15 @@ function close() {
     ></PageHeader
   >
   <HelpNote message="拓扑关系为合成演示。通信关联不等于攻击传播；资产归属、代理和 NAT 需要按时间与来源核对。" />
-  <StatePanel v-if="state === 'loading' || state === 'error'" :state="state" @action="emit('state', 'data')" />
+  <StatePanel
+    v-if="state === 'loading' || state === 'error'"
+    :loading="state === 'loading'"
+    :error="state === 'error'"
+    @retry="emit('state', 'data')"
+  />
   <StatePanel
     v-else-if="state === 'empty'"
-    state="empty"
+    empty
     title="尚未形成资产关系"
     description="接入资产、通信或授权业务依赖后，形成可追溯关系。"
     action="查看资产来源"

@@ -3,7 +3,8 @@ import HelpNote from './HelpNote.vue';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { PreviewState } from '../models';
-import PageHeader from './PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import QualityEventsPanel from '../../../web/packages/shared/src/components/QualityEventsPanel.vue';
 import QualityEventsFilters from '../../../web/packages/shared/src/components/QualityEventsFilters.vue';
 import type { QualityPage } from '../../../web/packages/shared/src/qualityEvents';
@@ -72,7 +73,7 @@ function changePage(_page: number, size: number) {
 }
 </script>
 <template>
-  <PageHeader title="质量事件" description="按探针、注册代次和时间窗口核对检测区间历史。"
+  <PageHeader :help-entries="helpEntries" title="质量事件" description="按探针、注册代次和时间窗口核对检测区间历史。"
     ><router-link to="/page/sensors"><a-button>探针列表</a-button></router-link></PageHeader
   >
   <HelpNote

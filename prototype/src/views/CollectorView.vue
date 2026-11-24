@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { statusTerms } from '../../../web/packages/shared/src/terms.ts';
+import ListFilters from '../../../web/packages/shared/src/components/ListFilters.vue';
+import ListTable from '../../../web/packages/shared/src/components/ListTable.vue';
 import HelpNote from '../components/HelpNote.vue';
 import { tablePagination } from '../../../web/packages/shared/src/pagination';
 import { computed, ref, watch, shallowRef } from 'vue';
@@ -15,9 +18,10 @@ import CollectorCapabilityPreview from '../components/CollectorCapabilityPreview
 import type { CollectorAction, CollectorInterface, CollectorTask } from '../data/collector';
 import { useCollector } from '../composables/useCollector';
 import { usePreview } from '../composables/usePreview';
-import PageHeader from '../components/PageHeader.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import MetricBar from '../../../web/packages/shared/src/components/MetricBar.vue';
-import StatePanel from '../components/StatePanel.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
 import StatusTag from '../../../web/packages/shared/src/components/StatusTag.vue';
 import { statusTone } from '../../../web/packages/shared/src/statusTones';
 import { taskTones } from '../data/statuses';
@@ -57,8 +61,8 @@ const action = ref<CollectorAction>('network');
 const localTab = ref('interfaces');
 const keyword = ref('');
 const statusFilter = ref('全部状态');
-const interfaceTones = { 链路正常: 'success', 链路断开: 'neutral', 本机回环: 'neutral' } as const;
-const serviceTones = { 运行中: 'info', 未授权: 'neutral' } as const;
+const interfaceTones = { 链路正常: statusTerms.正常, 链路断开: statusTerms.离线, 本机回环: 'neutral' } as const;
+const serviceTones = { 运行中: statusTerms.运行中, 未授权: 'neutral' } as const;
 const archivePage = { ...pageById.get('packet-archives')!, readOnly: true, primary: '刷新归档' };
 const pageTabs: Record<string, string[]> = {
   network: ['interfaces', 'capture', 'archives', 'replay-samples', 'replay-tasks', 'responses', 'syslog'],
@@ -130,21 +134,23 @@ const primaryAction = computed<CollectorAction>(() =>
 );
 const primaryLabel = computed(() => (primaryAction.value === 'upgrade' ? '创建升级申请' : (page.value?.primary ?? '')));
 const nicColumns = [
-  { title: '网卡 / MAC 地址', key: 'identity', width: 215 },
+  { title: '网卡名称', key: 'identity', width: 140, className: 'mono' },
+  { title: 'MAC 地址', dataIndex: 'mac', width: 160, ellipsis: true, className: 'mono' },
   { title: '用途', dataIndex: 'role', width: 100 },
   { title: '链路状态', key: 'status', width: 130 },
-  { title: 'IP 地址', key: 'address', width: 185 },
-  { title: '速率 / MTU', key: 'speed', width: 140 },
+  { title: 'IP 地址', key: 'address', width: 210, ellipsis: true, className: 'mono' },
+  { title: '速率 / MTU', key: 'speed', width: 158 },
   { title: '观测流量', dataIndex: 'rx', width: 140 },
-  { title: '操作', key: 'action', width: 80 },
+  { title: '操作', key: 'action', width: 80, fixed: 'right' as const },
 ];
 const taskColumns = [
+  { title: '任务编号', dataIndex: 'id', width: 152, ellipsis: true, className: 'mono' },
   { title: '任务', key: 'identity', width: 175 },
   { title: '来源', dataIndex: 'source', width: 165 },
   { title: '目标 / 对象', dataIndex: 'target', width: 220 },
   { title: '状态', key: 'status', width: 180 },
   { title: '创建时间', dataIndex: 'time', width: 170 },
-  { title: '操作', key: 'action', width: 80 },
+  { title: '操作', key: 'action', width: 80, fixed: 'right' as const },
 ];
 const servicesColumns = [
   { title: '服务', dataIndex: 'name', width: 190 },
@@ -154,6 +160,7 @@ const servicesColumns = [
   { title: '操作', key: 'action', width: 85 },
 ];
 const auditColumns = [
+  { title: '记录编号', dataIndex: 'id', width: 145, ellipsis: true, className: 'mono' },
   { title: '时间', dataIndex: 'time', width: 170 },
   { title: '操作者', dataIndex: 'actor', width: 195 },
   { title: '操作', dataIndex: 'action', width: 185 },
@@ -247,7 +254,10 @@ function clearFilters() {
         <a-tab-pane v-for="tab in tabs" :key="tab.key" :tab="tab.title" />
       </a-tabs>
     </nav>
-    <PageHeader :title="delivered?.title ?? page.title" :description="delivered?.description ?? page.description"
+    <PageHeader
+      :help-entries="helpEntries"
+      :title="delivered?.title ?? page.title"
+      :description="delivered?.description ?? page.description"
       ><a-button
         v-if="delivered && ['overview', 'interfaces', 'capture', 'responses', 'syslog'].includes(delivered.view)"
         @click="setState('data')"
@@ -325,16 +335,14 @@ function clearFilters() {
     />
     <StatePanel
       v-else-if="state === 'loading' || state === 'error'"
-      :state="state"
+      :loading="state === 'loading'"
+      :error="state === 'error' && '本地管理服务未返回数据。当前配置与执行结果未知，请重试或检查管理服务。'"
       :title="state === 'error' ? '采集器数据暂时无法加载' : undefined"
-      :description="
-        state === 'error' ? '本地管理服务未返回数据。当前配置与执行结果未知，请重试或检查管理服务。' : undefined
-      "
-      @action="setState('data')"
+      @retry="setState('data')"
     />
     <StatePanel
       v-else-if="state === 'empty'"
-      state="empty"
+      empty
       :title="
         {
           overview: '尚未完成采集器初始化',
@@ -364,7 +372,7 @@ function clearFilters() {
         <section class="panel collector-section">
           <div class="panel-heading">
             <h2>采集与上报链路</h2>
-            <StatusTag value="在线（示例）" tone="success" />
+            <StatusTag value="在线" :tone="statusTerms.在线" />
           </div>
           <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
             ><a-descriptions-item label="采集模式">旁路镜像 · {{ collector.capture.backend }}</a-descriptions-item
@@ -390,17 +398,20 @@ function clearFilters() {
             <h2>最近任务</h2>
             <router-link to="/collector/updates">查看同步与升级</router-link>
           </div>
-          <a-table
+          <ListTable
             :columns="taskColumns"
             :data-source="collector.tasks.slice(0, 4)"
             row-key="id"
             :pagination="false"
-            :scroll="{ x: 1050 }"
-            size="middle"
+            :scroll="{ x: 1142 }"
             ><template #bodyCell="{ column, record }"
-              ><template v-if="column.key === 'identity'"
-                ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
-                ><small class="row-id">{{ record.id }}</small></template
+              ><button
+                v-if="column.key === 'identity'"
+                class="record-link"
+                :title="record.name"
+                @click="showDetail(record)"
+              >
+                {{ record.name }}</button
               ><StatusTag
                 v-else-if="column.key === 'status'"
                 :value="record.status"
@@ -408,7 +419,7 @@ function clearFilters() {
               /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
                 >查看</a-button
               ></template
-            ></a-table
+            ></ListTable
           >
         </section>
       </template>
@@ -417,7 +428,6 @@ function clearFilters() {
           <section class="panel collector-section">
             <div class="panel-heading">
               <h2>平台通信身份</h2>
-              <a-tag>合成示例</a-tag>
             </div>
             <ProbeIdentitySummary :identity="identityExample" :now="Date.parse('2026-10-17T06:30:00Z')" />
           </section>
@@ -435,20 +445,26 @@ function clearFilters() {
               <span>变更确认窗口</span><b>{{ collector.network.rollbackSeconds }} 秒</b>
             </div>
           </section>
-          <section class="panel filter-panel">
-            <div class="collector-filter">
-              <a-input
+          <ListFilters label="网卡筛选" :columns="2">
+            <label for="collector-preview-nic-keyword"
+              ><span>网卡关键词</span
+              ><a-input
+                id="collector-preview-nic-keyword"
                 v-model:value="keyword"
                 aria-label="检索网卡"
                 placeholder="网卡、MAC、IP 或用途"
-                allow-clear
-              /><a-select
+                allow-clear /></label
+            ><label for="collector-preview-nic-status"
+              ><span>链路状态</span
+              ><a-select
+                id="collector-preview-nic-status"
                 v-model:value="statusFilter"
                 aria-label="网卡链路状态"
-                :options="['全部状态', '链路正常', '链路断开', '本机回环'].map(value => ({ value, label: value }))"
-              /><a-button @click="clearFilters">清除筛选</a-button>
-            </div>
-          </section>
+                :options="
+                  ['全部状态', '链路正常', '链路断开', '本机回环'].map(value => ({ value, label: value }))
+                " /></label
+            ><template #actions><a-button @click="clearFilters">清除筛选</a-button></template>
+          </ListFilters>
           <section class="panel table-panel">
             <div class="table-toolbar">
               <h2>
@@ -456,35 +472,40 @@ function clearFilters() {
               </h2>
               <a-button @click="openAction('capture')">选择镜像网卡</a-button>
             </div>
-            <a-table
+            <ListTable
               :columns="nicColumns"
               :data-source="interfaces"
               row-key="id"
               :pagination="tablePagination()"
-              :scroll="{ x: 990 }"
-              size="middle"
+              :scroll="{ x: 1118 }"
               ><template #bodyCell="{ column, record }"
-                ><template v-if="column.key === 'identity'"
-                  ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
-                  ><small class="row-id">{{ record.mac }}</small></template
+                ><button
+                  v-if="column.key === 'identity'"
+                  class="record-link"
+                  :title="record.name"
+                  @click="showDetail(record)"
+                >
+                  {{ record.name }}</button
                 ><StatusTag
                   v-else-if="column.key === 'status'"
                   :value="record.status"
                   :tone="statusTone(interfaceTones, record.status)"
-                /><template v-else-if="column.key === 'address'"
-                  >{{ record.ipv4 }}<small class="row-id">IPv6：{{ record.ipv6 }}</small></template
+                /><span v-else-if="column.key === 'address'" :title="`${record.ipv4} / ${record.ipv6}`"
+                  >{{ record.ipv4 }} / {{ record.ipv6 }}</span
                 ><template v-else-if="column.key === 'speed'"
-                  >{{ formatQuantity(record.speed) }}<small class="row-id">MTU {{ record.mtu }}</small></template
+                  >{{ formatQuantity(record.speed) }} / {{ record.mtu }}</template
                 ><span v-else-if="column.dataIndex === 'rx'" class="tabular">{{ formatQuantity(record.rx) }}</span
                 ><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
                   >查看</a-button
                 ></template
-              ><template #emptyText
-                ><a-empty :description="hasFilters ? '暂无符合条件的网卡' : '尚未发现可用网卡'"
-                  ><a-button v-if="hasFilters" @click="clearFilters">清除筛选</a-button></a-empty
-                ></template
-              ></a-table
-            >
+              ><template #emptyText>
+                <StatePanel
+                  empty
+                  :description="hasFilters ? '暂无符合条件的网卡' : '尚未发现可用网卡'"
+                  :action="hasFilters ? '清除筛选' : undefined"
+                  @action="clearFilters"
+                /> </template
+            ></ListTable>
           </section>
           <p class="collector-footnote">
             镜像口不配置业务 IP、网关或 DHCP。VLAN、Bond 和虚拟接口需按设备能力识别，当前样机仅提供物理网卡与回环接口。
@@ -525,7 +546,7 @@ function clearFilters() {
         <section class="panel collector-section">
           <div class="panel-heading">
             <h2>主控平台连接</h2>
-            <StatusTag value="在线（示例）" tone="success" />
+            <StatusTag value="在线" :tone="statusTerms.在线" />
           </div>
           <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 2 }" size="small"
             ><a-descriptions-item label="上报地址"
@@ -576,7 +597,7 @@ function clearFilters() {
               ><a-descriptions-item label="实际规则数 / 引擎"
                 >12840 条 / {{ collector.engineActive }}</a-descriptions-item
               ><a-descriptions-item label="同步状态"
-                ><StatusTag value="存在待同步版本" tone="warning" /></a-descriptions-item
+                ><StatusTag value="存在待同步版本" :tone="statusTerms.需关注" /></a-descriptions-item
               ><a-descriptions-item label="规则来源">平台签名制品 · 不允许本地覆盖已发布包</a-descriptions-item
               ><a-descriptions-item label="同步方式"
                 >{{ collector.syncMode }} · 每 {{ collector.syncMinutes }} 分钟核对版本</a-descriptions-item
@@ -605,14 +626,19 @@ function clearFilters() {
             签名制品下载、引擎测试、重载或重启、实际版本回读分别记录。规则重载需要额外内存；配置与系统升级不能按规则热重载处理。
           </p>
         </section>
-        <section class="panel filter-panel">
-          <div class="collector-filter">
-            <a-input
+        <ListFilters label="维护任务筛选" :columns="2">
+          <label for="collector-preview-task-keyword"
+            ><span>维护任务关键词</span
+            ><a-input
+              id="collector-preview-task-keyword"
               v-model:value="keyword"
               aria-label="检索维护任务"
               placeholder="任务、编号或目标版本"
-              allow-clear
-            /><a-select
+              allow-clear /></label
+          ><label for="collector-preview-task-status"
+            ><span>任务状态</span
+            ><a-select
+              id="collector-preview-task-status"
               v-model:value="statusFilter"
               aria-label="维护任务状态"
               :options="
@@ -620,27 +646,29 @@ function clearFilters() {
                   value,
                   label: value,
                 }))
-              "
-            /><a-button @click="clearFilters">清除筛选</a-button>
-          </div>
-        </section>
+              " /></label
+          ><template #actions><a-button @click="clearFilters">清除筛选</a-button></template>
+        </ListFilters>
         <section class="panel table-panel">
           <div class="table-toolbar">
             <h2>
               同步与维护任务 <span class="muted">{{ tasks.length }} 条</span>
             </h2>
           </div>
-          <a-table
+          <ListTable
             :columns="taskColumns"
             :data-source="tasks"
             row-key="id"
             :pagination="tablePagination()"
-            :scroll="{ x: 1050 }"
-            size="middle"
+            :scroll="{ x: 1142 }"
             ><template #bodyCell="{ column, record }"
-              ><template v-if="column.key === 'identity'"
-                ><button class="record-link" @click="showDetail(record)">{{ record.name }}</button
-                ><small class="row-id">{{ record.id }}</small></template
+              ><button
+                v-if="column.key === 'identity'"
+                class="record-link"
+                :title="record.name"
+                @click="showDetail(record)"
+              >
+                {{ record.name }}</button
               ><StatusTag
                 v-else-if="column.key === 'status'"
                 :value="record.status"
@@ -648,12 +676,14 @@ function clearFilters() {
               /><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="showDetail(record)"
                 >查看</a-button
               ></template
-            ><template #emptyText
-              ><a-empty description="暂无符合条件的任务"
-                ><a-button v-if="hasFilters" @click="clearFilters">清除筛选</a-button></a-empty
-              ></template
-            ></a-table
-          >
+            ><template #emptyText>
+              <StatePanel
+                empty
+                description="暂无符合条件的任务"
+                :action="hasFilters ? '清除筛选' : undefined"
+                @action="clearFilters"
+              /> </template
+          ></ListTable>
         </section>
       </template>
       <template v-else>
@@ -685,13 +715,12 @@ function clearFilters() {
           </section>
           <section class="panel table-panel">
             <div class="table-toolbar"><h2>本机服务</h2></div>
-            <a-table
+            <ListTable
               :columns="servicesColumns"
               :data-source="collector.services"
               row-key="id"
               :pagination="tablePagination()"
               :scroll="{ x: 915 }"
-              size="middle"
               ><template #bodyCell="{ column, record }"
                 ><StatusTag
                   v-if="column.key === 'status'"
@@ -705,7 +734,7 @@ function clearFilters() {
                   @click="openAction('service', record.id)"
                   >维护</a-button
                 ></template
-              ></a-table
+              ></ListTable
             >
           </section></template
         >
@@ -714,13 +743,12 @@ function clearFilters() {
             <h2>本地操作日志</h2>
             <span class="muted">不记录密钥与业务载荷</span>
           </div>
-          <a-table
+          <ListTable
             :columns="auditColumns"
             :data-source="collector.audits"
             row-key="id"
             :pagination="tablePagination()"
-            :scroll="{ x: 1005 }"
-            size="middle"
+            :scroll="{ x: 1150 }"
           />
         </section>
       </template>

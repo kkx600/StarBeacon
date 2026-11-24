@@ -11,8 +11,9 @@ import ResponseDeviceTable from '../../../web/packages/shared/src/components/Res
 import ResponseDeviceDetail from '../../../web/packages/shared/src/components/ResponseDeviceDetail.vue';
 import ResponseBlockForm from '../../../web/packages/shared/src/components/ResponseBlockForm.vue';
 import type { PreviewState } from '../models';
-import StatePanel from './StatePanel.vue';
-import PageHeader from './PageHeader.vue';
+import StatePanel from '../../../web/packages/shared/src/components/StatePanel.vue';
+import PageHeader from '../../../web/packages/shared/src/components/PageHeader.vue';
+import { helpEntries } from '../composables/pageHelp';
 import { prototypePath } from '../data/navigation';
 const props = defineProps<{ state: PreviewState }>(),
   emit = defineEmits<{ state: [value: PreviewState] }>(),
@@ -94,6 +95,7 @@ function actions(v: ResponseDevice) {
 </script>
 <template>
   <PageHeader
+    :help-entries="helpEntries"
     title="联动设备"
     description="按执行探针检索 HTTP 连接器，核对设备身份、配置绑定、观测时效和响应动作。"
   /><HelpNote
@@ -117,12 +119,16 @@ function actions(v: ResponseDevice) {
     </div>
     <StatePanel
       v-if="['empty', 'error', 'loading'].includes(state)"
-      :state="state as 'empty' | 'error' | 'loading'"
+      :loading="state === 'loading'"
+      :error="state === 'error'"
+      empty
       :description="
         state === 'empty'
           ? '当前条件下没有联动设备。请调整筛选，或在执行采集器配置本地 HTTP 连接器后核对心跳上报。'
           : undefined
       "
+      @retry="emit('state', 'data')"
+      action="重新加载"
       @action="emit('state', 'data')"
     /><ResponseDeviceTable
       v-else
