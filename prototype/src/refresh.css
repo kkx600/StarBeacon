@@ -61,42 +61,10 @@
   margin-bottom: var(--related-gap);
 }
 
-/* 顶栏在 1024px 宽度下不折行。 */
-.topbar-left {
-  flex: 1;
-  min-width: 0;
-}
-.topbar-left .ant-breadcrumb {
-  min-width: 0;
-  overflow: hidden;
-}
-.topbar-left .ant-breadcrumb ol {
-  flex-wrap: nowrap;
-}
-.topbar-left .ant-breadcrumb li {
-  flex: none;
-  white-space: nowrap;
-}
 @media (max-width: 1180px) {
-  /* 窄屏只留当前页名称，避免面包屑被截成半截。 */
-  .topbar-left .ant-breadcrumb li:not(:last-child) {
-    display: none;
-  }
-  .topbar-left .ant-breadcrumb li:last-child {
-    display: block;
-    flex: 0 1 auto;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   .preview-state-button .preview-state-prefix {
     display: none;
   }
-}
-.topbar-actions {
-  flex: none;
-}
-.profile-button {
-  white-space: nowrap;
 }
 
 /* AI 规则生成的步骤条：不再向右溢出内容栏。 */

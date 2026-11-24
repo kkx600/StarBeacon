@@ -18,15 +18,23 @@ const [message, MessageContextHolder] = antMessage.useMessage();
 const route = useRoute(),
   router = useRouter();
 const icons = { ApiOutlined, ClusterOutlined, DashboardOutlined, FileProtectOutlined, SafetyCertificateOutlined };
-const sections = computed(() => collectorNavigation(session.current.value?.role === 'admin'));
+const user = session.current;
+const shellKey = computed(() => JSON.stringify([user.value?.tenant_id, user.value?.id, user.value?.role]));
+const sections = computed(() => collectorNavigation(user.value?.role === 'admin'));
 const items = computed(() =>
   sections.value.map(item => ({ key: 'workspace:' + item.id, label: item.title, icon: () => h(icons[item.icon]) })),
 );
+const workspace = computed(() => collectorWorkspaces.find(item => item.id === route.meta.navWorkspace));
+const activeWorkspace = computed(() => {
+  const item = workspace.value;
+  if (!item || !sections.value.some(section => section.id === item.id)) return;
+  return { key: item.id, label: item.title, path: route.path };
+});
 const breadcrumbs = computed(() => {
-  const workspace = collectorWorkspaces.find(item => item.id === route.meta.navWorkspace);
+  const item = workspace.value;
   return [
-    ...(workspace ? [{ label: workspace.title }] : []),
-    ...(route.meta.title && route.meta.title !== workspace?.title ? [{ label: String(route.meta.title) }] : []),
+    ...(item ? [{ label: item.title }] : []),
+    ...(route.meta.title && route.meta.title !== item?.title ? [{ label: String(route.meta.title) }] : []),
   ];
 });
 function navigate(key: string) {
@@ -60,11 +68,15 @@ async function logout() {
     ><AApp
       ><MessageContextHolder /><RouterView v-if="route.path === '/login'" /><AppShell
         v-else
+        :key="shellKey"
         title="采集器本地管理"
-        :username="session.current.value?.username ?? ''"
+        brand-target="/overview/status"
+        navigation-label="采集器导航"
+        :username="user?.username ?? ''"
         :current="'workspace:' + String(route.meta.navWorkspace ?? '')"
         :breadcrumbs="breadcrumbs"
         :items="items"
+        :active-workspace="activeWorkspace"
         @navigate="navigate"
         @logout="logout"
         ><RouterView :key="route.path" /></AppShell></AApp

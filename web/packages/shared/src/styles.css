@@ -30,68 +30,6 @@ textarea {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
-.app-shell {
-  min-height: 100vh;
-  background: var(--workspace);
-}
-.app-shell > .ant-layout-sider {
-  border-right: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: auto;
-}
-.app-shell > .ant-layout {
-  min-width: 0;
-  background: var(--workspace);
-}
-.brand {
-  height: 88px;
-  display: flex;
-  align-items: center;
-  gap: var(--related-gap);
-  padding: var(--panel-inset);
-  white-space: nowrap;
-}
-.brand b {
-  font-size: 14px;
-}
-.brand small {
-  display: block;
-  margin-top: var(--label-gap);
-  font-size: 12px;
-  color: var(--muted);
-}
-.brand-symbol {
-  font-size: 24px;
-  color: var(--primary);
-}
-.app-header.ant-layout-header {
-  display: flex;
-  align-items: center;
-  gap: var(--related-gap);
-  height: 56px;
-  line-height: normal;
-  padding: 0 var(--panel-inset);
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.header-title {
-  color: var(--muted);
-}
-.header-user {
-  margin-left: auto;
-  font-size: 13px;
-}
-.app-content {
-  padding: var(--page-inset);
-  max-width: 1920px;
-  width: 100%;
-  margin: 0 auto;
-}
 .page-header {
   display: flex;
   align-items: flex-start;

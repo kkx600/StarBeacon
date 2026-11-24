@@ -81,6 +81,26 @@ export async function click(label: string, root: ParentNode = document.body) {
   target!.click();
   await flushPromises();
 }
+export async function openAccountMenu() {
+  const trigger = document.querySelector<HTMLButtonElement>('button[aria-label^="账号菜单"]');
+  expect(trigger).not.toBeNull();
+  if (trigger?.getAttribute('aria-expanded') === 'false') trigger.click();
+  return vi.waitFor(() => {
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    const menu = document.querySelector<HTMLElement>('.ant-dropdown:not(.ant-dropdown-hidden) .shell-account-menu');
+    expect(menu).not.toBeNull();
+    return menu!;
+  });
+}
+export async function chooseAccountAction(label: string) {
+  const menu = await openAccountMenu();
+  const action = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+    item => item.textContent?.trim() === label,
+  );
+  expect(action, `账号菜单应提供 ${label}`).toBeDefined();
+  action!.click();
+  await flushPromises();
+}
 export async function writeRule(wrapper: Pick<BaseWrapper<Node>, 'get'>, text: string) {
   const element = wrapper.get('.cm-editor').element as HTMLElement,
     view = EditorView.findFromDOM(element);

@@ -8,7 +8,7 @@ import { formatBytes, formatBitRate, formatQuantity, compareQuantity } from '../
 import { safeReturnPath } from '../packages/shared/src/utils/history';
 import { formatTime, formatPercent, formatHealthErrors, type Principal } from '../packages/shared/src/types';
 import AppShell from '../packages/shared/src/components/AppShell.vue';
-import { principal, click } from './fixtures';
+import { principal, click, chooseAccountAction } from './fixtures';
 const { request, restore, login, logout } = vi.hoisted(() => ({
   request: vi.fn(),
   restore: vi.fn(),
@@ -142,11 +142,55 @@ describe('导航壳层', () => {
     await wrapper.get('[aria-label=收起导航]').trigger('click');
     expect(wrapper.find('[aria-label=展开导航]').exists()).toBe(true);
     await wrapper.get('[aria-label=展开导航]').trigger('click');
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(wrapper.emitted('logout')).toHaveLength(1);
     wrapper.getComponent(Menu).vm.$emit('click', { key: '/network' });
     await flushPromises();
     expect(wrapper.emitted('navigate')).toEqual([['/network']]);
+  });
+
+  it('保留五个工作区及各自最后访问的页面，并显示入口专用插槽', async () => {
+    const workspace = (id: number, subpage = '/list') => ({
+      key: String(id),
+      label: `工作区 ${id}`,
+      path: `/${id}${subpage}`,
+    });
+    const wrapper = mount(AppShell, {
+      props: {
+        title: '态势感知系统',
+        username: '安全运营管理员',
+        current: '1',
+        items: [],
+        activeWorkspace: workspace(1),
+        initialWorkspaces: [workspace(0)],
+        showAssistant: true,
+      },
+      slots: {
+        'header-before-actions': '<button>原型状态</button>',
+        'workspace-actions': '<button>页面目录</button>',
+        footer: '合成数据仅用于界面评审',
+      },
+      global: { plugins: [registerAnt] },
+      attachTo: document.body,
+    });
+    expect(wrapper.get('.workspace-tabs [aria-current="page"]').text()).toBe('工作区 1');
+    expect(wrapper.get('.topbar-actions').text()).toContain('原型状态');
+    expect(wrapper.get('.app-footer').text()).toBe('合成数据仅用于界面评审');
+    for (const id of [2, 3, 2, 4, 5, 6]) await wrapper.setProps({ activeWorkspace: workspace(id, '/details') });
+    const tabs = wrapper.get('.workspace-tabs');
+    expect(tabs.findAll('button').map(button => button.text())).toEqual([
+      '工作区 2',
+      '工作区 3',
+      '工作区 4',
+      '工作区 5',
+      '工作区 6',
+      '页面目录',
+    ]);
+    expect(tabs.get('[aria-current="page"]').text()).toBe('工作区 6');
+    await tabs.get('button').trigger('click');
+    expect(wrapper.emitted('navigate')).toEqual([['/2/details']]);
+    await wrapper.get('.copilot-entry').trigger('click');
+    expect(wrapper.emitted('assistant')).toHaveLength(1);
   });
 });
 
@@ -221,9 +265,9 @@ describe('应用入口、路由和登录', () => {
     await router.push('/sensors');
     await flushPromises();
     logout.mockRejectedValueOnce(new Error('退出受阻'));
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/sensors/list');
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/login');
     wrapper.unmount();
   });
@@ -313,9 +357,9 @@ describe('应用入口、路由和登录', () => {
     await router.push('/network');
     await flushPromises();
     logout.mockRejectedValueOnce('offline');
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/network/interfaces');
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/login');
     wrapper.unmount();
     document.body.innerHTML = '<div id="app"></div>';

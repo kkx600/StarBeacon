@@ -228,3 +228,53 @@ strong {
     max-height: calc(100dvh - 48px);
   }
 }
+
+.brand {
+  height: 76px;
+  border: 0;
+  background: transparent;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+}
+.brand-symbol {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 36px;
+  background: var(--primary);
+  color: var(--surface);
+  border-radius: 8px;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+button.brand {
+  cursor: pointer;
+}
+.brand-copy {
+  white-space: nowrap;
+}
+.brand-copy b {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  display: block;
+}
+.brand-copy b span {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-left: 3px;
+}
+.brand-copy small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}

@@ -18,7 +18,7 @@ import RuleEditor from '../packages/shared/src/components/RuleEditor.vue';
 import CaptureForm from '../packages/shared/src/components/CaptureForm.vue';
 import ProtocolCapabilitiesDialog from '../packages/shared/src/components/ProtocolCapabilitiesDialog.vue';
 import DetectionQualityDialog from '../packages/shared/src/components/DetectionQualityDialog.vue';
-import { click, deferred, principal, rules, sample, task, writeRule } from './fixtures';
+import { chooseAccountAction, click, deferred, principal, rules, sample, task, writeRule } from './fixtures';
 
 const { request, restore, login, logout } = vi.hoisted(() => ({
   request: vi.fn(),
@@ -359,14 +359,14 @@ describe('采集器管理页面的实际导航', () => {
     const { wrapper, router } = await app('/access-denied?redirect=https://example.test');
     expect(request).not.toHaveBeenCalled();
     logout.mockRejectedValueOnce(new Error('退出暂不可用'));
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/access-denied');
     await click('返回登录');
     expect(router.currentRoute.value.query.redirect).toBe('/overview/status');
     user.value = principal;
     await router.push('/overview/status');
     await flushPromises();
-    await click('退出');
+    await chooseAccountAction('退出登录');
     expect(router.currentRoute.value.path).toBe('/login');
     expect(wrapper.text()).toContain('登录采集器');
   });

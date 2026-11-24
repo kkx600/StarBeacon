@@ -15,7 +15,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
 import { navigationForRole } from './navigation';
-import { navigationGroups, navigationWorkspaces } from '@starbeacon/shared/navigation.ts';
+import { navigationGroups, navigationWorkspaces, platformScreens } from '@starbeacon/shared/navigation.ts';
 import { useRoute, useRouter } from 'vue-router';
 import { App as AApp, message as antMessage } from 'ant-design-vue';
 import zhCN from 'ant-design-vue/es/locale/zh_CN';
@@ -27,6 +27,8 @@ const [message, MessageContextHolder] = antMessage.useMessage();
 const route = useRoute(),
   router = useRouter();
 const passwordOpen = shallowRef(false);
+const user = session.current;
+const shellKey = computed(() => JSON.stringify([user.value?.tenant_id, user.value?.id, user.value?.role]));
 const icons = {
   AlertOutlined,
   ApiOutlined,
@@ -41,7 +43,7 @@ const icons = {
   SettingOutlined,
   ThunderboltOutlined,
 };
-const sections = computed(() => navigationForRole(session.current.value?.role === 'admin'));
+const sections = computed(() => navigationForRole(user.value?.role === 'admin'));
 const items = computed(() =>
   sections.value.map(group => {
     const icon = () => h(icons[group.icon as keyof typeof icons]);
@@ -55,13 +57,22 @@ const items = computed(() =>
       : { key: 'group:' + group.key, label: group.label, icon, children };
   }),
 );
+const workspace = computed(() => navigationWorkspaces.find(item => item.id === route.meta.navWorkspace));
+const activeWorkspace = computed(() => {
+  const item = workspace.value;
+  if (!item || (route.meta.admin && user.value?.role !== 'admin')) return;
+  return { key: item.id, label: item.title, path: route.path };
+});
+const assistantPath = computed(
+  () => platformScreens.find(screen => screen.id === 'chat' && (!screen.admin || user.value?.role === 'admin'))?.path,
+);
 const breadcrumbs = computed(() => {
-  const group = navigationGroups.find(item => item.id === route.meta.navGroup),
-    workspace = navigationWorkspaces.find(item => item.id === route.meta.navWorkspace);
+  const group = navigationGroups.find(item => item.id === route.meta.navGroup);
+  const item = workspace.value;
   return [
     ...(group ? [{ label: group.title }] : []),
-    ...(workspace ? [{ label: workspace.title }] : []),
-    ...(route.meta.title && route.meta.title !== workspace?.title ? [{ label: String(route.meta.title) }] : []),
+    ...(item ? [{ label: item.title }] : []),
+    ...(route.meta.title && route.meta.title !== item?.title ? [{ label: String(route.meta.title) }] : []),
   ].filter((item, index, all) => !index || item.label !== all[index - 1]!.label);
 });
 function navigate(key: string) {
@@ -100,12 +111,17 @@ async function logout() {
       <RouterView v-if="route.path === '/login'" />
       <AppShell
         v-else
+        :key="shellKey"
         title="态势感知系统"
-        :username="session.current.value?.username ?? ''"
+        brand-target="/overview/dashboard"
+        :username="user?.username ?? ''"
         :current="'workspace:' + String(route.meta.navWorkspace ?? '')"
         :breadcrumbs="breadcrumbs"
         :items="items"
+        :active-workspace="activeWorkspace"
+        :show-assistant="!!assistantPath"
         allow-password-change
+        @assistant="assistantPath && navigate(assistantPath)"
         @password="passwordOpen = true"
         @navigate="navigate"
         @logout="logout"

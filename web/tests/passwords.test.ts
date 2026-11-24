@@ -17,7 +17,7 @@ import PasswordDialog from '../platform/src/features/users/PasswordDialog.vue';
 import UsersWorkspace from '../platform/src/features/users/UsersWorkspace.vue';
 import UserDetail from '../platform/src/features/users/UserDetail.vue';
 import AppShell from '../packages/shared/src/components/AppShell.vue';
-import { principal, deferred, click, button, closedMessage } from './fixtures';
+import { principal, deferred, click, button, closedMessage, chooseAccountAction, openAccountMenu } from './fixtures';
 
 const { request, unauthorized } = vi.hoisted(() => ({ request: vi.fn(), unauthorized: vi.fn() }));
 vi.mock('../platform/src/session', async () => ({
@@ -364,9 +364,9 @@ describe('密码表单与真实 Ant 交互', () => {
       attachTo: document.body,
     });
     await flushPromises();
-    await click('修改密码');
+    await chooseAccountAction('修改密码');
     expect(w.emitted('password')).toHaveLength(1);
     await w.setProps({ allowPasswordChange: false });
-    expect(w.text()).not.toContain('修改密码');
+    expect((await openAccountMenu()).textContent).not.toContain('修改密码');
   });
 });
