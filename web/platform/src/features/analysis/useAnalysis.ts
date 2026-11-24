@@ -1,5 +1,7 @@
 import { onMounted, onScopeDispose, shallowReadonly, shallowRef } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   validJob,
@@ -20,9 +22,11 @@ export function useAnalysis(group: 'chat' | 'reports') {
   const items = shallowRef<AnalysisSummary[]>([]),
     threads = shallowRef<AnalysisThread[]>([]),
     next = shallowRef(''),
+    cursors = shallowRef(['']),
     pending = shallowRef(false),
     error = shallowRef(''),
     available = shallowRef(false);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const selected = shallowRef<AnalysisJob | null>(null),
     conversation = shallowRef<Conversation | null>(null),
     loading = shallowRef(false),
@@ -38,7 +42,7 @@ export function useAnalysis(group: 'chat' | 'reports') {
     mutation: AbortController | undefined,
     timer: ReturnType<typeof setInterval> | undefined;
   let attempt: { key: string; input: AnalysisRequest } | undefined;
-  async function refresh(before = '', append = false) {
+  async function refresh() {
     if (stopped) return;
     const epoch = ++listEpoch;
     listController?.abort();
@@ -46,25 +50,30 @@ export function useAnalysis(group: 'chat' | 'reports') {
     listController = control;
     pending.value = true;
     error.value = '';
+    const before = cursors.value.at(-1) ?? '',
+      limit = pageSize.value,
+      listLimit = group === 'reports' ? limit : defaultPageSize;
     try {
-      const status = await session.api.request<AnalysisPage>(
-        `/analysis/jobs?group=${group}&limit=20${before ? '&before=' + encodeURIComponent(before) : ''}`,
-        { signal: control.signal },
-      );
+      const query = new URLSearchParams({ group, limit: String(listLimit) });
+      if (group === 'reports' && before) query.set('before', before);
+      const status = await session.api.request<AnalysisPage>('/analysis/jobs?' + query, { signal: control.signal });
       if (epoch !== listEpoch || stopped) return;
-      if (!validPage(status)) throw new Error('分析记录未能完整返回');
+      if (!validPage(status, listLimit)) throw new Error('分析记录未能完整返回');
       available.value = status.model_execution_available;
       if (group === 'reports') {
-        items.value = append ? [...items.value, ...status.items] : status.items;
+        items.value = status.items;
         next.value = status.next_cursor;
       } else {
+        const threadsQuery = new URLSearchParams();
+        if (before) threadsQuery.set('before', before);
+        if (limit !== defaultPageSize) threadsQuery.set('limit', String(limit));
         const page = await session.api.request<ThreadPage>(
-          `/analysis/threads${before ? '?before=' + encodeURIComponent(before) : ''}`,
+          '/analysis/threads' + (threadsQuery.size ? '?' + threadsQuery : ''),
           { signal: control.signal },
         );
         if (epoch !== listEpoch || stopped) return;
-        if (!validThreads(page)) throw new Error('对话记录未能完整返回');
-        threads.value = append ? [...threads.value, ...page.items] : page.items;
+        if (!validThreads(page, limit)) throw new Error('对话记录未能完整返回');
+        threads.value = page.items;
         next.value = page.next_cursor;
       }
     } catch (e) {
@@ -72,6 +81,20 @@ export function useAnalysis(group: 'chat' | 'reports') {
     } finally {
       if (epoch === listEpoch && !stopped) pending.value = false;
     }
+  }
+  function firstPage() {
+    cursors.value = [''];
+    return refresh();
+  }
+  function previousPage() {
+    if (pending.value || cursors.value.length <= 1) return;
+    cursors.value = cursors.value.slice(0, -1);
+    void refresh();
+  }
+  function nextPage() {
+    if (pending.value || error.value || !next.value) return;
+    cursors.value = [...cursors.value, next.value];
+    void refresh();
   }
   async function loadJob(id: string) {
     if (stopped) return;
@@ -157,7 +180,7 @@ export function useAnalysis(group: 'chat' | 'reports') {
       unconfirmed.value = false;
       selected.value = job;
       if (group === 'chat') await loadThread(job.request.thread_id);
-      void refresh();
+      void firstPage();
       return job;
     } catch (e) {
       if (!control.signal.aborted) {
@@ -199,7 +222,7 @@ export function useAnalysis(group: 'chat' | 'reports') {
           ...conversation.value,
           jobs: conversation.value.jobs.map(row => (row.id === job.id ? job : row)),
         };
-      void refresh();
+      void firstPage();
       return job;
     } catch (e) {
       if (!control.signal.aborted) actionError.value = e instanceof Error ? e.message : '取消请求未确认';
@@ -240,6 +263,8 @@ export function useAnalysis(group: 'chat' | 'reports') {
     items: shallowReadonly(items),
     threads: shallowReadonly(threads),
     next: shallowReadonly(next),
+    cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     available: shallowReadonly(available),
@@ -251,6 +276,10 @@ export function useAnalysis(group: 'chat' | 'reports') {
     actionError: shallowReadonly(actionError),
     unconfirmed: shallowReadonly(unconfirmed),
     refresh,
+    firstPage,
+    previousPage,
+    nextPage,
+    changePageSize,
     loadJob,
     loadThread,
     submit,

@@ -2,17 +2,22 @@
 import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('报告中心');
 import { computed, ref, watch } from 'vue';
-import { Table, Modal, Select, Checkbox } from 'ant-design-vue';
+import { Modal, Select, Checkbox } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useModels } from '../models/useModels';
-import { checkClass } from '../models/models';
-import { blankRequest, kindNames, stateNames, type AnalysisKind } from './analysis';
+import { blankRequest, kindNames, stateNames } from './analysis';
 import { useAnalysis } from './useAnalysis';
 import AnalysisDetail from './AnalysisDetail.vue';
 const models = useModels(),
   state = useAnalysis('reports'),
-  { items, next, pending, error, busy, actionError, unconfirmed, selected, loading, detailError } = state;
+  { items, next, cursors, pageSize, pending, error, busy, actionError, unconfirmed, selected, loading, detailError } =
+    state;
 const open = ref(false),
   detailOpen = ref(false),
   kind = ref<'daily' | 'weekly' | 'monthly'>('daily'),
@@ -35,11 +40,15 @@ watch(
   },
 );
 const columns = [
-  { title: '报告', key: 'name', width: 230 },
-  { title: '状态', key: 'state', width: 140 },
-  { title: '统计范围', key: 'window', width: 280 },
-  { title: '生成时间', key: 'time', width: 190 },
-  { title: '操作', key: 'action', width: 110, fixed: 'right' as const },
+  { title: '报告编号', dataIndex: 'id', width: 150, className: 'technical', ellipsis: true },
+  { title: '报告类型', key: 'kind', width: 108 },
+  { title: '报告名称', key: 'name', width: 180, ellipsis: true },
+  { title: '修订', dataIndex: 'revision', width: 62 },
+  { title: '状态', key: 'state', width: 122 },
+  { title: '统计开始时间', key: 'start', width: 172 },
+  { title: '统计结束时间', key: 'end', width: 172 },
+  { title: '生成时间', key: 'time', width: 172 },
+  { title: '操作', key: 'action', width: 68, fixed: 'right' as const },
 ];
 async function generate() {
   if (busy.value) return;
@@ -77,16 +86,13 @@ function closeDetail() {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">生成安全日报、周报与月报，复核冻结的统计来源和模型调查建议。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button :loading="pending" @click="state.refresh()">刷新</a-button
-      ><a-button type="primary" :disabled="busy" @click="open = true">生成报告</a-button>
-    </div>
-  </header>
+  <PageHeader
+    :title="pageTitle"
+    description="生成安全日报、周报与月报，复核冻结的统计来源和模型调查建议。不同运行保留独立修订。"
+  >
+    <a-button :loading="pending" @click="state.refresh">刷新</a-button>
+    <a-button type="primary" :disabled="busy" @click="open = true">生成报告</a-button>
+  </PageHeader>
   <a-alert
     v-if="models.error.value"
     type="warning"
@@ -94,47 +100,61 @@ function closeDetail() {
     show-icon
     class="section-gap"
   />
-  <section class="panel">
-    <div class="panel-header">
-      <h2>报告记录</h2>
-      <span>不同运行保留独立修订</span>
-    </div>
+  <section class="panel table-panel">
+    <div class="table-toolbar"><h2>报告记录</h2></div>
     <a-alert
       v-if="error && items.length"
       type="error"
       :message="error + '。当前显示上次成功读取的报告。'"
       show-icon
       class="section-gap"
-      ><template #action><a-button @click="state.refresh()">重试</a-button></template></a-alert
-    ><StatePanel
+      ><template #action><a-button @click="state.refresh">重试</a-button></template></a-alert
+    >
+    <StatePanel
       :loading="pending && !items.length"
       :error="items.length ? '' : error"
       :empty="items.length === 0"
       description="暂无报告记录，可选择自然日、完整周或自然月生成报告。"
-      @retry="state.refresh()"
-      ><div class="table-wrap">
-        <Table :columns="columns" :data-source="[...items]" row-key="id" :pagination="false" :scroll="{ x: 950 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'name'"
-              >{{ kindNames[record.kind as AnalysisKind] }} · {{ record.title
-              }}<small class="record-id">修订 {{ record.revision }}</small></template
-            ><template v-else-if="column.key === 'state'"
-              ><span :class="['status', checkClass(record.state)]">{{
-                stateNames[record.state] ?? '其他处理状态'
-              }}</span></template
-            ><template v-else-if="column.key === 'window'"
-              >{{ formatTime(record.window.start) }}<br />至 {{ formatTime(record.window.end) }}</template
-            ><template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template
-            ><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="show(record.id)"
-              >查看</a-button
-            ></template
-          ></Table
-        >
-      </div>
-      <a-button v-if="next" :loading="pending" class="section-gap" @click="state.refresh(next, true)"
-        >查看更多报告</a-button
-      ></StatePanel
+      @retry="state.refresh"
     >
+      <ListTable :columns="columns" :data-source="[...items]" :scroll="{ x: 1206 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'kind'">{{ kindNames[record.kind] }}</template>
+          <button
+            v-else-if="column.key === 'name'"
+            type="button"
+            class="record-link"
+            :title="record.title"
+            @click="show(record.id)"
+          >
+            {{ record.title }}
+          </button>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="statusTone(modelJobTones, record.state)"
+            :value="stateNames[record.state] ?? '其他处理状态'"
+          />
+          <template v-else-if="column.key === 'start'">{{ formatTime(record.window.start) }}</template>
+          <template v-else-if="column.key === 'end'">{{ formatTime(record.window.end) }}</template>
+          <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
+          <button v-else-if="column.key === 'action'" type="button" class="record-link" @click="show(record.id)">
+            查看
+          </button>
+        </template>
+      </ListTable>
+    </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!next"
+      :disabled="pending"
+      @previous="state.previousPage"
+      @next="state.nextPage"
+      @update:page-size="state.changePageSize"
+    />
   </section>
   <Modal
     :open="open"
@@ -182,8 +202,9 @@ function closeDetail() {
       <p class="muted section-gap">
         日报使用所选自然日；周报使用该日期所在的完整周（周一至周日）；月报使用该日期所在自然月。仅生成已经结束的周期，夏令时按报告时区计算。
       </p>
-      <a-form-item label="智能总结"
+      <a-form-item label="智能总结" html-for="report-model"
         ><Select
+          id="report-model"
           v-model:value="provider"
           aria-label="报告模型"
           :options="[

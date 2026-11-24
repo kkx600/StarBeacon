@@ -1,4 +1,5 @@
 import { stateNames, type AnalysisRequest } from './analysis';
+import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 
 export interface ReportPlanSpec {
   name: string;
@@ -66,6 +67,10 @@ export function planRunState(run: ReportPlanRun) {
       : run.state === 'cancelled'
         ? '已取消'
         : '本周期未提交';
+}
+const runTones = { preparing: 'info', failed: 'danger', cancelled: 'neutral' } as const;
+export function planRunTone(run: ReportPlanRun) {
+  return run.state === 'submitted' ? statusTone(modelJobTones, run.analysis_state) : runTones[run.state];
 }
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -174,12 +179,12 @@ export function validPlanRun(value: unknown): value is ReportPlanRun {
           (typeof value.analysis_state === 'string' && Object.hasOwn(stateNames, value.analysis_state)))
     : value.analysis_id === '' && value.analysis_state === '';
 }
-export function validRunPage(value: unknown): value is ReportRunPage {
+export function validRunPage(value: unknown, limit = 20): value is ReportRunPage {
   return (
     record(value) &&
     cursor(value.next_cursor) &&
     Array.isArray(value.items) &&
-    value.items.length <= 20 &&
+    value.items.length <= limit &&
     value.items.every(validPlanRun) &&
     new Set(value.items.map(row => row.id)).size === value.items.length
   );

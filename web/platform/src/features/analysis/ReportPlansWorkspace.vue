@@ -3,14 +3,20 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('报告计划');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { shallowRef } from 'vue';
-import { Table, Popconfirm } from 'ant-design-vue';
+import { Popconfirm } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useModels } from '../models/useModels';
 import { kindNames } from './analysis';
 import { useAnalysis } from './useAnalysis';
 import { useReportPlans } from './useReportPlans';
-import { planCodes, planRunState, type ReportPlan, type ReportPlanChange, type ReportPlanRun } from './plans';
+import { planCodes, planRunState, planRunTone, type ReportPlan, type ReportPlanChange } from './plans';
 import ReportPlanForm from './ReportPlanForm.vue';
 import AnalysisDetail from './AnalysisDetail.vue';
 const message = useFeedback();
@@ -28,6 +34,8 @@ const {
   unconfirmed,
   runs,
   next,
+  cursors,
+  pageSize,
   runsPending,
   runsError,
 } = state;
@@ -37,20 +45,28 @@ const editing = shallowRef<ReportPlan | null>(null),
   detailOpen = shallowRef(false),
   viewing = shallowRef('');
 const columns = [
-  { title: '计划名称', key: 'name', width: 200 },
-  { title: '报告周期', key: 'kind', width: 120 },
-  { title: '时区 / 执行时间', key: 'clock', width: 220 },
-  { title: '智能总结', key: 'provider', width: 160 },
-  { title: '状态', key: 'state', width: 100 },
-  { title: '下次计划时间', key: 'next', width: 190 },
-  { title: '操作', key: 'actions', width: 190, fixed: 'right' as const },
+  { title: '计划编号', dataIndex: 'id', width: 142, className: 'technical', ellipsis: true },
+  { title: '计划名称', dataIndex: ['spec', 'name'], width: 160, ellipsis: true },
+  { title: '修订', dataIndex: 'revision', width: 65 },
+  { title: '报告周期', key: 'kind', width: 106 },
+  { title: '时区', dataIndex: ['spec', 'timezone'], width: 150, ellipsis: true },
+  { title: '执行时间', dataIndex: ['spec', 'at'], width: 85 },
+  { title: '智能总结', key: 'provider', width: 134, ellipsis: true },
+  { title: '模型修订', key: 'providerRevision', width: 82 },
+  { title: '状态', key: 'state', width: 86 },
+  { title: '下次计划时间', key: 'next', width: 172 },
+  { title: '操作', key: 'actions', width: 174, fixed: 'right' as const },
 ];
 const runColumns = [
-  { title: '报告周期', key: 'period', width: 170 },
-  { title: '状态', key: 'state', width: 160 },
-  { title: '计划 / 实际槽位', key: 'due', width: 230 },
-  { title: '处理说明', key: 'reason', width: 280 },
-  { title: '操作', key: 'action', width: 110, fixed: 'right' as const },
+  { title: '运行编号', dataIndex: 'id', width: 142, className: 'technical', ellipsis: true },
+  { title: '报告周期', key: 'period', width: 156, ellipsis: true },
+  { title: '计划修订', dataIndex: 'plan_revision', width: 76 },
+  { title: '状态', key: 'state', width: 140 },
+  { title: '计划槽位', key: 'due', width: 172 },
+  { title: '实际槽位', key: 'effective', width: 172 },
+  { title: '处理说明', key: 'reason', width: 235, ellipsis: true },
+  { title: '错过槽位范围', key: 'skipped', width: 346, ellipsis: true },
+  { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
 ];
 function edit(record: ReportPlan | null) {
   if (busy.value || unconfirmed.value) return;
@@ -93,32 +109,28 @@ async function showReport(id: string) {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">
-        {{
-          selected
-            ? selected.spec.name + '的计划运行记录，可核对周期、错过范围与报告处理结果。'
-            : '按时区定时生成安全日报、周报与月报，管理持续模型授权和运行记录。'
-        }}
-      </p>
-    </div>
-    <div class="filter-actions">
-      <template v-if="selected"
-        ><a-button @click="closeRuns">返回计划</a-button
-        ><a-button :loading="runsPending" @click="state.loadRuns(selected.id)">刷新记录</a-button></template
-      ><template v-else
-        ><a-button :loading="pending" @click="state.refresh">刷新</a-button
-        ><a-button
-          type="primary"
-          :disabled="pending || busy || unconfirmed || !!error || items.length >= 32"
-          @click="edit(null)"
-          >创建计划</a-button
-        ></template
+  <PageHeader
+    :title="pageTitle"
+    :description="
+      selected
+        ? selected.spec.name + '的运行记录。错过槽位范围不含结束时刻，只生成最近完整周期。'
+        : '按时区定时生成安全日报、周报与月报，管理持续模型授权和运行记录。每租户最多 32 个计划。'
+    "
+  >
+    <template v-if="selected">
+      <a-button @click="closeRuns">返回计划</a-button>
+      <a-button :loading="runsPending" @click="state.loadRuns()">刷新记录</a-button>
+    </template>
+    <template v-else>
+      <a-button :loading="pending" @click="state.refresh">刷新</a-button>
+      <a-button
+        type="primary"
+        :disabled="pending || busy || unconfirmed || !!error || items.length >= 32"
+        @click="edit(null)"
+        >创建计划</a-button
       >
-    </div>
-  </header>
+    </template>
+  </PageHeader>
   <a-alert v-if="actionError && !editorOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <a-alert
     v-if="unconfirmed && !editorOpen"
@@ -142,10 +154,14 @@ async function showReport(id: string) {
     show-icon
     class="section-gap"
   />
-  <section v-if="!selected" class="panel">
-    <div class="panel-header">
+  <section v-if="!selected" class="panel table-panel">
+    <div class="table-toolbar">
       <h2>报告计划</h2>
-      <span>当前账号 {{ items.length }} 个 · 每租户最多 32 个</span>
+      <MetricBar
+        v-if="!pending && !error"
+        embedded
+        :items="[{ label: '当前账号计划', value: items.length, suffix: '个' }]"
+      />
     </div>
     <a-alert
       v-if="error && items.length"
@@ -154,70 +170,59 @@ async function showReport(id: string) {
       show-icon
       class="section-gap"
       ><template #action><a-button @click="state.refresh">重试</a-button></template></a-alert
-    ><StatePanel
+    >
+    <StatePanel
       :loading="pending && !items.length"
       :error="items.length ? '' : error"
       :empty="!items.length"
       description="暂无报告计划，可配置周期、时区与执行时间生成统计报告。"
       @retry="state.refresh"
-      ><div class="table-wrap">
-        <Table :columns="columns" :data-source="[...items]" row-key="id" :pagination="false" :scroll="{ x: 1180 }"
-          ><template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'name'"
-              >{{ record.spec.name }}<small class="record-id">修订 {{ record.revision }}</small></template
-            ><template v-else-if="column.key === 'kind'">{{
-              kindNames[record.spec.kind as 'daily' | 'weekly' | 'monthly']
-            }}</template
-            ><template v-else-if="column.key === 'clock'"
-              ><span class="plan-value">{{ record.spec.timezone }}</span
-              ><small class="record-id">{{ record.spec.at }}</small></template
-            ><template v-else-if="column.key === 'provider'"
-              ><template v-if="record.spec.provider_id"
-                ><span class="plan-value">{{
-                  models.items.value.find(p => p.id === record.spec.provider_id)?.name ?? '固定模型修订'
-                }}</span
-                ><small class="record-id">模型修订 {{ record.spec.provider_revision }}</small></template
-              ><template v-else>统计报告</template></template
-            ><template v-else-if="column.key === 'state'"
-              ><span :class="['status', record.spec.enabled ? 'status-online' : 'status-disabled']">{{
-                record.spec.enabled ? '启用' : '停用'
-              }}</span></template
-            ><template v-else-if="column.key === 'next'">{{
-              record.next_at ? formatTime(record.next_at) : '未安排执行'
-            }}</template
-            ><template v-else-if="column.key === 'actions'"
-              ><div class="filter-actions">
-                <a-button
-                  type="link"
-                  size="small"
-                  :disabled="busy || unconfirmed || pending"
-                  @click="edit(record as ReportPlan)"
-                  >配置</a-button
-                ><a-button
-                  type="link"
-                  size="small"
-                  :disabled="busy || unconfirmed"
-                  @click="showRuns(record as ReportPlan)"
-                  >运行记录</a-button
-                ><Popconfirm
-                  v-if="record.spec.enabled"
-                  title="停用报告计划？"
-                  description="后续周期不再生成，已提交的报告继续处理。"
-                  ok-text="停用计划"
-                  cancel-text="取消"
-                  :disabled="busy || unconfirmed"
-                  @confirm="disable(record as ReportPlan)"
-                  ><a-button type="link" size="small" :disabled="busy || unconfirmed">停用</a-button></Popconfirm
-                >
-              </div></template
-            >
-          </template></Table
-        >
-      </div></StatePanel
     >
+      <ListTable :columns="columns" :data-source="[...items]" :pagination="tablePagination()" :scroll="{ x: 1356 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'kind'">{{ kindNames[record.spec.kind] }}</template>
+          <template v-else-if="column.key === 'provider'">
+            {{
+              record.spec.provider_id
+                ? (models.items.value.find(p => p.id === record.spec.provider_id)?.name ?? '固定模型修订')
+                : '统计报告'
+            }}
+          </template>
+          <template v-else-if="column.key === 'providerRevision'">{{
+            record.spec.provider_id ? record.spec.provider_revision : '—'
+          }}</template>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="record.spec.enabled ? 'success' : 'neutral'"
+            :value="record.spec.enabled ? '启用' : '停用'"
+          />
+          <template v-else-if="column.key === 'next'">{{
+            record.next_at ? formatTime(record.next_at) : '未安排执行'
+          }}</template>
+          <div v-else-if="column.key === 'actions'" class="table-row-actions">
+            <a-button type="link" size="small" :disabled="busy || unconfirmed || pending" @click="edit(record)"
+              >配置</a-button
+            >
+            <a-button type="link" size="small" :disabled="busy || unconfirmed" @click="showRuns(record)"
+              >运行记录</a-button
+            >
+            <Popconfirm
+              v-if="record.spec.enabled"
+              title="停用报告计划？"
+              description="后续周期不再生成，已提交的报告继续处理。"
+              ok-text="停用计划"
+              cancel-text="取消"
+              :disabled="busy || unconfirmed"
+              @confirm="disable(record)"
+              ><a-button type="link" size="small" :disabled="busy || unconfirmed">停用</a-button></Popconfirm
+            >
+          </div>
+        </template>
+      </ListTable>
+    </StatePanel>
   </section>
-  <section v-else class="panel">
-    <div class="panel-header">
+  <section v-else class="panel table-panel">
+    <div class="table-toolbar">
       <h2>计划运行记录</h2>
       <span>计划修订 {{ selected.revision }}</span>
     </div>
@@ -227,61 +232,55 @@ async function showReport(id: string) {
       :message="runsError + '。当前显示上次成功读取的运行记录。'"
       show-icon
       class="section-gap"
-      ><template #action><a-button @click="state.loadRuns(selected.id)">重试</a-button></template></a-alert
-    ><StatePanel
+      ><template #action><a-button @click="state.loadRuns()">重试</a-button></template></a-alert
+    >
+    <StatePanel
       :loading="runsPending && !runs.length"
       :error="runs.length ? '' : runsError"
       :empty="!runs.length"
       description="暂无运行记录，计划到期后可核对生成结果。"
-      @retry="state.loadRuns(selected.id)"
-      ><div class="table-wrap">
-        <Table :columns="runColumns" :data-source="[...runs]" row-key="id" :pagination="false" :scroll="{ x: 950 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'period'"
-              >{{ kindNames[record.request.kind as 'daily' | 'weekly' | 'monthly'] }} · {{ record.request.period
-              }}<small class="record-id">计划修订 {{ record.plan_revision }}</small></template
-            ><template v-else-if="column.key === 'state'"
-              ><span
-                :class="[
-                  'status',
-                  record.analysis_state === 'succeeded'
-                    ? 'status-online'
-                    : record.state === 'failed' || record.analysis_state === 'failed'
-                      ? 'status-offline'
-                      : 'status-pending',
-                ]"
-                >{{ planRunState(record as ReportPlanRun) }}</span
-              ></template
-            ><template v-else-if="column.key === 'due'"
-              >{{ formatTime(record.due_at)
-              }}<small class="record-id">实际槽位 {{ formatTime(record.effective_at) }}</small></template
-            ><template v-else-if="column.key === 'reason'"
-              ><span>{{
-                Object.hasOwn(planCodes, record.code)
-                  ? planCodes[record.code]
-                  : record.state === 'preparing'
-                    ? '统计正在准备'
-                    : '请核对运行状态'
-              }}</span
-              ><small v-if="record.skipped_from" class="record-id"
-                >错过槽位范围：{{ formatTime(record.skipped_from) }} 至
-                {{ formatTime(record.skipped_until) }}（不含结束时刻）；仅生成最近完整周期。</small
-              ></template
-            ><a-button
-              v-else-if="column.key === 'action'"
+      @retry="state.loadRuns()"
+    >
+      <ListTable :columns="runColumns" :data-source="[...runs]" :scroll="{ x: 1539 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'period'"
+            >{{ kindNames[record.request.kind] }} · {{ record.request.period }}</template
+          >
+          <StatusTag v-else-if="column.key === 'state'" :tone="planRunTone(record)" :value="planRunState(record)" />
+          <template v-else-if="column.key === 'due'">{{ formatTime(record.due_at) }}</template>
+          <template v-else-if="column.key === 'effective'">{{ formatTime(record.effective_at) }}</template>
+          <span v-else-if="column.key === 'reason'" :title="planCodes[record.code]">
+            {{ planCodes[record.code] ?? (record.state === 'preparing' ? '统计正在准备' : '请核对运行状态') }}
+          </span>
+          <template v-else-if="column.key === 'skipped'">
+            {{
+              record.skipped_from ? formatTime(record.skipped_from) + ' 至 ' + formatTime(record.skipped_until) : '—'
+            }}
+          </template>
+          <div v-else-if="column.key === 'action'" class="table-row-actions">
+            <a-button
               type="link"
               size="small"
               :disabled="!record.analysis_id || !record.analysis_state"
               @click="showReport(record.analysis_id)"
               >查看报告</a-button
-            ></template
-          ></Table
-        >
-      </div>
-      <a-button v-if="next" class="section-gap" :loading="runsPending" @click="state.loadRuns(selected.id, next)"
-        >查看更多记录</a-button
-      ></StatePanel
-    >
+            >
+          </div>
+        </template>
+      </ListTable>
+    </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="runsPending || runsError ? undefined : runs.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!runsError && !!next"
+      :disabled="runsPending"
+      @previous="state.previousPage"
+      @next="state.nextPage"
+      @update:page-size="state.changePageSize"
+    />
   </section>
   <ReportPlanForm
     v-if="editorOpen"
@@ -310,9 +309,3 @@ async function showReport(id: string) {
     @cancel="analysis.cancel"
   />
 </template>
-<style scoped>
-.plan-value {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-</style>

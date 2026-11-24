@@ -7,16 +7,20 @@ import {
   Modal as AModal,
   Radio as ARadio,
   Select as ASelect,
-  Table as ATable,
 } from 'ant-design-vue';
 import type { ReplaySample, RulePackage } from '@starbeacon/shared/types.ts';
 import type { ModelProvider } from '../models/models';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { formatBytes } from '@starbeacon/shared/utils/format.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 import RuleEditor from '@starbeacon/shared/components/RuleEditor.vue';
 import { session } from '../../session';
-import { checkClass, resultNames } from '../models/models';
+import { resultNames } from '../models/models';
 import {
   generationCodes,
   generationStates,
@@ -31,8 +35,21 @@ const ADescriptionsItem = ADescriptions.Item,
   ARadioGroup = ARadio.Group;
 const emit = defineEmits<{ adopted: [value: RulePackage]; samples: [] }>();
 const generation = useRuleGeneration();
-const { items, next, pending, error, available, selected, loading, detailError, busy, actionError, unconfirmed } =
-  generation;
+const {
+  items,
+  next,
+  cursors,
+  pageSize,
+  pending,
+  error,
+  available,
+  selected,
+  loading,
+  detailError,
+  busy,
+  actionError,
+  unconfirmed,
+} = generation;
 const creating = shallowRef(false),
   viewing = shallowRef(false),
   optionsPending = shallowRef(false),
@@ -80,11 +97,13 @@ const candidateOptions = computed(
   () => selected.value?.candidates.map(row => ({ value: row.sid, label: `SID ${row.sid} · ${row.title}` })) ?? [],
 );
 const columns = [
-  { title: '检测说明', dataIndex: 'title', width: 260 },
-  { title: '材料来源', key: 'source', width: 140 },
-  { title: '处理状态', key: 'state', width: 160 },
-  { title: '提交时间', key: 'time', width: 190 },
-  { title: '操作', key: 'action', width: 180 },
+  { title: '作业编号', dataIndex: 'id', width: 148, className: 'technical', ellipsis: true },
+  { title: '检测说明', dataIndex: 'title', width: 230, ellipsis: true },
+  { title: '材料来源', key: 'source', width: 135 },
+  { title: '处理状态', key: 'state', width: 132 },
+  { title: '取消申请', key: 'cancel', width: 132 },
+  { title: '提交时间', key: 'time', width: 172 },
+  { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
 ];
 async function readOptions() {
   if (stopped || frozen.value) return;
@@ -249,63 +268,74 @@ onScopeDispose(() => {
     class="section-gap"
     ><template #action><a-button :loading="busy" @click="confirm">确认原请求</a-button></template></a-alert
   >
-  <section class="panel">
-    <div class="panel-header">
-      <div>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
         <h2>AI 规则生成</h2>
-        <p class="page-description">根据自然语言与离线样本生成候选，保留材料引用、模型修订和人工采纳记录。</p>
+        <PageHelp title="AI 规则生成">
+          <p>根据自然语言与离线样本生成候选，保留材料引用、模型修订和人工采纳记录。</p>
+          <p>候选仅限 alert 检测规则。原生语法、误报率和检测结论需独立验证。</p>
+        </PageHelp>
       </div>
-      <a-space
-        ><a-button :loading="pending" @click="generation.refresh()">刷新记录</a-button
-        ><a-button type="primary" :disabled="!available || frozen" @click="openCreate">生成规则</a-button></a-space
-      >
+      <div class="filter-actions">
+        <a-button :loading="pending" @click="generation.refresh">刷新记录</a-button>
+        <a-button type="primary" :disabled="!available || frozen" @click="openCreate">生成规则</a-button>
+      </div>
     </div>
-    <div class="panel-body">
+    <div v-if="!pending && !error && !available" class="panel-body">
       <a-alert
-        v-if="!pending && !error && !available"
         type="warning"
         show-icon
         message="模型执行服务暂不可用"
-        description="当前可查看历史记录；请核对模型凭据、任务队列和服务状态。"
+        description="当前可查看历史记录，请核对模型凭据、任务队列和服务状态。"
       />
-      <p v-else class="page-description">
-        候选仅包含 alert 检测规则；模型生成成功不代表原生语法、误报率或攻击结论已通过验证。
-      </p>
     </div>
     <StatePanel
       :loading="pending && items.length === 0"
       :error="items.length === 0 ? error : ''"
       :empty="items.length === 0"
       description="暂无规则生成记录。配置模型后，可根据检测说明和离线样本生成候选规则。"
-      @retry="generation.refresh()"
+      @retry="generation.refresh"
     >
       <div v-if="error" class="panel-body">
-        <a-alert type="warning" show-icon :message="`${error}。当前显示上次读取的记录，请刷新核对。`" />
+        <a-alert type="warning" show-icon :message="error + '。当前显示上次读取的记录，请刷新核对。'" />
       </div>
-      <div class="table-wrap">
-        <a-table
-          :columns="columns"
-          :data-source="items"
-          row-key="id"
-          size="small"
-          :pagination="false"
-          :scroll="{ x: 930 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'source'">{{ sourceNames[record.source as GenerationSource] }}</template
-            ><template v-else-if="column.key === 'state'"
-              ><span :class="['status', checkClass(record.state)]">{{ generationStates[record.state] }}</span
-              ><small v-if="record.cancel_requested" class="record-id">取消请求已提交</small></template
-            ><template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template
-            ><template v-else-if="column.key === 'action'"
-              ><a-button type="link" :disabled="busy" @click="openDetail(record.id)">查看结果</a-button></template
-            ></template
-          ></a-table
-        >
-      </div>
-      <div v-if="next" class="panel-body">
-        <a-button :loading="pending" @click="generation.refresh(next, true)">加载更多</a-button>
-      </div>
+      <ListTable :columns="columns" :data-source="items" :scroll="{ x: 1049 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'source'">{{ sourceNames[record.source] }}</template>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="statusTone(modelJobTones, record.state)"
+            :value="generationStates[record.state] ?? '其他处理状态'"
+          />
+          <template v-else-if="column.key === 'cancel'">{{
+            record.cancel_requested ? '取消请求已提交' : '—'
+          }}</template>
+          <template v-else-if="column.key === 'time'">{{ formatTime(record.created_at) }}</template>
+          <button
+            v-else-if="column.key === 'action'"
+            type="button"
+            class="link-button record-link"
+            :disabled="busy"
+            @click="openDetail(record.id)"
+          >
+            查看结果
+          </button>
+        </template>
+      </ListTable>
     </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!next"
+      :disabled="pending"
+      @previous="generation.previousPage"
+      @next="generation.nextPage"
+      @update:page-size="generation.changePageSize"
+    />
   </section>
   <a-modal
     title="AI 规则生成"
@@ -444,11 +474,10 @@ onScopeDispose(() => {
           class="section-gap"
         />
         <div class="filter-actions section-gap">
-          <span :class="['status', checkClass(selected.state)]">{{ generationStates[selected.state] }}</span><a-button
-            :loading="loading"
-            :disabled="busy"
-            @click="generation.load(selected.id)"
-            >刷新结果</a-button
+          <StatusTag
+            :tone="statusTone(modelJobTones, selected.state)"
+            :value="generationStates[selected.state] ?? '其他处理状态'"
+          /><a-button :loading="loading" :disabled="busy" @click="generation.load(selected.id)">刷新结果</a-button
           ><a-button
             v-if="generationWorking(selected.state)"
             danger

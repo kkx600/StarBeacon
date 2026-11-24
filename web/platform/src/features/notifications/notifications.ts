@@ -1,3 +1,5 @@
+import type { StatusTone } from '@starbeacon/shared/terms.ts';
+
 export type ChannelKind = 'email' | 'wecom' | 'dingtalk' | 'feishu' | 'webhook' | 'syslog_tls' | 'syslog_tcp';
 export type LogStream = 'alerts' | 'operations' | 'logins' | 'quality';
 export type DeliveryState =
@@ -128,12 +130,14 @@ export const receiptNames: Record<string, string> = {
   message_too_large: '消息超过渠道容量限制',
   invalid_recipient: '接收人不在渠道配置范围内',
 };
-export function deliveryClass(state: DeliveryState) {
-  return state === 'accepted' || state === 'transport_written'
-    ? 'status-online'
-    : state === 'failed'
-      ? 'status-high'
-      : state === 'uncertain' || state === 'retry'
-        ? 'status-medium'
-        : 'status-unknown';
-}
+export const deliveryTones = {
+  queued: 'neutral',
+  running: 'info',
+  retry: 'warning',
+  accepted: 'success',
+  transport_written: 'success',
+  failed: 'danger',
+  uncertain: 'warning',
+  suppressed: 'neutral',
+  cancelled: 'neutral',
+} as const satisfies Record<DeliveryState, StatusTone>;

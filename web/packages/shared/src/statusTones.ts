@@ -48,3 +48,14 @@ export const taskStateTones = {
   expired: 'neutral',
   cancelled: 'neutral',
 } as const satisfies StatusToneMap;
+
+export const modelJobTones = {
+  queued: 'neutral',
+  running: 'info',
+  succeeded: 'success',
+  failed: 'danger',
+  refused: 'warning',
+  incomplete: 'warning',
+  uncertain: 'warning',
+  cancelled: 'neutral',
+} as const satisfies StatusToneMap;

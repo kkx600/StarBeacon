@@ -225,7 +225,7 @@ describe('响应动作检索与来源核对', () => {
     await click('重置');
     expect(fromPath(request.mock.lastCall![0]).target_ip).toBe('');
     await vi.waitFor(() => expect(wrapper.text()).not.toContain('正在读取数据'));
-    await wrapper.get('[aria-label="响应开始时间"]').setValue('2000-01-01T00:00:00');
+    await wrapper.get('#response-start').setValue('2000-01-01T00:00:00');
     const before = request.mock.calls.length;
     await click('查询');
     expect(request).toHaveBeenCalledTimes(before);

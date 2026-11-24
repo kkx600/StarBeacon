@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Modal, Descriptions, DescriptionsItem } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
-import { checkNames, resultNames, type ModelProvider } from './models';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import { statusTone } from '@starbeacon/shared/statusTones.ts';
+import { checkNames, checkTones, resultNames, type ModelProvider } from './models';
 defineProps<{ record: ModelProvider | null }>();
 const emit = defineEmits<{ close: [] }>();
 function count(value: number | undefined) {
@@ -9,8 +12,17 @@ function count(value: number | undefined) {
 }
 </script>
 <template>
-  <Modal :open="!!record" title="模型连接验证" :width="680" :footer="null" @cancel="emit('close')"
-    ><template v-if="record">
+  <Modal :open="!!record" :width="680" :footer="null" @cancel="emit('close')">
+    <template #title>
+      <span class="heading-with-help"
+        >模型连接验证
+        <PageHelp title="模型连接验证">
+          <p>验证使用固定短文本确认生成接口响应，生成文本会被丢弃。安全研判评测另行执行。</p>
+          <p>结果未知时，请先核对提供方调用记录再发起验证。</p>
+        </PageHelp>
+      </span>
+    </template>
+    <template v-if="record">
       <a-alert
         v-if="record.check && record.check.provider_revision !== record.revision"
         type="warning"
@@ -21,9 +33,11 @@ function count(value: number | undefined) {
       <Descriptions bordered :column="1" size="small"
         ><DescriptionsItem label="提供方">{{ record.name }}</DescriptionsItem
         ><DescriptionsItem label="当前配置修订">{{ record.revision }}</DescriptionsItem
-        ><DescriptionsItem label="验证状态">{{
-          record.check ? (checkNames[record.check.state] ?? '其他处理状态') : '尚未验证'
-        }}</DescriptionsItem
+        ><DescriptionsItem label="验证状态">
+          <StatusTag
+            :tone="statusTone(checkTones, record.check?.state)"
+            :value="record.check ? (checkNames[record.check.state] ?? '其他处理状态') : '尚未验证'"
+          /> </DescriptionsItem
         ><template v-if="record.check"
           ><DescriptionsItem label="验证配置修订">{{ record.check.provider_revision }}</DescriptionsItem
           ><DescriptionsItem label="处理说明">{{
@@ -43,9 +57,6 @@ function count(value: number | undefined) {
           ></template
         ></Descriptions
       >
-      <p class="page-description section-gap">
-        连接验证只确认生成接口响应。验证不携带告警正文，不保存生成文本，也不代表通过安全研判评测。结果未知时，请先核对提供方调用记录再发起新的验证。
-      </p>
     </template></Modal
   >
 </template>

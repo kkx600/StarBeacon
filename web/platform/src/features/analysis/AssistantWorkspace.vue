@@ -3,12 +3,16 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('智能对话');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, ref } from 'vue';
-import { Select, Checkbox, Modal, Table, Input } from 'ant-design-vue';
+import { Select, Checkbox, Modal, Input } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useModels } from '../models/useModels';
-import { checkClass } from '../models/models';
 import { blankRequest, stateNames, working, type AnalysisJob } from './analysis';
 import { useAnalysis } from './useAnalysis';
 import AnalysisDetail from './AnalysisDetail.vue';
@@ -16,8 +20,28 @@ const message = useFeedback();
 const router = useRouter(),
   models = useModels(),
   state = useAnalysis('chat'),
-  { conversation, loading, detailError, busy, actionError, unconfirmed, threads, next, pending, error } = state;
+  {
+    conversation,
+    loading,
+    detailError,
+    busy,
+    actionError,
+    unconfirmed,
+    threads,
+    next,
+    cursors,
+    pageSize,
+    pending,
+    error,
+  } = state;
 const ATextarea = Input.TextArea;
+const columns = [
+  { title: '对话编号', dataIndex: 'id', width: 148, className: 'technical', ellipsis: true },
+  { title: '对话主题', key: 'title', width: 164, ellipsis: true },
+  { title: '最后活动', key: 'time', width: 168 },
+  { title: '处理状态', key: 'state', width: 120 },
+  { title: '操作', key: 'action', width: 68, fixed: 'right' as const },
+];
 const question = ref(''),
   provider = ref(''),
   hours = ref(24),
@@ -86,23 +110,17 @@ async function cancel(id: string) {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">依据当前统计解释检测现象并提出调查建议，结论须结合原始证据复核。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button :disabled="blocked || unconfirmed" @click="fresh">创建对话</a-button
-      ><a-button
-        :disabled="busy || unconfirmed"
-        @click="
-          historyOpen = true;
-          state.refresh();
-        "
-        >对话记录</a-button
-      >
-    </div>
-  </header>
+  <PageHeader :title="pageTitle" description="依据当前统计解释检测现象并提出调查建议，结论须结合原始证据复核。">
+    <a-button :disabled="blocked || unconfirmed" @click="fresh">创建对话</a-button>
+    <a-button
+      :disabled="busy || unconfirmed"
+      @click="
+        historyOpen = true;
+        state.firstPage();
+      "
+      >对话记录</a-button
+    >
+  </PageHeader>
   <a-alert v-if="models.error.value" type="error" :message="models.error.value" show-icon class="section-gap" /><a-alert
     v-if="!models.pending.value && !providers.length"
     type="info"
@@ -176,9 +194,10 @@ async function cancel(id: string) {
           <p class="assistant-question">{{ job.request.question }}</p>
           <div class="assistant-response">
             <div class="filter-actions">
-              <span :class="['status', checkClass(job.state)]">{{ stateNames[job.state] ?? '其他处理状态' }}</span><span
-                class="muted"
-                >{{ formatTime(job.created_at) }}</span
+              <StatusTag
+                :tone="statusTone(modelJobTones, job.state)"
+                :value="stateNames[job.state] ?? '其他处理状态'"
+              /><span class="muted">{{ formatTime(job.created_at) }}</span
               ><a-button type="link" size="small" @click="detail = job">统计与来源</a-button
               ><a-button
                 v-if="working(job.state)"
@@ -240,37 +259,50 @@ async function cancel(id: string) {
     </div>
     <p class="muted">提供方可能按调用计费。关闭页面不会停止已提交的分析，可通过取消分析操作申请终止。</p>
   </section>
-  <Modal :open="historyOpen" title="对话记录" :width="760" :footer="null" @cancel="historyOpen = false"
-    ><StatePanel
-      :loading="pending && !threads.length"
+  <Modal :open="historyOpen" title="对话记录" :width="760" :footer="null" @cancel="historyOpen = false">
+    <StatePanel
+      :loading="pending"
       :error="error"
       :empty="threads.length === 0"
       description="暂无对话记录。"
-      @retry="state.refresh()"
-      ><div class="table-wrap">
-        <Table
-          :data-source="[...threads]"
-          :columns="[
-            { title: '对话主题', dataIndex: 'title', width: 300 },
-            { title: '最后活动', key: 'time', width: 190 },
-            { title: '操作', key: 'action', width: 90 },
-          ]"
-          row-key="id"
-          :pagination="false"
-          :scroll="{ x: 580 }"
-          ><template #bodyCell="{ column, record }"
-            ><template v-if="column.key === 'time'">{{ formatTime(record.updated_at) }}</template
-            ><a-button v-else-if="column.key === 'action'" type="link" size="small" @click="choose(record.id)"
-              >查看</a-button
-            ></template
-          ></Table
-        >
-      </div>
-      <a-button v-if="next" :loading="pending" class="section-gap" @click="state.refresh(next, true)"
-        >查看更多对话</a-button
-      ></StatePanel
-    ></Modal
-  >
+      @retry="state.refresh"
+    >
+      <ListTable :data-source="[...threads]" :columns="columns" :scroll="{ x: 668 }">
+        <template #bodyCell="{ column, record }">
+          <button
+            v-if="column.key === 'title'"
+            type="button"
+            class="record-link"
+            :title="record.title"
+            @click="choose(record.id)"
+          >
+            {{ record.title }}
+          </button>
+          <template v-else-if="column.key === 'time'">{{ formatTime(record.updated_at) }}</template>
+          <StatusTag
+            v-else-if="column.key === 'state'"
+            :tone="statusTone(modelJobTones, record.state)"
+            :value="stateNames[record.state] ?? '其他处理状态'"
+          />
+          <button v-else-if="column.key === 'action'" type="button" class="record-link" @click="choose(record.id)">
+            查看
+          </button>
+        </template>
+      </ListTable>
+    </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : threads.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!next"
+      :disabled="pending"
+      @previous="state.previousPage"
+      @next="state.nextPage"
+      @update:page-size="state.changePageSize"
+    />
+  </Modal>
   <AnalysisDetail
     :open="!!detail"
     :job="detail"

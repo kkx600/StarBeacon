@@ -1,5 +1,7 @@
 import { policyID, type PolicyRecord } from './decisionPolicies';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 export const triggerStates = { pending: '等待模型队列', submitted: '模型队列已受理', skipped: '未提交' } as const;
+export const triggerTones = { pending: 'info', submitted: 'success', skipped: 'warning' } as const;
 export const triggerCodes = {
   awaiting_model_queue: '等待执行服务核对',
   model_queue_accepted: '已创建独立研判作业',
@@ -28,16 +30,21 @@ export interface AutomaticTriagePage {
 }
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const digest = (v: unknown) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
-export function validAutomaticTriagePage(v: unknown, p: PolicyRecord, cursor: string): v is AutomaticTriagePage {
+export function validAutomaticTriagePage(
+  v: unknown,
+  p: PolicyRecord,
+  cursor: string,
+  limit = defaultPageSize,
+): v is AutomaticTriagePage {
   if (
     !object(v) ||
     Object.keys(v).length !== 2 ||
     !Array.isArray(v.items) ||
-    v.items.length > 20 ||
+    v.items.length > limit ||
     typeof v.next_cursor !== 'string' ||
     (v.next_cursor !== '' &&
       (!policyID(v.next_cursor) ||
-        v.items.length !== 20 ||
+        v.items.length !== limit ||
         !object(v.items.at(-1)) ||
         v.items.at(-1).id !== v.next_cursor))
   )

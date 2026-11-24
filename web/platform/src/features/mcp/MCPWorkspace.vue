@@ -3,11 +3,17 @@ import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('MCP 服务');
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { shallowRef } from 'vue';
-import { Table, Modal, Popconfirm, Tabs } from 'ant-design-vue';
+import { Modal, Popconfirm, Tabs } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useMCP } from './useMCP';
-import { bindingState, scopeNames, type Scope, type Binding, type BindingChange } from './mcp';
+import { bindingBadge, scopeNames, type Binding, type BindingChange } from './mcp';
 import BindingForm from './BindingForm.vue';
 import MCPResourceGuide from './MCPResourceGuide.vue';
 const TabPane = Tabs.TabPane;
@@ -19,14 +25,20 @@ const editing = shallowRef<Binding | null>(null),
   toolsOpen = shallowRef(false);
 const directoryTab = shallowRef('tools');
 const columns = [
-  { title: '服务身份', key: 'name', width: 180 },
-  { title: '授权主体 / OAuth 客户端', key: 'identity', width: 270 },
-  { title: '只读权限', key: 'scopes', width: 190 },
+  { title: '身份编号', dataIndex: 'id', width: 142, className: 'technical', ellipsis: true },
+  { title: '服务身份', dataIndex: 'name', width: 142, ellipsis: true },
+  { title: '修订', dataIndex: 'revision', width: 62 },
+  { title: '授权主体', dataIndex: 'subject', width: 155, className: 'technical', ellipsis: true },
+  { title: 'OAuth 客户端', dataIndex: 'oauth_client_id', width: 158, className: 'technical', ellipsis: true },
+  { title: '只读权限', key: 'scopes', width: 160, ellipsis: true },
   { title: '状态', key: 'state', width: 90 },
-  { title: '到期时间', key: 'expiry', width: 190 },
+  { title: '到期时间', key: 'expiry', width: 172 },
   { title: '调用上限', key: 'budget', width: 110 },
-  { title: '操作', key: 'actions', fixed: 'right' as const, width: 150 },
+  { title: '操作', key: 'actions', fixed: 'right' as const, width: 115 },
 ];
+function scopes(record: Binding) {
+  return record.scopes.map(scope => scopeNames[scope] ?? scope).join('、');
+}
 function edit(record: Binding | null) {
   state.clearActionError();
   editing.value = record;
@@ -47,19 +59,21 @@ function openDirectory() {
 }
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">管理其他 Agent 的只读数据分析接入、租户授权及调用预算。</p>
-    </div>
-    <div class="filter-actions">
-      <a-button :loading="pending" @click="state.refresh">刷新</a-button
-      ><a-button @click="openDirectory">工具与资源</a-button
-      ><a-button type="primary" :disabled="pending || busy || !info?.enabled || items.length >= 100" @click="edit(null)"
-        >登记服务身份</a-button
-      >
-    </div>
-  </header>
+  <PageHeader
+    :title="pageTitle"
+    description="管理其他 Agent 的只读数据分析接入、租户授权及调用预算。最多可登记 100 个服务身份。"
+    :notice="
+      info?.enabled
+        ? 'HTTP POST · Bearer 认证 · 无持久协议会话。支持协议：' + info.protocol_versions.join('、') + '。'
+        : undefined
+    "
+  >
+    <a-button :loading="pending" @click="state.refresh">刷新</a-button>
+    <a-button @click="openDirectory">工具与资源</a-button>
+    <a-button type="primary" :disabled="pending || busy || !info?.enabled || items.length >= 100" @click="edit(null)"
+      >登记服务身份</a-button
+    >
+  </PageHeader>
   <a-alert v-if="actionError && !editorOpen" type="error" :message="actionError" show-icon class="section-gap" />
   <a-alert
     v-if="!pending && !error && !info?.enabled"
@@ -78,14 +92,15 @@ function openDirectory() {
     <div>
       <span class="muted">资源发现</span><code>{{ info.metadata_url }}</code>
     </div>
-    <p class="page-description">
-      HTTP POST · Bearer 认证 · 无持久协议会话。支持协议：{{ info.protocol_versions.join('、') }}。
-    </p>
   </section>
-  <section class="panel">
-    <div class="panel-header">
+  <section class="panel table-panel">
+    <div class="table-toolbar">
       <h2>MCP 服务身份</h2>
-      <span>{{ items.length }} / 100 个身份</span>
+      <MetricBar
+        v-if="!pending && !error"
+        embedded
+        :items="[{ label: '已登记身份', value: items.length, suffix: '/ 100' }]"
+      />
     </div>
     <StatePanel
       :loading="pending"
@@ -93,44 +108,28 @@ function openDirectory() {
       :empty="items.length === 0"
       description="暂无服务身份。启用 MCP 后，可登记调用方的主体与客户端，并授予只读权限。"
       @retry="state.refresh"
-      ><div class="table-wrap">
-        <Table :columns="columns" :data-source="[...items]" row-key="id" :pagination="false" :scroll="{ x: 1180 }"
-          ><template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'name'"
-              >{{ record.name }}<small class="record-id">修订 {{ record.revision }}</small></template
-            ><template v-else-if="column.key === 'identity'"
-              ><span class="mcp-identity">{{ record.subject }}</span
-              ><small class="record-id mcp-identity">{{ record.oauth_client_id }}</small></template
-            ><template v-else-if="column.key === 'scopes'"
-              ><span v-for="scope in record.scopes" :key="scope" class="mcp-scope">{{
-                scopeNames[scope as Scope] ?? scope
-              }}</span></template
-            ><template v-else-if="column.key === 'state'"
-              ><span
-                :class="['status', bindingState(record as Binding) === '启用' ? 'status-online' : 'status-disabled']"
-                >{{ bindingState(record as Binding) }}</span
-              ></template
-            ><template v-else-if="column.key === 'expiry'">{{ formatTime(record.expires_at) }}</template
-            ><template v-else-if="column.key === 'budget'">{{ record.requests_per_minute }} 次 / 分钟</template
-            ><template v-else-if="column.key === 'actions'"
-              ><div class="filter-actions">
-                <a-button type="link" size="small" :disabled="busy || !info?.enabled" @click="edit(record as Binding)"
-                  >配置</a-button
-                ><Popconfirm
-                  title="删除此服务身份？"
-                  description="该身份的后续调用会被拒绝，已有操作日志仍按保留策略保存。"
-                  ok-text="删除身份"
-                  cancel-text="取消"
-                  :disabled="busy"
-                  @confirm="remove(record as Binding)"
-                  ><a-button type="link" size="small" danger :disabled="busy">删除</a-button></Popconfirm
-                >
-              </div></template
-            >
-          </template></Table
-        >
-      </div></StatePanel
     >
+      <ListTable :columns="columns" :data-source="[...items]" :pagination="tablePagination()" :scroll="{ x: 1306 }">
+        <template #bodyCell="{ column, record }">
+          <span v-if="column.key === 'scopes'" :title="scopes(record)">{{ scopes(record) }}</span>
+          <StatusTag v-else-if="column.key === 'state'" v-bind="bindingBadge(record)" />
+          <template v-else-if="column.key === 'expiry'">{{ formatTime(record.expires_at) }}</template>
+          <template v-else-if="column.key === 'budget'">{{ record.requests_per_minute }} 次 / 分钟</template>
+          <div v-else-if="column.key === 'actions'" class="table-row-actions">
+            <a-button type="link" size="small" :disabled="busy || !info?.enabled" @click="edit(record)">配置</a-button>
+            <Popconfirm
+              title="删除此服务身份？"
+              description="该身份的后续调用会被拒绝，已有操作日志仍按保留策略保存。"
+              ok-text="删除身份"
+              cancel-text="取消"
+              :disabled="busy"
+              @confirm="remove(record)"
+              ><a-button type="link" size="small" danger :disabled="busy">删除</a-button></Popconfirm
+            >
+          </div>
+        </template>
+      </ListTable>
+    </StatePanel>
   </section>
   <BindingForm
     v-if="editorOpen && info"
@@ -152,6 +151,12 @@ function openDirectory() {
   >
     <Tabs v-model:activeKey="directoryTab" :animated="false" destroy-inactive-tab-pane>
       <TabPane key="tools" tab="工具目录">
+        <div class="heading-with-help section-gap">
+          <h2>工具目录</h2>
+          <PageHelp title="工具目录">
+            <p>实际可调用的范围以当前令牌发现结果为准。工具只执行有界只读查询，调用结果与错误写入操作日志。</p>
+          </PageHelp>
+        </div>
         <StatePanel
           :loading="pending"
           :error="error"
@@ -166,10 +171,6 @@ function openDirectory() {
             </li>
           </ul></StatePanel
         >
-        <p class="page-description">
-          目录说明当前软件支持的工具。Agent
-          实际可调用的范围以自身令牌的工具发现结果为准。工具只执行有界只读查询，不能直接访问数据库、运行命令或执行封禁。调用结果与错误写入操作日志。
-        </p>
       </TabPane>
       <TabPane key="resources" tab="元数据资源"><MCPResourceGuide /></TabPane>
     </Tabs>
@@ -187,13 +188,9 @@ function openDirectory() {
   grid-template-columns: 80px minmax(0, 1fr);
   gap: var(--related-gap);
 }
-.mcp-connection code,
-.mcp-identity {
+.mcp-connection code {
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-.mcp-scope {
-  display: block;
 }
 .mcp-tools {
   padding-left: 20px;

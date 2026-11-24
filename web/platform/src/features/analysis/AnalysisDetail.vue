@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, ref, watch, onScopeDispose } from 'vue';
-import { Modal, Table } from 'ant-design-vue';
+import { Modal } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import MetricBar from '@starbeacon/shared/components/MetricBar.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { tablePagination } from '@starbeacon/shared/pagination.ts';
+import { modelJobTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 import { formatTime } from '@starbeacon/shared/types.ts';
-import { checkClass, resultNames } from '../models/models';
+import { resultNames } from '../models/models';
 import { countText } from '../overview/overview';
 import {
   analysisCodes,
@@ -29,6 +35,21 @@ watch(
 );
 onScopeDispose(() => downloadControl?.abort());
 const facts = computed(() => (props.job ? analysisFacts(props.job) : []));
+const factColumns = [
+  { title: '来源编号', dataIndex: 'id', width: 192, className: 'technical', ellipsis: true },
+  { title: '统计项', dataIndex: 'label', width: 218, ellipsis: true },
+  { title: '统计值', dataIndex: 'value', width: 300, ellipsis: true },
+];
+const metrics = computed(() => {
+  const job = props.job;
+  if (!job) return [];
+  const inventory = job.evidence.segments.at(-1)?.inventory;
+  return [
+    { label: '已索引告警', value: countText(totalAlerts(job)) },
+    { label: '登记资产（生成时）', value: inventory ? countText(inventory.assets) : '—' },
+    { label: '在线探针（生成时）', value: inventory ? countText(inventory.online) : '—' },
+  ];
+});
 async function download() {
   if (!props.job || exporting.value) return;
   const control = new AbortController();
@@ -74,9 +95,10 @@ async function download() {
           class="section-gap"
         />
         <div class="filter-actions section-gap">
-          <span :class="['status', checkClass(job.state)]">{{ stateNames[job.state] ?? '其他处理状态' }}</span><span
-            class="muted"
-            >修订 {{ job.revision }} · {{ formatTime(job.created_at) }}</span
+          <StatusTag
+            :tone="statusTone(modelJobTones, job.state)"
+            :value="stateNames[job.state] ?? '其他处理状态'"
+          /><span class="muted">修订 {{ job.revision }} · {{ formatTime(job.created_at) }}</span
           ><a-button :loading="loading" :disabled="busy || loading" @click="emit('retry')">刷新结果</a-button
           ><a-button
             v-if="working(job.state)"
@@ -100,19 +122,7 @@ async function download() {
           show-icon
           class="section-gap"
         />
-        <div class="analysis-statistics">
-          <div>
-            <span>已索引告警</span><strong :title="totalAlerts(job)">{{ countText(totalAlerts(job)) }}</strong>
-          </div>
-          <div>
-            <span>登记资产（生成时）</span
-            ><strong>{{ countText(job.evidence.segments.at(-1)?.inventory.assets ?? '0') }}</strong>
-          </div>
-          <div>
-            <span>在线探针（生成时）</span
-            ><strong>{{ countText(job.evidence.segments.at(-1)?.inventory.online ?? '0') }}</strong>
-          </div>
-        </div>
+        <MetricBar :items="metrics" />
         <p class="muted">
           统计范围：{{ formatTime(job.evidence.window.start) }} — {{ formatTime(job.evidence.window.end) }} ·
           {{ job.request.timezone || 'UTC' }}
@@ -141,26 +151,13 @@ async function download() {
           show-icon
           class="section-gap"
         />
-        <a-alert
-          type="info"
-          message="统计快照记录已索引告警；检测命中不代表攻击成功，登记状态不代表周期覆盖率。模型建议需要人工复核。"
-          show-icon
-          class="section-gap"
-        />
-        <h2>统计来源</h2>
-        <div class="table-wrap">
-          <Table
-            :data-source="facts"
-            :columns="[
-              { title: '来源标识', dataIndex: 'id', width: 220 },
-              { title: '统计项', dataIndex: 'label', width: 240 },
-              { title: '统计值', dataIndex: 'value', width: 200 },
-            ]"
-            row-key="id"
-            :pagination="{ pageSize: 10, showSizeChanger: false }"
-            :scroll="{ x: 660 }"
-          />
+        <div class="heading-with-help">
+          <h2>统计来源</h2>
+          <PageHelp title="统计来源">
+            <p>统计快照仅记录已索引告警。检测结论与周期覆盖率需独立核对，模型建议需人工复核。</p>
+          </PageHelp>
         </div>
+        <ListTable :data-source="facts" :columns="factColumns" :pagination="tablePagination()" :scroll="{ x: 710 }" />
         <dl class="analysis-metadata">
           <dt>分析标识</dt>
           <dd>{{ job.id }}</dd>
@@ -187,28 +184,6 @@ async function download() {
   </Modal>
 </template>
 <style scoped>
-.analysis-statistics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 12px 0;
-}
-.analysis-statistics > div {
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--primary);
-  padding: 12px;
-  background: var(--surface);
-}
-.analysis-statistics span {
-  color: var(--muted);
-  font-size: 12px;
-}
-.analysis-statistics strong {
-  font-size: 24px;
-  overflow-wrap: anywhere;
-}
 .analysis-narrative p {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

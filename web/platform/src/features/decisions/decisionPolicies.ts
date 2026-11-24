@@ -11,6 +11,12 @@ export const policyStatuses = {
   protected: '保护网段排除',
   abstained: '不参与决策',
 } as const;
+export const policyStatusTones = {
+  matched: 'success',
+  not_matched: 'neutral',
+  protected: 'warning',
+  abstained: 'neutral',
+} as const;
 export const policyReasons = {
   policy_inactive: '策略已停用',
   triage_not_eligible: '研判未完成、已取消或已到期',

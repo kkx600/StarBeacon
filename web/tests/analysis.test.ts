@@ -121,14 +121,17 @@ describe('分析状态与持久作业交互', () => {
     first.resolve({ items: [], next_cursor: '', model_execution_available: false });
     await flushPromises();
     expect(state.items.value).toEqual([analysisRow]);
+    request.mockResolvedValueOnce({ ...list, next_cursor: 'cursor_owned' });
+    await state.refresh();
     request.mockResolvedValueOnce({
       items: [{ ...analysisRow, id: 'next_owned' }],
       next_cursor: 'after_owned',
       model_execution_available: true,
     });
-    await state.refresh('cursor_owned', true);
+    state.nextPage();
+    await flushPromises();
     expect(request.mock.lastCall?.[0]).toContain('before=cursor_owned');
-    expect(state.items.value).toHaveLength(2);
+    expect(state.items.value.map(row => row.id)).toEqual(['next_owned']);
     request.mockRejectedValueOnce('offline');
     await state.refresh();
     expect(state.error.value).toBe('分析记录读取失败');
@@ -511,7 +514,10 @@ describe('报告中心交互', () => {
     const wrapper = mount(ReportsWorkspace, { global: { plugins: [registerAnt] }, attachTo: document.body });
     await flushPromises();
     await click('生成报告');
-    await wrapper.findAllComponents(Select)[1]!.setValue(analysisProvider.id, 'value');
+    await wrapper
+      .findAllComponents(Select)
+      .find(select => select.props('id') === 'report-model')!
+      .setValue(analysisProvider.id, 'value');
     await wrapper.findComponent(Checkbox).setValue(true, 'checked');
     expect(button('开始生成').disabled).toBe(false);
     const date = document.body.querySelector<HTMLInputElement>('input[aria-label="周期内日期"]')!;
@@ -546,7 +552,10 @@ describe('报告中心交互', () => {
     const wrapper = mount(ReportsWorkspace, { global: { plugins: [registerAnt] }, attachTo: document.body });
     await flushPromises();
     await click('生成报告');
-    await wrapper.findAllComponents(Select)[1]!.setValue(analysisProvider.id, 'value');
+    await wrapper
+      .findAllComponents(Select)
+      .find(select => select.props('id') === 'report-model')!
+      .setValue(analysisProvider.id, 'value');
     expect(button('开始生成').disabled).toBe(true);
     await wrapper.findComponent(Checkbox).setValue(true, 'checked');
     request.mockRejectedValueOnce(new Error('结果未确认'));
@@ -569,14 +578,15 @@ describe('报告中心交互', () => {
     expect(wrapper.text()).toContain('暂无报告记录');
     request.mockResolvedValueOnce({ ...list, next_cursor: 'cursor_owned' });
     await click('刷新');
-    expect(wrapper.text()).toContain('查看更多报告');
+    expect(button('下一页').disabled).toBe(false);
     request.mockResolvedValueOnce({
       items: [{ ...analysisRow, id: 'older_owned' }],
       next_cursor: '',
       model_execution_available: true,
     });
-    await click('查看更多报告');
-    expect(wrapper.findAll('tbody tr.ant-table-row')).toHaveLength(2);
+    await click('下一页');
+    expect(wrapper.findAll('tbody tr.ant-table-row')).toHaveLength(1);
+    expect(wrapper.text()).toContain('第 2 页 · 本页 1 条');
     request.mockRejectedValueOnce(new Error('报告服务不可用'));
     await click('刷新');
     expect(wrapper.text()).toContain('报告服务不可用');

@@ -164,13 +164,13 @@ export function validGenerationRequest(value: unknown): value is GenerationReque
     ? value.sample_id === '' && value.sample_sha256 === ''
     : id(value.sample_id) && hash(value.sample_sha256);
 }
-export function validGenerationPage(value: unknown): value is GenerationPage {
+export function validGenerationPage(value: unknown, limit = 20): value is GenerationPage {
   return (
     record(value) &&
     typeof value.model_execution_available === 'boolean' &&
     (value.next_cursor === '' || id(value.next_cursor)) &&
     Array.isArray(value.items) &&
-    value.items.length <= 20 &&
+    value.items.length <= limit &&
     unique(value.items.map(row => (record(row) ? row.id : null))) &&
     value.items.every(
       row =>

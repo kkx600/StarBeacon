@@ -5,7 +5,7 @@ import { Select, InputNumber, Switch, message } from 'ant-design-vue';
 import { registerAnt } from '../packages/shared/src/ant';
 import { useModels } from '../platform/src/features/models/useModels';
 import {
-  checkClass,
+  checkTones,
   type ModelProvider,
   type ModelChange,
   type ModelCheck,
@@ -289,8 +289,14 @@ describe('模型验证详情与工作区', () => {
     expect(document.body.textContent).toContain('尚未验证');
     await wrapper.setProps({ record: null });
     expect(document.body.textContent).not.toContain(provider.name);
-    for (const state of ['succeeded', 'running', 'failed', 'uncertain', 'incomplete', 'refused'])
-      expect(checkClass(state)).toMatch(/^status-/);
+    expect(checkTones).toEqual({
+      succeeded: 'success',
+      running: 'info',
+      failed: 'danger',
+      uncertain: 'warning',
+      incomplete: 'warning',
+      refused: 'warning',
+    });
   });
   it('单一表格贯通配置、验证与结果，并展示历史修订与停用状态', async () => {
     request.mockResolvedValueOnce({ items: [{ ...provider, check }], available: true });
@@ -304,7 +310,8 @@ describe('模型验证详情与工作区', () => {
     await click('连接验证');
     await click('开始验证');
     await vi.waitFor(() => expect(message.success).toHaveBeenCalledWith('模型连接验证通过'));
-    expect(document.body.textContent).toContain('不代表通过安全研判评测');
+    document.querySelector<HTMLButtonElement>('.ant-modal [aria-label="模型连接验证的说明"]')!.click();
+    await vi.waitFor(() => expect(document.body.textContent).toContain('安全研判评测另行执行'));
     (document.body.querySelector('.ant-modal-close') as HTMLButtonElement).click();
     await flushPromises();
     await click('结果');

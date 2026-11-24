@@ -7,7 +7,7 @@ import { registerAnt } from '../packages/shared/src/ant';
 import { useNotifications } from '../platform/src/features/notifications/useNotifications';
 import {
   channelNames,
-  deliveryClass,
+  deliveryTones,
   type Channel,
   type ChannelChange,
   type Delivery,
@@ -489,8 +489,14 @@ describe('渠道列表、推送回执与工作区交互', () => {
     expect(detail.emitted('close')).toHaveLength(1);
     await detail.setProps({ record: null });
     expect(document.body.textContent).not.toContain(delivery.id);
-    for (const state of ['accepted', 'transport_written', 'failed', 'uncertain', 'retry', 'queued'] as const)
-      expect(deliveryClass(state)).toMatch(/^status-/);
+    expect(deliveryTones).toMatchObject({
+      accepted: 'success',
+      transport_written: 'success',
+      failed: 'danger',
+      uncertain: 'warning',
+      retry: 'warning',
+      queued: 'neutral',
+    });
   });
   it('Syslog 部分写入显示帧数和重复风险，缺测不补零', async () => {
     const wrapper = mount(DeliveryDetail, {

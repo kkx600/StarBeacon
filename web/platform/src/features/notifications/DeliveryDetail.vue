@@ -1,21 +1,33 @@
 <script setup lang="ts">
 import { Modal, Descriptions, DescriptionsItem, Popconfirm } from 'ant-design-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
-import { deliveryNames, receiptNames, streamNames, type Delivery } from './notifications';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { statusTone } from '@starbeacon/shared/statusTones.ts';
+import { deliveryNames, deliveryTones, receiptNames, streamNames, type Delivery } from './notifications';
 defineProps<{ record: Delivery | null; busy: boolean }>();
 const emit = defineEmits<{ close: []; retry: [record: Delivery] }>();
 </script>
 <template>
   <Modal
     :open="!!record"
-    title="推送日志详情"
     :width="700"
     :footer="null"
     :closable="!busy"
     :keyboard="!busy"
     :mask-closable="false"
     @cancel="emit('close')"
-    ><template v-if="record"
+  >
+    <template #title>
+      <span class="heading-with-help"
+        >推送日志详情
+        <PageHelp title="渠道回执">
+          <p>渠道受理只说明渠道已接手消息。是否已读、传输后是否落盘，请向接收渠道分别核对。</p>
+          <p>结果待核实时，人工重试前须先查看接收记录。</p>
+        </PageHelp>
+      </span>
+    </template>
+    <template v-if="record"
       ><Descriptions :column="1" bordered size="small"
         ><DescriptionsItem label="投递标识"
           ><span class="technical">{{ record.id }}</span></DescriptionsItem
@@ -23,7 +35,10 @@ const emit = defineEmits<{ close: []; retry: [record: Delivery] }>();
           >{{ record.channel_name }} · 修订 {{ record.channel_revision }}</DescriptionsItem
         ><DescriptionsItem label="接收目标"
           ><span class="technical">{{ record.recipient || '渠道目标' }}</span></DescriptionsItem
-        ><DescriptionsItem label="处理状态">{{ deliveryNames[record.state] }}</DescriptionsItem
+        ><DescriptionsItem label="处理状态"
+          ><StatusTag
+            :tone="statusTone(deliveryTones, record.state)"
+            :value="deliveryNames[record.state]" /></DescriptionsItem
         ><DescriptionsItem label="内容类别">{{ streamNames[record.stream ?? 'alerts'] }}</DescriptionsItem
         ><DescriptionsItem label="记录数量">{{ record.record_count ?? record.alert_count }}</DescriptionsItem
         ><DescriptionsItem label="尝试次数">{{ record.attempts }}</DescriptionsItem
@@ -54,11 +69,6 @@ const emit = defineEmits<{ close: []; retry: [record: Delivery] }>();
         "
         type="warning"
         :message="`已完整写入 ${record.receipt.frames_written} / ${record.receipt.frames} 帧。请核对日志服务器接收记录，重试可能重复发送已写入的帧。`"
-        show-icon
-        class="detail-notice"
-      /><a-alert
-        type="info"
-        message="渠道受理不代表接收人已读；传输写入不代表远端落盘。结果待核实时应先与接收渠道核对。"
         show-icon
         class="detail-notice"
       />

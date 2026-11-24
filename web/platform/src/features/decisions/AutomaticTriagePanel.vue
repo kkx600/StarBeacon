@@ -1,25 +1,37 @@
 <script setup lang="ts">
 import { onScopeDispose, ref, shallowRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Table as ATable, Tag as ATag } from 'ant-design-vue';
 import { session } from '../../session';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHelp from '@starbeacon/shared/components/PageHelp.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import type { PolicyRecord } from './decisionPolicies';
-import { triggerStates, triggerCodes, validAutomaticTriagePage, type AutomaticTriagePage } from './automaticTriage';
+import {
+  triggerStates,
+  triggerTones,
+  triggerCodes,
+  validAutomaticTriagePage,
+  type AutomaticTriagePage,
+} from './automaticTriage';
 const props = defineProps<{ record: PolicyRecord }>(),
   router = useRouter(),
   page = shallowRef<AutomaticTriagePage>({ items: [], next_cursor: '' }),
   pending = ref(false),
   error = ref(''),
-  cursor = ref(''),
-  history = ref<string[]>([]);
+  cursors = shallowRef(['']);
+const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, load);
 const columns = [
-  { title: '告警标识', dataIndex: 'event_id', width: 260 },
+  { title: '登记编号', dataIndex: 'id', width: 150, className: 'technical', ellipsis: true },
+  { title: '告警编号', dataIndex: 'event_id', width: 160, className: 'technical', ellipsis: true },
   { title: '状态', key: 'state', width: 150 },
   { title: '核对结果', key: 'code', width: 260 },
   { title: '登记时间', key: 'created', width: 180 },
-  { title: '操作', key: 'actions', width: 130 },
+  { title: '操作', key: 'actions', width: 130, fixed: 'right' as const },
 ];
 let read: AbortController | undefined,
   stopped = false;
@@ -33,16 +45,21 @@ async function load() {
   page.value = { items: [], next_cursor: '' };
   const p = props.record,
     u = session.current.value,
-    before = cursor.value;
+    before = cursors.value.at(-1) ?? '',
+    limit = pageSize.value;
   try {
     if (!u || u.role !== 'admin' || u.id !== p.created_by || u.tenant_id !== p.tenant_id)
       throw new Error('当前账号没有该策略自动研判记录的查看权限。');
+    const query = new URLSearchParams();
+    if (before) query.set('before', before);
+    if (limit !== defaultPageSize) query.set('limit', String(limit));
     const result = await session.api.request<unknown>(
-      `/decision-policies/${encodeURIComponent(p.id)}/revisions/${p.revision}/triggers${before ? '?before=' + encodeURIComponent(before) : ''}`,
+      `/decision-policies/${encodeURIComponent(p.id)}/revisions/${p.revision}/triggers` +
+        (query.size ? '?' + query : ''),
       { signal: c.signal },
     );
     if (c.signal.aborted) return;
-    if (!validAutomaticTriagePage(result, p, before))
+    if (!validAutomaticTriagePage(result, p, before, limit))
       throw new Error('自动研判记录与所选策略、探针或修订不一致，请重试。');
     if (!c.signal.aborted) page.value = result;
   } catch (e) {
@@ -52,19 +69,17 @@ async function load() {
   }
 }
 function next() {
-  if (pending.value || !page.value.next_cursor) return;
-  history.value.push(cursor.value);
-  cursor.value = page.value.next_cursor;
+  if (pending.value || error.value || !page.value.next_cursor) return;
+  cursors.value = [...cursors.value, page.value.next_cursor];
   void load();
 }
 function previous() {
-  if (pending.value || !history.value.length) return;
-  cursor.value = history.value.pop()!;
+  if (pending.value || cursors.value.length <= 1) return;
+  cursors.value = cursors.value.slice(0, -1);
   void load();
 }
 function refresh() {
-  cursor.value = '';
-  history.value = [];
+  cursors.value = [''];
   void load();
 }
 watch(
@@ -76,7 +91,10 @@ watch(
     session.current.value?.tenant_id,
     session.current.value?.role,
   ],
-  refresh,
+  () => {
+    pageSize.value = defaultPageSize;
+    refresh();
+  },
   { immediate: true },
 );
 onScopeDispose(() => {
@@ -85,77 +103,53 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <div class="trigger-heading">
-    <p class="page-description">
-      {{ record.name }} · 修订 {{ record.revision }}。登记和提交状态不代表模型研判或设备处置已完成。
-    </p>
-    <a-button :loading="pending" @click="refresh">刷新记录</a-button>
-  </div>
-  <StatePanel
-    :loading="pending"
-    :error="error"
-    :empty="!page.items.length"
-    description="本策略修订暂无自动研判登记。仅处理启用许可后的指定探针与告警等级，每日登记量受配置额度限制。"
-    @retry="load"
-  >
-    <a-table
-      :data-source="page.items"
-      :columns="columns"
-      row-key="id"
-      :pagination="false"
-      size="small"
-      :scroll="{ x: 980 }"
-      ><template #bodyCell="{ column, record: row }">
-        <template v-if="column.dataIndex === 'event_id'"
-          ><span class="technical trigger-id">{{ row.event_id }}</span></template
-        >
-        <template v-else-if="column.key === 'state'"
-          ><a-tag :color="row.state === 'submitted' ? 'green' : row.state === 'skipped' ? 'orange' : 'blue'">{{
-            triggerStates[row.state as keyof typeof triggerStates]
-          }}</a-tag></template
-        >
-        <template v-else-if="column.key === 'code'">{{ triggerCodes[row.code as keyof typeof triggerCodes] }}</template>
-        <template v-else-if="column.key === 'created'">{{ formatTime(row.created_at) }}</template>
-        <template v-else-if="column.key === 'actions'"
-          ><a-button
-            v-if="row.triage_id"
-            type="link"
-            size="small"
-            @click="router.push({ path: '/response/evaluations', query: { triage_id: row.triage_id } })"
-            >查看决策记录</a-button
-          ><span v-else>尚无研判作业</span></template
-        >
-      </template></a-table
-    >
-  </StatePanel>
-  <div class="trigger-pagination">
-    <span>当前页 {{ page.items.length }} 条</span>
-    <div>
-      <a-button :disabled="pending || !history.length" @click="previous">上一页</a-button
-      ><a-button :disabled="pending || !page.next_cursor" @click="next">下一页</a-button>
+  <section class="panel table-panel">
+    <div class="table-toolbar">
+      <div class="heading-with-help">
+        <h2>{{ record.name }} · 修订 {{ record.revision }}</h2>
+        <PageHelp title="自动研判记录">
+          <p>登记和提交状态不代表模型研判或设备处置已完成。登记范围和每日额度取自当前策略修订。</p>
+        </PageHelp>
+      </div>
+      <a-button :loading="pending" @click="refresh">刷新记录</a-button>
     </div>
-  </div>
+    <StatePanel
+      :loading="pending"
+      :error="error"
+      :empty="!page.items.length"
+      description="本策略修订暂无自动研判登记。"
+      @retry="load"
+    >
+      <ListTable :data-source="page.items" :columns="columns" :scroll="{ x: 1030 }">
+        <template #bodyCell="{ column, record: row }">
+          <StatusTag v-if="column.key === 'state'" :tone="triggerTones[row.state]" :value="triggerStates[row.state]" />
+          <template v-else-if="column.key === 'code'">{{ triggerCodes[row.code] }}</template>
+          <template v-else-if="column.key === 'created'">{{ formatTime(row.created_at) }}</template>
+          <template v-else-if="column.key === 'actions'">
+            <button
+              v-if="row.triage_id"
+              type="button"
+              class="record-link"
+              @click="router.push({ path: '/response/evaluations', query: { triage_id: row.triage_id } })"
+            >
+              查看决策记录
+            </button>
+            <span v-else>尚无研判作业</span>
+          </template>
+        </template>
+      </ListTable>
+    </StatePanel>
+    <ListPager
+      mode="cursor"
+      :page="cursors.length"
+      :page-size="pageSize"
+      :count="pending || error ? undefined : page.items.length"
+      :has-previous="cursors.length > 1"
+      :has-next="!error && !!page.next_cursor"
+      :disabled="pending"
+      @previous="previous"
+      @next="next"
+      @update:page-size="changePageSize"
+    />
+  </section>
 </template>
-<style scoped>
-.trigger-heading,
-.trigger-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.trigger-pagination {
-  margin-top: 12px;
-}
-.trigger-pagination > div {
-  display: flex;
-  gap: 8px;
-}
-.trigger-heading p {
-  margin: 0 0 8px;
-  overflow-wrap: anywhere;
-}
-.trigger-id {
-  overflow-wrap: anywhere;
-}
-</style>

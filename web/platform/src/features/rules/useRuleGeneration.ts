@@ -1,5 +1,7 @@
 import { onMounted, onScopeDispose, shallowReadonly, shallowRef } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import type { RulePackage } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
 import {
@@ -18,9 +20,11 @@ import {
 export function useRuleGeneration() {
   const items = shallowRef<GenerationSummary[]>([]),
     next = shallowRef(''),
+    cursors = shallowRef(['']),
     pending = shallowRef(false),
     error = shallowRef(''),
     available = shallowRef(false);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const selected = shallowRef<GenerationJob | null>(null),
     loading = shallowRef(false),
     detailError = shallowRef(''),
@@ -56,7 +60,7 @@ export function useRuleGeneration() {
       failed ? 5000 * 2 ** Math.max(0, failures - 1) : 3000,
     );
   }
-  async function refresh(before = '', append = false) {
+  async function refresh() {
     if (stopped) return;
     const epoch = ++listEpoch;
     listController?.abort();
@@ -64,16 +68,20 @@ export function useRuleGeneration() {
     listController = control;
     pending.value = true;
     error.value = '';
+    const before = cursors.value.at(-1) ?? '',
+      limit = pageSize.value;
     let failed = false;
     try {
+      const query = new URLSearchParams();
+      if (before) query.set('before', before);
+      if (limit !== defaultPageSize) query.set('limit', String(limit));
       const page = await session.api.request<GenerationPage>(
-        '/rule-generation/jobs' + (before ? '?before=' + encodeURIComponent(before) : ''),
+        '/rule-generation/jobs' + (query.size ? '?' + query : ''),
         { signal: control.signal },
       );
       if (stopped || control.signal.aborted || epoch !== listEpoch) return;
-      if (!validGenerationPage(page)) throw new Error('规则生成记录未能完整返回');
-      const known = new Set(items.value.map(row => row.id));
-      items.value = append ? [...items.value, ...page.items.filter(row => !known.has(row.id))] : page.items;
+      if (!validGenerationPage(page, limit)) throw new Error('规则生成记录未能完整返回');
+      items.value = page.items;
       next.value = page.next_cursor;
       available.value = page.model_execution_available;
     } catch (e) {
@@ -87,6 +95,20 @@ export function useRuleGeneration() {
         schedule(failed);
       }
     }
+  }
+  function firstPage() {
+    cursors.value = [''];
+    return refresh();
+  }
+  function previousPage() {
+    if (pending.value || cursors.value.length <= 1) return;
+    cursors.value = cursors.value.slice(0, -1);
+    void refresh();
+  }
+  function nextPage() {
+    if (pending.value || error.value || !next.value) return;
+    cursors.value = [...cursors.value, next.value];
+    void refresh();
   }
   async function load(id: string) {
     if (stopped) return;
@@ -140,7 +162,7 @@ export function useRuleGeneration() {
       selected.value = job;
       attempt = undefined;
       unconfirmed.value = false;
-      void refresh();
+      void firstPage();
       return job;
     } catch (e) {
       if (!control.signal.aborted) {
@@ -172,7 +194,7 @@ export function useRuleGeneration() {
       if (stopped || control.signal.aborted) return;
       if (!validGenerationJob(job) || job.id !== id) throw new Error('取消结果未能完整返回，请刷新记录核对');
       selected.value = job;
-      void refresh();
+      void firstPage();
     } catch (e) {
       if (!control.signal.aborted) actionError.value = e instanceof Error ? e.message : '取消请求未确认';
     } finally {
@@ -242,6 +264,8 @@ export function useRuleGeneration() {
   return {
     items: shallowReadonly(items),
     next: shallowReadonly(next),
+    cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     available: shallowReadonly(available),
@@ -252,6 +276,9 @@ export function useRuleGeneration() {
     actionError: shallowReadonly(actionError),
     unconfirmed: shallowReadonly(unconfirmed),
     refresh,
+    previousPage,
+    nextPage,
+    changePageSize,
     load,
     submit,
     confirm: () => (attempt ? submit(attempt.input) : Promise.resolve(undefined)),

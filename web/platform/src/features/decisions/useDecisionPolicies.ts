@@ -1,5 +1,7 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
 import { ApiError } from '@starbeacon/shared/api.ts';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import {
   policyChangeError,
@@ -17,6 +19,7 @@ export function useDecisionPolicies() {
     keyword = shallowRef(''),
     active = shallowRef(''),
     cursors = shallowRef(['']);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   const busy = shallowRef(false),
     unconfirmed = shallowRef(false),
     mutationError = shallowRef('');
@@ -33,12 +36,14 @@ export function useDecisionPolicies() {
     error.value = '';
     const tenant = session.current.value?.tenant_id ?? '',
       cursor = cursors.value.at(-1) ?? '',
-      state = active.value;
-    const query = new URLSearchParams({ limit: '20', cursor, keyword: keyword.value, active: state });
+      state = active.value,
+      limit = pageSize.value;
+    const query = new URLSearchParams({ limit: String(limit), cursor, keyword: keyword.value, active: state });
     try {
       const value = await session.api.request<unknown>('/decision-policies?' + query, { signal: controller.signal });
       if (controller.signal.aborted) return;
-      if (!(await validPolicyPage(value, tenant, cursor, state))) throw new Error('决策策略目录未能完整返回，请重试。');
+      if (!(await validPolicyPage(value, tenant, cursor, state, limit)))
+        throw new Error('决策策略目录未能完整返回，请重试。');
       if (!controller.signal.aborted) page.value = value as PolicyPage;
     } catch (e) {
       if (!controller.signal.aborted) error.value = e instanceof Error ? e.message : '决策策略读取失败。';
@@ -137,6 +142,7 @@ export function useDecisionPolicies() {
     keyword.value = '';
     active.value = '';
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
     void refresh();
   }
   watch(
@@ -157,6 +163,8 @@ export function useDecisionPolicies() {
     keyword: shallowReadonly(keyword),
     active: shallowReadonly(active),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     busy: shallowReadonly(busy),
     unconfirmed: shallowReadonly(unconfirmed),
     mutationError: shallowReadonly(mutationError),

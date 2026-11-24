@@ -135,13 +135,13 @@ function kind(value: unknown) {
 function unique(values: unknown[]) {
   return new Set(values).size === values.length;
 }
-export function validPage(value: unknown): value is AnalysisPage {
+export function validPage(value: unknown, limit = 50): value is AnalysisPage {
   return (
     record(value) &&
     typeof value.model_execution_available === 'boolean' &&
     cursor(value.next_cursor) &&
     Array.isArray(value.items) &&
-    value.items.length <= 50 &&
+    value.items.length <= limit &&
     unique(value.items.map(row => (record(row) ? row.id : null))) &&
     value.items.every(
       row =>
@@ -159,12 +159,12 @@ export function validPage(value: unknown): value is AnalysisPage {
     )
   );
 }
-export function validThreads(value: unknown): value is ThreadPage {
+export function validThreads(value: unknown, limit = 20): value is ThreadPage {
   return (
     record(value) &&
     cursor(value.next_cursor) &&
     Array.isArray(value.items) &&
-    value.items.length <= 20 &&
+    value.items.length <= limit &&
     unique(value.items.map(row => (record(row) ? row.id : null))) &&
     value.items.every(
       row =>

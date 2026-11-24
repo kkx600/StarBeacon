@@ -1,4 +1,6 @@
 import { onScopeDispose, shallowRef, watch, type Ref, shallowReadonly } from 'vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import type { Channel, ChannelChange, Delivery } from './notifications';
 
@@ -15,6 +17,7 @@ export function useNotifications(view: Ref<string>) {
     cursors = shallowRef(['']),
     nextCursor = shallowRef(''),
     generation = shallowRef(0);
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   let stopped = false,
     actionController: AbortController | undefined;
   const testKeys = new Map<string, string>();
@@ -45,12 +48,16 @@ export function useNotifications(view: Ref<string>) {
             development.value = result.development;
           }
         } else {
+          const limit = pageSize.value;
           const query = new URLSearchParams({ cursor: cursors.value.at(-1) ?? '', state: filter.value });
+          if (limit !== defaultPageSize) query.set('limit', String(limit));
           const result = await session.api.request<{ items: Delivery[]; next_cursor: string }>(
             '/notifications/deliveries?' + query,
             { signal: controller.signal },
           );
           if (!controller.signal.aborted) {
+            if (!Array.isArray(result.items) || result.items.length > limit || typeof result.next_cursor !== 'string')
+              throw new Error('推送日志目录未能完整返回，请重试。');
             deliveries.value = result.items;
             nextCursor.value = result.next_cursor;
           }
@@ -77,7 +84,7 @@ export function useNotifications(view: Ref<string>) {
     refresh();
   }
   function next() {
-    if (!pending.value && nextCursor.value) cursors.value = [...cursors.value, nextCursor.value];
+    if (!pending.value && !error.value && nextCursor.value) cursors.value = [...cursors.value, nextCursor.value];
   }
   function previous() {
     if (!pending.value && cursors.value.length > 1) cursors.value = cursors.value.slice(0, -1);
@@ -125,6 +132,8 @@ export function useNotifications(view: Ref<string>) {
     actionError: shallowReadonly(actionError),
     cursors: shallowReadonly(cursors),
     nextCursor: shallowReadonly(nextCursor),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     refresh,
     search,
     next,

@@ -222,13 +222,15 @@ describe('计划读取与保存', () => {
     wrapper.unmount();
     expect(await state.refresh()).toBeUndefined();
   });
-  it('运行记录分页去重，换计划和关闭隔离迟到响应', async () => {
+  it('运行记录只显示当前页，换计划和关闭隔离迟到响应', async () => {
     const { state, wrapper } = host();
     await flushPromises();
+    request.mockResolvedValueOnce({ ...runPage, next_cursor: 'cursor_owned' });
     await state.loadRuns(plan.id);
-    request.mockResolvedValueOnce({ items: [run, { ...run, id: 'older_run' }], next_cursor: 'older_run' });
-    await state.loadRuns(plan.id, 'cursor_owned');
-    expect(state.runs.value).toHaveLength(2);
+    request.mockResolvedValueOnce({ items: [{ ...run, id: 'older_run' }], next_cursor: '' });
+    state.nextPage();
+    await flushPromises();
+    expect(state.runs.value.map(row => row.id)).toEqual(['older_run']);
     expect(request.mock.lastCall?.[0]).toContain('before=cursor_owned');
     const first = deferred<typeof runPage>();
     request.mockReturnValueOnce(first.promise);
@@ -468,9 +470,10 @@ describe('报告计划工作台', () => {
     expect(wrapper.text()).toContain('本周期未提交');
     expect(wrapper.text()).toContain('准备统计');
     expect(button('查看报告').disabled).toBe(true);
-    request.mockResolvedValueOnce({ items: [], next_cursor: '' });
-    await click('查看更多记录');
-    expect(wrapper.findAll('tbody tr.ant-table-row')).toHaveLength(3);
+    request.mockResolvedValueOnce({ items: [{ ...run, id: 'older_run' }], next_cursor: '' });
+    await click('下一页');
+    expect(wrapper.findAll('tbody tr.ant-table-row')).toHaveLength(1);
+    expect(wrapper.text()).toContain('第 2 页 · 本页 1 条');
   });
   it('停用结果未知保留原请求确认，确定停用后不暗示已取消报告', async () => {
     const wrapper = mount(ReportPlansWorkspace, { global, attachTo: document.body });

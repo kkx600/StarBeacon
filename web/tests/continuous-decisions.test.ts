@@ -335,12 +335,12 @@ describe('持续决策表单与授权详情交互', () => {
     request.mockResolvedValueOnce({ items: [row(21)], next_cursor: '' });
     await click('下一页');
     expect(request.mock.lastCall?.[0]).toContain('?before=trigger_20');
-    expect(w.text()).toContain('当前页 1 条');
+    expect(w.text()).toContain('第 2 页 · 本页 1 条');
     await click('查看决策记录');
     expect(router.currentRoute.value.query.triage_id).toBe(e.result.triage_id);
     request.mockResolvedValueOnce(first);
     await click('上一页');
-    expect(w.text()).toContain('当前页 20 条');
+    expect(w.text()).toContain('第 1 页 · 本页 20 条');
     request.mockRejectedValueOnce(new Error('执行记录服务暂不可用'));
     await click('刷新记录');
     expect(w.text()).toContain('执行记录服务暂不可用');

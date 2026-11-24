@@ -5,13 +5,18 @@ import { useFeedback } from '@starbeacon/shared/composables/useFeedback.ts';
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import {
-  Table as ATable,
   Modal as AModal,
   InputNumber as AInputNumber,
   Select as ASelect,
-  Tag as ATag,
+  Dropdown as ADropdown,
+  Menu as AMenu,
 } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
 import { policyActions, policyModes, validPolicy, type PolicyChange, type PolicyRecord } from './decisionPolicies';
@@ -20,6 +25,7 @@ import DecisionPolicyForm from './DecisionPolicyForm.vue';
 import DecisionPolicyEvaluation from './DecisionPolicyEvaluation.vue';
 import AutomaticTriagePanel from './AutomaticTriagePanel.vue';
 const message = useFeedback();
+const AMenuItem = AMenu.Item;
 const triggerTarget = shallowRef<PolicyRecord | null>(null);
 const model = useDecisionPolicies(),
   route = useRoute(),
@@ -37,7 +43,8 @@ const triageID = computed(() => (typeof route.query.triage_id === 'string' ? rou
 let read: AbortController | undefined,
   stopped = false;
 const columns = [
-  { title: '策略名称', key: 'name', width: 240 },
+  { title: '策略编号', dataIndex: 'id', width: 144, className: 'technical', ellipsis: true },
+  { title: '策略名称', key: 'name', width: 198, ellipsis: true },
   { title: '运行模式', key: 'mode', width: 180 },
   { title: '候选处置', key: 'action', width: 185 },
   { title: '自报分数阈值', key: 'threshold', width: 110 },
@@ -45,7 +52,7 @@ const columns = [
   { title: '修订', dataIndex: 'revision', width: 75 },
   { title: '状态', key: 'active', width: 80 },
   { title: '保存时间', key: 'created', width: 175 },
-  { title: '操作', key: 'actions', width: 270 },
+  { title: '操作', key: 'actions', width: 184, fixed: 'right' as const },
 ];
 function closeDetail() {
   read?.abort();
@@ -71,6 +78,17 @@ function refresh() {
 function page(direction: 'next' | 'previous') {
   closeOverlays();
   model[direction]();
+}
+function resize(size: number) {
+  closeOverlays();
+  model.changePageSize(size);
+}
+function canReadTriggers(record: PolicyRecord) {
+  return canEdit.value && record.created_by === session.current.value?.id && !!record.definition.continuous?.trigger;
+}
+function showTriggers(record: PolicyRecord) {
+  closeOverlays();
+  triggerTarget.value = record;
 }
 function edit(record: PolicyRecord | null) {
   if (model.busy.value || !canEdit.value) return;
@@ -174,46 +192,45 @@ onScopeDispose(() => {
 });
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">维护决策条件与材料时限，核对当前策略及历史修订。</p>
-    </div>
-  </header>
-  <a-alert
-    type="info"
-    show-icon
-    message="持续模式处理指定模型的新研判；配置自动研判许可后，指定探针的新告警自动进入队列，再按策略授权限时任务。模型分数、设备配置回读与实际流量效果分别核对。"
-    class="section-gap"
-  />
+  <PageHeader
+    :title="pageTitle"
+    description="维护决策条件与材料时限，核对当前策略及历史修订。最多 64 个策略，历史修订默认保留 180 天。"
+    notice="持续模式处理指定模型的新研判。取得自动研判许可后，指定探针的新告警进入队列，后续限时任务按策略授权。模型分数、设备配置回读与实际流量效果分别核对。"
+  >
+    <a-button :loading="model.pending.value" @click="refresh">刷新</a-button>
+    <a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{
+      model.unconfirmed.value ? '核对原提交' : '创建策略'
+    }}</a-button>
+  </PageHeader>
   <p v-if="triageID" class="page-description">
     已带入研判作业 <span class="technical">{{ triageID }}</span>，选择策略的“影子评估”后确认执行。
   </p>
-  <form class="policy-toolbar" @submit.prevent="search">
-    <a-input
-      v-model:value="filter.keyword"
-      aria-label="决策策略名称"
-      placeholder="策略名称"
-      :maxlength="128"
-    /><a-select
-      v-model:value="filter.active"
-      aria-label="决策策略状态"
-      :options="[
-        { value: '', label: '全部状态' },
-        { value: 'true', label: '启用' },
-        { value: 'false', label: '停用' },
-      ]"
-    /><a-button html-type="submit" :disabled="model.pending.value">检索</a-button
-    ><a-button :loading="model.pending.value" @click="refresh">刷新</a-button
-    ><a-button v-if="canEdit" type="primary" :disabled="model.busy.value" @click="edit(null)">{{
-      model.unconfirmed.value ? '核对原提交' : '创建策略'
-    }}</a-button>
+  <form @submit.prevent="search">
+    <ListFilters label="决策策略筛选" :columns="3">
+      <label>
+        <span>策略名称</span>
+        <a-input v-model:value="filter.keyword" aria-label="决策策略名称" placeholder="策略名称" :maxlength="128" />
+      </label>
+      <div class="filter-field">
+        <label for="policy-status">状态</label>
+        <ASelect
+          id="policy-status"
+          v-model:value="filter.active"
+          aria-label="决策策略状态"
+          :options="[
+            { value: '', label: '全部状态' },
+            { value: 'true', label: '启用' },
+            { value: 'false', label: '停用' },
+          ]"
+        />
+      </div>
+      <template #actions>
+        <a-button type="primary" html-type="submit" :disabled="model.pending.value">检索</a-button>
+      </template>
+    </ListFilters>
   </form>
-  <section class="panel">
-    <div class="panel-header">
-      <h2>决策策略</h2>
-      <span>当前页 {{ model.page.value.items.length }} 条</span>
-    </div>
+  <section class="panel table-panel">
+    <div class="table-toolbar"><h2>决策策略</h2></div>
     <StatePanel
       :loading="model.pending.value"
       :error="model.error.value"
@@ -225,74 +242,77 @@ onScopeDispose(() => {
       "
       @retry="model.refresh"
     >
-      <a-table
-        :data-source="model.page.value.items"
-        :columns="columns"
-        row-key="id"
-        :pagination="false"
-        size="small"
-        :scroll="{ x: 1515 }"
-        ><template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'name'"
-            ><strong>{{ record.name }}</strong>
-            <div class="page-description technical">{{ record.id }}</div></template
+      <ListTable :data-source="model.page.value.items" :columns="columns" :scroll="{ x: 1431 }">
+        <template #bodyCell="{ column, record }">
+          <button
+            v-if="column.key === 'name'"
+            type="button"
+            class="record-link"
+            :title="record.name"
+            @click="inspect(record)"
           >
-          <template v-else-if="column.key === 'mode'">{{
-            policyModes[record.definition.mode as keyof typeof policyModes]
-          }}</template>
+            {{ record.name }}
+          </button>
+          <template v-else-if="column.key === 'mode'">{{ policyModes[record.definition.mode] }}</template>
           <template v-else-if="column.key === 'action'">{{
-            policyActions[record.definition.candidate_action as keyof typeof policyActions]
+            policyActions[record.definition.candidate_action]
           }}</template>
           <template v-else-if="column.key === 'threshold'">{{ record.definition.threshold.toFixed(3) }}</template>
           <template v-else-if="column.key === 'age'">{{ record.definition.max_age_seconds }} 秒</template>
-          <template v-else-if="column.key === 'active'"
-            ><a-tag :color="record.active ? 'green' : 'default'">{{ record.active ? '启用' : '停用' }}</a-tag></template
-          >
+          <StatusTag
+            v-else-if="column.key === 'active'"
+            :tone="record.active ? 'success' : 'neutral'"
+            :value="record.active ? '启用' : '停用'"
+          />
           <template v-else-if="column.key === 'created'">{{ formatTime(record.created_at) }}</template>
-          <template v-else-if="column.key === 'actions'"
-            ><div class="policy-row-actions">
-              <a-button type="link" size="small" @click="inspect(record as PolicyRecord)">查看</a-button
-              ><a-button
-                v-if="canEdit"
-                type="link"
-                size="small"
-                :disabled="model.busy.value || model.unconfirmed.value"
-                @click="edit(record as PolicyRecord)"
-                >编辑</a-button
-              ><a-button
-                v-if="canEdit"
-                type="link"
-                size="small"
-                :disabled="model.busy.value || model.unconfirmed.value"
-                @click="evaluate(record as PolicyRecord)"
-                >影子评估</a-button
-              ><a-button
-                v-if="
-                  canEdit && record.created_by === session.current.value?.id && record.definition.continuous?.trigger
-                "
-                type="link"
-                size="small"
-                @click="
-                  closeOverlays();
-                  triggerTarget = record as PolicyRecord;
-                "
-                >自动研判记录</a-button
-              >
-            </div></template
-          >
-        </template></a-table
-      >
+          <div v-else-if="column.key === 'actions'" class="table-row-actions">
+            <a-button type="link" size="small" @click="inspect(record)">查看</a-button>
+            <a-button
+              v-if="canEdit"
+              type="link"
+              size="small"
+              :disabled="model.busy.value || model.unconfirmed.value"
+              @click="edit(record)"
+              >编辑</a-button
+            >
+            <ADropdown v-if="canReadTriggers(record)" :trigger="['click']">
+              <a-button type="link" size="small" aria-haspopup="menu">更多</a-button>
+              <template #overlay>
+                <AMenu :selectable="false">
+                  <AMenuItem
+                    key="evaluation"
+                    :disabled="model.busy.value || model.unconfirmed.value"
+                    @click="evaluate(record)"
+                    >影子评估</AMenuItem
+                  >
+                  <AMenuItem key="triggers" @click="showTriggers(record)">自动研判记录</AMenuItem>
+                </AMenu>
+              </template>
+            </ADropdown>
+            <a-button
+              v-else-if="canEdit"
+              type="link"
+              size="small"
+              :disabled="model.busy.value || model.unconfirmed.value"
+              @click="evaluate(record)"
+              >影子评估</a-button
+            >
+          </div>
+        </template>
+      </ListTable>
     </StatePanel>
-    <div class="policy-pagination">
-      <span class="page-description">最多 64 个策略；历史修订默认保留 180 天，当前配置持续保留。</span
-      ><a-button :disabled="model.pending.value || model.cursors.value.length < 2" @click="page('previous')"
-        >上一页</a-button
-      ><a-button
-        :disabled="model.pending.value || !!model.error.value || !model.page.value.next_cursor"
-        @click="page('next')"
-        >下一页</a-button
-      >
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="model.cursors.value.length"
+      :page-size="model.pageSize.value"
+      :count="model.pending.value || model.error.value ? undefined : model.page.value.items.length"
+      :has-previous="model.cursors.value.length > 1"
+      :has-next="!model.error.value && !!model.page.value.next_cursor"
+      :disabled="model.pending.value"
+      @previous="page('previous')"
+      @next="page('next')"
+      @update:page-size="resize"
+    />
   </section>
   <DecisionPolicyForm
     v-if="editing"
@@ -364,33 +384,11 @@ onScopeDispose(() => {
   /></a-modal>
 </template>
 <style scoped>
-.policy-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.policy-toolbar > .ant-input {
-  width: 220px;
-}
-.policy-toolbar > .ant-select {
-  width: 130px;
-}
-.policy-row-actions,
-.policy-pagination,
 .policy-revision {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--related-gap);
   flex-wrap: wrap;
-}
-.policy-pagination {
-  justify-content: flex-end;
-  padding: 12px;
-}
-.policy-pagination > span {
-  flex: 1;
-  min-width: 180px;
 }
 .policy-detail {
   display: grid;

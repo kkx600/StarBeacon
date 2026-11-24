@@ -45,7 +45,18 @@ export interface MCPInfo {
   protocol_versions: string[];
   tools: ToolInfo[];
 }
-export function bindingState(binding: Binding, now = Date.now()) {
+const bindingBadges = {
+  disabled: { value: '停用', tone: 'neutral' },
+  invalid: { value: '有效期异常', tone: 'warning' },
+  expired: { value: '已到期', tone: 'neutral' },
+  enabled: { value: '启用', tone: 'success' },
+} as const;
+export function bindingBadge(binding: Binding, now = Date.now()) {
   const expiry = Date.parse(binding.expires_at);
-  return !binding.enabled ? '停用' : !Number.isFinite(expiry) ? '有效期异常' : expiry <= now ? '已到期' : '启用';
+  if (!binding.enabled) return bindingBadges.disabled;
+  if (!Number.isFinite(expiry)) return bindingBadges.invalid;
+  return expiry <= now ? bindingBadges.expired : bindingBadges.enabled;
+}
+export function bindingState(binding: Binding, now = Date.now()) {
+  return bindingBadge(binding, now).value;
 }

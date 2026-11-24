@@ -2,11 +2,16 @@
 import { usePageTitle } from '@starbeacon/shared/utils/usePageTitle.ts';
 const pageTitle = usePageTitle('评估记录');
 import { onScopeDispose, reactive, ref, shallowRef, watch } from 'vue';
-import { Table as ATable, Select as ASelect, Tag as ATag, Modal as AModal } from 'ant-design-vue';
+import { Select as ASelect, Modal as AModal } from 'ant-design-vue';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
+import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
+import ListFilters from '@starbeacon/shared/components/ListFilters.vue';
+import ListTable from '@starbeacon/shared/components/ListTable.vue';
+import ListPager from '@starbeacon/shared/components/ListPager.vue';
+import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { session } from '../../session';
-import { policyStatuses } from './decisionPolicies';
+import { policyStatuses, policyStatusTones } from './decisionPolicies';
 import { validEvaluation, type EvaluationRecord } from './decisionEvaluations';
 import { useDecisionEvaluations } from './useDecisionEvaluations';
 import DecisionEvaluationDetail from './DecisionEvaluationDetail.vue';
@@ -20,13 +25,16 @@ const model = useDecisionEvaluations(),
 const responseTarget = shallowRef<EvaluationRecord | null>(null);
 let read: AbortController | undefined;
 const columns = [
-  { title: '评估标识', key: 'id', width: 220 },
-  { title: '策略 / 修订', key: 'policy', width: 220 },
+  { title: '评估编号', dataIndex: 'id', width: 145, className: 'technical', ellipsis: true },
+  { title: '策略编号', dataIndex: ['policy', 'id'], width: 145, className: 'technical', ellipsis: true },
+  { title: '策略名称', dataIndex: ['policy', 'name'], width: 156, ellipsis: true },
+  { title: '修订', dataIndex: ['policy', 'revision'], width: 65 },
   { title: '判断结果', key: 'status', width: 150 },
+  { title: '处置授权', key: 'authorization', width: 132 },
   { title: '模型自报分数', key: 'confidence', width: 130 },
-  { title: '研判作业', key: 'triage', width: 230 },
-  { title: '评估时间', key: 'time', width: 190 },
-  { title: '操作', key: 'actions', width: 80 },
+  { title: '研判作业编号', dataIndex: ['result', 'triage_id'], width: 156, className: 'technical', ellipsis: true },
+  { title: '评估时间', key: 'time', width: 172 },
+  { title: '操作', key: 'actions', width: 68, fixed: 'right' as const },
 ];
 function close() {
   read?.abort();
@@ -71,6 +79,10 @@ function refresh() {
   close();
   model.refresh();
 }
+function resize(size: number) {
+  close();
+  model.changePageSize(size);
+}
 function page(direction: 'next' | 'previous') {
   close();
   model[direction]();
@@ -87,39 +99,46 @@ watch(
 onScopeDispose(() => read?.abort());
 </script>
 <template>
-  <header class="page-header">
-    <div>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-description">查看本账号的评估档案与策略快照，核对判断依据和处置授权记录。</p>
-    </div>
-  </header>
-  <a-alert
-    type="info"
-    show-icon
-    message="仅显示本账号的评估记录。判断与持续决策授权独立留档，详情可核对自动任务或未授权原因；默认保留 180 天。"
-    class="section-gap"
-  />
-  <form class="evaluation-toolbar" @submit.prevent="search">
-    <a-input v-model:value="draft.policy_id" aria-label="评估策略标识" placeholder="策略标识" :maxlength="64" /><a-input
-      v-model:value="draft.triage_id"
-      aria-label="评估研判作业标识"
-      placeholder="研判作业标识"
-      :maxlength="64"
-    /><a-select
-      v-model:value="draft.status"
-      aria-label="评估判断结果"
-      :options="[
-        { value: '', label: '全部结果' },
-        ...Object.entries(policyStatuses).map(([value, label]) => ({ value, label })),
-      ]"
-    /><a-button html-type="submit" :disabled="model.pending.value">检索</a-button
-    ><a-button :loading="model.pending.value" @click="refresh">刷新</a-button>
+  <PageHeader
+    :title="pageTitle"
+    description="按持久提交倒序查看本账号的评估档案。判断与持续决策授权独立留档，详情可核对自动任务或未授权原因。模型自报分数未经校准。"
+    notice="记录默认保留 180 天。刷新首屏可读取新记录，游标到期时请重新检索。"
+  >
+    <a-button :loading="model.pending.value" @click="refresh">刷新</a-button>
+  </PageHeader>
+  <form @submit.prevent="search">
+    <ListFilters label="评估记录筛选" :columns="4">
+      <label
+        ><span>策略编号</span
+        ><a-input v-model:value="draft.policy_id" aria-label="评估策略标识" placeholder="策略标识" :maxlength="64"
+      /></label>
+      <label
+        ><span>研判作业编号</span
+        ><a-input
+          v-model:value="draft.triage_id"
+          aria-label="评估研判作业标识"
+          placeholder="研判作业标识"
+          :maxlength="64"
+      /></label>
+      <div class="filter-field">
+        <label for="evaluation-status">判断结果</label>
+        <ASelect
+          id="evaluation-status"
+          v-model:value="draft.status"
+          aria-label="评估判断结果"
+          :options="[
+            { value: '', label: '全部结果' },
+            ...Object.entries(policyStatuses).map(([value, label]) => ({ value, label })),
+          ]"
+        />
+      </div>
+      <template #actions
+        ><a-button type="primary" html-type="submit" :disabled="model.pending.value">检索</a-button></template
+      >
+    </ListFilters>
   </form>
-  <section class="panel">
-    <div class="panel-header">
-      <h2>评估记录</h2>
-      <span>当前页 {{ model.page.value.items.length }} 条 · 持久提交倒序</span>
-    </div>
+  <section class="panel table-panel">
+    <div class="table-toolbar"><h2>评估记录</h2></div>
     <StatePanel
       :loading="model.pending.value"
       :error="model.error.value"
@@ -131,53 +150,38 @@ onScopeDispose(() => read?.abort());
       "
       @retry="model.refresh"
     >
-      <a-table
-        :data-source="model.page.value.items"
-        :columns="columns"
-        row-key="id"
-        :pagination="false"
-        size="small"
-        :scroll="{ x: 1220 }"
-        ><template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'id'"
-            ><span class="technical">{{ record.id }}</span></template
-          ><template v-else-if="column.key === 'policy'"
-            ><strong>{{ record.policy.name }}</strong>
-            <div class="page-description">{{ record.policy.id }} / {{ record.policy.revision }}</div></template
-          >
-          <template v-else-if="column.key === 'status'"
-            ><a-tag
-              :color="
-                record.result.status === 'matched' ? 'green' : record.result.status === 'protected' ? 'gold' : 'default'
-              "
-              >{{ policyStatuses[record.result.status as keyof typeof policyStatuses] }}</a-tag
-            >
-            <div class="page-description">
-              {{ record.policy.definition.mode === 'shadow' ? '未授权执行' : '授权记录见详情' }}
-            </div></template
-          >
-          <template v-else-if="column.key === 'confidence'"
-            >{{ record.result.confidence === null ? '未参与评估' : record.result.confidence.toFixed(3) }}
-            <div class="page-description">未校准</div></template
-          ><template v-else-if="column.key === 'triage'"
-            ><span class="technical">{{ record.result.triage_id }}</span></template
-          ><template v-else-if="column.key === 'time'">{{ formatTime(record.result.evaluated_at) }}</template
-          ><template v-else-if="column.key === 'actions'"
-            ><a-button type="link" size="small" @click="inspect(record.id)">查看</a-button></template
-          >
-        </template></a-table
-      >
+      <ListTable :data-source="model.page.value.items" :columns="columns" :scroll="{ x: 1319 }">
+        <template #bodyCell="{ column, record }">
+          <StatusTag
+            v-if="column.key === 'status'"
+            :tone="policyStatusTones[record.result.status]"
+            :value="policyStatuses[record.result.status]"
+          />
+          <template v-else-if="column.key === 'authorization'">{{
+            record.policy.definition.mode === 'shadow' ? '未授权执行' : '授权记录见详情'
+          }}</template>
+          <template v-else-if="column.key === 'confidence'">{{
+            record.result.confidence === null ? '未参与评估' : record.result.confidence.toFixed(3)
+          }}</template>
+          <template v-else-if="column.key === 'time'">{{ formatTime(record.result.evaluated_at) }}</template>
+          <button v-else-if="column.key === 'actions'" type="button" class="record-link" @click="inspect(record.id)">
+            查看
+          </button>
+        </template>
+      </ListTable>
     </StatePanel>
-    <div class="evaluation-pagination">
-      <span class="page-description">到期记录不可访问。新记录在刷新首屏后出现；游标到期时请重新检索。</span
-      ><a-button :disabled="model.pending.value || model.cursors.value.length < 2" @click="page('previous')"
-        >上一页</a-button
-      ><a-button
-        :disabled="model.pending.value || !!model.error.value || !model.page.value.next_cursor"
-        @click="page('next')"
-        >下一页</a-button
-      >
-    </div>
+    <ListPager
+      mode="cursor"
+      :page="model.cursors.value.length"
+      :page-size="model.pageSize.value"
+      :count="model.pending.value || model.error.value ? undefined : model.page.value.items.length"
+      :has-previous="model.cursors.value.length > 1"
+      :has-next="!model.error.value && !!model.page.value.next_cursor"
+      :disabled="model.pending.value"
+      @previous="page('previous')"
+      @next="page('next')"
+      @update:page-size="resize"
+    />
   </section>
   <DecisionEvaluationDetail
     v-if="detail"
@@ -198,29 +202,3 @@ onScopeDispose(() => read?.abort());
     ><StatePanel :loading="detailPending" :error="detailError" @retry="inspect(detailTarget)"
   /></a-modal>
 </template>
-<style scoped>
-.evaluation-toolbar,
-.evaluation-pagination {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.evaluation-toolbar {
-  margin-bottom: 12px;
-}
-.evaluation-toolbar > .ant-input {
-  width: 220px;
-}
-.evaluation-toolbar > .ant-select {
-  width: 160px;
-}
-.evaluation-pagination {
-  justify-content: flex-end;
-  padding: 12px;
-}
-.evaluation-pagination > span {
-  flex: 1;
-  min-width: 200px;
-}
-</style>

@@ -340,7 +340,7 @@ describe('生成数据契约与来源', () => {
 });
 
 describe('生成请求与持久结果', () => {
-  it('历史读取失败可恢复，加载更多去重，旧响应不能覆盖新列表', async () => {
+  it('历史读取失败可恢复，翻页和换页长使用独立目录，旧响应不能回填', async () => {
     request.mockRejectedValueOnce('offline');
     const { state } = host();
     await flushPromises();
@@ -348,9 +348,16 @@ describe('生成请求与持久结果', () => {
     request.mockResolvedValueOnce({ ...page, next_cursor: 'older' });
     await state.refresh();
     expect(state.next.value).toBe('older');
-    request.mockResolvedValueOnce({ ...page, items: [summary, { ...summary, id: 'gen_older' }] });
-    await state.refresh('older', true);
-    expect(state.items.value.map(row => row.id)).toEqual([generationID, 'gen_older']);
+    request.mockResolvedValueOnce({ ...page, items: [{ ...summary, id: 'gen_older' }] });
+    state.nextPage();
+    await flushPromises();
+    expect(state.items.value.map(row => row.id)).toEqual(['gen_older']);
+    expect(request.mock.lastCall?.[0]).toBe('/rule-generation/jobs?before=older');
+    request.mockResolvedValueOnce(page);
+    state.changePageSize(10);
+    await flushPromises();
+    expect(request.mock.lastCall?.[0]).toBe('/rule-generation/jobs?limit=10');
+    expect(state.cursors.value).toEqual(['']);
     const old = deferred<unknown>();
     request.mockReturnValueOnce(old.promise);
     const first = state.refresh();
@@ -528,6 +535,9 @@ describe('生成请求与持久结果', () => {
 });
 
 describe('规则生成页面操作', () => {
+  const selectByPlaceholder = (wrapper: Awaited<ReturnType<typeof workspace>>['wrapper'], placeholder: string) =>
+    wrapper.findAllComponents(Select).find(select => select.props('placeholder') === placeholder)!;
+
   it('规则工作台按规范路径提供单一业务表格，查看账号不能进入生成', async () => {
     const { wrapper, router } = await workspace(RulesWorkspace);
     expect(wrapper.findAll('.ant-table')).toHaveLength(1);
@@ -563,7 +573,7 @@ describe('规则生成页面操作', () => {
     await describeDetection(input.description);
     await click('提交生成');
     expect(document.body.textContent).toContain('请选择已启用');
-    await wrapper.findAllComponents(Select)[0]!.setValue(analysisProvider.id, 'value');
+    await selectByPlaceholder(wrapper, '选择支持严格 JSON 输出的模型').setValue(analysisProvider.id, 'value');
     await click('提交生成');
     expect(document.body.textContent).toContain('请确认本次检测说明');
     await consent();
@@ -589,23 +599,23 @@ describe('规则生成页面操作', () => {
     await click('生成规则');
     document.body.querySelector<HTMLInputElement>('input[value=http_raw]')!.click();
     await flushPromises();
-    const selects = wrapper.findAllComponents(Select);
-    expect(selects[0]!.props('options')).toEqual([
+    const sampleSelect = selectByPlaceholder(wrapper, '选择对应来源的样本');
+    expect(sampleSelect.props('options')).toEqual([
       { value: httpSample.id, label: expect.stringContaining(httpSample.name) },
     ]);
     expect(document.body.textContent).toContain('HTTP Raw 为合成样本');
     await describeDetection(input.description);
-    await selects[1]!.setValue(analysisProvider.id, 'value');
+    await selectByPlaceholder(wrapper, '选择支持严格 JSON 输出的模型').setValue(analysisProvider.id, 'value');
     await consent();
     await click('提交生成');
     expect(document.body.textContent).toContain('请选择尚在保留期');
-    await selects[0]!.setValue(httpSample.id, 'value');
-    selects[0]!.vm.$emit('change', httpSample.id);
+    await sampleSelect.setValue(httpSample.id, 'value');
+    sampleSelect.vm.$emit('change', httpSample.id);
     await flushPromises();
     expect(document.body.querySelector<HTMLInputElement>('input[type=checkbox]')?.checked).toBe(false);
     document.body.querySelector<HTMLInputElement>('input[value=pcap]')!.click();
     await flushPromises();
-    expect(wrapper.findAllComponents(Select)[0]!.props('options')).toEqual([
+    expect(selectByPlaceholder(wrapper, '选择对应来源的样本').props('options')).toEqual([
       { value: sample.id, label: expect.stringContaining(sample.name) },
     ]);
     await click('管理与导入重放样本');
@@ -635,7 +645,7 @@ describe('规则生成页面操作', () => {
     const { wrapper } = await workspace();
     await click('生成规则');
     await describeDetection(input.description);
-    await wrapper.findAllComponents(Select)[0]!.setValue(analysisProvider.id, 'value');
+    await selectByPlaceholder(wrapper, '选择支持严格 JSON 输出的模型').setValue(analysisProvider.id, 'value');
     await consent();
     request.mockRejectedValueOnce(new Error('连接未确认'));
     await click('提交生成');

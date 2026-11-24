@@ -2,6 +2,7 @@ import type { ResponseConnector } from './response';
 import { readyConnector } from './response';
 import { instant } from './utils/instant';
 import { goJSONDigest } from './utils/goJSONDigest';
+import type { StatusTone } from './terms';
 
 export interface DeviceQuery {
   sensor_id: string;
@@ -73,16 +74,41 @@ export function usableDevice(v: ResponseDevice, now = Date.now()) {
     seen <= now + 30000
   );
 }
-export function deviceState(v: ResponseDevice, now = Date.now()) {
-  if (v.sensor_status === 'disabled') return '探针已停用';
-  if (v.sensor_status === 'offline') return '探针离线或心跳过期';
-  if (v.observation === 'pending') return '等待设备核验';
+export const deviceConditions = {
+  disabled: '探针已停用',
+  offline: '探针离线或心跳过期',
+  pending: '等待设备核验',
+  stale: '设备观测已过期',
+  unavailable: '设备不可用',
+  unverified: '身份待核验',
+  unsupported: '执行能力不完整',
+  ready: '具备提交条件',
+  probe_stale: '探针观测已过期',
+} as const;
+export const deviceConditionTones = {
+  disabled: 'neutral',
+  offline: 'neutral',
+  pending: 'info',
+  stale: 'warning',
+  unavailable: 'danger',
+  unverified: 'warning',
+  unsupported: 'warning',
+  ready: 'success',
+  probe_stale: 'warning',
+} as const satisfies Record<keyof typeof deviceConditions, StatusTone>;
+export function deviceCondition(v: ResponseDevice, now = Date.now()): keyof typeof deviceConditions {
+  if (v.sensor_status === 'disabled') return 'disabled';
+  if (v.sensor_status === 'offline') return 'offline';
+  if (v.observation === 'pending') return 'pending';
   if (v.observation === 'stale' || Date.parse(v.observed_at) < now - 35000 || Date.parse(v.observed_at) > now + 30000)
-    return '设备观测已过期';
-  if (v.status === 'unavailable') return '设备不可用';
-  if (v.status === 'unverified') return '身份待核验';
-  if (!v.task_supported) return '执行能力不完整';
-  return usableDevice(v, now) ? '具备提交条件' : '探针观测已过期';
+    return 'stale';
+  if (v.status === 'unavailable') return 'unavailable';
+  if (v.status === 'unverified') return 'unverified';
+  if (!v.task_supported) return 'unsupported';
+  return usableDevice(v, now) ? 'ready' : 'probe_stale';
+}
+export function deviceState(v: ResponseDevice, now = Date.now()) {
+  return deviceConditions[deviceCondition(v, now)];
 }
 function position(value: string) {
   try {

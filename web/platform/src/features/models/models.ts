@@ -65,6 +65,14 @@ export const checkNames: Record<string, string> = {
   refused: '提供方拒答',
   incomplete: '输出未完成',
 };
+export const checkTones = {
+  running: 'info',
+  succeeded: 'success',
+  failed: 'danger',
+  uncertain: 'warning',
+  refused: 'warning',
+  incomplete: 'warning',
+} as const;
 export const resultNames: Record<string, string> = {
   completed: '生成接口已返回完整响应',
   invalid_config: '模型配置或请求参数无效',
@@ -83,14 +91,3 @@ export const resultNames: Record<string, string> = {
   provider_refused: '提供方拒绝生成内容',
   unexpected_tool_call: '响应包含未授权的工具调用',
 };
-export function checkClass(state: string) {
-  return state === 'succeeded'
-    ? 'status-online'
-    : state === 'running'
-      ? 'status-unknown'
-      : state === 'failed'
-        ? 'status-high'
-        : state === 'uncertain' || state === 'incomplete'
-          ? 'status-medium'
-          : 'status-disabled';
-}

@@ -1,4 +1,6 @@
 import { onScopeDispose, shallowReadonly, shallowRef, watch } from 'vue';
+import { useCursorPageSize } from '@starbeacon/shared/composables/useCursorPageSize.ts';
+import { defaultPageSize } from '@starbeacon/shared/pagination.ts';
 import { session } from '../../session';
 import { policyID, policyStatuses } from './decisionPolicies';
 import { validEvaluationPage, type EvaluationFilter, type EvaluationPage } from './decisionEvaluations';
@@ -9,6 +11,7 @@ export function useDecisionEvaluations() {
     cursors = shallowRef(['']),
     pending = shallowRef(false),
     error = shallowRef('');
+  const { pageSize, changePageSize } = useCursorPageSize(cursors, pending, refresh);
   let stopped = false,
     read: AbortController | undefined;
   async function refresh() {
@@ -21,14 +24,16 @@ export function useDecisionEvaluations() {
     page.value = { items: [], next_cursor: '' };
     const frozen = { ...filter.value },
       tenant = session.current.value?.tenant_id ?? '',
-      owner = session.current.value?.id ?? '';
+      owner = session.current.value?.id ?? '',
+      limit = pageSize.value;
     try {
       const value = await session.api.request<unknown>(
-        '/decision-evaluations?' + new URLSearchParams({ ...frozen, limit: '20', cursor: cursors.value.at(-1) ?? '' }),
+        '/decision-evaluations?' +
+          new URLSearchParams({ ...frozen, limit: String(limit), cursor: cursors.value.at(-1) ?? '' }),
         { signal: controller.signal },
       );
       if (controller.signal.aborted) return;
-      if (!(await validEvaluationPage(value, tenant, owner, frozen)))
+      if (!(await validEvaluationPage(value, tenant, owner, frozen, limit)))
         throw new Error('评估记录目录与账号、筛选或摘要不一致，请重试。');
       if (!controller.signal.aborted) page.value = value as EvaluationPage;
     } catch (e) {
@@ -65,6 +70,7 @@ export function useDecisionEvaluations() {
     read?.abort();
     filter.value = empty();
     cursors.value = [''];
+    pageSize.value = defaultPageSize;
     page.value = { items: [], next_cursor: '' };
     void refresh();
   }
@@ -81,6 +87,8 @@ export function useDecisionEvaluations() {
     page: shallowReadonly(page),
     filter: shallowReadonly(filter),
     cursors: shallowReadonly(cursors),
+    pageSize: shallowReadonly(pageSize),
+    changePageSize,
     pending: shallowReadonly(pending),
     error: shallowReadonly(error),
     refresh,
