@@ -1383,6 +1383,26 @@
       "boundary": "管理员按执行探针、设备及原始核验状态分页读取本租户最多每探针八个 HTTP 连接器。目录保留离线及停用历史，设备核验、探针心跳与实际流量效果分开表达。探针及连接器升序游标绑定所有筛选与页大小，不承诺跨心跳状态快照。限时封禁冻结所选设备、配置摘要及注册身份，提交仍由已有任务链复核权限与本地目标范围；相关动作按探针及设备关联。采集器只核对启动时固定私有配置文件的权限、结构及运行绑定，不接受任意路径、不读取凭据、不连设备、不应用配置；CA 内容与同路径凭据轮换不在此核对范围。管理地址与凭据仍由本机私有文件管理，不提供集中凭据托管、网络域配置、设备 HA、排他接管、认证插件或商业设备效果验收。工程验证以独立记录为准。"
     },
     {
+      "id": "response_template_plugins",
+      "name": "联动模板与不可变草稿版本",
+      "code": [
+        "internal/response/template.go",
+        "internal/response/template_runtime.go",
+        "internal/agent/response.go",
+        "internal/store/response_plugins.go",
+        "internal/platform/response_plugins.go",
+        "migrations/00059_response_plugins.sql"
+      ],
+      "pages": [],
+      "tests": [
+        "internal/response/template_test.go",
+        "internal/agent/response_template_test.go",
+        "internal/platform/response_plugins_test.go",
+        "tests/integration/response_plugins_test.go"
+      ],
+      "boundary": "声明式 HTTPS 设备模板具有固定相对路径、字段绑定、状态码及 JSON 标量条件。认证采用采集器私有令牌或受限登录与内存缓存。租约沿用现有目标保护、原生到期、所有者条件和独立回读，设备规则标识仅保存在采集器。平台管理员在租户范围内读取草稿和历史不可变版本，保存绑定当前版本与幂等键。专属 HTTPS 设备夹具覆盖封禁、回读及解除，生产发布、签名分发和联动插件页面由后续条目交付。"
+    },
+    {
       "id": "syslog",
       "name": "Syslog 接收与日志检索",
       "code": [
@@ -2319,10 +2339,12 @@
       "state": "partial",
       "acceptance": "pending",
       "capabilities": [
-        "response_http"
+        "response_http",
+        "response_template_plugins"
       ],
       "implemented": [
-        "采集器侧固定 HTTPS 通用连接器、私有 CA/Bearer 文件引用、身份与原生 TTL 核验、单次写后独立回读及结果未知保护"
+        "采集器侧固定 HTTPS 通用连接器、私有 CA/Bearer 文件引用、身份与原生 TTL 核验、单次写后独立回读及结果未知保护",
+        "声明式模板支持私有凭据登录、令牌到期更新、成功字段核对与独立读回；管理员草稿和历史版本不可改写"
       ],
       "remaining": [
         "真实设备 API 适配与验收",
@@ -2339,14 +2361,16 @@
         "decision_response",
         "continuous_decisions",
         "response_catalog",
-        "watchlists"
+        "watchlists",
+        "response_template_plugins"
       ],
       "implemented": [
         "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
         "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键",
         "持续策略依据本人指定模型的新研判签发限时源 IP 任务；模型、观测、探针及设备绑定，告警去重、目标冷却与小时预算约束",
         "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认",
-        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。"
+        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
+        "模板以设备独立规则标识和所有者为条件，受控 HTTPS 设备协议验证限时封禁、回读和解除"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",

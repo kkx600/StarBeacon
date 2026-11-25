@@ -149,6 +149,7 @@ type Lease struct {
 	ExpiresAt     time.Time `json:"expires_at"`
 	State         string    `json:"state"`
 	ObservedAt    time.Time `json:"observed_at"`
+	DeviceRuleID  string    `json:"-"`
 }
 
 func (v Lease) Validate(a Action, now time.Time) error {

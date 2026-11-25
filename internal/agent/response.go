@@ -10,17 +10,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/response"
 	bolt "go.etcd.io/bbolt"
 )
 
 type responseRecord struct {
-	Action      response.Action  `json:"action"`
-	Result      *response.Result `json:"result,omitempty"`
-	Status      string           `json:"status"`
-	CheckedAt   time.Time        `json:"checked_at"`
-	RetainUntil time.Time        `json:"retain_until"`
+	Action       response.Action  `json:"action"`
+	Result       *response.Result `json:"result,omitempty"`
+	Status       string           `json:"status"`
+	CheckedAt    time.Time        `json:"checked_at"`
+	RetainUntil  time.Time        `json:"retain_until"`
+	DeviceRuleID string           `json:"device_rule_id,omitempty"`
 }
 type ResponseService struct {
 	WAL          *WAL
@@ -50,7 +52,7 @@ func NewResponseService(w *WAL, path string, management ...string) (*ResponseSer
 			return nil, err
 		}
 		s.clients[config.ID] = client
-		s.health[config.ID] = response.Health{ConnectorID: config.ID, DeviceID: config.DeviceID, Version: config.DeviceVersion, ConfigSHA256: config.SHA256(), Status: "unverified", MaxTTLSeconds: config.MaxTTLSeconds}
+		s.health[config.ID] = response.Health{ConnectorID: config.ID, DeviceID: config.DeviceID, Version: config.DeviceVersion, ConfigSHA256: client.BindingSHA256(), Status: "unverified", MaxTTLSeconds: config.MaxTTLSeconds}
 	}
 	err = w.DB.Update(func(tx *bolt.Tx) error { _, err := tx.CreateBucketIfNotExists([]byte("response_leases")); return err })
 	if err != nil {
@@ -124,7 +126,7 @@ func (s *ResponseService) Execute(ctx context.Context, c control.Command) (json.
 		return nil, "response_scope_invalid", response.ErrInput
 	}
 	client := s.clients[a.ConnectorID]
-	if client == nil || client.Config.SHA256() != a.ConfigSHA256 {
+	if client == nil || client.BindingSHA256() != a.ConfigSHA256 {
 		return nil, "response_device_unavailable", response.ErrUnavailable
 	}
 	if c.Kind == "response.block" && !client.Config.Allows(a.TargetIP, int(a.ExpiresAt.Sub(a.RequestedAt)/time.Second)) {
@@ -165,12 +167,13 @@ func (s *ResponseService) Execute(ctx context.Context, c control.Command) (json.
 		return nil, "local_storage_unavailable", err
 	}
 	// 副作用之前的意图已落盘；重启维护只读取状态，不补发历史封禁。
-	result, executeErr := client.Execute(ctx, c.Kind, a)
+	result, executeErr := client.ExecuteBound(ctx, c.Kind, a, record.DeviceRuleID)
 	record.CheckedAt = time.Now().UTC()
 	record.Status = "unknown"
 	if executeErr == nil {
 		record.Status = result.Observation.State
 		record.Result = &result
+		record.DeviceRuleID = result.Observation.DeviceRuleID
 	}
 	err = s.WAL.DB.Update(func(tx *bolt.Tx) error {
 		raw, err := json.Marshal(record)
@@ -229,17 +232,18 @@ func (s *ResponseService) maintain(ctx context.Context) error {
 	slices.SortFunc(selected, func(a, b responseRecord) int { return a.CheckedAt.Compare(b.CheckedAt) })
 	for _, record := range selected[:min(2, len(selected))] {
 		client := s.clients[record.Action.ConnectorID]
-		if client == nil || client.Config.SHA256() != record.Action.ConfigSHA256 {
+		if client == nil || client.BindingSHA256() != record.Action.ConfigSHA256 {
 			continue
 		}
 		call, cancel := context.WithTimeout(ctx, 10*time.Second)
-		result, readErr := client.Execute(call, "response.read", record.Action)
+		result, readErr := client.ExecuteBound(call, "response.read", record.Action, record.DeviceRuleID)
 		cancel()
 		record.CheckedAt = time.Now().UTC()
 		record.Status = "unknown"
 		if readErr == nil {
 			record.Status = result.Observation.State
 			record.Result = &result
+			record.DeviceRuleID = result.Observation.DeviceRuleID
 		}
 		if err = s.WAL.DB.Update(func(tx *bolt.Tx) error {
 			raw, err := json.Marshal(record)
@@ -259,7 +263,7 @@ func (s *ResponseService) maintain(ctx context.Context) error {
 }
 
 func (s *ResponseService) validRecord(key string, r responseRecord) error {
-	if r.Action.Validate() != nil || key != r.Action.LeaseID || r.Action.OwnerSHA256 != response.Owner(s.WAL.TenantID, s.WAL.SensorID, s.WAL.RegistrationID, key) || !r.RetainUntil.After(r.Action.RequestedAt) {
+	if r.Action.Validate() != nil || key != r.Action.LeaseID || r.Action.OwnerSHA256 != response.Owner(s.WAL.TenantID, s.WAL.SensorID, s.WAL.RegistrationID, key) || !r.RetainUntil.After(r.Action.RequestedAt) || r.DeviceRuleID != "" && !contract.ValidID(r.DeviceRuleID) {
 		return response.ErrInput
 	}
 	switch r.Status {

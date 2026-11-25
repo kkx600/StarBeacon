@@ -101,12 +101,13 @@ func responseServiceFixture(t *testing.T) (*ResponseService, string, *int, *sync
 	return s, path, &writes, &mu
 }
 func responseCommand(s *ResponseService, id string) control.Command {
-	var config response.Configuration
+	var client *response.Client
 	for _, c := range s.clients {
-		config = c.Config
+		client = c
 	}
+	config := client.Config
 	now := time.Now().UTC()
-	a := response.Action{SchemaVersion: response.ActionSchema, ConnectorID: config.ID, DeviceID: config.DeviceID, ConfigSHA256: config.SHA256(), LeaseID: id, OwnerSHA256: response.Owner(s.WAL.TenantID, s.WAL.SensorID, s.WAL.RegistrationID, id), TargetIP: "198.51.100.10", RequestedAt: now, ExpiresAt: now.Add(time.Minute), Reason: "受控联动"}
+	a := response.Action{SchemaVersion: response.ActionSchema, ConnectorID: config.ID, DeviceID: config.DeviceID, ConfigSHA256: client.BindingSHA256(), LeaseID: id, OwnerSHA256: response.Owner(s.WAL.TenantID, s.WAL.SensorID, s.WAL.RegistrationID, id), TargetIP: "198.51.100.10", RequestedAt: now, ExpiresAt: now.Add(time.Minute), Reason: "受控联动"}
 	raw, _ := json.Marshal(a)
 	return control.Command{ID: id, TenantID: s.WAL.TenantID, SensorID: s.WAL.SensorID, RegistrationID: s.WAL.RegistrationID, Kind: "response.block", IssuedAt: now, ExpiresAt: now.Add(30 * time.Second), Payload: raw}
 }

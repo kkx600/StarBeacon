@@ -1,0 +1,59 @@
+{
+  "schema_version": "response.template.v1",
+  "login": {
+    "path": "/session/new",
+    "username_field": "user",
+    "password_field": "pass",
+    "token_field": "access_token",
+    "ttl_seconds": 60
+  },
+  "health": {
+    "method": "GET",
+    "path": "/v1/status",
+    "accept": { "status": [200], "field": "ok", "equals": true },
+    "values": [
+      { "name": "device_id", "value": "unit" },
+      { "name": "version", "value": "firmware" },
+      { "name": "native_ttl", "value": "expires_locally" },
+      { "name": "separate_leases", "value": "isolated_rules" },
+      { "name": "conditional_revoke", "value": "checks_owner" },
+      { "name": "max_ttl_seconds", "value": "maximum_age" },
+      { "name": "observed_at", "value": "checked_at" }
+    ]
+  },
+  "block": {
+    "method": "POST",
+    "path": "/v1/acl",
+    "body": [
+      { "name": "comment", "value": "{{task_id}}" },
+      { "name": "address", "value": "{{target.ip}}" },
+      { "name": "owner", "value": "{{owner_sha256}}" },
+      { "name": "end", "value": "{{expires_at}}" },
+      { "name": "ttl", "value": "{{duration_seconds}}" },
+      { "name": "policy", "value": "temporary" }
+    ],
+    "accept": { "status": [201], "field": "code", "equals": 0 },
+    "values": [{ "name": "rule_id", "value": "key" }]
+  },
+  "verify": {
+    "method": "GET",
+    "path": "/v1/acl/by-task/{{task_id}}",
+    "accept": { "status": [200] },
+    "values": [
+      { "name": "device_id", "value": "unit" },
+      { "name": "lease_id", "value": "comment" },
+      { "name": "owner_sha256", "value": "owner" },
+      { "name": "target_ip", "value": "address" },
+      { "name": "expires_at", "value": "end" },
+      { "name": "state", "value": "rule_state" },
+      { "name": "observed_at", "value": "checked_at" },
+      { "name": "rule_id", "value": "key" }
+    ]
+  },
+  "missing": { "status": [404], "field": "code", "equals": "unassigned" },
+  "unblock": {
+    "method": "DELETE",
+    "path": "/v1/acl/rules/{{lease.rule_id}}",
+    "accept": { "status": [204, 404] }
+  }
+}

@@ -119,14 +119,23 @@ func LoadFile(path string) (File, error) {
 }
 
 type Client struct {
-	Config Configuration
-	http   *http.Client
+	Config   Configuration
+	http     *http.Client
+	template *templateRuntime
 }
 
 func NewClient(c Configuration) (*Client, error) {
 	if c.Validate() != nil {
 		return nil, ErrInput
 	}
+	client, err := deviceHTTPClient(c)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{Config: c, http: client}, nil
+}
+
+func deviceHTTPClient(c Configuration) (*http.Client, error) {
 	roots, err := outbound.LoadRoots(c.CAFile)
 	if err != nil || roots == nil {
 		return nil, ErrUnavailable
@@ -141,17 +150,41 @@ func NewClient(c Configuration) (*Client, error) {
 	// 每次写只建立一条连接，不让连接复用触发隐式重发；未知结果通过 GET 核对。
 	client.Transport.(*http.Transport).DisableKeepAlives = true
 	client.Timeout = 8 * time.Second
-	return &Client{Config: c, http: client}, nil
+	return client, nil
 }
 func (c *Client) Close() { c.http.CloseIdleConnections() }
-func (c *Client) request(ctx context.Context, method, path string, body any, owner string) ([]byte, int, error) {
+func (c *Client) BindingSHA256() string {
+	if c.template != nil {
+		return digest([]string{"response.template.binding.v1", c.Config.SHA256(), c.template.sha256})
+	}
+	return c.Config.SHA256()
+}
+
+func (c *Client) fileToken() (string, error) {
 	token, err := ReadPrivateFile(c.Config.TokenFile, 4096)
 	value := strings.TrimSuffix(strings.TrimSuffix(string(token), "\n"), "\r")
-	if err != nil || len(value) < 16 || len(value) > 4096 || strings.ContainsAny(value, "\r\n\x00 \t") {
+	if err != nil || !validDeviceToken(value) {
+		return "", ErrUnavailable
+	}
+	return value, nil
+}
+
+func validDeviceToken(value string) bool {
+	return len(value) >= 16 && len(value) <= 4096 && !strings.ContainsAny(value, "\r\n\x00 \t")
+}
+
+func (c *Client) request(ctx context.Context, method, path string, body any, owner string) ([]byte, int, error) {
+	value, err := c.fileToken()
+	if err != nil {
 		return nil, 0, ErrUnavailable
 	}
+	return c.send(ctx, method, path, body, owner, value, false)
+}
+
+func (c *Client) send(ctx context.Context, method, path string, body any, owner, token string, allowEmpty bool) ([]byte, int, error) {
 	var input []byte
 	if body != nil {
+		var err error
 		input, err = json.Marshal(body)
 		if err != nil {
 			return nil, 0, ErrInput
@@ -161,7 +194,9 @@ func (c *Client) request(ctx context.Context, method, path string, body any, own
 	if err != nil {
 		return nil, 0, ErrInput
 	}
-	req.Header.Set("Authorization", "Bearer "+value)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -175,6 +210,9 @@ func (c *Client) request(ctx context.Context, method, path string, body any, own
 	}
 	defer res.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(res.Body, 16385))
+	if allowEmpty && err == nil && len(raw) == 0 {
+		return raw, res.StatusCode, nil
+	}
 	contentType, _, typeErr := mime.ParseMediaType(res.Header.Get("Content-Type"))
 	if err != nil || len(raw) > 16384 || typeErr != nil || contentType != "application/json" {
 		return nil, res.StatusCode, ErrUnknown
@@ -182,6 +220,9 @@ func (c *Client) request(ctx context.Context, method, path string, body any, own
 	return raw, res.StatusCode, nil
 }
 func (c *Client) Describe(ctx context.Context) (Device, error) {
+	if c.template != nil {
+		return c.template.describe(ctx, c)
+	}
 	var value Device
 	raw, status, err := c.request(ctx, http.MethodGet, "/starbeacon/v1/device", nil, "")
 	fields := []string{"schema_version", "device_id", "version", "native_ttl", "separate_leases", "conditional_revoke", "max_ttl_seconds", "observed_at"}
@@ -191,6 +232,9 @@ func (c *Client) Describe(ctx context.Context) (Device, error) {
 	return value, nil
 }
 func (c *Client) read(ctx context.Context, a Action) (Lease, bool, error) {
+	if c.template != nil {
+		return c.template.read(ctx, c, a)
+	}
 	var value Lease
 	raw, status, err := c.request(ctx, http.MethodGet, "/starbeacon/v1/leases/"+a.LeaseID, nil, "")
 	if err != nil {
@@ -212,8 +256,13 @@ func (c *Client) read(ctx context.Context, a Action) (Lease, bool, error) {
 	return value, false, nil
 }
 func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, error) {
+	return c.ExecuteBound(ctx, kind, a, "")
+}
+
+// ExecuteBound 同时核对已经持久化的设备规则标识；固定协议不使用此字段。
+func (c *Client) ExecuteBound(ctx context.Context, kind string, a Action, deviceRuleID string) (Result, error) {
 	var result Result
-	if a.Validate() != nil || a.ConnectorID != c.Config.ID || a.ConfigSHA256 != c.Config.SHA256() || a.DeviceID != c.Config.DeviceID || kind != "response.block" && kind != "response.read" && kind != "response.revoke" {
+	if a.Validate() != nil || a.ConnectorID != c.Config.ID || a.ConfigSHA256 != c.BindingSHA256() || a.DeviceID != c.Config.DeviceID || kind != "response.block" && kind != "response.read" && kind != "response.revoke" {
 		return result, ErrInput
 	}
 	device, err := c.Describe(ctx)
@@ -224,6 +273,9 @@ func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, er
 	if err != nil {
 		return result, err
 	}
+	if deviceRuleID != "" && (absent || lease.DeviceRuleID != deviceRuleID) {
+		return result, ErrUnknown
+	}
 	if kind == "response.block" {
 		seconds := int(a.ExpiresAt.Sub(a.RequestedAt) / time.Second)
 		if !c.Config.Allows(a.TargetIP, seconds) || seconds > device.MaxTTLSeconds || !a.ExpiresAt.After(time.Now().UTC().Add(5*time.Second)) || a.RequestedAt.After(time.Now().UTC().Add(30*time.Second)) {
@@ -233,13 +285,13 @@ func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, er
 			return result, ErrUnknown
 		}
 		if absent {
-			_, status, putErr := c.request(ctx, http.MethodPut, "/starbeacon/v1/leases/"+a.LeaseID, a, "")
+			reference, status, putErr := c.block(ctx, a)
 			// 受理、异步及丢失响应都只回读原资源，绝不重新提交 PUT。
 			if putErr == nil && (status == 400 || status == 401 || status == 403 || status == 409 || status == 412 || status == 429) {
 				return result, ErrUnavailable
 			}
 			lease, absent, err = c.read(ctx, a)
-			if err != nil || absent || lease.State != "active" {
+			if err != nil || absent || lease.State != "active" || reference != "" && lease.DeviceRuleID != reference {
 				return result, ErrUnknown
 			}
 		}
@@ -248,12 +300,13 @@ func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, er
 			return result, ErrUnknown
 		}
 		if lease.State == "active" {
-			_, status, deleteErr := c.request(ctx, http.MethodDelete, "/starbeacon/v1/leases/"+a.LeaseID, nil, a.OwnerSHA256)
+			status, deleteErr := c.unblock(ctx, a, lease)
 			if deleteErr == nil && (status == 400 || status == 401 || status == 403 || status == 409 || status == 412 || status == 429) {
 				return result, ErrUnavailable
 			}
+			previousRuleID := lease.DeviceRuleID
 			lease, absent, err = c.read(ctx, a)
-			if err != nil || absent || lease.State == "active" {
+			if err != nil || absent || lease.State == "active" || previousRuleID != lease.DeviceRuleID {
 				return result, ErrUnknown
 			}
 		}
@@ -262,6 +315,22 @@ func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, er
 	}
 	result = Result{SchemaVersion: "response.result.v1", ConnectorID: a.ConnectorID, ConfigSHA256: a.ConfigSHA256, Verified: true, Observation: lease, Effect: "not_observed"}
 	return result, result.Validate(a, kind, time.Now().UTC())
+}
+
+func (c *Client) block(ctx context.Context, a Action) (string, int, error) {
+	if c.template != nil {
+		return c.template.block(ctx, c, a)
+	}
+	_, status, err := c.request(ctx, http.MethodPut, "/starbeacon/v1/leases/"+a.LeaseID, a, "")
+	return "", status, err
+}
+
+func (c *Client) unblock(ctx context.Context, a Action, lease Lease) (int, error) {
+	if c.template != nil {
+		return c.template.unblock(ctx, c, a, lease)
+	}
+	_, status, err := c.request(ctx, http.MethodDelete, "/starbeacon/v1/leases/"+a.LeaseID, nil, a.OwnerSHA256)
+	return status, err
 }
 func Code(err error) string {
 	switch {

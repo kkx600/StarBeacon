@@ -18940,6 +18940,284 @@
           }
         }
       }
+    },
+    "/api/v1/response-plugins": {
+      "get": {
+        "summary": "分页读取当前联动插件草稿",
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                10,
+                20,
+                50,
+                100
+              ],
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前租户按插件标识升序返回最新草稿。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePluginPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "目录、版本或模板定义不符合契约。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要管理员会话。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前账号的联动插件权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "目录与版本存储暂时不可用或内容摘要核对失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "创建联动插件草稿版本",
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{7,63}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponsePluginDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "草稿版本、模板摘要与保存审计原子提交。同一提交幂等回读原版本。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePluginVersion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "目录、版本或模板定义不符合契约。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要管理员会话。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前账号的联动插件权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "草稿版本或原提交参数已有变化。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "已达到联动插件或单个插件的版本容量。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "目录与版本存储暂时不可用或内容摘要核对失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/response-plugins/{id}/versions/{version}": {
+      "get": {
+        "summary": "读取指定联动插件版本",
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前草稿或不可修改的历史版本。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePluginVersion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "目录、版本或模板定义不符合契约。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要管理员会话。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前账号的联动插件权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "联动插件版本不存在或不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "目录与版本存储暂时不可用或内容摘要核对失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -34624,6 +34902,300 @@
             ]
           }
         }
+      },
+      "ResponseTemplateField": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "ResponseTemplateCondition": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 200,
+              "maximum": 404
+            },
+            "minItems": 1,
+            "maxItems": 6,
+            "uniqueItems": true
+          },
+          "field": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$"
+          },
+          "equals": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer",
+                "format": "int64"
+              },
+              {
+                "type": "string",
+                "maxLength": 254
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "ResponseTemplateLogin": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "username_field": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$"
+          },
+          "password_field": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$"
+          },
+          "token_field": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$"
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 300
+          }
+        },
+        "required": [
+          "path",
+          "username_field",
+          "password_field",
+          "token_field",
+          "ttl_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "ResponseTemplateStep": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponseTemplateField"
+            },
+            "minItems": 0,
+            "maxItems": 16
+          },
+          "accept": {
+            "$ref": "#/components/schemas/ResponseTemplateCondition"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponseTemplateField"
+            },
+            "minItems": 0,
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "method",
+          "path",
+          "accept"
+        ],
+        "additionalProperties": false
+      },
+      "ResponseDeviceTemplate": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "response.template.v1"
+          },
+          "login": {
+            "$ref": "#/components/schemas/ResponseTemplateLogin"
+          },
+          "health": {
+            "$ref": "#/components/schemas/ResponseTemplateStep"
+          },
+          "block": {
+            "$ref": "#/components/schemas/ResponseTemplateStep"
+          },
+          "verify": {
+            "$ref": "#/components/schemas/ResponseTemplateStep"
+          },
+          "missing": {
+            "$ref": "#/components/schemas/ResponseTemplateCondition"
+          },
+          "unblock": {
+            "$ref": "#/components/schemas/ResponseTemplateStep"
+          }
+        },
+        "required": [
+          "schema_version",
+          "health",
+          "block",
+          "verify",
+          "missing",
+          "unblock"
+        ],
+        "additionalProperties": false,
+        "description": "固定相对路径、字段映射及 HTTP 状态和 JSON 标量比较。读取必须核对任务标识、所有者与绝对到期，解除按已确认规则标识及所有者条件执行。认证凭据由采集器私有文件提供。"
+      },
+      "ResponsePluginDraft": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 32
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "device": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "template": {
+            "$ref": "#/components/schemas/ResponseDeviceTemplate"
+          }
+        },
+        "required": [
+          "id",
+          "expected_version",
+          "name",
+          "device",
+          "template"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "device": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "kind": {
+            "type": "string",
+            "const": "template"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "superseded"
+            ]
+          },
+          "template": {
+            "$ref": "#/components/schemas/ResponseDeviceTemplate"
+          },
+          "template_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "created_by": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "name",
+          "device",
+          "kind",
+          "state",
+          "template",
+          "template_sha256",
+          "created_by",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginVersion"
+            },
+            "minItems": 0,
+            "maxItems": 64
+          },
+          "next_after": {
+            "type": "string",
+            "pattern": "^(?:[a-z0-9][a-z0-9_-]{0,63})?$"
+          }
+        },
+        "required": [
+          "items",
+          "next_after"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {
