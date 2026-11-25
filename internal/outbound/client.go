@@ -19,6 +19,7 @@ var ErrTarget = errors.New("目标地址不在连接器允许范围内")
 
 type Policy struct {
 	PrivateNetworks []netip.Prefix
+	PinnedIP        netip.Addr
 	Development     bool
 	PrivateOnly     bool
 	Roots           *x509.CertPool
@@ -47,6 +48,9 @@ func ParseNetworks(value string) ([]netip.Prefix, error) {
 func (p Policy) Allowed(ip netip.Addr) bool {
 	ip = ip.Unmap()
 	if !ip.IsValid() || ip.Zone() != "" || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip == netip.MustParseAddr("100.100.100.200") || ip == netip.MustParseAddr("fd00:ec2::254") || netip.MustParsePrefix("240.0.0.0/4").Contains(ip) {
+		return false
+	}
+	if p.PinnedIP.IsValid() && ip != p.PinnedIP {
 		return false
 	}
 	if p.PrivateOnly && !ip.IsPrivate() && !ip.IsLoopback() {
@@ -133,9 +137,10 @@ func (p Policy) TLSConfig(host string) *tls.Config {
 }
 
 func (p Policy) HTTPClient() *http.Client {
+	// 固定管理 IP 的连接器逐次核对解析，也避免复用连接时重发请求。
 	return &http.Client{
 		Timeout:       15 * time.Second,
-		Transport:     &http.Transport{DialContext: p.DialContext, Proxy: nil, TLSClientConfig: p.TLSConfig(""), TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 10 * time.Second, MaxResponseHeaderBytes: 32768, MaxConnsPerHost: 4, MaxIdleConns: 8, IdleConnTimeout: 30 * time.Second, DisableCompression: true},
+		Transport:     &http.Transport{DialContext: p.DialContext, Proxy: nil, TLSClientConfig: p.TLSConfig(""), TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 10 * time.Second, MaxResponseHeaderBytes: 32768, MaxConnsPerHost: 4, MaxIdleConns: 8, IdleConnTimeout: 30 * time.Second, DisableCompression: true, DisableKeepAlives: p.PinnedIP.IsValid()},
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 }

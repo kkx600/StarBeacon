@@ -10,6 +10,7 @@ import (
 
 	"github.com/kkx600/StarBeacon/internal/app"
 	"github.com/kkx600/StarBeacon/internal/collectorupdate"
+	"github.com/kkx600/StarBeacon/internal/responsescript"
 )
 
 func maintenance(args []string) (bool, error) {
@@ -48,6 +49,12 @@ func maintenance(args []string) (bool, error) {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == responsescript.WorkerCommand {
+		if responsescript.WorkerMain() != 0 {
+			os.Exit(1)
+		}
+		return
+	}
 	if handled, err := maintenance(os.Args[1:]); handled {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "采集器维护未完成：", err)

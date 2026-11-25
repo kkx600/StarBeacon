@@ -27,6 +27,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/wneessen/go-mail v0.8.1
 	go.etcd.io/bbolt v1.5.0
+	go.starlark.net v0.0.0-20261021141710-4f4267fb140d
 	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/crypto v0.57.0
 	golang.org/x/net v0.58.0

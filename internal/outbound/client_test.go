@@ -121,3 +121,33 @@ func TestPrivateModelPolicyCannotUsePublicOrMetadataRanges(t *testing.T) {
 		}
 	}
 }
+
+func TestPinnedDeviceResolutionRejectsAnyDifferentAddress(t *testing.T) {
+	ip := netip.MustParseAddr("127.0.0.1")
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	_, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	address := net.JoinHostPort("device.example", port)
+	p := Policy{PinnedIP: ip, PrivateNetworks: []netip.Prefix{netip.PrefixFrom(ip, 32)}}
+	for _, addresses := range [][]netip.Addr{nil, {ip, netip.MustParseAddr("192.0.2.20")}, {netip.MustParseAddr("127.0.0.2")}} {
+		p.lookup = func(context.Context, string) ([]netip.Addr, error) { return addresses, nil }
+		if _, err := p.DialContext(t.Context(), "tcp", address); err != ErrTarget {
+			t.Fatalf("错误的设备解析未被拒绝 %v", err)
+		}
+	}
+	p.lookup = func(context.Context, string) ([]netip.Addr, error) { return []netip.Addr{ip}, nil }
+	conn, err := p.DialContext(t.Context(), "tcp", address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if conn.RemoteAddr().String() != listener.Addr().String() || !p.HTTPClient().Transport.(*http.Transport).DisableKeepAlives {
+		t.Fatal("请求没有使用固定地址和独立连接")
+	}
+}

@@ -1403,6 +1403,23 @@
       "boundary": "声明式 HTTPS 设备模板具有固定相对路径、字段绑定、状态码及 JSON 标量条件。认证采用采集器私有令牌或受限登录与内存缓存。租约沿用现有目标保护、原生到期、所有者条件和独立回读，设备规则标识仅保存在采集器。平台管理员在租户范围内读取草稿和历史不可变版本，保存绑定当前版本与幂等键。专属 HTTPS 设备夹具覆盖封禁、回读及解除，生产发布、签名分发和联动插件页面由后续条目交付。"
     },
     {
+      "id": "response_script_plugins",
+      "name": "联动脚本运行与隔离",
+      "code": [
+        "cmd/starbeacon-agent/main.go",
+        "internal/responsescript/runtime.go",
+        "internal/responsescript/worker.go",
+        "internal/responsescript/broker.go",
+        "internal/responsescript/interpreter.go"
+      ],
+      "pages": [],
+      "tests": [
+        "internal/responsescript/runtime_test.go",
+        "tests/integration/response_script_test.go"
+      ],
+      "boundary": "采集器工作进程使用锁定版 Starlark、Linux bubblewrap 和硬资源限额。HTTP 由采集器按本地固定的 HTTPS、管理 IP、入口、方法、路径和字段代理。写入还要求本次任务冻结授权。凭据保留在父进程，日志记录拒绝原因。HTTPS 夹具核验越界、步数、实际超时、响应大小和凭据隔离。试运行、签名下发及告警持久化属于后续条目。"
+    },
+    {
       "id": "syslog",
       "name": "Syslog 接收与日志检索",
       "code": [
@@ -2340,14 +2357,16 @@
       "acceptance": "pending",
       "capabilities": [
         "response_http",
-        "response_template_plugins"
+        "response_template_plugins",
+        "response_script_plugins"
       ],
       "implemented": [
         "采集器侧固定 HTTPS 通用连接器、私有 CA/Bearer 文件引用、身份与原生 TTL 核验、单次写后独立回读及结果未知保护",
-        "声明式模板支持私有凭据登录、令牌到期更新、成功字段核对与独立读回；管理员草稿和历史版本不可改写"
+        "声明式模板支持私有凭据登录、令牌到期更新、成功字段核对与独立读回；管理员草稿和历史版本不可改写",
+        "采集器使用隔离工作进程运行 Starlark，按本地接口清单、执行预算和不透明凭据引用代理设备请求"
       ],
       "remaining": [
-        "真实设备 API 适配与验收",
+        "插件试运行、签名下发、回退及真实设备 API 适配验收",
         "浏览器认证插件、Cookie 缓存/续期/MFA/熔断",
         "设备 HA 与真实链路故障验收"
       ]
