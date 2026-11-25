@@ -3,7 +3,9 @@ package responsescript
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -68,6 +70,13 @@ type Result struct {
 	Value      json.RawMessage `json:"value,omitempty"`
 	Events     []Event         `json:"events,omitempty"`
 	DurationMS int64           `json:"duration_ms"`
+	Readback   *Readback       `json:"-"`
+}
+
+// Readback 来自采集器的实际 HTTPS 响应，不由脚本返回值填写。
+type Readback struct {
+	Status int
+	Fields map[string]json.RawMessage
 }
 
 // Config 将不可变源码绑定到采集器本地核准的设备、接口和凭据。
@@ -82,41 +91,46 @@ type Config struct {
 }
 
 type Route struct {
-	Entry  string
-	Method string
-	Path   string
-	Query  []string
+	Entry  string   `json:"entry"`
+	Method string   `json:"method"`
+	Path   string   `json:"path"`
+	Query  []string `json:"query,omitempty"`
 	// 空值允许普通字符串，名称限制为对应凭据引用，token 代表本设备的登录令牌。
-	Headers map[string]string
+	Headers map[string]string `json:"headers,omitempty"`
 	// 只把列出的 JSON 对象字段交给脚本。
-	Fields []string
+	Fields []string `json:"fields,omitempty"`
 }
 
 type Login struct {
-	Path       string
-	Secrets    map[string]string
-	TokenField string
+	Path       string            `json:"path"`
+	Secrets    map[string]string `json:"secrets"`
+	TokenField string            `json:"token_field"`
 }
 
 type Secret struct {
-	File string
+	File string `json:"file"`
 	// HMAC 专用文件必须包含 32 字节随机密钥，不能作为 HTTP 凭据使用。
-	HMAC bool
+	HMAC bool `json:"hmac,omitempty"`
 }
 
 type Invocation struct {
-	Entry  string
-	TaskID string
-	RuleID string
-	Args   []json.RawMessage
-	Write  *ApprovedWrite
+	Entry           string
+	TaskID          string
+	RuleID          string
+	Args            []json.RawMessage
+	Write           *ApprovedWrite
+	ReadbackPath    string
+	OwnerSHA256     string
+	ExpiresAt       string
+	DurationSeconds int
 }
 
 // ApprovedWrite 由可信任务端提供，一次调用只允许发出一次完全匹配的变更请求。
 type ApprovedWrite struct {
-	Method string
-	Path   string
-	Body   json.RawMessage
+	Method      string
+	Path        string
+	Body        json.RawMessage
+	OwnerSHA256 string
 }
 
 type credential struct {
@@ -146,6 +160,18 @@ type Runtime struct {
 var workerSlots = make(chan struct{}, 4)
 
 func New(cfg Config, workerBinary string) (*Runtime, error) {
+	return makeRuntime(cfg, workerBinary, nil)
+}
+
+// NewSimulation 只使用调用端提供的样例传输与合成凭据。
+func NewSimulation(cfg Config, workerBinary string, replay http.RoundTripper) (*Runtime, error) {
+	if replay == nil {
+		return nil, Input
+	}
+	return makeRuntime(cfg, workerBinary, replay)
+}
+
+func makeRuntime(cfg Config, workerBinary string, replay http.RoundTripper) (*Runtime, error) {
 	if len(cfg.Source) == 0 || len(cfg.Source) > maxSource || len(cfg.Routes) > 32 || len(cfg.Secrets) > 16 {
 		return nil, Input
 	}
@@ -176,17 +202,32 @@ func New(cfg Config, workerBinary string) (*Runtime, error) {
 	}
 	policy.PinnedIP = ip
 	policy.PrivateNetworks = []netip.Prefix{netip.PrefixFrom(ip, ip.BitLen())}
-	if !policy.Allowed(ip) || cfg.Roots == nil {
+	if !policy.Allowed(ip) || cfg.Roots == nil && replay == nil {
 		return nil, Scope
 	}
-	policy.Roots = cfg.Roots.Clone()
+	var client *http.Client
+	if replay == nil {
+		policy.Roots = cfg.Roots.Clone()
+		client = policy.HTTPClient()
+	} else {
+		client = &http.Client{Transport: replay, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	}
 	r := &Runtime{
-		cfg: cfg, binary: workerBinary, client: policy.HTTPClient(),
+		cfg: cfg, binary: workerBinary, client: client,
 		secrets: make(map[string]credential, len(cfg.Secrets)), active: make(chan struct{}, 1),
 		state: make(map[string]stateItem), now: time.Now,
 	}
 	for name, spec := range cfg.Secrets {
-		data, err := privatefile.Read(spec.File, maxLogBytes)
+		var data []byte
+		var err error
+		if replay == nil {
+			data, err = privatefile.Read(spec.File, maxLogBytes)
+		} else if spec.HMAC {
+			sum := sha256.Sum256([]byte("fixture-signing-" + name))
+			data = sum[:]
+		} else {
+			data = []byte("fixture-secret-" + name)
+		}
 		if err != nil || !identifier(name) || name == "token" || spec.HMAC && len(data) != 32 || !spec.HMAC && !printable(string(data)) {
 			return nil, Credential
 		}
@@ -197,6 +238,8 @@ func New(cfg Config, workerBinary string) (*Runtime, error) {
 	}
 	return r, nil
 }
+
+func (r *Runtime) Close() { r.client.CloseIdleConnections() }
 
 func entryKnown(entry string) bool {
 	switch entry {
@@ -258,7 +301,9 @@ func (r *Runtime) Run(ctx context.Context, in Invocation) (result Result) {
 		}
 		slog.Info("联动脚本执行结束", "entry", entry, "code", result.Code, "duration_ms", result.DurationMS)
 	}()
-	if !entryKnown(in.Entry) || in.TaskID != "" && !identifier(in.TaskID) || in.RuleID != "" && !identifier(in.RuleID) || len(in.Args) > 4 {
+	if !entryKnown(in.Entry) || in.TaskID != "" && !identifier(in.TaskID) || in.RuleID != "" && !identifier(in.RuleID) ||
+		len(in.Args) > 4 || in.ReadbackPath != "" && !routePath(in.ReadbackPath) ||
+		in.DurationSeconds < 0 || in.DurationSeconds > 3600 || len(in.ExpiresAt) > 40 || !ownerHash(in.OwnerSHA256) {
 		return Result{Code: Input}
 	}
 	select {
@@ -294,7 +339,7 @@ func (r *Runtime) Run(ctx context.Context, in Invocation) (result Result) {
 	}
 	if in.Write != nil {
 		grant := *in.Write
-		if !mutation(in.Entry) || !verbKnown(grant.Method) || grant.Method == http.MethodGet || !routePath(grant.Path) {
+		if !mutation(in.Entry) || !verbKnown(grant.Method) || grant.Method == http.MethodGet || !routePath(grant.Path) || !ownerHash(grant.OwnerSHA256) {
 			return Result{Code: Scope}
 		}
 		if len(grant.Body) > 0 {
@@ -306,13 +351,23 @@ func (r *Runtime) Run(ctx context.Context, in Invocation) (result Result) {
 		}
 		b.in.Write = &grant
 	}
-	start := program{r.cfg.Source, in.Entry, in.Args, r.cfg.Origin, in.TaskID, now.UTC().Format(time.RFC3339Nano)}
+	start := program{Source: r.cfg.Source, Entry: in.Entry, Args: in.Args, Origin: r.cfg.Origin, TaskID: in.TaskID, Now: now.UTC().Format(time.RFC3339Nano),
+		OwnerSHA256: in.OwnerSHA256, ExpiresAt: in.ExpiresAt, DurationSeconds: in.DurationSeconds}
 	result.Code, result.Value = r.launch(call, start, b)
 	result.Events = b.events
 	if result.Code == OK {
 		r.state = b.state
+		result.Readback = b.readback
 	}
 	return result
+}
+
+func ownerHash(s string) bool {
+	if s == "" {
+		return true
+	}
+	raw, err := hex.DecodeString(s)
+	return err == nil && len(raw) == sha256.Size && hex.EncodeToString(raw) == s
 }
 
 func (r *Runtime) deviceURL(p string, query map[string]string) string {

@@ -14,6 +14,15 @@ var ErrJSON = errors.New("JSON 不符合唯一字段与资源边界")
 
 // JSONFields 拒绝重复键、大小写别名及超深对象；结构和必填值由领域解码器继续核对。
 func Fields(text string, fields []string, limit int) error {
+	return object(text, limit, func(_ int, name string) bool { return slices.Contains(fields, name) })
+}
+
+// TopFields 检查外层契约，同时核对供应商嵌套数据的编码、重复字段和深度。
+func TopFields(text string, fields []string, limit int) error {
+	return object(text, limit, func(depth int, name string) bool { return depth > 0 || slices.Contains(fields, name) })
+}
+
+func object(text string, limit int, allowed func(int, string) bool) error {
 	if !utf8.ValidString(text) || strings.ContainsRune(text, 0) || len(text) > limit || limit < 1 {
 		return ErrJSON
 	}
@@ -41,7 +50,7 @@ func Fields(text string, fields []string, limit int) error {
 			for d.More() {
 				key, err := d.Token()
 				name, valid := key.(string)
-				if err != nil || !valid || seen[name] || !slices.Contains(fields, name) {
+				if err != nil || !valid || seen[name] || !allowed(depth, name) {
 					return ErrJSON
 				}
 				seen[name] = true

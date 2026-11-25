@@ -43,6 +43,7 @@ type WAL struct {
 	packetArchives                            *PacketArchiveController
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
+	pluginBindings                            func() []response.PluginBinding
 	syslogHealth                              func() []syslogdata.Health
 	responseConfigCheck                       func() response.ConfigCheck
 	applicationState                          func() json.RawMessage

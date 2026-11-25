@@ -29,6 +29,7 @@ const components: Record<string, NonNullable<RouteRecordRaw['component']>> = {
   settings: () => import('./views/SettingsView.vue'),
   responseActions: () => import('./views/ResponseActionsView.vue'),
   responseDevices: () => import('./views/ResponseDevicesView.vue'),
+  responsePlugins: () => import('./views/ResponsePluginsView.vue'),
 };
 export function screenMeta(screen: PlatformScreen) {
   const workspace = navigationWorkspaces.find(item => item.id === screen.workspace)!;

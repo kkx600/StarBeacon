@@ -124,7 +124,7 @@ func Run(ctx context.Context, c config.Config) error {
 			return raw
 		}
 	}
-	if c.ResponseConnectorsFile != "" {
+	if c.ResponseConnectorsFile != "" || c.ResponsePluginBindings != "" {
 		engine.Response, e = NewResponseService(wal, c.ResponseConnectorsFile, c.PlatformAddr, c.IngestAddr)
 		if e != nil {
 			return e
@@ -132,6 +132,17 @@ func Run(ctx context.Context, c config.Config) error {
 		defer engine.Response.Close()
 		wal.responseHealth = engine.Response.Health
 		wal.responseConfigCheck = engine.Response.CheckConfiguration
+	}
+	if c.ResponsePluginBindings != "" {
+		engine.Plugins, e = NewPluginService(wal, c.ResponsePluginBindings, "", publicKey, c.PlatformAddr, c.IngestAddr)
+		if e != nil {
+			return e
+		}
+		defer engine.Plugins.Close()
+		wal.pluginBindings = engine.Plugins.Bindings
+		if e = engine.Response.connectPlugins(engine.Plugins); e != nil {
+			return e
+		}
 	}
 	var syslog *SyslogService
 	if c.SyslogSourcesFile != "" {
@@ -187,6 +198,7 @@ func Run(ctx context.Context, c config.Config) error {
 	engine.LocalReplay = samples
 	tasks.Replay = samples
 	tasks.Capture = capture
+	tasks.Plugins = engine.Plugins
 	wal.registeredRulesAvailable = c.SuricataRulesPath != ""
 	wal.registeredRulesPath = c.SuricataRulesPath
 	protocols := &ProtocolInspector{Engine: engine}
@@ -277,6 +289,9 @@ func Run(ctx context.Context, c config.Config) error {
 	group.Go(func() error { monitor.Run(run); return nil })
 	if engine.Response != nil {
 		group.Go(func() error { return engine.Response.Run(run) })
+	}
+	if engine.Plugins != nil {
+		group.Go(func() error { return engine.Plugins.Run(run, reader.Route) })
 	}
 	if packets != nil {
 		group.Go(func() error { return packets.Upload(run, sensorv1.NewSensorServiceClient(packetConnection)) })

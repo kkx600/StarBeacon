@@ -20,6 +20,7 @@ import ResponseDeviceFilters from '@starbeacon/shared/components/ResponseDeviceF
 import ResponseDeviceTable from '@starbeacon/shared/components/ResponseDeviceTable.vue';
 import ResponseDeviceDetail from '@starbeacon/shared/components/ResponseDeviceDetail.vue';
 import ResponseDialog from '../features/sensors/ResponseDialog.vue';
+import PluginWorkspaceTabs from '../features/plugins/PluginWorkspaceTabs.vue';
 import { session } from '../session';
 const router = useRouter(),
   filters = reactive(emptyDeviceQuery()),
@@ -153,6 +154,7 @@ onScopeDispose(() => {
 });
 </script>
 <template>
+  <PluginWorkspaceTabs active="devices" />
   <PageHeader
     title="联动设备"
     description="按执行探针检索 HTTP 连接器，核对设备身份、配置绑定、观测时效和响应动作。"

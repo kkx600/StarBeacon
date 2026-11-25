@@ -84,7 +84,7 @@ func evaluate(t *testing.T, r *Runtime, entry, source string, in Invocation) (Co
 		defer right.Close()
 		_ = serve(channel{right, right})
 	}()
-	code, value := b.exchange(ctx, channel{left, left}, program{source, entry, in.Args, r.cfg.Origin, in.TaskID, "2026-11-25T04:00:00Z"})
+	code, value := b.exchange(ctx, channel{left, left}, program{Source: source, Entry: entry, Args: in.Args, Origin: r.cfg.Origin, TaskID: in.TaskID, Now: "2026-11-25T04:00:00Z"})
 	_ = left.Close()
 	<-joined
 	return code, value, b.events

@@ -25,12 +25,15 @@ type wireValue struct {
 }
 
 type program struct {
-	Source string            `json:"source"`
-	Entry  string            `json:"entry"`
-	Args   []json.RawMessage `json:"args"`
-	Origin string            `json:"origin"`
-	TaskID string            `json:"task_id"`
-	Now    string            `json:"now"`
+	Source          string            `json:"source"`
+	Entry           string            `json:"entry"`
+	Args            []json.RawMessage `json:"args"`
+	Origin          string            `json:"origin"`
+	TaskID          string            `json:"task_id"`
+	Now             string            `json:"now"`
+	OwnerSHA256     string            `json:"owner_sha256,omitempty"`
+	ExpiresAt       string            `json:"expires_at,omitempty"`
+	DurationSeconds int               `json:"duration_seconds,omitempty"`
 }
 
 type frame struct {

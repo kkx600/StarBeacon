@@ -275,7 +275,7 @@ func TestHitValidateRejectsBrokenMaterials(t *testing.T) {
 		{"事件标识非法", func(h *Hit) { h.EventID = "Alert_Owned" }},
 		{"原始摘要非法", func(h *Hit) { h.RawSHA256 = strings.Repeat("A", 64) }},
 		{"探针身份非法", func(h *Hit) { h.SensorID = "" }},
-		{"严重级别非法", func(h *Hit) { h.Severity = "critical" }},
+		{"严重级别非法", func(h *Hit) { h.Severity = "fatal" }},
 		{"匹配项为空", func(h *Hit) { h.Matches = nil }},
 		{"匹配项重复", func(h *Hit) {
 			h.Matches = []Observed{{FieldSourceIP, "192.0.2.1"}, {FieldSourceIP, "192.0.2.1"}}

@@ -1400,7 +1400,7 @@
         "internal/platform/response_plugins_test.go",
         "tests/integration/response_plugins_test.go"
       ],
-      "boundary": "声明式 HTTPS 设备模板具有固定相对路径、字段绑定、状态码及 JSON 标量条件。认证采用采集器私有令牌或受限登录与内存缓存。租约沿用现有目标保护、原生到期、所有者条件和独立回读，设备规则标识仅保存在采集器。平台管理员在租户范围内读取草稿和历史不可变版本，保存绑定当前版本与幂等键。专属 HTTPS 设备夹具覆盖封禁、回读及解除，生产发布、签名分发和联动插件页面由后续条目交付。"
+      "boundary": "声明式 HTTPS 设备模板具有固定相对路径、字段绑定、状态码及 JSON 标量条件。认证采用采集器私有令牌或受限登录与内存缓存。租约沿用现有目标保护、原生到期、所有者条件和独立回读，设备规则标识仅保存在采集器。平台管理员在租户范围内读取草稿和历史不可变版本，保存绑定当前版本与幂等键。专属 HTTPS 设备夹具覆盖封禁、回读及解除。"
     },
     {
       "id": "response_script_plugins",
@@ -1417,7 +1417,35 @@
         "internal/responsescript/runtime_test.go",
         "tests/integration/response_script_test.go"
       ],
-      "boundary": "采集器工作进程使用锁定版 Starlark、Linux bubblewrap 和硬资源限额。HTTP 由采集器按本地固定的 HTTPS、管理 IP、入口、方法、路径和字段代理。写入还要求本次任务冻结授权。凭据保留在父进程，日志记录拒绝原因。HTTPS 夹具核验越界、步数、实际超时、响应大小和凭据隔离。试运行、签名下发及告警持久化属于后续条目。"
+      "boundary": "采集器工作进程使用锁定版 Starlark、Linux bubblewrap 和硬资源限额。HTTP 由采集器按本地固定的 HTTPS、管理 IP、入口、方法、路径和字段代理。写入还要求本次任务冻结授权。凭据保留在父进程，日志记录拒绝原因。HTTPS 夹具核验越界、步数、实际超时、响应大小和凭据隔离。"
+    },
+    {
+      "id": "response_plugin_delivery",
+      "name": "联动插件试运行、签名分发和设备告警",
+      "code": [
+        "internal/response/plugin_delivery.go",
+        "internal/store/plugin_delivery.go",
+        "internal/platform/response_plugins.go",
+        "internal/agent/plugin_trial.go",
+        "internal/agent/plugin_service.go",
+        "internal/agent/plugin_alerts.go",
+        "internal/contract/device_alert.go",
+        "migrations/00060_plugin_delivery.sql",
+        "web/platform/src/views/ResponsePluginsView.vue",
+        "prototype/src/views/PluginsView.vue"
+      ],
+      "pages": [
+        "platform:/response/plugins"
+      ],
+      "tests": [
+        "internal/response/plugin_delivery_test.go",
+        "internal/agent/plugin_state_test.go",
+        "internal/contract/device_alert_test.go",
+        "tests/integration/plugin_delivery_test.go",
+        "tests/integration/plugin_script_trial_test.go",
+        "web/tests/response-plugins.test.ts"
+      ],
+      "boundary": "同一注册代次、版本和设备绑定依次通过模拟、真实设备只读及能力验收，才可签名下发。采集器核对内外层签名，停用与回退使用部署代次，保护尚未撤销的租约。设备告警、游标和去重身份在同一 WAL 事务保存，沿用平台告警检索和通知。受控 HTTPS 夹具覆盖保留 IP、登记测试终端和重叠告警页。商业设备适配和生产终端隔离仍待独立验证。"
     },
     {
       "id": "syslog",
@@ -2358,15 +2386,17 @@
       "capabilities": [
         "response_http",
         "response_template_plugins",
-        "response_script_plugins"
+        "response_script_plugins",
+        "response_plugin_delivery"
       ],
       "implemented": [
         "采集器侧固定 HTTPS 通用连接器、私有 CA/Bearer 文件引用、身份与原生 TTL 核验、单次写后独立回读及结果未知保护",
         "声明式模板支持私有凭据登录、令牌到期更新、成功字段核对与独立读回；管理员草稿和历史版本不可改写",
-        "采集器使用隔离工作进程运行 Starlark，按本地接口清单、执行预算和不透明凭据引用代理设备请求"
+        "采集器使用隔离工作进程运行 Starlark，按本地接口清单、执行预算和不透明凭据引用代理设备请求",
+        "同版本三档试运行、签名下发、停用与回退，设备告警按持久游标去重并进入平台"
       ],
       "remaining": [
-        "插件试运行、签名下发、回退及真实设备 API 适配验收",
+        "商业设备 API 适配验收",
         "浏览器认证插件、Cookie 缓存/续期/MFA/熔断",
         "设备 HA 与真实链路故障验收"
       ]
@@ -2381,7 +2411,8 @@
         "continuous_decisions",
         "response_catalog",
         "watchlists",
-        "response_template_plugins"
+        "response_template_plugins",
+        "response_plugin_delivery"
       ],
       "implemented": [
         "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
@@ -2389,11 +2420,12 @@
         "持续策略依据本人指定模型的新研判签发限时源 IP 任务；模型、观测、探针及设备绑定，告警去重、目标冷却与小时预算约束",
         "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认",
         "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
-        "模板以设备独立规则标识和所有者为条件，受控 HTTPS 设备协议验证限时封禁、回读和解除"
+        "模板以设备独立规则标识和所有者为条件，受控 HTTPS 设备协议验证限时封禁、回读和解除",
+        "脚本在本地登记的测试终端使用独立 HTTPS 回读验收隔离与恢复"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",
-        "EDR 隔离/恢复及跨设备冲突处理",
+        "生产 EDR 隔离与恢复及跨设备冲突处理",
         "自动研判的规模与恢复、多级审批、置信度校准与自动设备动作的整体验收"
       ]
     },

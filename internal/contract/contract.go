@@ -123,6 +123,15 @@ func Validate(tenant, sensor, registration string, b *sensorv1.EventBatch) error
 			if err != nil || r.PayloadSchema != syslogdata.Schema || r.EventType != "syslog" || r.SourceOffset != 0 || r.RecordOrdinal != 0 || r.EngineRunId != "" || len(r.ApplicationJson) != 0 || len(r.ApplicationSha256) != 0 || r.SourceId != v.Binding.SourceID || r.SourceGenerationId != v.SourceEpoch || fmt.Sprint(r.SourceSequence) != v.SourceSequence || r.EventId != SyslogEventID(tenant, registration, r.SourceId, r.SourceGenerationId, r.SourceSequence) || !bytes.Equal(rawHash[:], r.RawSha256) || !r.ObservedAt.AsTime().Equal(v.ObservedAt) || !r.EventTime.AsTime().Equal(v.ObservedAt) {
 				return fmt.Errorf("Syslog 来源身份或原始摘要不合法")
 			}
+		} else if r.PayloadSchema == DeviceAlertSchema {
+			v, err := ReadDeviceAlertRecord(r.Payload)
+			rawHash := sha256.Sum256(v.Alert.Raw)
+			if err != nil || b.StreamId != "alerts" || r.EventType != "device_alert" || r.SourceId != "" || r.SourceSequence != 0 ||
+				r.SourceOffset != 0 || r.RecordOrdinal != 0 || r.EngineRunId != "" || len(r.ApplicationJson) != 0 || len(r.ApplicationSha256) != 0 ||
+				r.SourceGenerationId != v.PluginID || r.EventId != DeviceAlertID(tenant, registration, v.PluginID, v.DeviceID, v.Alert.ID) ||
+				!r.EventTime.AsTime().Equal(v.Alert.Time) || !bytes.Equal(rawHash[:], r.RawSha256) {
+				return ErrDeviceAlert
+			}
 		} else if r.PayloadSchema != "suricata.eve.v1" || r.SourceId != "" || r.SourceSequence != 0 || r.EventId != EventID(tenant, registration, r.SourceGenerationId, r.SourceOffset, r.RecordOrdinal) || !bytes.Equal(h[:], r.RawSha256) {
 			return fmt.Errorf("事件身份或 schema 不合法")
 		}

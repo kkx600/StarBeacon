@@ -12,13 +12,13 @@ import (
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
 )
 
-const responsePluginColumns = `v.plugin_id,v.version,v.name,v.device,v.template,v.template_sha256,v.created_by,v.created_at`
+const responsePluginColumns = `v.plugin_id,v.version,v.name,v.device,v.template,COALESCE(v.template_sha256,''),v.script,COALESCE(v.script_sha256,''),v.examples,v.created_by,v.created_at`
 
 func scanResponsePlugin(row interface{ Scan(...any) error }, head bool) (responseapi.PluginVersion, error) {
 	var item responseapi.PluginVersion
-	var raw json.RawMessage
+	var raw, script, examples json.RawMessage
 	var current int
-	fields := []any{&item.ID, &item.Version, &item.Name, &item.Device, &raw, &item.TemplateSHA256, &item.CreatedBy, &item.CreatedAt}
+	fields := []any{&item.ID, &item.Version, &item.Name, &item.Device, &raw, &item.TemplateSHA256, &script, &item.ScriptSHA256, &examples, &item.CreatedBy, &item.CreatedAt}
 	if !head {
 		fields = append(fields, &current)
 	}
@@ -29,7 +29,15 @@ func scanResponsePlugin(row interface{ Scan(...any) error }, head bool) (respons
 	if !head && current != item.Version {
 		item.State = "superseded"
 	}
-	if json.Unmarshal(raw, &item.Template) != nil || item.Validate() != nil {
+	if len(script) != 0 {
+		item.Kind = "script"
+		if json.Unmarshal(script, &item.Script) != nil {
+			return responseapi.PluginVersion{}, errors.New("联动脚本版本损坏")
+		}
+	} else if json.Unmarshal(raw, &item.Template) != nil {
+		return responseapi.PluginVersion{}, errors.New("联动模板版本损坏")
+	}
+	if json.Unmarshal(examples, &item.Examples) != nil || item.Validate() != nil {
 		return responseapi.PluginVersion{}, errors.New("联动插件版本与摘要不一致")
 	}
 	return item, nil
@@ -84,12 +92,24 @@ func (p *Postgres) ResponsePlugins(ctx context.Context, u model.Principal, after
 			}
 			page.Items = append(page.Items, item)
 		}
-		return rows.Err()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		rows.Close()
+		if len(page.Items) > limit {
+			page.NextAfter = page.Items[limit-1].ID
+			page.Items = page.Items[:limit]
+		}
+		ids := make([]string, len(page.Items))
+		for i, item := range page.Items {
+			ids[i] = item.ID
+		}
+		page.Deployments, err = readPluginDeployments(ctx, tx, u.TenantID, ids)
+		if err == nil {
+			page.Executions, err = readPluginExecutions(ctx, tx, u.TenantID, ids)
+		}
+		return err
 	})
-	if err == nil && len(page.Items) > limit {
-		page.NextAfter = page.Items[limit-1].ID
-		page.Items = page.Items[:limit]
-	}
 	return page, err
 }
 
@@ -142,20 +162,29 @@ func (p *Postgres) SaveResponsePluginDraft(ctx context.Context, u model.Principa
 				return responseapi.ErrPluginQuota
 			}
 		}
-		raw, err := json.Marshal(draft.Template)
-		if err != nil {
-			return err
+		var template, script []byte
+		var templateSHA, scriptSHA any
+		if draft.Script == nil {
+			template, _ = json.Marshal(draft.Template)
+			templateSHA = draft.Template.SHA256()
+		} else {
+			script, _ = json.Marshal(draft.Script)
+			scriptSHA = draft.Script.SHA256()
+		}
+		examples := []byte("[]")
+		if len(draft.Examples) > 0 {
+			examples, _ = json.Marshal(draft.Examples)
 		}
 		result, err = scanResponsePlugin(tx.QueryRow(ctx, `INSERT INTO response_plugin_versions AS v
-			(tenant_id,plugin_id,version,name,device,template,template_sha256,created_by,request_key_sha256,request_sha256)
-			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING `+responsePluginColumns,
-			u.TenantID, draft.ID, current+1, draft.Name, draft.Device, raw, draft.Template.SHA256(), u.ID, keySHA, requestSHA), true)
+			(tenant_id,plugin_id,version,name,device,template,template_sha256,script,script_sha256,examples,created_by,request_key_sha256,request_sha256)
+			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING `+responsePluginColumns,
+			u.TenantID, draft.ID, current+1, draft.Name, draft.Device, template, templateSHA, script, scriptSHA, examples, u.ID, keySHA, requestSHA), true)
 		if err != nil {
 			return err
 		}
 		return insertOperationAudit(ctx, tx, u, "response.plugin.draft.save", draft.ID, model.RequestMetadataFrom(ctx).RequestID)
 	})
-	if err == nil && (result.ID != draft.ID || result.Version != draft.ExpectedVersion+1 || result.TemplateSHA256 != draft.Template.SHA256() || result.Name != draft.Name || result.Device != draft.Device || result.CreatedBy != u.ID) {
+	if err == nil && (result.ID != draft.ID || result.Version != draft.ExpectedVersion+1 || result.DefinitionSHA256() != requestSHA || result.CreatedBy != u.ID) {
 		err = errors.New("联动插件草稿回执与原提交不一致")
 	}
 	return result, err

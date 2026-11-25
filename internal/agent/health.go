@@ -112,6 +112,9 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	if w.responseHealth != nil {
 		h.ResponseConnectors = w.responseHealth()
 	}
+	if w.pluginBindings != nil {
+		h.PluginBindings = w.pluginBindings()
+	}
 	if w.applicationState != nil {
 		h.ApplicationRules = w.applicationState()
 	}

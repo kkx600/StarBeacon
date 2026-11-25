@@ -50,6 +50,7 @@
     "/response",
     "/response/actions",
     "/response/devices",
+    "/response/plugins",
     "/response/evaluations",
     "/response/playbooks",
     "/response/policies",

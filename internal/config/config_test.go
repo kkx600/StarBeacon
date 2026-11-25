@@ -63,3 +63,19 @@ func TestSyslogConfigurationIsAgentOnlyAndAbsolute(t *testing.T) {
 		})
 	}
 }
+
+func TestPluginBindingsUsePrivateAbsoluteAgentConfiguration(t *testing.T) {
+	for _, test := range []struct{ role, path string }{
+		{"agent", "plugins.json"},
+		{"platform", "/private/plugins.json"},
+		{"worker", "/private/plugins.json"},
+	} {
+		t.Run(test.role, func(t *testing.T) {
+			development(t)
+			t.Setenv("SB_RESPONSE_PLUGIN_BINDINGS_FILE", test.path)
+			if _, err := Load(test.role); err == nil || !strings.Contains(err.Error(), "联动插件绑定") {
+				t.Fatal("联动插件绑定越过本机角色或绝对路径边界", err)
+			}
+		})
+	}
+}

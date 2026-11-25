@@ -13,6 +13,7 @@ import (
 
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
 	bolt "go.etcd.io/bbolt"
 )
@@ -42,6 +43,7 @@ type TaskManager struct {
 	RetentionDays int
 	Replay        *ReplayService
 	Capture       *CaptureSupervisor
+	Plugins       *PluginService
 }
 
 func NewTaskManager(w *WAL, publicKey ed25519.PublicKey, runner TaskRunner) (*TaskManager, error) {
@@ -184,11 +186,27 @@ func (m *TaskManager) Run(ctx context.Context) error {
 				state = "failed"
 				code = "invalid_execution_result"
 			}
+			apply := c.Kind == response.PluginApplyCommand && state == "succeeded"
+			if apply && m.Plugins == nil {
+				state, code, apply = "failed", "plugin_unavailable", false
+			}
+			if apply {
+				m.Plugins.mu.Lock()
+			}
 			e = m.WAL.DB.Update(func(tx *bolt.Tx) error {
 				b := tx.Bucket([]byte("sensor_tasks"))
 				var v LocalTask
 				if e := json.Unmarshal(b.Get([]byte(c.ID)), &v); e != nil {
 					return e
+				}
+				if apply {
+					if err := m.Plugins.commitActivation(tx, c, result); err != nil {
+						if !errors.Is(err, response.ErrInput) && !errors.Is(err, response.ErrUnavailable) {
+							return err
+						}
+						// 资格核对到落盘之间可能产生新租约，留下失败回执并保持旧版本。
+						result, state, code = json.RawMessage(`{}`), "failed", "plugin_deployment_changed"
+					}
 				}
 				now := time.Now().UTC()
 				v.Receipt.State = state
@@ -214,6 +232,9 @@ func (m *TaskManager) Run(ctx context.Context) error {
 				}
 				return appendAudit(tx, LocalAudit{Username: v.Origin, Action: "task." + state + "." + c.Kind, RequestID: c.ID, CreatedAt: now, ExpiresAt: now.AddDate(0, 0, 180)})
 			})
+			if apply {
+				m.Plugins.mu.Unlock()
+			}
 			if e != nil {
 				return e
 			}
@@ -307,7 +328,7 @@ func (m *TaskManager) validateLocalTask(row LocalTask, id string) error {
 		return errors.New("本地任务来源不一致")
 	}
 	switch row.Command.Kind {
-	case "diagnostics", "capture.configure", control.PacketRetentionConfigure, "applications.apply", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke":
+	case "diagnostics", "capture.configure", control.PacketRetentionConfigure, "applications.apply", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke", response.PluginTrialCommand, response.PluginApplyCommand:
 	default:
 		return errors.New("本地任务类型无效")
 	}

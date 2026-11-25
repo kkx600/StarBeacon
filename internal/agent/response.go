@@ -36,12 +36,17 @@ type ResponseService struct {
 	resolve      func(context.Context, string, string) ([]netip.Addr, error)
 	configPath   string
 	configSHA256 string
+	Plugins      *PluginService
 }
 
 func NewResponseService(w *WAL, path string, management ...string) (*ResponseService, error) {
-	file, err := response.LoadFile(path)
-	if err != nil {
-		return nil, err
+	file := response.File{RetentionDays: 180}
+	var err error
+	if path != "" {
+		file, err = response.LoadFile(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 	s := &ResponseService{WAL: w, clients: map[string]*response.Client{}, health: map[string]response.Health{}, retention: file.RetentionDays, management: management, addresses: net.InterfaceAddrs, resolve: net.DefaultResolver.LookupNetIP}
 	s.configPath, s.configSHA256 = path, file.SHA256()
@@ -69,7 +74,7 @@ func (s *ResponseService) Close() {
 
 func (s *ResponseService) CheckConfiguration() response.ConfigCheck {
 	out := response.ConfigCheck{SchemaVersion: "response.config-check.v1", State: "not_configured", CheckedAt: time.Now().UTC()}
-	if s == nil {
+	if s == nil || s.configPath == "" {
 		return out
 	}
 	out.RunningCount = len(s.clients)
@@ -92,6 +97,9 @@ func (s *ResponseService) Health() []response.Health {
 	for _, h := range s.health {
 		out = append(out, h)
 	}
+	if s.Plugins != nil {
+		out = append(out, s.Plugins.connectorHealth()...)
+	}
 	slices.SortFunc(out, func(a, b response.Health) int {
 		if a.ConnectorID < b.ConnectorID {
 			return -1
@@ -102,6 +110,35 @@ func (s *ResponseService) Health() []response.Health {
 		return 0
 	})
 	return out
+}
+
+func (s *ResponseService) connectPlugins(plugins *PluginService) error {
+	count := len(s.clients)
+	for _, profile := range plugins.profiles {
+		for _, client := range s.clients {
+			if profile.Device.ID == client.Config.ID || profile.Device.DeviceID == client.Config.DeviceID {
+				return response.ErrInput
+			}
+		}
+		if profile.TestAddress != "" {
+			count++
+		}
+	}
+	if count > 8 {
+		return response.ErrInput
+	}
+	s.Plugins = plugins
+	return nil
+}
+
+func (s *ResponseService) clientFor(a response.Action, activeOnly bool) (*response.Client, func()) {
+	if client := s.clients[a.ConnectorID]; client != nil && client.BindingSHA256() == a.ConfigSHA256 {
+		return client, nil
+	}
+	if s.Plugins != nil {
+		return s.Plugins.lookupConnector(a.ConnectorID, a.ConfigSHA256, activeOnly)
+	}
+	return nil, nil
 }
 func (s *ResponseService) check(ctx context.Context, id string) {
 	client := s.clients[id]
@@ -125,9 +162,12 @@ func (s *ResponseService) Execute(ctx context.Context, c control.Command) (json.
 	if err != nil || a.OwnerSHA256 != response.Owner(c.TenantID, c.SensorID, c.RegistrationID, a.LeaseID) || c.TenantID != s.WAL.TenantID || c.SensorID != s.WAL.SensorID || c.RegistrationID != s.WAL.RegistrationID || c.Kind == "response.block" && a.LeaseID != c.ID {
 		return nil, "response_scope_invalid", response.ErrInput
 	}
-	client := s.clients[a.ConnectorID]
-	if client == nil || client.BindingSHA256() != a.ConfigSHA256 {
+	client, release := s.clientFor(a, c.Kind == "response.block")
+	if client == nil {
 		return nil, "response_device_unavailable", response.ErrUnavailable
+	}
+	if release != nil {
+		defer release()
 	}
 	if c.Kind == "response.block" && !client.Config.Allows(a.TargetIP, int(a.ExpiresAt.Sub(a.RequestedAt)/time.Second)) {
 		return nil, "response_scope_invalid", response.ErrInput
@@ -231,13 +271,16 @@ func (s *ResponseService) maintain(ctx context.Context) error {
 	// 最久未核对的记录优先，每轮最多两项；不按 key 固定抽样导致后续租约饥饿。
 	slices.SortFunc(selected, func(a, b responseRecord) int { return a.CheckedAt.Compare(b.CheckedAt) })
 	for _, record := range selected[:min(2, len(selected))] {
-		client := s.clients[record.Action.ConnectorID]
-		if client == nil || client.BindingSHA256() != record.Action.ConfigSHA256 {
+		client, release := s.clientFor(record.Action, false)
+		if client == nil {
 			continue
 		}
 		call, cancel := context.WithTimeout(ctx, 10*time.Second)
 		result, readErr := client.ExecuteBound(call, "response.read", record.Action, record.DeviceRuleID)
 		cancel()
+		if release != nil {
+			release()
+		}
 		record.CheckedAt = time.Now().UTC()
 		record.Status = "unknown"
 		if readErr == nil {
@@ -328,12 +371,21 @@ func (s *ResponseService) Run(ctx context.Context) error {
 	for id := range s.clients {
 		keys = append(keys, id)
 	}
+	var plugins []response.PluginBinding
+	if s.Plugins != nil {
+		plugins = s.Plugins.Bindings()
+	}
 	next := 0
 	for ctx.Err() == nil {
 		call, cancel := context.WithTimeout(ctx, 10*time.Second)
-		s.check(call, keys[next])
+		if len(keys) > 0 {
+			s.check(call, keys[next%len(keys)])
+		}
+		if len(plugins) > 0 {
+			s.Plugins.observeConnector(call, plugins[next%len(plugins)].PluginID)
+		}
 		cancel()
-		next = (next + 1) % len(keys)
+		next++
 		if err := s.maintain(ctx); err != nil {
 			s.WAL.setFailure("response_storage_unavailable", true)
 		} else {

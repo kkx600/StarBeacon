@@ -6,7 +6,7 @@ import StatusTag from '@starbeacon/shared/components/StatusTag.vue';
 import { alertSeverityTones, statusTone } from '@starbeacon/shared/statusTones.ts';
 defineProps<{ result: SearchResult }>();
 const emit = defineEmits<{ view: [alert: Alert]; page: [value: number, size: number] }>();
-const labels = { high: '高危', medium: '中危', low: '低危', unknown: '未知' };
+const labels = { critical: '严重', high: '高危', medium: '中危', low: '低危', unknown: '未知' };
 const columns = [
   { title: '告警编号', dataIndex: 'event_id', width: 132, ellipsis: true, className: 'technical' },
   { title: '告警名称', key: 'name', width: 190, ellipsis: true },

@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
+	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/model"
 )
 
@@ -63,6 +64,9 @@ func Decode(raw []byte) (Eve, error) {
 	return v, fmt.Errorf("EVE 包含额外文档")
 }
 func Normalize(tenant, sensor, registration string, r *sensorv1.EventRecord, received time.Time) (model.Alert, error) {
+	if r.PayloadSchema == contract.DeviceAlertSchema {
+		return normalizeDeviceAlert(tenant, sensor, registration, r, received)
+	}
 	var out model.Alert
 	v, e := Decode(r.Payload)
 	if e != nil {
@@ -146,5 +150,22 @@ func Normalize(tenant, sensor, registration string, r *sensorv1.EventRecord, rec
 		}
 	}
 	out.EvidenceStatus = "not_linked"
+	return out, nil
+}
+
+func normalizeDeviceAlert(tenant, sensor, registration string, r *sensorv1.EventRecord, received time.Time) (model.Alert, error) {
+	var out model.Alert
+	record, err := contract.ReadDeviceAlertRecord(r.Payload)
+	if err != nil {
+		return out, err
+	}
+	out.SchemaVersion, out.EventID, out.TenantID = "1.0", r.EventId, tenant
+	out.SensorID, out.RegistrationID, out.SourceGenerationID = sensor, registration, record.PluginID
+	out.SourceOffset, out.Sequence, out.RawSHA256 = "0", strconv.FormatUint(r.Sequence, 10), hex.EncodeToString(r.RawSha256)
+	out.Timestamp, out.ObservedAt, out.ReceivedAt = record.Alert.Time, r.ObservedAt.AsTime(), received
+	out.Event.Kind, out.Event.Dataset, out.Event.Original = "alert", "设备告警 · "+record.PluginName, string(r.Payload)
+	out.Source.IP, out.Destination.IP = record.Alert.SourceIP, record.Alert.DestinationIP
+	out.Rule.ID, out.Rule.Name = record.Alert.ID, record.Alert.Name
+	out.Severity, out.EvidenceStatus = record.Alert.Severity, "not_linked"
 	return out, nil
 }

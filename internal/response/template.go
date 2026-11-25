@@ -18,11 +18,12 @@ const MaxTemplateBytes = 24 * 1024
 type Template struct {
 	SchemaVersion string         `json:"schema_version"`
 	Login         *TemplateLogin `json:"login,omitempty"`
-	Health        TemplateStep   `json:"health"`
-	Block         TemplateStep   `json:"block"`
-	Verify        TemplateStep   `json:"verify"`
-	Missing       TemplateCheck  `json:"missing"`
-	Unblock       TemplateStep   `json:"unblock"`
+	Health        TemplateStep   `json:"health,omitzero"`
+	Block         TemplateStep   `json:"block,omitzero"`
+	Verify        TemplateStep   `json:"verify,omitzero"`
+	Missing       TemplateCheck  `json:"missing,omitzero"`
+	Unblock       TemplateStep   `json:"unblock,omitzero"`
+	Pull          *TemplatePull  `json:"pull_alerts,omitempty"`
 }
 
 type TemplateLogin struct {
@@ -53,6 +54,15 @@ type TemplateCheck struct {
 	Equals json.RawMessage `json:"equals,omitempty"`
 }
 
+// TemplatePull 映射分页接口的外层字段，并保留每条设备记录的原始 JSON。
+type TemplatePull struct {
+	Path        string          `json:"path"`
+	CursorParam string          `json:"cursor_param"`
+	ItemsField  string          `json:"items_field"`
+	CursorField string          `json:"cursor_field"`
+	Fields      []TemplateField `json:"fields"`
+}
+
 const templateTask = "{{task_id}}"
 const templateRule = "{{lease.rule_id}}"
 
@@ -60,7 +70,7 @@ var templateName = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$`)
 
 var templateHealthFields = []string{"device_id", "version", "native_ttl", "separate_leases", "conditional_revoke", "max_ttl_seconds", "observed_at"}
 var templateLeaseFields = []string{"device_id", "lease_id", "owner_sha256", "target_ip", "expires_at", "state", "observed_at", "rule_id"}
-var templateJSONFields = []string{"schema_version", "login", "username_field", "password_field", "token_field", "ttl_seconds", "health", "block", "verify", "missing", "unblock", "method", "path", "body", "accept", "values", "name", "value", "status", "field", "equals"}
+var templateJSONFields = []string{"schema_version", "login", "username_field", "password_field", "token_field", "ttl_seconds", "health", "block", "verify", "missing", "unblock", "method", "path", "body", "accept", "values", "name", "value", "status", "field", "equals", "pull_alerts", "cursor_param", "items_field", "cursor_field", "fields"}
 
 func (v *Template) UnmarshalJSON(raw []byte) error {
 	if contract.JSONFields(string(raw), templateJSONFields, MaxTemplateBytes) != nil {
@@ -73,6 +83,14 @@ func (v *Template) UnmarshalJSON(raw []byte) error {
 	if decoder.Decode(&next) != nil || Template(next).Validate() != nil {
 		return ErrInput
 	}
+	for _, step := range []*TemplateStep{&next.Health, &next.Block, &next.Verify, &next.Unblock} {
+		if step.empty() {
+			*step = TemplateStep{}
+		}
+	}
+	if next.Missing.empty() {
+		next.Missing = TemplateCheck{}
+	}
 	for _, check := range []*TemplateCheck{&next.Health.Accept, &next.Block.Accept, &next.Verify.Accept, &next.Missing, &next.Unblock.Accept} {
 		if check.Field != "" {
 			value, _ := templateScalar(check.Equals)
@@ -84,8 +102,17 @@ func (v *Template) UnmarshalJSON(raw []byte) error {
 }
 
 func (v Template) Validate() error {
-	if v.SchemaVersion != TemplateSchema || v.Login != nil && !v.Login.valid() ||
-		!v.Health.valid([]string{http.MethodGet}, "", templateHealthFields, false) ||
+	if v.SchemaVersion != TemplateSchema || v.Login != nil && !v.Login.valid() || v.Pull != nil && !v.Pull.valid() {
+		return ErrInput
+	}
+	if v.Block.empty() {
+		if !v.Verify.empty() || !v.Unblock.empty() || !v.Missing.empty() ||
+			v.Health.empty() && v.Pull == nil || !v.Health.empty() && !v.Health.valid([]string{http.MethodGet}, "", nil, false) {
+			return ErrInput
+		}
+		return nil
+	}
+	if !v.Health.valid([]string{http.MethodGet}, "", templateHealthFields, false) ||
 		!v.Block.valid([]string{http.MethodPost, http.MethodPut}, "", []string{"rule_id"}, false) ||
 		!v.Verify.valid([]string{http.MethodGet}, templateTask, templateLeaseFields, false) ||
 		!v.Unblock.valid([]string{http.MethodDelete}, templateRule, nil, true) ||
@@ -104,6 +131,41 @@ func (v Template) Validate() error {
 	return nil
 }
 
+func (v Template) entries() []string {
+	var result []string
+	if !v.Health.empty() {
+		result = append(result, "health")
+	}
+	if v.Pull != nil {
+		result = append(result, "pull_alerts")
+	}
+	if !v.Block.empty() {
+		result = append(result, "block", "verify", "unblock")
+	}
+	return result
+}
+
+func (v TemplateStep) empty() bool {
+	return v.Method == "" && v.Path == "" && len(v.Body) == 0 && len(v.Values) == 0 && v.Accept.empty()
+}
+
+func (v TemplateCheck) empty() bool { return len(v.Status) == 0 && v.Field == "" && len(v.Equals) == 0 }
+
+func (v TemplatePull) valid() bool {
+	if !validTemplatePath(v.Path, "") || !templateName.MatchString(v.CursorParam) ||
+		!templateName.MatchString(v.ItemsField) || !templateName.MatchString(v.CursorField) || v.CursorField == v.ItemsField {
+		return false
+	}
+	allowed := []string{"id", "time", "severity", "name", "source_ip", "destination_ip", "host"}
+	names := make(map[string]bool)
+	for _, field := range v.Fields {
+		if names[field.Name] || !slices.Contains(allowed, field.Name) || !templateName.MatchString(field.Value) {
+			return false
+		}
+		names[field.Name] = true
+	}
+	return names["id"] && names["time"] && names["severity"] && names["name"]
+}
 func (v TemplateLogin) valid() bool {
 	return validTemplatePath(v.Path, "") && templateName.MatchString(v.UsernameField) && templateName.MatchString(v.PasswordField) &&
 		v.UsernameField != v.PasswordField && templateName.MatchString(v.TokenField) && v.TTLSeconds >= 1 && v.TTLSeconds <= 300

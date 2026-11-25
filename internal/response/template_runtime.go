@@ -1,15 +1,19 @@
 package response
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/strictjson"
 )
 
 type templateRuntime struct {
@@ -22,7 +26,25 @@ type templateRuntime struct {
 
 // NewTemplateClient 绑定一个已经通过调用方资格检查的不可变模板。平台草稿目录不会调用它。
 func NewTemplateClient(c Configuration, definition Template) (*Client, error) {
-	if c.Validate() != nil {
+	if c.ValidatePlugin() != nil || !filepath.IsAbs(c.TokenFile) {
+		return nil, ErrInput
+	}
+	client, err := deviceHTTPClient(c)
+	if err != nil {
+		return nil, err
+	}
+	return freezeTemplate(c, definition, client, false)
+}
+
+func NewTemplateSimulation(c Configuration, definition Template, replay *PluginReplay) (*Client, error) {
+	if replay == nil {
+		return nil, ErrInput
+	}
+	return freezeTemplate(c, definition, &http.Client{Transport: replay}, true)
+}
+
+func freezeTemplate(c Configuration, definition Template, client *http.Client, simulation bool) (*Client, error) {
+	if c.ValidatePlugin() != nil || !definition.Block.empty() && len(c.AllowedTargets) == 0 {
 		return nil, ErrInput
 	}
 	raw, err := json.Marshal(definition)
@@ -33,13 +55,9 @@ func NewTemplateClient(c Configuration, definition Template) (*Client, error) {
 	if json.Unmarshal(raw, &frozen) != nil {
 		return nil, ErrInput
 	}
-	client, err := deviceHTTPClient(c)
-	if err != nil {
-		return nil, err
-	}
 	c.AllowedTargets = slices.Clone(c.AllowedTargets)
 	c.ProtectedTargets = slices.Clone(c.ProtectedTargets)
-	return &Client{Config: c, http: client, template: &templateRuntime{definition: frozen, sha256: frozen.SHA256()}}, nil
+	return &Client{Config: c, http: client, template: &templateRuntime{definition: frozen, sha256: frozen.SHA256()}, simulation: simulation}, nil
 }
 
 // 设备回执只在本次调用内解析。身份、租约和状态字段经过独立校验后才会返回。
@@ -60,7 +78,7 @@ func readTemplateReply(raw []byte) (templateReply, error) {
 		}
 		allowed = append(allowed, name)
 	}
-	if contract.JSONFields(string(raw), allowed, 16384) != nil {
+	if strictjson.TopFields(string(raw), allowed, 16384) != nil {
 		return nil, ErrUnknown
 	}
 	return fields, nil
@@ -110,14 +128,18 @@ func (t *templateRuntime) token(ctx context.Context, c *Client) (string, error) 
 	if t.bearer != "" && time.Now().Before(t.expires) {
 		return t.bearer, nil
 	}
-	raw, err := ReadPrivateFile(c.Config.TokenFile, 8192)
 	var credentials struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err != nil || contract.JSONFields(string(raw), []string{"username", "password"}, 8192) != nil ||
-		json.Unmarshal(raw, &credentials) != nil || !validText(credentials.Username, 512) || !validText(credentials.Password, 1024) {
-		return "", ErrUnavailable
+	if c.simulation {
+		credentials.Username, credentials.Password = "fixture-username", "fixture-password"
+	} else {
+		raw, err := ReadPrivateFile(c.Config.TokenFile, 8192)
+		if err != nil || contract.JSONFields(string(raw), []string{"username", "password"}, 8192) != nil ||
+			json.Unmarshal(raw, &credentials) != nil || !validText(credentials.Username, 512) || !validText(credentials.Password, 1024) {
+			return "", ErrUnavailable
+		}
 	}
 	body := map[string]string{login.UsernameField: credentials.Username, login.PasswordField: credentials.Password}
 	raw, status, err := c.send(ctx, http.MethodPost, login.Path, body, "", "", false)
@@ -131,6 +153,68 @@ func (t *templateRuntime) token(ctx context.Context, c *Client) (string, error) 
 	}
 	t.bearer, t.expires = token, time.Now().Add(time.Duration(login.TTLSeconds)*time.Second)
 	return token, nil
+}
+
+func (c *Client) CheckPlugin(ctx context.Context) error {
+	if c.template == nil || c.template.definition.Health.empty() {
+		return ErrInput
+	}
+	if !c.template.definition.Block.empty() {
+		_, err := c.Describe(ctx)
+		return err
+	}
+	step := c.template.definition.Health
+	fields, status, err := c.template.request(ctx, c, step.Method, step.Path, nil, "")
+	if err != nil || !step.Accept.matches(status, fields) {
+		return ErrUnavailable
+	}
+	return nil
+}
+
+func (c *Client) CheckPluginLease(ctx context.Context, a Action) (Lease, bool, error) {
+	if c.template == nil || c.template.definition.Block.empty() || a.Validate() != nil ||
+		a.DeviceID != c.Config.DeviceID || a.ConnectorID != c.Config.ID || a.ConfigSHA256 != c.BindingSHA256() {
+		return Lease{}, false, ErrInput
+	}
+	return c.read(ctx, a)
+}
+
+func (c *Client) PullAlerts(ctx context.Context, cursor string) (contract.DeviceAlertPage, error) {
+	if c.template == nil || c.template.definition.Pull == nil || !contract.ValidDeviceCursor(cursor) {
+		return contract.DeviceAlertPage{}, ErrInput
+	}
+	pull := c.template.definition.Pull
+	query := url.Values{pull.CursorParam: {cursor}}
+	fields, status, err := c.template.request(ctx, c, http.MethodGet, pull.Path+"?"+query.Encode(), nil, "")
+	var items []json.RawMessage
+	var next *string
+	if err != nil || status != http.StatusOK || json.Unmarshal(fields[pull.ItemsField], &items) != nil ||
+		json.Unmarshal(fields[pull.CursorField], &next) != nil || items == nil || len(items) > contract.MaxDeviceAlertPage ||
+		next == nil || !contract.ValidDeviceCursor(*next) {
+		return contract.DeviceAlertPage{}, ErrUnavailable
+	}
+	page := contract.DeviceAlertPage{Cursor: *next, Items: make([]contract.DeviceAlert, 0, len(items))}
+	for _, item := range items {
+		var raw map[string]json.RawMessage
+		if json.Unmarshal(item, &raw) != nil || raw == nil {
+			return contract.DeviceAlertPage{}, ErrInput
+		}
+		projected := map[string]json.RawMessage{"raw": item}
+		for _, field := range pull.Fields {
+			if value, ok := raw[field.Value]; ok {
+				projected[field.Name] = value
+			}
+		}
+		var data bytes.Buffer
+		encoder := json.NewEncoder(&data)
+		encoder.SetEscapeHTML(false)
+		var event contract.DeviceAlert
+		if encoder.Encode(projected) != nil || json.Unmarshal(data.Bytes(), &event) != nil {
+			return contract.DeviceAlertPage{}, ErrInput
+		}
+		page.Items = append(page.Items, event)
+	}
+	return page, nil
 }
 
 func (t *templateRuntime) request(ctx context.Context, c *Client, method, path string, body any, owner string) (templateReply, int, error) {

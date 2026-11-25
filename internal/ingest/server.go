@@ -329,6 +329,18 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 					}
 					seenSources[source.SourceID] = true
 				}
+				seenPlugins := map[string]bool{}
+				if len(h.PluginBindings) > 8 {
+					stop()
+					return status.Error(codes.InvalidArgument, "联动插件绑定过多")
+				}
+				for _, binding := range h.PluginBindings {
+					if binding.Validate() != nil || seenPlugins[binding.PluginID] {
+						stop()
+						return status.Error(codes.InvalidArgument, "联动插件绑定无效")
+					}
+					seenPlugins[binding.PluginID] = true
+				}
 				e = s.DB.Heartbeat(call, id, h)
 				ack.Kind = sensorv1.CommandKind_COMMAND_KIND_HEARTBEAT_ACK
 			case sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_TASK_RECEIPT:

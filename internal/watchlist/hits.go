@@ -151,7 +151,7 @@ func ValidDigest(v string) bool {
 }
 
 func validSeverity(v string) bool {
-	return slices.Contains([]string{"high", "medium", "low", "unknown"}, v)
+	return slices.Contains([]string{"critical", "high", "medium", "low", "unknown"}, v)
 }
 
 // NewHit 冻结告警摘要；规则名称不符合展示约束时记为空，不截断成另一条规则名。

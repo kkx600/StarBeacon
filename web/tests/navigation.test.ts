@@ -92,6 +92,7 @@ describe('业务导航与路由契约', () => {
     '/ai/assistant',
     '/response/policies',
     '/response/evaluations',
+    '/response/plugins',
     '/ai/mcp',
     '/reports/plans',
   ])('实际路由 %s 的页面标题与导航名称一致', async path => {

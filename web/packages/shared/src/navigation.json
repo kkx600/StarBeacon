@@ -527,6 +527,14 @@
       "admin": true
     },
     {
+      "id": "auth-plugins",
+      "workspace": "devices",
+      "path": "/response/plugins",
+      "title": "联动插件",
+      "module": "responsePlugins",
+      "admin": true
+    },
+    {
       "id": "actions",
       "workspace": "actions",
       "path": "/response/actions",

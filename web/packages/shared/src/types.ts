@@ -30,6 +30,7 @@ export interface HostHealth {
   registered_rules_sha256?: string;
   syslog_sources?: import('./syslog').SyslogSource[];
   response_connectors?: import('./response').ResponseConnector[];
+  plugin_bindings?: import('./responsePlugins').PluginBinding[];
 }
 export interface Sensor {
   id: string;
@@ -64,8 +65,8 @@ export interface Alert {
   rule: { id?: string; name?: string; revision?: string };
   http: { method?: string; hostname?: string; path?: string };
   suricata: { flow_id?: string; action?: string };
-  severity: 'high' | 'medium' | 'low' | 'unknown';
-  event: { kind: string; original: string };
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+  event: { kind: string; original: string; dataset?: string };
   evidence_status: string;
 }
 export interface SearchRequest {

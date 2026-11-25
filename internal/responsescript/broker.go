@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kkx600/StarBeacon/internal/response"
 )
 
 func headerName(name string) bool {
@@ -24,7 +26,7 @@ func headerName(name string) bool {
 	case "Host", "Connection", "Content-Length", "Transfer-Encoding", "Trailer", "Upgrade",
 		"Te", "Keep-Alive", "Expect", "Content-Type", "Accept", "Accept-Encoding", "Cookie",
 		"Set-Cookie", "Forwarded", "X-Http-Method", "X-Http-Method-Override", "X-Method-Override",
-		"X-Original-Url", "X-Rewrite-Url":
+		"X-Original-Url", "X-Rewrite-Url", "If-Match":
 		return false
 	}
 	return !strings.HasPrefix(name, "Proxy-") && !strings.HasPrefix(name, "X-Forwarded-")
@@ -96,6 +98,7 @@ type broker struct {
 	events   []Event
 	requests int
 	wrote    bool
+	readback *Readback
 }
 
 func (r *Runtime) containsSecret(value string) bool {
@@ -333,6 +336,9 @@ func (b *broker) device(ctx context.Context, request frame) (reply frame) {
 			if !bytes.Equal(body, grant.Body) {
 				return frame{Code: Scope}
 			}
+			if grant.OwnerSHA256 != "" {
+				headers.Set("If-Match", `"`+grant.OwnerSHA256+`"`)
+			}
 		}
 	}
 	now := r.now()
@@ -357,6 +363,7 @@ func (b *broker) device(ctx context.Context, request frame) (reply frame) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	res, err := r.client.Do(req)
+	response.RecordPluginTrialRequest(ctx, request.Method, res)
 	if err != nil {
 		return frame{Code: deviceCode(ctx, err)}
 	}
@@ -372,7 +379,17 @@ func (b *broker) device(ctx context.Context, request frame) (reply frame) {
 	if len(raw) > maxData {
 		return frame{Code: Size}
 	}
-	return b.response(event.Status, route, isLogin, raw)
+	reply = b.response(event.Status, route, isLogin, raw)
+	if reply.Code == OK && request.Method == http.MethodGet && p == b.in.ReadbackPath {
+		if b.readback != nil {
+			return frame{Code: Scope}
+		}
+		b.readback = &Readback{Status: res.StatusCode, Fields: make(map[string]json.RawMessage, len(reply.Fields))}
+		for key, value := range reply.Fields {
+			b.readback.Fields[key] = value.JSON
+		}
+	}
+	return reply
 }
 
 func (b *broker) headers(route Route, headers http.Header, requested map[string]wireValue) Code {

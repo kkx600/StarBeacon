@@ -58,12 +58,12 @@ func plain(value string, maximum int) bool {
 }
 
 func (c Config) Validate(policy outbound.Policy) error {
-	if !ValidStreams(c.Kind, c.LogStreams()) || strings.TrimSpace(c.Name) != c.Name || c.Name == "" || !plain(c.Name, 128) || c.Accepts("alerts") && len(c.Severities) == 0 || len(c.Severities) > 4 || !plain(c.Secret, 1024) || !plain(c.Token, 4096) || !plain(c.SMTPUser, 320) || !plain(c.SMTPPass, 1024) {
+	if !ValidStreams(c.Kind, c.LogStreams()) || strings.TrimSpace(c.Name) != c.Name || c.Name == "" || !plain(c.Name, 128) || c.Accepts("alerts") && len(c.Severities) == 0 || len(c.Severities) > 5 || !plain(c.Secret, 1024) || !plain(c.Token, 4096) || !plain(c.SMTPUser, 320) || !plain(c.SMTPPass, 1024) {
 		return ErrConfig
 	}
 	seen := map[string]bool{}
 	for _, severity := range c.Severities {
-		if seen[severity] || (severity != "high" && severity != "medium" && severity != "low" && severity != "unknown") {
+		if seen[severity] || !validSeverity(severity) {
 			return ErrConfig
 		}
 		seen[severity] = true
@@ -143,12 +143,16 @@ func ValidateBatch(tenant, batch string, alerts []Summary) error {
 		if !contract.ValidID(alert.ID) || seen[alert.ID] || !contract.ValidID(alert.SensorID) || !plain(alert.RuleID, 64) || !plain(alert.RuleName, 256) || alert.Timestamp.Year() < 1970 || alert.Timestamp.Year() > 2262 {
 			return ErrBatch
 		}
-		if alert.Severity != "high" && alert.Severity != "medium" && alert.Severity != "low" && alert.Severity != "unknown" {
+		if !validSeverity(alert.Severity) {
 			return ErrBatch
 		}
 		seen[alert.ID] = true
 	}
 	return nil
+}
+
+func validSeverity(severity string) bool {
+	return severity == "critical" || severity == "high" || severity == "medium" || severity == "low" || severity == "unknown"
 }
 
 func Summaries(alerts []model.Alert) []Summary {

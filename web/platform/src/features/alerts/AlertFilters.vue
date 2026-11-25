@@ -114,6 +114,7 @@ function reset() {
             v-model:value="form.severity"
             :options="[
               { label: '全部级别', value: '' },
+              { label: '严重', value: 'critical' },
               { label: '高危', value: 'high' },
               { label: '中危', value: 'medium' },
               { label: '低危', value: 'low' },

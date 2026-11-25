@@ -229,6 +229,18 @@ func Validate(c Command) error {
 		return errors.New("任务参数无效")
 	}
 	switch c.Kind {
+	case response.PluginTrialCommand:
+		_, err := response.ReadPluginTrial(c.Payload)
+		return err
+	case response.PluginApplyCommand:
+		p, err := response.ReadPluginActivation(c.Payload)
+		if err == nil && p.Artifact != nil {
+			g := p.Artifact.Release.Grant
+			if g.TenantID != c.TenantID || g.SensorID != c.SensorID || g.RegistrationID != c.RegistrationID {
+				return response.ErrInput
+			}
+		}
+		return err
 	case PacketRetentionConfigure:
 		return validatePacketRetention(c.Payload)
 	case "applications.apply":

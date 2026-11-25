@@ -2423,6 +2423,14 @@
           },
           "packet_retention": {
             "$ref": "#/components/schemas/PacketRetentionStatus"
+          },
+          "plugin_bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginBinding"
+            },
+            "maxItems": 8,
+            "minItems": 0
           }
         },
         "required": [
@@ -2710,7 +2718,9 @@
               "response.read",
               "response.revoke",
               "applications.apply",
-              "packet.retention.configure"
+              "packet.retention.configure",
+              "plugin.trial",
+              "plugin.apply"
             ]
           },
           "state": {
@@ -5365,6 +5375,29 @@
           "quota_bytes",
           "segment_bytes",
           "rotate_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginBinding": {
+        "type": "object",
+        "properties": {
+          "plugin_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "device_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "binding_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "plugin_id",
+          "device_id",
+          "binding_sha256"
         ],
         "additionalProperties": false
       }

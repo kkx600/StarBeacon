@@ -104,6 +104,7 @@ export const streamOptions = Object.entries(streamNames)
   .filter(([value]) => value !== 'test')
   .map(([value, label]) => ({ value, label }));
 export const severityOptions = [
+  { value: 'critical', label: '严重' },
   { value: 'high', label: '高危' },
   { value: 'medium', label: '中危' },
   { value: 'low', label: '低危' },

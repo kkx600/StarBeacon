@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Modal as AModal, Descriptions as ADescriptions, Tabs } from 'ant-design-vue';
 const TabPane = Tabs.TabPane;
 const ADescriptionsItem = ADescriptions.Item;
@@ -13,6 +13,7 @@ import AlertTriage from './AlertTriage.vue';
 import AlertWatchlistHits from './AlertWatchlistHits.vue';
 import ApplicationAttribution from '@starbeacon/shared/components/ApplicationAttribution.vue';
 const props = defineProps<{ alert: Alert | null }>();
+const deviceAlert = computed(() => props.alert?.event.dataset?.startsWith('设备告警 · ') ?? false);
 const active = ref('evidence'),
   locked = ref(false);
 watch(
@@ -44,6 +45,7 @@ function investigate() {
       ><TabPane key="evidence" tab="通信证据" :disabled="locked">
         <div v-if="alert" class="detail-content">
           <a-alert
+            v-if="!deviceAlert"
             type="info"
             show-icon
             message="规则命中不代表攻击成功。当前记录未关联原生会话证据。"
@@ -59,6 +61,7 @@ function investigate() {
           >
           <a-descriptions bordered :column="1" size="small">
             <a-descriptions-item label="告警名称">{{ alert.rule.name }}</a-descriptions-item>
+            <a-descriptions-item v-if="deviceAlert" label="来源">{{ alert.event.dataset }}</a-descriptions-item>
             <a-descriptions-item label="事件标识"
               ><span class="technical">{{ alert.event_id }}</span></a-descriptions-item
             >
@@ -89,8 +92,8 @@ function investigate() {
             :raw-digest="alert.raw_sha256"
             :observed="alert.observed_at"
           />
-          <ByteViewer :original="alert.event.original" />
-          <h2>原始 EVE</h2>
+          <ByteViewer v-if="!deviceAlert" :original="alert.event.original" />
+          <h2>{{ deviceAlert ? '设备原始记录' : '原始 EVE' }}</h2>
           <pre v-if="alert.event.original" class="raw-data technical">{{ alert.event.original }}</pre>
           <a-empty v-else description="当前账号未获原始载荷读取权限" />
         </div> </TabPane

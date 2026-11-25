@@ -65,6 +65,8 @@ func (v *interpreter) run(p program) (json.RawMessage, Code) {
 	input := make(starlark.Tuple, 1, len(p.Args)+1)
 	input[0] = starlarkstruct.FromStringDict(starlark.String("context"), starlark.StringDict{
 		"base_url": starlark.String(p.Origin), "task_id": starlark.String(p.TaskID),
+		"owner_sha256": starlark.String(p.OwnerSHA256), "expires_at": starlark.String(p.ExpiresAt),
+		"duration_seconds": starlark.MakeInt(p.DurationSeconds),
 	})
 	for _, arg := range p.Args {
 		data, err := v.value(wireValue{JSON: arg})

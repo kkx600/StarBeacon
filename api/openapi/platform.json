@@ -18973,7 +18973,7 @@
         ],
         "responses": {
           "200": {
-            "description": "当前租户按插件标识升序返回最新草稿。",
+            "description": "当前租户按插件标识升序返回最新草稿及其已确认部署。",
             "content": {
               "application/json": {
                 "schema": {
@@ -19058,7 +19058,7 @@
         },
         "responses": {
           "201": {
-            "description": "草稿版本、模板摘要与保存审计原子提交。同一提交幂等回读原版本。",
+            "description": "草稿、内容摘要及保存审计原子提交，幂等重试返回原版本。",
             "content": {
               "application/json": {
                 "schema": {
@@ -19127,7 +19127,8 @@
               }
             }
           }
-        }
+        },
+        "description": "最多 128 KiB 严格 JSON，模板和 Starlark 脚本二选一。样例属于不可变版本，保存草稿经幂等核对。"
       }
     },
     "/api/v1/response-plugins/{id}/versions/{version}": {
@@ -19208,6 +19209,231 @@
           },
           "503": {
             "description": "目录与版本存储暂时不可用或内容摘要核对失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/response-plugins/{id}/operations": {
+      "get": {
+        "summary": "查询联动插件试运行与部署",
+        "x-required-role": "admin",
+        "description": "按插件和指定采集器读取本租户当前注册身份的本地绑定摘要、确认版本、可回退版本及最近 24 条任务回执。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "sensor_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已核对的插件操作目录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePluginOperations"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作参数、插件、采集器、版本或幂等键无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要有效会话。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "缺少当前租户管理员权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "插件版本或采集器不存在。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "存储、设备绑定、签名密钥或采集器心跳无法核验。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "提交联动插件试运行、签名下发、回退或停用",
+        "x-required-role": "admin",
+        "description": "管理员在本租户对指定采集器提交操作，冻结预期部署代次和幂等键。模拟、真实只读和按能力验收严格依序，签名绑定三档成功回执与同一版本、注册代次及本地绑定。回退复用上一版签名。202 表示队列已保存，启用状态在采集器确认后更新。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "minLength": 8
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponsePluginOperation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "签名任务已进入指定采集器的控制队列。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+                    }
+                  },
+                  "required": [
+                    "task_id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作参数、插件、采集器、版本或幂等键无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要有效会话。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "缺少当前租户管理员权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "插件版本或采集器不存在。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "试运行缺失，版本、部署代次或原提交参数已有变化，或采集器有在途任务。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "租户最近 24 小时的插件操作额度已用尽。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "存储、设备绑定、签名密钥或采集器心跳无法核验。",
             "content": {
               "application/json": {
                 "schema": {
@@ -19435,6 +19661,14 @@
           },
           "packet_retention": {
             "$ref": "#/components/schemas/PacketRetentionStatus"
+          },
+          "plugin_bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginBinding"
+            },
+            "maxItems": 8,
+            "minItems": 0
           }
         },
         "required": [
@@ -19698,6 +19932,7 @@
           "severity": {
             "type": "string",
             "enum": [
+              "critical",
               "high",
               "medium",
               "low",
@@ -19791,6 +20026,7 @@
             "type": "string",
             "enum": [
               "",
+              "critical",
               "high",
               "medium",
               "low",
@@ -19984,7 +20220,9 @@
               "response.read",
               "response.revoke",
               "applications.apply",
-              "packet.retention.configure"
+              "packet.retention.configure",
+              "plugin.trial",
+              "plugin.apply"
             ]
           },
           "state": {
@@ -20570,6 +20808,7 @@
             "items": {
               "type": "string",
               "enum": [
+                "critical",
                 "high",
                 "medium",
                 "low",
@@ -20577,7 +20816,7 @@
               ]
             },
             "minItems": 0,
-            "maxItems": 4,
+            "maxItems": 5,
             "uniqueItems": true,
             "description": "订阅 alerts 时至少选择一个级别；审计日志不按告警级别筛选。"
           },
@@ -20697,6 +20936,7 @@
             "items": {
               "type": "string",
               "enum": [
+                "critical",
                 "high",
                 "medium",
                 "low",
@@ -20704,7 +20944,7 @@
               ]
             },
             "minItems": 0,
-            "maxItems": 4,
+            "maxItems": 5,
             "uniqueItems": true,
             "description": "订阅 alerts 时至少选择一个告警级别；质量事件和审计日志不按告警级别筛选。"
           },
@@ -20788,6 +21028,7 @@
             "items": {
               "type": "string",
               "enum": [
+                "critical",
                 "high",
                 "medium",
                 "low",
@@ -20795,7 +21036,7 @@
               ]
             },
             "minItems": 0,
-            "maxItems": 4,
+            "maxItems": 5,
             "uniqueItems": true,
             "description": "订阅 alerts 时至少选择一个告警级别；质量事件和审计日志不按告警级别筛选。"
           },
@@ -23815,6 +24056,7 @@
           "severity": {
             "type": "string",
             "enum": [
+              "critical",
               "high",
               "medium",
               "low",
@@ -26543,6 +26785,7 @@
             "type": "string",
             "enum": [
               "",
+              "critical",
               "high",
               "medium",
               "low",
@@ -33417,6 +33660,7 @@
           "severity": {
             "type": "string",
             "enum": [
+              "critical",
               "high",
               "medium",
               "low",
@@ -33649,6 +33893,7 @@
           "severity": {
             "type": "string",
             "enum": [
+              "critical",
               "high",
               "medium",
               "low",
@@ -35064,18 +35309,78 @@
           },
           "unblock": {
             "$ref": "#/components/schemas/ResponseTemplateStep"
+          },
+          "pull_alerts": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "maxLength": 512
+              },
+              "cursor_param": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "items_field": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "cursor_field": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ResponseTemplateField"
+                },
+                "maxItems": 7,
+                "minItems": 4
+              }
+            },
+            "required": [
+              "path",
+              "cursor_param",
+              "items_field",
+              "cursor_field",
+              "fields"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
-          "schema_version",
-          "health",
-          "block",
-          "verify",
-          "missing",
-          "unblock"
+          "schema_version"
         ],
         "additionalProperties": false,
-        "description": "固定相对路径、字段映射及 HTTP 状态和 JSON 标量比较。读取必须核对任务标识、所有者与绝对到期，解除按已确认规则标识及所有者条件执行。认证凭据由采集器私有文件提供。"
+        "description": "固定相对路径、字段映射及 HTTP 状态和 JSON 标量比较。读取必须核对任务标识、所有者与绝对到期，解除按已确认规则标识及所有者条件执行。认证凭据由采集器私有文件提供。",
+        "anyOf": [
+          {
+            "required": [
+              "health"
+            ]
+          },
+          {
+            "required": [
+              "pull_alerts"
+            ]
+          }
+        ],
+        "dependentRequired": {
+          "block": [
+            "verify",
+            "unblock",
+            "missing"
+          ],
+          "verify": [
+            "block"
+          ],
+          "unblock": [
+            "block"
+          ],
+          "missing": [
+            "block"
+          ]
+        }
       },
       "ResponsePluginDraft": {
         "type": "object",
@@ -35101,16 +35406,38 @@
           },
           "template": {
             "$ref": "#/components/schemas/ResponseDeviceTemplate"
+          },
+          "script": {
+            "$ref": "#/components/schemas/ResponsePluginScript"
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginExample"
+            },
+            "maxItems": 48,
+            "minItems": 0
           }
         },
         "required": [
           "id",
           "expected_version",
           "name",
-          "device",
-          "template"
+          "device"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "script"
+            ]
+          }
+        ]
       },
       "ResponsePluginVersion": {
         "type": "object",
@@ -35136,7 +35463,10 @@
           },
           "kind": {
             "type": "string",
-            "const": "template"
+            "enum": [
+              "template",
+              "script"
+            ]
           },
           "state": {
             "type": "string",
@@ -35159,6 +35489,21 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "script": {
+            "$ref": "#/components/schemas/ResponsePluginScript"
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginExample"
+            },
+            "maxItems": 48,
+            "minItems": 0
+          },
+          "script_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
           }
         },
         "required": [
@@ -35168,12 +35513,62 @@
           "device",
           "kind",
           "state",
-          "template",
-          "template_sha256",
           "created_by",
           "created_at"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "kind": {
+                "const": "template"
+              }
+            },
+            "required": [
+              "template",
+              "template_sha256"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "script"
+                  ]
+                },
+                {
+                  "required": [
+                    "script_sha256"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "properties": {
+              "kind": {
+                "const": "script"
+              }
+            },
+            "required": [
+              "script",
+              "script_sha256"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "template"
+                  ]
+                },
+                {
+                  "required": [
+                    "template_sha256"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
       },
       "ResponsePluginPage": {
         "type": "object",
@@ -35189,11 +35584,420 @@
           "next_after": {
             "type": "string",
             "pattern": "^(?:[a-z0-9][a-z0-9_-]{0,63})?$"
+          },
+          "deployments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginDeployment"
+            },
+            "maxItems": 512,
+            "minItems": 0
+          },
+          "executions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginExecution"
+            },
+            "maxItems": 64,
+            "minItems": 0
           }
         },
         "required": [
           "items",
           "next_after"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginScript": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32768
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "health",
+                "pull_alerts",
+                "block",
+                "verify",
+                "unblock",
+                "isolate",
+                "release"
+              ]
+            },
+            "maxItems": 7,
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "source",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginExample": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "maxLength": 512
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "request": {
+            "type": "string",
+            "maxLength": 16384
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 599
+          },
+          "response": {
+            "type": "string",
+            "maxLength": 16384
+          }
+        },
+        "required": [
+          "method",
+          "path",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginBinding": {
+        "type": "object",
+        "properties": {
+          "plugin_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "device_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "binding_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "plugin_id",
+          "device_id",
+          "binding_sha256"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginDeployment": {
+        "type": "object",
+        "properties": {
+          "plugin_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "sensor_name": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 32
+          },
+          "previous_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 32
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "unavailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plugin_id",
+          "sensor_id",
+          "sensor_name",
+          "generation",
+          "version",
+          "previous_version",
+          "updated_at",
+          "unavailable"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginExecution": {
+        "type": "object",
+        "properties": {
+          "plugin_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "plugin_id",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginOperation": {
+        "type": "object",
+        "properties": {
+          "sensor_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "simulate",
+              "read",
+              "capability",
+              "publish",
+              "rollback",
+              "disable"
+            ]
+          },
+          "expected_generation": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sensor_id",
+          "version",
+          "action",
+          "expected_generation"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginTrialEvent": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120000
+          },
+          "requests": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "method": {
+                  "type": "string",
+                  "enum": ["GET", "POST", "PUT", "DELETE"]
+                },
+                "status": {
+                  "description": "HTTP 状态码。未收到响应时为 0。",
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 599
+                }
+              },
+              "required": ["method", "status"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "entry",
+          "code",
+          "duration_ms"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginTrialResult": {
+        "type": "object",
+        "properties": {
+          "plugin_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "definition_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "binding": {
+            "$ref": "#/components/schemas/ResponsePluginBinding"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "simulate",
+              "read",
+              "capability"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "block",
+              "isolate",
+              "block_and_isolate"
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 16,
+            "minItems": 0
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginTrialEvent"
+            },
+            "maxItems": 16,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "plugin_id",
+          "version",
+          "definition_sha256",
+          "binding",
+          "stage",
+          "mode",
+          "checks",
+          "events"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginOperationResult": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "simulate",
+              "read",
+              "capability",
+              "publish",
+              "rollback",
+              "disable"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "delivered",
+              "running",
+              "succeeded",
+              "failed",
+              "unknown",
+              "expired",
+              "cancelled"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trial": {
+            "$ref": "#/components/schemas/ResponsePluginTrialResult"
+          }
+        },
+        "required": [
+          "task_id",
+          "action",
+          "version",
+          "state",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "ResponsePluginOperations": {
+        "type": "object",
+        "properties": {
+          "deployment": {
+            "$ref": "#/components/schemas/ResponsePluginDeployment"
+          },
+          "binding": {
+            "$ref": "#/components/schemas/ResponsePluginBinding"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsePluginOperationResult"
+            },
+            "maxItems": 24,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "deployment",
+          "operations"
         ],
         "additionalProperties": false
       }

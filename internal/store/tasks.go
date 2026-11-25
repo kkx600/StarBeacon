@@ -387,6 +387,11 @@ func (p *Postgres) SaveReceipt(ctx context.Context, id transport.SensorIdentity,
 				return err
 			}
 		}
+		if (kind == responseapi.PluginTrialCommand || kind == responseapi.PluginApplyCommand) && receipt.State == "succeeded" {
+			if err := savePluginReceipt(ctx, tx, id, kind, command, receipt); err != nil {
+				return err
+			}
+		}
 		if strings.HasPrefix(kind, "response.") && receipt.State == "succeeded" {
 			var c control.Command
 			if receipt.Code != "" || json.Unmarshal(command, &c) != nil || control.Validate(c) != nil || c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {

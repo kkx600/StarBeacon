@@ -33,6 +33,13 @@ type Configuration struct {
 
 func (v Configuration) SHA256() string { return digest(v) }
 func (v Configuration) Validate() error {
+	if v.ValidatePlugin() != nil || !filepath.IsAbs(v.TokenFile) || len(v.AllowedTargets) == 0 {
+		return ErrInput
+	}
+	return nil
+}
+
+func (v Configuration) ValidatePlugin() error {
 	u, err := url.Parse(v.Origin)
 	if err != nil || !contract.ValidID(v.ID) || !contract.ValidID(v.DeviceID) || !validText(v.DeviceVersion, 64) || u.Scheme != "https" || u.User != nil || u.Opaque != "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.Hostname() == "" || strings.ContainsAny(v.Origin, "\r\n\x00") {
 		return ErrInput
@@ -42,7 +49,7 @@ func (v Configuration) Validate() error {
 	if err != nil || ip.String() != u.Hostname() || ip.Is4In6() || ip.Zone() != "" || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return ErrInput
 	}
-	if !filepath.IsAbs(v.TokenFile) || !filepath.IsAbs(v.CAFile) || v.MaxTTLSeconds < 30 || v.MaxTTLSeconds > MaxTTLSeconds || len(v.AllowedTargets) == 0 || len(v.AllowedTargets) > 32 || len(v.ProtectedTargets) > 32 {
+	if v.TokenFile != "" && !filepath.IsAbs(v.TokenFile) || !filepath.IsAbs(v.CAFile) || v.MaxTTLSeconds < 30 || v.MaxTTLSeconds > MaxTTLSeconds || len(v.AllowedTargets) > 32 || len(v.ProtectedTargets) > 32 {
 		return ErrInput
 	}
 	for _, group := range [][]string{v.AllowedTargets, v.ProtectedTargets} {
@@ -58,7 +65,7 @@ func (v Configuration) Validate() error {
 	return nil
 }
 func (v Configuration) Allows(target string, seconds int) bool {
-	if v.Validate() != nil || !ValidTarget(target) || seconds < 30 || seconds > v.MaxTTLSeconds {
+	if v.ValidatePlugin() != nil || !ValidTarget(target) || seconds < 30 || seconds > v.MaxTTLSeconds {
 		return false
 	}
 	ip, _ := netip.ParseAddr(target)
@@ -119,9 +126,35 @@ func LoadFile(path string) (File, error) {
 }
 
 type Client struct {
-	Config   Configuration
-	http     *http.Client
-	template *templateRuntime
+	Config     Configuration
+	http       *http.Client
+	template   *templateRuntime
+	simulation bool
+	adapter    PluginDeviceAdapter
+	binding    string
+}
+
+// PluginDeviceAdapter 只提供已核准设备的协议映射，授权与租约回读由 Client 复用。
+type PluginDeviceAdapter interface {
+	Describe(context.Context) (Device, error)
+	Read(context.Context, Action) (Lease, bool, error)
+	Block(context.Context, Action) (string, int, error)
+	Unblock(context.Context, Action, Lease) (int, error)
+}
+
+func NewPluginDevice(c Configuration, hash string, adapter PluginDeviceAdapter) (*Client, error) {
+	if c.ValidatePlugin() != nil || len(c.AllowedTargets) == 0 || adapter == nil || !validHash(hash) {
+		return nil, ErrInput
+	}
+	return &Client{Config: c, adapter: adapter, binding: hash}, nil
+}
+
+func (c *Client) BindPlugin(hash string) error {
+	if c.template == nil || c.template.definition.Block.empty() || !validHash(hash) {
+		return ErrInput
+	}
+	c.binding = hash
+	return nil
 }
 
 func NewClient(c Configuration) (*Client, error) {
@@ -152,8 +185,15 @@ func deviceHTTPClient(c Configuration) (*http.Client, error) {
 	client.Timeout = 8 * time.Second
 	return client, nil
 }
-func (c *Client) Close() { c.http.CloseIdleConnections() }
+func (c *Client) Close() {
+	if c.http != nil {
+		c.http.CloseIdleConnections()
+	}
+}
 func (c *Client) BindingSHA256() string {
+	if c.binding != "" {
+		return c.binding
+	}
 	if c.template != nil {
 		return digest([]string{"response.template.binding.v1", c.Config.SHA256(), c.template.sha256})
 	}
@@ -161,6 +201,9 @@ func (c *Client) BindingSHA256() string {
 }
 
 func (c *Client) fileToken() (string, error) {
+	if c.simulation {
+		return "fixture-response-token", nil
+	}
 	token, err := ReadPrivateFile(c.Config.TokenFile, 4096)
 	value := strings.TrimSuffix(strings.TrimSuffix(string(token), "\n"), "\r")
 	if err != nil || !validDeviceToken(value) {
@@ -205,6 +248,7 @@ func (c *Client) send(ctx context.Context, method, path string, body any, owner,
 		req.Header.Set("If-Match", `"`+owner+`"`)
 	}
 	res, err := c.http.Do(req)
+	RecordPluginTrialRequest(ctx, method, res)
 	if err != nil {
 		return nil, 0, ErrUnknown
 	}
@@ -220,6 +264,13 @@ func (c *Client) send(ctx context.Context, method, path string, body any, owner,
 	return raw, res.StatusCode, nil
 }
 func (c *Client) Describe(ctx context.Context) (Device, error) {
+	if c.adapter != nil {
+		device, err := c.adapter.Describe(ctx)
+		if err == nil {
+			err = device.Validate(c.Config.DeviceID, c.Config.DeviceVersion, time.Now().UTC())
+		}
+		return device, err
+	}
 	if c.template != nil {
 		return c.template.describe(ctx, c)
 	}
@@ -232,6 +283,13 @@ func (c *Client) Describe(ctx context.Context) (Device, error) {
 	return value, nil
 }
 func (c *Client) read(ctx context.Context, a Action) (Lease, bool, error) {
+	if c.adapter != nil {
+		lease, absent, err := c.adapter.Read(ctx, a)
+		if err == nil && !absent {
+			err = lease.Validate(a, time.Now().UTC())
+		}
+		return lease, absent, err
+	}
 	if c.template != nil {
 		return c.template.read(ctx, c, a)
 	}
@@ -262,7 +320,7 @@ func (c *Client) Execute(ctx context.Context, kind string, a Action) (Result, er
 // ExecuteBound 同时核对已经持久化的设备规则标识；固定协议不使用此字段。
 func (c *Client) ExecuteBound(ctx context.Context, kind string, a Action, deviceRuleID string) (Result, error) {
 	var result Result
-	if a.Validate() != nil || a.ConnectorID != c.Config.ID || a.ConfigSHA256 != c.BindingSHA256() || a.DeviceID != c.Config.DeviceID || kind != "response.block" && kind != "response.read" && kind != "response.revoke" {
+	if c.template != nil && c.template.definition.Block.empty() || a.Validate() != nil || a.ConnectorID != c.Config.ID || a.ConfigSHA256 != c.BindingSHA256() || a.DeviceID != c.Config.DeviceID || kind != "response.block" && kind != "response.read" && kind != "response.revoke" {
 		return result, ErrInput
 	}
 	device, err := c.Describe(ctx)
@@ -318,6 +376,9 @@ func (c *Client) ExecuteBound(ctx context.Context, kind string, a Action, device
 }
 
 func (c *Client) block(ctx context.Context, a Action) (string, int, error) {
+	if c.adapter != nil {
+		return c.adapter.Block(ctx, a)
+	}
 	if c.template != nil {
 		return c.template.block(ctx, c, a)
 	}
@@ -326,6 +387,9 @@ func (c *Client) block(ctx context.Context, a Action) (string, int, error) {
 }
 
 func (c *Client) unblock(ctx context.Context, a Action, lease Lease) (int, error) {
+	if c.adapter != nil {
+		return c.adapter.Unblock(ctx, a, lease)
+	}
 	if c.template != nil {
 		return c.template.unblock(ctx, c, a, lease)
 	}

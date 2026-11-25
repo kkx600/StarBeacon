@@ -23,6 +23,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/config"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/shirou/gopsutil/v4/process"
 	"golang.org/x/sys/unix"
@@ -34,6 +35,7 @@ type Engine struct {
 	WAL                *WAL
 	Applications       *ApplicationService
 	Response           *ResponseService
+	Plugins            *PluginService
 	LocalReplay        *ReplayService
 	ReplayClient       sensorv1.SensorServiceClient
 	isolationOnce      sync.Once
@@ -67,6 +69,9 @@ func (e *Engine) Capabilities() []string {
 	if e.Response != nil {
 		out = append(out, "response.block", "response.read", "response.revoke")
 	}
+	if e.Plugins != nil {
+		out = append(out, response.PluginTrialCommand, response.PluginApplyCommand)
+	}
 	if e.Capture != nil {
 		out = append(out, "capture.configure")
 	}
@@ -85,6 +90,12 @@ func (e *Engine) Capabilities() []string {
 	return out
 }
 func (e *Engine) Execute(ctx context.Context, c control.Command) (json.RawMessage, string, error) {
+	if c.Kind == response.PluginTrialCommand || c.Kind == response.PluginApplyCommand {
+		if e.Plugins == nil {
+			return nil, "plugin_unavailable", response.ErrUnavailable
+		}
+		return e.Plugins.execute(ctx, c)
+	}
 	if c.Kind == control.PacketRetentionConfigure && e.WAL != nil {
 		return e.WAL.packetArchives.executeRetention(ctx, c)
 	}

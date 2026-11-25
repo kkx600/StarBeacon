@@ -351,7 +351,7 @@ func ValidateSearch(q *model.SearchRequest) error {
 	if len(q.Keyword) > 256 || len(q.Path) > 1024 || len(q.Protocol) > 32 || len(q.Method) > 16 {
 		return fmt.Errorf("检索条件长度超限")
 	}
-	if q.Severity != "" && q.Severity != "high" && q.Severity != "medium" && q.Severity != "low" && q.Severity != "unknown" {
+	if q.Severity != "" && q.Severity != "critical" && q.Severity != "high" && q.Severity != "medium" && q.Severity != "low" && q.Severity != "unknown" {
 		return fmt.Errorf("严重级别不合法")
 	}
 	if _, e := searchfilter.Compile(q.Filter); e != nil {

@@ -63,3 +63,41 @@ func TestResponsePluginHTTPRejectsAmbiguousInputsAndUnavailableStorage(t *testin
 		}
 	}
 }
+
+func TestPluginOperationsRequireExactTargetAndGeneration(t *testing.T) {
+	api := &API{}
+	for _, query := range []string{"", "?sensor_id=probe&sensor_id=other", "?sensor_id=probe%2Fscope", "?sensor_id=probe&version=1", "?sensor_id=%xx", "?sensor_id=probe"} {
+		r := httptest.NewRequest(http.MethodGet, "/response-plugins/plug/operations"+query, nil)
+		r.SetPathValue("id", "plug")
+		w := httptest.NewRecorder()
+		api.pluginOperations(w, r)
+		want := http.StatusBadRequest
+		if query == "?sensor_id=probe" {
+			want = http.StatusServiceUnavailable
+		}
+		if w.Code != want {
+			t.Fatal("采集器查询范围未严格核对", query, w.Code)
+		}
+	}
+	const current = `{"sensor_id":"probe","version":1,"action":"simulate","expected_generation":0}`
+	for _, tc := range []struct {
+		body string
+		want int
+	}{
+		{`{"sensor_id":"probe","version":1,"action":"simulate"}`, 400},
+		{strings.Replace(current, `"expected_generation":0`, `"expected_generation":0,"expected_generation":2`, 1), 400},
+		{strings.Replace(current, `"simulate"`, `"deploy_without_trials"`, 1), 400},
+		{strings.Replace(current, `"expected_generation":0`, `"expected_generation":-1`, 1), 400},
+		{current, 503},
+	} {
+		r := httptest.NewRequest(http.MethodPost, "/response-plugins/plug/operations", strings.NewReader(tc.body))
+		r.Header.Set("Idempotency-Key", "owned_plugin_op")
+		r.Header.Set("Content-Type", "application/json")
+		r.SetPathValue("id", "plug")
+		w := httptest.NewRecorder()
+		api.submitPluginOperation(w, r)
+		if w.Code != tc.want {
+			t.Fatal("操作的动作、采集器或预期代次未严格核对", w.Code)
+		}
+	}
+}
