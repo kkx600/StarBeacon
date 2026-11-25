@@ -26,6 +26,8 @@ func (a *API) registerPacketArchives(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/packet-archives/{id}/download", a.Auth.Require(true, a.downloadPacketArchive))
 	m.HandleFunc("GET /api/v1/packet-archives/{id}/packets/{number}", a.Auth.Require(true, a.inspectPacketArchive))
 	m.HandleFunc("POST /api/v1/packet-archives/session-export", a.Auth.Require(true, a.exportPacketSession))
+	m.HandleFunc("POST /api/v1/packet-archives/{id}/flow-packets/{number}", a.Auth.Require(true, a.packetFlow))
+	m.HandleFunc("POST /api/v1/packet-archives/{id}/flow-snapshot", a.Auth.Require(true, a.packetFlow))
 }
 
 func (a *API) exportPacketSession(w http.ResponseWriter, r *http.Request) {

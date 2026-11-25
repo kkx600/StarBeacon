@@ -14,6 +14,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/transport"
 	"github.com/kkx600/StarBeacon/internal/watchlist"
@@ -59,10 +60,15 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 	var sampleID *string
 	var protection *watchlist.ResponseCheck
 	request := control.Digest(append([]byte(sensor+"\x00"+kind+"\x00"), payload...))
-	if strings.HasPrefix(kind, "response.") || kind == "applications.apply" {
+	if strings.HasPrefix(kind, "response.") || kind == "applications.apply" || kind == control.PacketRetentionConfigure {
 		request = control.Digest(append([]byte(u.ID+"\x00"+sensor+"\x00"+kind+"\x00"), payload...))
 	}
 	e := func() error {
+		if kind == control.PacketRetentionConfigure {
+			if err := configurationActor(ctx, tx, u, true, ErrPacketRetentionPermission); err != nil {
+				return err
+			}
+		}
 		if kind == "applications.apply" {
 			if err := applicationRuleUser(ctx, tx, u, true); err != nil {
 				return err
@@ -111,6 +117,11 @@ func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kin
 				return errors.New("任务签名密钥未配置")
 			}
 			if e = qualifyCaptureTask(ctx, tx, u.TenantID, sensor, registration, payload, signer); e != nil {
+				return e
+			}
+		}
+		if kind == control.PacketRetentionConfigure {
+			if e = qualifyPacketRetention(ctx, tx, u.TenantID, sensor, registration, payload, signer); e != nil {
 				return e
 			}
 		}
@@ -356,6 +367,15 @@ func (p *Postgres) SaveReceipt(ctx context.Context, id transport.SensorIdentity,
 			}
 			if e = control.ValidateCaptureResult(p, receipt.Result); e != nil {
 				return e
+			}
+		}
+		if kind == control.PacketRetentionConfigure && receipt.State == "succeeded" {
+			var c control.Command
+			if json.Unmarshal(command, &c) != nil || c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {
+				return packetarchive.ErrIntegrity
+			}
+			if err := control.ValidatePacketRetentionReceipt(c, receipt); err != nil {
+				return err
 			}
 		}
 		if kind == "applications.apply" && receipt.State == "succeeded" {

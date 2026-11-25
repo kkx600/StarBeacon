@@ -604,18 +604,13 @@ func (p *PendingCapture) Seal(ended time.Time, termination string, drops *uint64
 		_ = p.spool.fail(p.ID, "capture_seal_unconfirmed")
 		return err
 	}
-	retentionFile := p.spool.RetentionFile
-	var policy RetentionPolicy
-	var policyErr error
-	if retentionFile != "" {
-		policy, policyErr = readRetentionPolicy(retentionFile)
-	}
 	return p.spool.updateTx(p.ID, func(tx *bolt.Tx, row *LocalRecord) error {
 		if row.State != "capturing" {
 			return ErrIntegrity
 		}
-		if retentionFile != "" {
-			plan, err := freezeRetention(tx, policy, policyErr != nil)
+		if p.spool.RetentionFile != "" {
+			current, observedErr := p.spool.retentionObservation(tx)
+			plan, err := freezeRetention(tx, current.Policy, observedErr != nil)
 			if err != nil {
 				return err
 			}

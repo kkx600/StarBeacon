@@ -8,7 +8,13 @@ import {
 } from 'ant-design-vue';
 import type { ApiClient } from '../api';
 import { packetCapture, type PacketRecord } from '../packetArchives';
-import { inspectionStates, verifyPacketInspection, type PacketInspection } from '../packetInspection';
+import {
+  inspectionStates,
+  verifyPacketInspection,
+  verifyFlowInspection,
+  type PacketInspection,
+  type SegmentFlowSource,
+} from '../packetInspection';
 import { formatTime } from '../types';
 import { formatBytes, formatNumber } from '../utils/format';
 import StatePanel from './StatePanel.vue';
@@ -18,6 +24,7 @@ const ADescriptionsItem = ADescriptions.Item,
 const props = defineProps<{
   api: ApiClient;
   record: PacketRecord | null;
+  flow?: SegmentFlowSource | null;
   initialNumber?: number;
   initialLayer?: number | null;
 }>();
@@ -29,7 +36,8 @@ const number = ref<number | undefined>(1),
   error = shallowRef(''),
   numberID = useId();
 const activeLayers = shallowRef<string[]>(['0']);
-const total = computed(() => (props.record ? packetCapture(props.record).packets : 0)),
+const selected = computed(() => props.flow ?? props.record),
+  total = computed(() => props.flow?.count ?? (props.record ? packetCapture(props.record).packets : 0)),
   byteSource = computed(() => (data.value ? JSON.stringify({ packet: data.value.packet }) : ''));
 let controller: AbortController | undefined;
 function inputNumber(value: string) {
@@ -63,7 +71,7 @@ function changeLayers(value: unknown) {
   );
 }
 async function read(index: number) {
-  const record = props.record;
+  const record = selected.value;
   if (!record || pending.value || !Number.isSafeInteger(index) || index < 1 || index > total.value) return;
   stop();
   selectedNumber.value = index;
@@ -73,12 +81,28 @@ async function read(index: number) {
   const active = new AbortController();
   controller = active;
   try {
-    const raw = await props.api.request<unknown>(
-      '/packet-archives/' + encodeURIComponent(record.id) + '/packets/' + index,
-      { signal: active.signal },
-    );
-    const result = await verifyPacketInspection(raw, record, index);
-    if (!active.signal.aborted && props.record === record) {
+    const result =
+      'flow' in record
+        ? await verifyFlowInspection(
+            await props.api.request<unknown>(
+              `/packet-archives/${encodeURIComponent(record.archiveID)}/flow-packets/${index}`,
+              {
+                signal: active.signal,
+                method: 'POST',
+                body: record.flow,
+              },
+            ),
+            record,
+            index,
+          )
+        : await verifyPacketInspection(
+            await props.api.request<unknown>(`/packet-archives/${encodeURIComponent(record.id)}/packets/${index}`, {
+              signal: active.signal,
+            }),
+            record,
+            index,
+          );
+    if (!active.signal.aborted && selected.value === record) {
       data.value = result;
       restoreLayer();
     }
@@ -89,7 +113,7 @@ async function read(index: number) {
   }
 }
 watch(
-  [() => props.record, () => props.initialNumber],
+  [selected, () => props.initialNumber],
   ([record, initial], previous) => {
     const selected = initial === undefined ? 1 : initial;
     if (record === previous?.[0] && selected === selectedNumber.value) return;
@@ -115,15 +139,18 @@ onScopeDispose(stop);
 </script>
 <template>
   <a-modal
-    title="原包协议查看"
-    :open="record !== null"
+    :title="flow ? '会话分段逐包查看' : '原包协议查看'"
+    :open="selected !== null"
     :width="1000"
     :footer="null"
     :body-style="{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }"
     @cancel="emit('close')"
   >
     <slot name="notice" />
-    <p class="muted inspector-note">
+    <p v-if="flow" class="muted inspector-note">
+      按此窗口中匹配会话的原包顺序查看。最多解析 16 层，保留实际捕获时间和字节。
+    </p>
+    <p v-else class="muted inspector-note">
       按所选切片的捕获顺序查看，每次完整核验归档后读取一个包；最多解析 16
       层。捕获时间不等于双向入站／出站时间，未重组应用正文、校验报文校验和或解密 TLS。
     </p>

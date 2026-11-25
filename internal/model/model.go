@@ -61,6 +61,7 @@ type HostHealth struct {
 	CaptureStatus            string               `json:"capture_status"`
 	Capture                  json.RawMessage      `json:"capture,omitempty"`
 	PacketArchive            json.RawMessage      `json:"packet_archive,omitempty"`
+	PacketRetention          json.RawMessage      `json:"packet_retention,omitempty"`
 	NetworkInterfaces        []NetworkInterface   `json:"network_interfaces,omitempty"`
 }
 type NetworkInterface struct {
@@ -147,4 +148,7 @@ type TrafficSearchRequest struct {
 	RegistrationID string `json:"sensor_registration_id"`
 	GenerationID   string `json:"source_generation_id"`
 	FlowID         string `json:"flow_id"`
+	EndpointA      string `json:"endpoint_a,omitempty"`
+	EndpointB      string `json:"endpoint_b,omitempty"`
+	Retention      string `json:"session_retention,omitempty"`
 }

@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/agent"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/packetpolicy"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/kkx600/StarBeacon/internal/traffic"
@@ -222,7 +224,83 @@ func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, pla
 	}
 	for index, mode := range []string{packetarchive.RetentionSmart, packetarchive.RetentionFull, packetarchive.RetentionAlertOnly} {
 		revision := uint64(index + 2)
-		nativeRetentionPolicy(t, policy, revision, mode)
+		var status packetpolicy.Status
+		collectorHTTP.request("GET", "/packet-retention", "", nil, &status, 200)
+		if status.Configuration == nil || status.Configuration.Policy.Revision != revision-1 || !status.Valid() {
+			t.Fatalf("采集器当前留存观测无效 %+v", status)
+		}
+		next := status.Configuration.Policy
+		next.Revision, next.Mode = revision, mode
+		change := packetpolicy.Change{ExpectedRevision: revision - 1, ExpectedSHA256: status.Configuration.SHA256, Policy: next}
+		var taskID string
+		origin := "file"
+		switch index {
+		case 0:
+			// 本机修改一个实际参数，下一次心跳同步到平台。
+			bytes := 32 << 10
+			change.Policy.EncryptedBytes = &bytes
+			var saved packetpolicy.Observation
+			collectorHTTP.request("PUT", "/packet-retention", "", change, &saved, 200)
+			if !saved.Valid() || !saved.Policy.Equal(change.Policy) || saved.Origin != "local" {
+				t.Fatal("本机配置没有返回已持久保存的修订")
+			}
+			collectorHTTP.request("PUT", "/packet-retention", "", change, nil, 409)
+			origin = "local"
+		case 1:
+			var submitted struct {
+				TaskID string `json:"task_id"`
+			}
+			platformHTTP.request("POST", "/sensors/"+sensor+"/packet-retention", "native-packet-retention-v3", change, &submitted, 202)
+			taskID, origin = submitted.TaskID, "platform"
+			if taskID == "" {
+				t.Fatal("平台没有创建签名任务")
+			}
+			eventually(t, ctx, "平台收到已核验的留存配置任务回执", func() bool {
+				var task store.SensorTask
+				platformHTTP.request("GET", "/tasks/"+taskID, "", nil, &task, 200)
+				if task.State == "failed" || task.State == "unknown" || task.State == "expired" {
+					t.Fatalf("留存签名任务未成功：%s %s", task.State, task.Receipt)
+				}
+				return task.State == "succeeded"
+			})
+			// 同一个提交在已经生效后重试仍得到原任务。
+			var retry map[string]string
+			platformHTTP.request("POST", "/sensors/"+sensor+"/packet-retention", "native-packet-retention-v3", change, &retry, 202)
+			if retry["task_id"] != taskID {
+				t.Fatal("留存下发重试产生了新任务")
+			}
+		case 2:
+			nativeRetentionPolicy(t, policy, revision, mode)
+		}
+		eventually(t, ctx, "平台读取采集器实际当前修订与来源", func() bool {
+			var storage struct {
+				Sensors []store.PacketStorageSensor `json:"sensors"`
+				Warm    *store.PacketStorageStatus  `json:"warm"`
+			}
+			platformHTTP.request("GET", "/packet-storage", "", nil, &storage, 200)
+			for _, row := range storage.Sensors {
+				if row.ID == sensor && row.Fresh && row.CanApply && row.Status != nil && row.Status.Configuration != nil &&
+					row.Status.Configuration.Policy.Revision == revision {
+					if row.Status.Configuration.Origin != origin || row.Status.Configuration.TaskID != taskID ||
+						row.Status.Configuration.Policy.Mode != mode || row.Status.ReservedBytes == nil || storage.Warm == nil {
+						t.Fatalf("配置来源或热温用量失真 %+v", row.Status)
+					}
+					if index < 2 && !row.Status.Configuration.Policy.Equal(change.Policy) {
+						t.Fatal("平台显示的实际配置不同于已提交参数")
+					}
+					t.Logf("留存策略同步实测 修订 %d，来源 %s，模式 %s", revision, origin, mode)
+					return true
+				}
+			}
+			return false
+		})
+		if index == 1 {
+			var conflict struct{ Code string }
+			platformHTTP.request("POST", "/sensors/"+sensor+"/packet-retention", "native-packet-retention-stale", change, &conflict, 409)
+			if conflict.Code != "packet_retention_changed" {
+				t.Fatal("平台旧修订未按回读基线拒绝", conflict.Code)
+			}
+		}
 		old := current()
 		var captureID string
 		eventually(t, ctx, "等待专属采集器打开后继热写段", func() bool {
@@ -266,6 +344,7 @@ func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, pla
 		if normal.OriginalBytes < bodyBytes || normal.PolicyRevision != revision {
 			t.Fatalf("实际普通 HTTP 流量未完整进入热段 %+v", normal)
 		}
+		verifyNativeFlowPage(t, ctx, platformHTTP, archive, normal)
 		switch mode {
 		case packetarchive.RetentionSmart:
 			if normal.Protocol != "http" || normal.State != "policy_truncated" || normal.RetainedBytes == 0 || normal.RetainedBytes >= normal.OriginalBytes {
@@ -292,4 +371,89 @@ func verifyNativeRetention(t *testing.T, ctx context.Context, collectorHTTP, pla
 			mode, revision, normal.RetainedBytes, normal.OriginalBytes, 100*float64(normal.RetainedBytes)/float64(normal.OriginalBytes),
 			summary.OriginalBytes, elapsed, float64(summary.OriginalBytes)/elapsed/(1<<20), float64(normal.OriginalBytes)/active/(1<<20), *capture.KernelDrops)
 	}
+}
+
+func verifyNativeFlowPage(t *testing.T, ctx context.Context, platformHTTP *liveHTTP, archive store.PacketArchive, flow packetarchive.RetentionSession) {
+	t.Helper()
+	query := model.TrafficSearchRequest{
+		SearchRequest: model.SearchRequest{Start: flow.StartedAt.Add(-time.Second), End: flow.EndedAt.Add(time.Second)},
+		EventKind:     traffic.PacketSessionKind, SensorID: archive.Manifest.Capture.SensorID,
+		RegistrationID: archive.Manifest.Capture.RegistrationID, GenerationID: archive.ID,
+		EndpointA: flow.A.String(), EndpointB: flow.B.String(), Retention: flow.State,
+	}
+	var selected traffic.Record
+	eventually(t, ctx, "全流量回溯按端点与留存状态命中实际 HTTP 会话", func() bool {
+		var result traffic.Result
+		platformHTTP.request("POST", "/traffic/search", "", query, &result, 200)
+		for _, row := range result.Items {
+			if row.Details.Segment != nil && row.Details.Segment.ArchiveID == archive.ID {
+				selected = row
+				return true
+			}
+		}
+		return false
+	})
+	segment := selected.Details.Segment
+	if segment.Retention != flow.State || segment.RetainedBytes != flow.RetainedBytes || segment.OriginalBytes != flow.OriginalBytes {
+		t.Fatal("全流量检索与实际归档策略计数不一致")
+	}
+	query.Retention = "metadata_only"
+	if flow.State == query.Retention {
+		query.Retention = "retained"
+	}
+	var excluded traffic.Result
+	platformHTTP.request("POST", "/traffic/search", "", query, &excluded, 200)
+	if excluded.Total != 0 {
+		t.Fatal("留存筛选包含不同状态的会话")
+	}
+	input := map[string]string{"endpoint_a": flow.A.String(), "endpoint_b": flow.B.String(), "transport": flow.Transport, "vlan": flow.VLAN,
+		"manifest_sha256": archive.ManifestSHA256, "archive_raw_sha256": archive.Manifest.Encoding.RawSHA256}
+	base := "/packet-archives/" + archive.ID
+	if flow.State == "metadata_only" {
+		platformHTTP.request("POST", base+"/flow-packets/1", "", input, nil, 404)
+		platformHTTP.request("POST", base+"/flow-snapshot", "", input, nil, 404)
+		return
+	}
+	var view packetarchive.SegmentFlowInspection
+	platformHTTP.request("POST", base+"/flow-packets/1", "", input, &view, 200)
+	raw, err := json.Marshal(input)
+	require(t, err)
+	request, err := http.NewRequestWithContext(ctx, "POST", platformHTTP.origin+platformHTTP.prefix+base+"/flow-snapshot", bytes.NewReader(raw))
+	require(t, err)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Origin", platformHTTP.origin)
+	request.Header.Set("X-CSRF-Token", platformHTTP.csrf)
+	response, err := platformHTTP.client.Do(request)
+	require(t, err)
+	defer response.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(response.Body, packetarchive.MaxSegmentBytes+1))
+	require(t, err)
+	if response.StatusCode != 200 || response.Header.Get("X-Session-Completeness") != "snapshot" || response.Header.Get("X-Packet-Retention") != flow.State ||
+		response.Header.Get("X-Content-SHA256") != packetarchive.Digest(data) || (flow.State == "policy_truncated") != strings.Contains(response.Header.Get("Content-Disposition"), "-partial.pcapng") {
+		t.Fatalf("会话快照完整性、留存标签或摘要不正确：%d", response.StatusCode)
+	}
+	reader, err := pcapgo.NewNgReader(bytes.NewReader(data), pcapgo.DefaultNgReaderOptions)
+	require(t, err)
+	var reference map[string]any
+	require(t, json.Unmarshal([]byte(reader.SectionInfo().Comment), &reference))
+	if reference["retention"] != flow.State || reference["completeness"] != "snapshot" {
+		t.Fatal("导出文件没有保存实际留存标记")
+	}
+	var count, stored uint64
+	for {
+		frame, ci, err := reader.ReadPacketData()
+		if err == io.EOF {
+			break
+		}
+		require(t, err)
+		if count == 0 && (view.PacketSHA256 != packetarchive.Digest(frame) || view.Packet != base64.StdEncoding.EncodeToString(frame) || !view.CapturedAt.Equal(ci.Timestamp)) {
+			t.Fatal("逐包查看与快照首包字节、捕获时间不一致")
+		}
+		count++
+		stored += uint64(len(frame))
+	}
+	if view.Retention != flow.State || view.Total != count || count != segment.RetainedPackets || stored != segment.RetainedBytes {
+		t.Fatal("会话逐包和快照数量与原包观测不一致")
+	}
+	t.Logf("全流量回溯实测 %s，逐包校验和快照 %d 包、%d 字节", flow.State, count, stored)
 }

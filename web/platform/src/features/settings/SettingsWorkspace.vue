@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { AppstoreOutlined, TeamOutlined } from '@ant-design/icons-vue';
+import { AppstoreOutlined, DatabaseOutlined, TeamOutlined } from '@ant-design/icons-vue';
 import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
 import UsersWorkspace from '../users/UsersWorkspace.vue';
 import FeatureDirectory from './FeatureDirectory.vue';
+import PacketStorageSettings from './PacketStorageSettings.vue';
 
 const route = useRoute();
 const sections = [
   { key: 'users', title: '用户管理', to: '/system/settings/users', icon: TeamOutlined },
+  {
+    key: 'traffic',
+    title: '全流量存储',
+    to: { path: '/system/settings', query: { section: 'traffic' } },
+    icon: DatabaseOutlined,
+  },
   {
     key: 'features',
     title: '功能目录',
@@ -16,9 +23,10 @@ const sections = [
     icon: AppstoreOutlined,
   },
 ];
-const section = computed(() =>
-  route.meta.workspaceView !== 'users' && route.query.section === 'features' ? 'features' : 'users',
-);
+const section = computed(() => {
+  const name = route.query.section;
+  return route.meta.workspaceView !== 'users' && (name === 'features' || name === 'traffic') ? name : 'users';
+});
 </script>
 
 <template>
@@ -34,6 +42,7 @@ const section = computed(() =>
     </nav>
     <section class="settings-section" aria-label="当前设置分类">
       <UsersWorkspace v-if="section === 'users'" />
+      <PacketStorageSettings v-else-if="section === 'traffic'" />
       <FeatureDirectory v-else />
     </section>
   </div>

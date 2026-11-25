@@ -65,6 +65,9 @@ func (a *API) SearchTraffic(ctx context.Context, user model.Principal, q model.T
 			if err != nil {
 				return traffic.Result{}, err
 			}
+			if q.Retention != "" && q.Retention != details.Segment.Retention {
+				return traffic.Result{}, errors.New("会话分段与留存筛选条件不一致")
+			}
 			details.State = "available"
 		}
 		if user.Role != "admin" {

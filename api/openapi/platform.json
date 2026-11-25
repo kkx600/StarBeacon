@@ -18431,6 +18431,515 @@
           }
         }
       }
+    },
+    "/api/v1/packet-storage": {
+      "get": {
+        "summary": "读取全流量存储设置",
+        "x-required-role": "admin",
+        "description": "按采集器读取最近一次有效观测。Can apply 依据当前连接、签名能力和修订。",
+        "responses": {
+          "200": {
+            "description": "本租户采集器的策略与热层预留、温层实际目录用量。冷层状态指平台是否管理该层。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketStorageSettings"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "签名、存储或对象校验服务异常。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sensors/{id}/packet-retention": {
+      "post": {
+        "summary": "向指定采集器下发留存策略",
+        "x-required-role": "admin",
+        "description": "使用当前注册代次与最新心跳的修订、摘要和网络域。同一管理员的相同幂等请求返回原任务。只有采集器执行并核验后才报告已应用。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PacketRetentionChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "签名任务已入队。核对任务完成回执及后续心跳确认生效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+                    }
+                  },
+                  "required": [
+                    "task_id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象不存在、已到期或不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "观测或对象的修订发生变化。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "签名、存储或对象校验服务异常。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packet-archives/{id}/flow-packets/{number}": {
+      "post": {
+        "summary": "查看会话分段中的报文",
+        "x-required-role": "admin",
+        "description": "仅当前租户管理员可见。根据精确元组、VLAN 及归档摘要读取其留存报文。仅元数据或归档到期时返回 404。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1048576
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PacketSegmentFlowRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "按指定会话分段的原捕获顺序返回一个已核验的实际留存报文。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketSegmentFlowInspection"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象不存在、已到期或不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "观测或对象的修订发生变化。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "读取额度已满。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "签名、存储或对象校验服务异常。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packet-archives/{id}/flow-snapshot": {
+      "post": {
+        "summary": "下载会话分段的原包快照",
+        "x-required-role": "admin",
+        "description": "生成所选窗口的快照。按策略截断时文件显式带状态。仅元数据禁止下载。已有跨窗口完整会话导出继续使用独立接口和完整性校验。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PacketSegmentFlowRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际留存帧组成的 PCAPNG。按策略截断的结果写入节注释和文件名。",
+            "content": {
+              "application/x-pcapng": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Content-Disposition": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Length": {
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "minimum": 24,
+                  "maximum": 67108864
+                }
+              },
+              "X-Content-SHA256": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "X-Session-Completeness": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "snapshot"
+                }
+              },
+              "X-Packet-Retention": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "retained",
+                    "policy_truncated"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "对象不存在、已到期或不可访问。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "观测或对象的修订发生变化。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "输出超过处理预算。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "读取额度已满。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "签名、存储或对象校验服务异常。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -18645,6 +19154,9 @@
           },
           "engine_health": {
             "$ref": "#/components/schemas/EngineHealth"
+          },
+          "packet_retention": {
+            "$ref": "#/components/schemas/PacketRetentionStatus"
           }
         },
         "required": [
@@ -19193,7 +19705,8 @@
               "response.block",
               "response.read",
               "response.revoke",
-              "applications.apply"
+              "applications.apply",
+              "packet.retention.configure"
             ]
           },
           "state": {
@@ -22478,6 +22991,26 @@
             "type": "string",
             "pattern": "^$|^(0|[1-9][0-9]{0,19})$",
             "description": "规范十进制 uint64，不超过 18446744073709551615；不能单独作为跨探针会话身份。"
+          },
+          "endpoint_a": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "仅 flow_segment 支持。按规范顺序选定端点，支持 IP、CIDR 或 IP:端口，IPv6 端口使用方括号。空值不筛选。"
+          },
+          "endpoint_b": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "仅 flow_segment 支持。按规范顺序选定端点，支持 IP、CIDR 或 IP:端口，IPv6 端口使用方括号。空值不筛选。"
+          },
+          "session_retention": {
+            "type": "string",
+            "enum": [
+              "",
+              "retained",
+              "policy_truncated",
+              "metadata_only"
+            ],
+            "description": "仅 flow_segment 支持。留存状态以冻结的会话分段记录为准。"
           }
         },
         "required": [
@@ -33597,6 +34130,500 @@
           "retained_bytes"
         ],
         "additionalProperties": false
+      },
+      "PacketRetentionPolicy": {
+        "type": "object",
+        "properties": {
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "smart",
+              "full",
+              "alert_only"
+            ]
+          },
+          "encrypted_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "plain_bytes": {
+            "type": "integer",
+            "minimum": 65536,
+            "maximum": 67108864
+          },
+          "dedup_millis": {
+            "oneOf": [
+              {
+                "const": 0
+              },
+              {
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 500
+              }
+            ]
+          },
+          "protect": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 48,
+              "description": "规范化的 IPv4/IPv6 CIDR 网段，地址需对齐掩码。"
+            }
+          },
+          "observe": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 48,
+              "description": "规范化的 IPv4/IPv6 CIDR 网段，地址需对齐掩码。"
+            }
+          }
+        },
+        "required": [
+          "network_domain",
+          "revision",
+          "mode",
+          "encrypted_bytes",
+          "plain_bytes",
+          "dedup_millis"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionChange": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740990
+          },
+          "expected_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PacketRetentionPolicy"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "expected_sha256",
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionObservation": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/PacketRetentionPolicy"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "file",
+              "local",
+              "platform"
+            ]
+          },
+          "task_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "applied_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "policy",
+          "sha256",
+          "origin"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionStatus": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable",
+              "not_configured"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/PacketRetentionObservation"
+          },
+          "reserved_bytes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quota_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "segment_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "rotate_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "state",
+          "observed_at",
+          "reserved_bytes",
+          "quota_bytes",
+          "segment_bytes",
+          "rotate_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "PacketStorageSensor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PacketRetentionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fresh": {
+            "type": "boolean"
+          },
+          "can_apply": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "fresh",
+          "can_apply"
+        ],
+        "additionalProperties": false
+      },
+      "PacketStorageWarm": {
+        "type": "object",
+        "properties": {
+          "backend": {
+            "type": "string"
+          },
+          "measured": {
+            "type": "boolean"
+          },
+          "free_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "total_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "floor_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "limit_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "archives": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "stored_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "oldest_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retention_days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3650
+          }
+        },
+        "required": [
+          "backend",
+          "measured",
+          "free_bytes",
+          "total_bytes",
+          "floor_bytes",
+          "limit_bytes",
+          "archives",
+          "stored_bytes",
+          "oldest_created_at",
+          "retention_days"
+        ],
+        "additionalProperties": false
+      },
+      "PacketStorageSettings": {
+        "type": "object",
+        "properties": {
+          "sensors": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/PacketStorageSensor"
+            }
+          },
+          "sensors_limited": {
+            "type": "boolean"
+          },
+          "warm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PacketStorageWarm"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warm_state": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable",
+              "not_configured"
+            ]
+          },
+          "cold_state": {
+            "type": "string",
+            "const": "unmanaged"
+          }
+        },
+        "required": [
+          "sensors",
+          "sensors_limited",
+          "warm",
+          "warm_state",
+          "cold_state"
+        ],
+        "additionalProperties": false
+      },
+      "PacketSegmentFlowRequest": {
+        "type": "object",
+        "properties": {
+          "endpoint_a": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "排序后的端点 A，写为 IP:端口。IPv6 地址加方括号。"
+          },
+          "endpoint_b": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "排序后的端点 B，写为 IP:端口。IPv6 地址加方括号。"
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ]
+          },
+          "vlan": {
+            "type": "string",
+            "maxLength": 39
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "archive_raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "endpoint_a",
+          "endpoint_b",
+          "transport",
+          "manifest_sha256",
+          "archive_raw_sha256"
+        ],
+        "additionalProperties": false
+      },
+      "PacketSegmentFlowInspection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "archive_id",
+          "manifest_sha256",
+          "raw_sha256",
+          "packet_sha256",
+          "number",
+          "total",
+          "captured_at",
+          "captured_length",
+          "original_length",
+          "truncated",
+          "interface",
+          "vlan_offload",
+          "decode_status",
+          "layers",
+          "packet",
+          "checksum_validation",
+          "payload_visibility",
+          "flow",
+          "retention"
+        ],
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "packet.inspect.v1"
+          },
+          "archive_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "raw_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "packet_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "实际网卡捕获时间，UTC，保留最多九位小数；不推断双向入站或出站时间。"
+          },
+          "captured_length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 262144
+          },
+          "original_length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "interface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "vlan_offload": {
+            "type": "boolean",
+            "description": "原生包注释记录 VLAN 卸载；未向原字节重建标签。"
+          },
+          "decode_status": {
+            "type": "string",
+            "enum": [
+              "parsed",
+              "partial",
+              "limited"
+            ]
+          },
+          "layers": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/PacketInspectionLayer"
+            }
+          },
+          "packet": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 349528,
+            "description": "所选原始捕获帧的 Base64 字节；客户端核验长度及 packet_sha256。"
+          },
+          "checksum_validation": {
+            "type": "string",
+            "const": "not_checked"
+          },
+          "payload_visibility": {
+            "type": "string",
+            "const": "not_decoded"
+          },
+          "flow": {
+            "$ref": "#/components/schemas/PacketSegmentFlowRequest"
+          },
+          "retention": {
+            "type": "string",
+            "enum": [
+              "retained",
+              "policy_truncated"
+            ]
+          }
+        }
       }
     },
     "parameters": {

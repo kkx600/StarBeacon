@@ -70,6 +70,9 @@ func (e *Engine) Capabilities() []string {
 	if e.Capture != nil {
 		out = append(out, "capture.configure")
 	}
+	if e.WAL != nil && e.WAL.packetArchives.retentionManaged() {
+		out = append(out, control.PacketRetentionConfigure)
+	}
 	if e.ReplayAvailable() {
 		out = append(out, "rules.validate")
 		if e.ReplayAvailable() {
@@ -82,6 +85,9 @@ func (e *Engine) Capabilities() []string {
 	return out
 }
 func (e *Engine) Execute(ctx context.Context, c control.Command) (json.RawMessage, string, error) {
+	if c.Kind == control.PacketRetentionConfigure && e.WAL != nil {
+		return e.WAL.packetArchives.executeRetention(ctx, c)
+	}
 	if c.Kind == "applications.apply" {
 		if e.Applications == nil {
 			return nil, "application_service_unavailable", errors.New("采集器应用识别服务未就绪")

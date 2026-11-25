@@ -1,3 +1,4 @@
+import type { SegmentFlowSource } from './packetInspection';
 import { readonly, shallowRef } from 'vue';
 import type { Principal, SearchRequest } from './types';
 import { instant } from './utils/instant';
@@ -103,7 +104,13 @@ export class ApiClient {
     return blob;
   }
 
-  async downloadPacket(path: string, signal?: AbortSignal, submission?: SessionExportRequest): Promise<Blob> {
+  async downloadPacket(
+    path: string,
+    signal?: AbortSignal,
+    submission?: SessionExportRequest | Pick<SegmentFlowSource, 'flow' | 'retention'>,
+  ): Promise<Blob> {
+    const segment = submission && 'flow' in submission ? submission : undefined;
+    const mode = submission && ('mode' in submission ? submission.mode : 'snapshot');
     const epoch = this.authEpoch,
       response = await this.fetch(path, {
         method: submission ? 'POST' : 'GET',
@@ -112,7 +119,7 @@ export class ApiClient {
         ...(submission
           ? {
               headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf },
-              body: JSON.stringify(submission),
+              body: JSON.stringify(segment?.flow ?? submission),
             }
           : {}),
       });
@@ -129,7 +136,11 @@ export class ApiClient {
         body.request_id,
       );
     }
-    if (submission && response.headers.get('X-Session-Completeness') !== submission.mode) {
+    if (
+      mode &&
+      (response.headers.get('X-Session-Completeness') !== mode ||
+        (segment && response.headers.get('X-Packet-Retention') !== segment.retention))
+    ) {
       await response.body?.cancel();
       throw new ApiError(502, 'invalid_session_export', '会话导出范围与所选模式不一致，请重新核查');
     }

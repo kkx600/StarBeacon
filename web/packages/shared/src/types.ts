@@ -290,6 +290,7 @@ export const taskNames: Record<string, string> = {
   diagnostics: '运行诊断',
   'applications.apply': '应用规则部署',
   'capture.configure': '采集配置',
+  'packet.retention.configure': '全流量留存策略',
   'rules.validate': '规则装载检查',
   'rules.apply': '规则发布',
   'rules.reconcile': '规则核实',
@@ -331,6 +332,8 @@ export const taskCodes: Record<string, string> = {
   invalid_execution_result: '执行结果不符合约定',
   managed_rules_mismatch: '规则来源证据不足',
   rule_reload_failed_rolled_back: '规则重载失败，已恢复原规则',
+  packet_retention_changed: '采集器留存配置已变化，请刷新后核对',
+  packet_retention_write_failed: '留存配置未保存，需核对采集器存储',
 };
 Object.assign(taskCodes, {
   engine_isolation_unavailable: '检测引擎隔离环境异常',

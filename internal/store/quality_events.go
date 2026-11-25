@@ -163,7 +163,7 @@ func (s *Elasticsearch) QualityEvents(ctx context.Context, tenant, sensor, regis
 			extra = append(extra, map[string]any{"term": map[string]string{pair.field: pair.value}})
 		}
 	}
-	page, err := s.searchEvents(ctx, tenant, q, "context", []string{"quality"}, extra)
+	page, err := s.searchEvents(ctx, tenant, q, "context", []string{"quality"}, extra, nil)
 	if err != nil {
 		return result, err
 	}

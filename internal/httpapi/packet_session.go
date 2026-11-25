@@ -38,6 +38,18 @@ func PacketSessionFailure(w http.ResponseWriter, r *http.Request, request packet
 }
 
 func SendPacketSession(ctx context.Context, w http.ResponseWriter, r *http.Request, output *os.File, id, completeness string, authorize func() bool) {
+	sendPacketFile(ctx, w, r, output, "session-"+id+".pcapng", completeness, "", authorize)
+}
+
+func SendPacketFlowSnapshot(ctx context.Context, w http.ResponseWriter, r *http.Request, output *os.File, id, retention string, authorize func() bool) {
+	name := "snapshot-" + id
+	if retention == "policy_truncated" {
+		name += "-partial"
+	}
+	sendPacketFile(ctx, w, r, output, name+".pcapng", "snapshot", retention, authorize)
+}
+
+func sendPacketFile(ctx context.Context, w http.ResponseWriter, r *http.Request, output *os.File, name, completeness, retention string, authorize func() bool) {
 	if _, err := output.Seek(0, io.SeekStart); err != nil {
 		Fail(w, r, 503, "packet_staging_unavailable", "会话导出制品不可读取")
 		return
@@ -56,11 +68,14 @@ func SendPacketSession(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-pcapng")
-	w.Header().Set("Content-Disposition", `attachment; filename="session-`+id+`.pcapng"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
 	w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-SHA256", hex.EncodeToString(hash.Sum(nil)))
 	w.Header().Set("X-Session-Completeness", completeness)
+	if retention != "" {
+		w.Header().Set("X-Packet-Retention", retention)
+	}
 	if _, err = io.Copy(w, output); err != nil {
 		panic(http.ErrAbortHandler)
 	}

@@ -4,7 +4,11 @@ import { DOMWrapper, flushPromises, mount } from '@vue/test-utils';
 import { registerAnt } from '../packages/shared/src/ant';
 import type { ApiClient } from '../packages/shared/src/api';
 import type { PacketRecord } from '../packages/shared/src/packetArchives';
-import { verifyPacketInspection, type PacketInspection } from '../packages/shared/src/packetInspection';
+import {
+  verifyPacketInspection,
+  type PacketInspection,
+  type SegmentFlowSource,
+} from '../packages/shared/src/packetInspection';
 import Inspector from '../packages/shared/src/components/PacketInspector.vue';
 import { click, button, deferred } from './fixtures';
 
@@ -144,6 +148,51 @@ describe('原包协议回执核验', () => {
 });
 
 describe('原包协议查看交互', () => {
+  it('会话分段按指定端点读取，并拒绝来自另一 VLAN 的原包', async () => {
+    const flow: SegmentFlowSource = {
+      archiveID: record.id,
+      retention: 'policy_truncated',
+      interface: 'eth0',
+      count: 1,
+      first: stamp,
+      last: stamp,
+      flow: {
+        endpoint_a: '192.0.2.1:30000',
+        endpoint_b: '[2001:db8::9]:8080',
+        transport: 'tcp',
+        vlan: '42',
+        manifest_sha256: result.manifest_sha256,
+        archive_raw_sha256: result.raw_sha256,
+      },
+    };
+    const packet = { ...result, total: flow.count, retention: flow.retention, flow: flow.flow };
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce({ ...packet, flow: { ...flow.flow, vlan: '43' } })
+      .mockResolvedValue(packet);
+    const wrapper = mount(Inspector, {
+      props: { api: { request } as unknown as ApiClient, record: null, flow },
+      attachTo: document.body,
+      global: { plugins: [registerAnt] },
+    });
+    try {
+      await vi.waitFor(() => expect(scope().text()).toContain('原包回执与所选会话分段不一致'));
+      expect(scope().text()).not.toContain('实际捕获字节');
+      await click('重试');
+      await vi.waitFor(() => expect(scope().text()).toContain(result.packet_sha256));
+      expect(scope().text()).toContain('会话分段逐包查看');
+      expect(button('下一包').disabled).toBe(true);
+      expect(request).toHaveBeenCalledTimes(2);
+      expect(request).toHaveBeenLastCalledWith('/packet-archives/packet_owned/flow-packets/1', {
+        method: 'POST',
+        signal: expect.any(AbortSignal),
+        body: flow.flow,
+      });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it('真实弹窗只有协议字段和原字节，保留纳秒时间与副本区别', async () => {
     const request = vi.fn().mockResolvedValue(result),
       wrapper = await show({ request } as unknown as ApiClient);

@@ -87,6 +87,9 @@ func (w *WAL) Health(ctx context.Context, path string) model.HostHealth {
 	}
 	if w.packetArchives != nil {
 		h.PacketArchive = w.packetArchives.JSON()
+		if w.packetArchives.retentionManaged() {
+			h.PacketRetention, _ = json.Marshal(w.packetArchives.retentionStatus())
+		}
 	}
 	if capabilities != nil {
 		h.TaskCapabilities = capabilities()

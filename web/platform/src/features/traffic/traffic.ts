@@ -46,6 +46,7 @@ export interface TrafficDetails {
   community_id: string;
   packet_source: string;
   direction: string;
+  segment?: unknown;
 }
 export interface TrafficRecord extends Alert {
   details: TrafficDetails;
@@ -152,7 +153,10 @@ export function validTrafficResult(value: unknown, query: TrafficQuery, tenant: 
       row.tenant_id !== tenant ||
       typeof row.sensor_id !== 'string' ||
       !object(row.event) ||
-      !Object.hasOwn(trafficKinds, String(row.event.kind)) ||
+      !(
+        Object.hasOwn(trafficKinds, String(row.event.kind)) ||
+        (query.event_kind === 'flow_segment' && row.event.kind === 'flow_segment')
+      ) ||
       typeof row.event.original !== 'string' ||
       !['source', 'destination', 'network', 'http', 'suricata', 'rule'].every(k => object(row[k])) ||
       typeof row['@timestamp'] !== 'string' ||

@@ -422,6 +422,15 @@
       "view": "events"
     },
     {
+      "id": "full-traffic",
+      "workspace": "sessions",
+      "path": "/traffic/full-traffic",
+      "title": "全流量回溯",
+      "module": "traffic",
+      "view": "full-traffic",
+      "admin": true
+    },
+    {
       "id": "packet-archives",
       "workspace": "sessions",
       "path": "/traffic/archives",

@@ -152,7 +152,7 @@ func (p *Postgres) LoginAudit(ctx context.Context, u model.Principal, success bo
 func (p *Postgres) Sensors(ctx context.Context, tenant string) ([]model.Sensor, error) {
 	out := make([]model.Sensor, 0)
 	e := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		rows, e := tx.Query(ctx, "SELECT id,name,registration_id,active,created_at,last_seen,health,metadata_revision,COALESCE(group_id,''),site,description,metadata_updated_at FROM sensors WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 500", tenant)
+		rows, e := tx.Query(ctx, "SELECT id,name,registration_id,active,created_at,last_seen,health - 'packet_retention',metadata_revision,COALESCE(group_id,''),site,description,metadata_updated_at FROM sensors WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 500", tenant)
 		if e != nil {
 			return e
 		}

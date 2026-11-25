@@ -26,7 +26,7 @@ func (p *Postgres) Sensor(ctx context.Context, tenant, id string) (model.Sensor,
 		return s, pgx.ErrNoRows
 	}
 	err := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `SELECT s.id,s.name,s.registration_id,s.active,s.created_at,s.last_seen,s.health,s.metadata_revision,COALESCE(s.group_id,''),COALESCE(g.name,''),s.site,s.description,s.metadata_updated_at,
+		return tx.QueryRow(ctx, `SELECT s.id,s.name,s.registration_id,s.active,s.created_at,s.last_seen,s.health - 'packet_retention',s.metadata_revision,COALESCE(s.group_id,''),COALESCE(g.name,''),s.site,s.description,s.metadata_updated_at,
  CASE WHEN NOT s.active THEN 'disabled' WHEN s.last_seen>now()-interval '35 seconds' THEN 'online' ELSE 'offline' END
  FROM sensors s LEFT JOIN sensor_groups g ON g.tenant_id=s.tenant_id AND g.id=s.group_id WHERE s.tenant_id=$1 AND s.id=$2`, tenant, id).Scan(&s.ID, &s.Name, &s.RegistrationID, &s.Active, &s.CreatedAt, &s.LastSeen, &s.Health, &s.MetadataRevision, &s.GroupID, &s.GroupName, &s.Site, &s.Description, &s.MetadataUpdatedAt, &s.Status)
 	})
@@ -121,7 +121,7 @@ func (p *Postgres) SensorDirectory(ctx context.Context, tenant string, q sensorm
 	}
 	err := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
 		pattern := "%" + strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(q.Keyword) + "%"
-		rows, err := tx.Query(ctx, `SELECT s.id,s.name,s.registration_id,s.active,s.created_at,s.last_seen,s.health,s.metadata_revision,COALESCE(s.group_id,''),COALESCE(g.name,''),s.site,s.description,s.metadata_updated_at,
+		rows, err := tx.Query(ctx, `SELECT s.id,s.name,s.registration_id,s.active,s.created_at,s.last_seen,s.health - 'packet_retention',s.metadata_revision,COALESCE(s.group_id,''),COALESCE(g.name,''),s.site,s.description,s.metadata_updated_at,
  CASE WHEN NOT s.active THEN 'disabled' WHEN s.last_seen>now()-interval '35 seconds' THEN 'online' ELSE 'offline' END AS status
  FROM sensors s LEFT JOIN sensor_groups g ON g.tenant_id=s.tenant_id AND g.id=s.group_id
  WHERE s.tenant_id=$1 AND s.id>$2 AND (s.name ILIKE $3 ESCAPE '!' OR s.id ILIKE $3 ESCAPE '!' OR s.site ILIKE $3 ESCAPE '!')

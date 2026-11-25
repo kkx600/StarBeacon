@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -50,6 +50,13 @@ async function routerFor(path: string) {
 }
 
 describe('业务导航与路由契约', () => {
+  beforeAll(async () => {
+    // 先加载真实路由组件，避免模块冷编译耗时占用交互用例的期限。
+    await Promise.all([
+      import('../platform/src/views/RulesView.vue'),
+      import('../platform/src/views/CorrelationView.vue'),
+    ]);
+  });
   it('从检测规则入口可进入关联目录和回测，并能返回规则包，专属选择不泄漏到其他页面', async () => {
     const router = await routerFor('/detection/rules/packages?start=2026-10-19#scope');
     const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
@@ -231,7 +238,7 @@ describe('业务导航与路由契约', () => {
     const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
     await flushPromises();
     const categories = wrapper.get('nav[aria-label="设置分类"]');
-    expect(categories.findAll('a').map(link => link.text())).toEqual(['用户管理', '功能目录']);
+    expect(categories.findAll('a').map(link => link.text())).toEqual(['用户管理', '全流量存储', '功能目录']);
     expect(categories.get('[aria-current="page"]').text()).toBe('用户管理');
     expect(wrapper.get('section[aria-label="用户管理"] h2').text()).toBe('用户管理');
     expect(request.mock.calls.some(([path]) => String(path).startsWith('/users?'))).toBe(true);

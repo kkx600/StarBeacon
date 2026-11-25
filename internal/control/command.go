@@ -229,6 +229,8 @@ func Validate(c Command) error {
 		return errors.New("任务参数无效")
 	}
 	switch c.Kind {
+	case PacketRetentionConfigure:
+		return validatePacketRetention(c.Payload)
 	case "applications.apply":
 		p, err := application.ReadPackage(c.Payload)
 		if err == nil && p.ExpectedRegistrationID != c.RegistrationID {

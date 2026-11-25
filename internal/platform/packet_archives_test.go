@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -141,5 +142,75 @@ func TestPacketHTTPBudgetsRejectBeforeDatabaseAndObjectAccess(t *testing.T) {
 				t.Fatal("超过处理预算仍访问数据库", response.Code, response.Body.String())
 			}
 		})
+	}
+}
+
+func TestSegmentFlowHTTPRejectsScopeAndRespectsBothReadBudgets(t *testing.T) {
+	objects, err := packetarchive.NewLocalObjects(filepath.Join(t.TempDir(), "objects"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := &API{DB: &store.Postgres{}, Packets: objects, PacketStaging: t.TempDir()}
+	digest := strings.Repeat("a", 64)
+	body := `{"endpoint_a":"192.0.2.1:20000","endpoint_b":"198.51.100.2:80","transport":"tcp","manifest_sha256":"` + digest + `","archive_raw_sha256":"` + digest + `"}`
+	check := func(handler http.HandlerFunc, id, number, query, input string, status int, code string) {
+		t.Helper()
+		r := httptest.NewRequest("POST", "/flow"+query, strings.NewReader(input))
+		r.SetPathValue("id", id)
+		r.SetPathValue("number", number)
+		r.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		handler(response, r)
+		if response.Code != status || !strings.Contains(response.Body.String(), code) {
+			t.Fatalf("会话读取应返回 %d %s，实得 %d %s", status, code, response.Code, response.Body)
+		}
+	}
+	check(api.packetFlow, "outside/owned", "", "", body, 400, "invalid_flow_segment")
+	check(api.packetFlow, "packet_owned", "", "?retention=retained", body, 400, "invalid_flow_segment")
+	check(api.packetFlow, "packet_owned", "", "", `{}`, 400, "invalid_flow_segment")
+	check(api.packetFlow, "packet_owned", "01", "", body, 400, "invalid_packet_number")
+	check((&API{}).packetFlow, "packet_owned", "", "", body, 503, "packet_storage_unavailable")
+	for _, action := range []struct {
+		number string
+		slots  chan struct{}
+	}{{"", sessionExports}, {"1", packetDownloads}} {
+		t.Run(action.number, func(t *testing.T) {
+			for range cap(action.slots) {
+				action.slots <- struct{}{}
+			}
+			defer func() {
+				for range cap(action.slots) {
+					<-action.slots
+				}
+			}()
+			check(api.packetFlow, "packet_owned", action.number, "", body, 429, "packet_download_busy")
+		})
+	}
+}
+
+func TestPacketRetentionHTTPRejectsUnavailableSigningAndAmbiguousInput(t *testing.T) {
+	api := &API{DB: &store.Postgres{}, Signer: ed25519.NewKeyFromSeed(make([]byte, ed25519.SeedSize))}
+	for _, tc := range []struct {
+		method, query, key, id, code string
+		handler                      http.HandlerFunc
+		status                       int
+	}{
+		{"GET", "?sensor_id=one", "", "", "invalid_request", api.packetStorageSettings, 400},
+		{"GET", "", "", "", "storage_unavailable", (&API{}).packetStorageSettings, 503},
+		{"GET", "", "", "", "storage_unavailable", api.packetStorageSettings, 503},
+		{"POST", "", "valid-retention", "sensor_owned", "signer_unavailable", (&API{}).applyPacketRetention, 503},
+		{"POST", "", "short", "sensor_owned", "idempotency_key_required", api.applyPacketRetention, 400},
+		{"POST", "?revision=2", "valid-retention", "sensor_owned", "invalid_packet_retention", api.applyPacketRetention, 400},
+		{"POST", "", "valid-retention", "sensor_owned", "invalid_packet_retention", api.applyPacketRetention, 400},
+	} {
+		r := httptest.NewRequest(tc.method, "/packet-retention"+tc.query, strings.NewReader(`{"policy":{}}`))
+		r.SetPathValue("id", tc.id)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Idempotency-Key", tc.key)
+		response := httptest.NewRecorder()
+		tc.handler(response, r)
+		if response.Code != tc.status || !strings.Contains(response.Body.String(), tc.code) {
+			t.Fatalf("%s %s 应返回 %d %s，实得 %d %s", tc.method, tc.query, tc.status, tc.code, response.Code, response.Body)
+		}
 	}
 }

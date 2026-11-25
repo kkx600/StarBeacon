@@ -360,7 +360,7 @@ func ValidateSearch(q *model.SearchRequest) error {
 	return nil
 }
 func (s *Elasticsearch) Search(ctx context.Context, tenant string, q model.SearchRequest) (model.SearchResult, error) {
-	return s.searchEvents(ctx, tenant, q, "alerts", []string{"alert"}, nil)
+	return s.searchEvents(ctx, tenant, q, "alerts", []string{"alert"}, nil, nil)
 }
 
 var trafficKinds = []string{"flow", "http", "http2", "dns", "tls", "quic", "ssh", "smtp", "ftp", "smb", "nfs", "dhcp", "rdp", "anomaly", "fileinfo"}
@@ -398,7 +398,7 @@ func ValidateTrafficSearch(q *model.TrafficSearchRequest) error {
 			return fmt.Errorf("流标识必须为规范的 64 位无符号十进制整数")
 		}
 	}
-	return nil
+	return validatePacketSessionSearch(q)
 }
 
 func (s *Elasticsearch) SearchTraffic(ctx context.Context, tenant string, q model.TrafficSearchRequest) (model.SearchResult, error) {
@@ -406,7 +406,14 @@ func (s *Elasticsearch) SearchTraffic(ctx context.Context, tenant string, q mode
 		return model.SearchResult{}, err
 	}
 	kinds, filters := trafficScope(q)
-	return s.searchEvents(ctx, tenant, q.SearchRequest, "context", kinds, filters)
+	var runtime map[string]any
+	if q.EventKind == traffic.PacketSessionKind {
+		filters = packetSessionSearchFilters(q, filters)
+		if q.Retention != "" {
+			runtime = packetSessionRetentionMapping()
+		}
+	}
+	return s.searchEvents(ctx, tenant, q.SearchRequest, "context", kinds, filters, runtime)
 }
 
 func trafficScope(q model.TrafficSearchRequest) ([]string, []any) {
@@ -426,7 +433,7 @@ func trafficScope(q model.TrafficSearchRequest) ([]string, []any) {
 	return kinds, filters
 }
 
-func (s *Elasticsearch) searchEvents(ctx context.Context, tenant string, q model.SearchRequest, stream string, kinds []string, extra []any) (model.SearchResult, error) {
+func (s *Elasticsearch) searchEvents(ctx context.Context, tenant string, q model.SearchRequest, stream string, kinds []string, extra []any, runtime map[string]any) (model.SearchResult, error) {
 	result := model.SearchResult{Items: []model.Alert{}, Page: q.Page, PageSize: q.PageSize}
 	if !contract.ValidID(tenant) {
 		return result, fmt.Errorf("租户标识不合法")
@@ -442,7 +449,11 @@ func (s *Elasticsearch) searchEvents(ctx context.Context, tenant string, q model
 	if e != nil {
 		return result, e
 	}
-	body, _ := json.Marshal(map[string]any{"from": (q.Page - 1) * q.PageSize, "size": q.PageSize, "track_total_hits": true, "timeout": "5s", "query": map[string]any{"bool": boolQuery}, "sort": []any{map[string]string{"@timestamp": "desc"}, map[string]string{"event_id": "asc"}}})
+	request := map[string]any{"from": (q.Page - 1) * q.PageSize, "size": q.PageSize, "track_total_hits": true, "timeout": "5s", "query": map[string]any{"bool": boolQuery}, "sort": []any{map[string]string{"@timestamp": "desc"}, map[string]string{"event_id": "asc"}}}
+	if runtime != nil {
+		request["runtime_mappings"] = runtime
+	}
+	body, _ := json.Marshal(request)
 	return s.readEventPage(ctx, tenant, q, stream, kinds, body)
 }
 

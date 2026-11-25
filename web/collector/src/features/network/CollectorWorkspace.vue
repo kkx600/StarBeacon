@@ -11,6 +11,7 @@ import CollectorSyslogPanel from './CollectorSyslogPanel.vue';
 import CollectorIdentity from './CollectorIdentity.vue';
 import ResponseConnectors from '@starbeacon/shared/components/ResponseConnectors.vue';
 import ResponseConfiguration from './ResponseConfiguration.vue';
+import LocalPacketRetention from './LocalPacketRetention.vue';
 import CaptureForm from '@starbeacon/shared/components/CaptureForm.vue';
 import AsyncWorkspaceState from '@starbeacon/shared/components/AsyncWorkspaceState.vue';
 import WorkspaceTabs from '@starbeacon/shared/components/WorkspaceTabs.vue';
@@ -105,27 +106,29 @@ async function submit(settings: CaptureSettings) {
       ><a-button :disabled="saving" @click="protocolsOpen = true">协议能力</a-button
       ><a-button v-if="observed" :loading="pending" :disabled="saving" @click="refresh">刷新</a-button>
     </PageHeader>
-    <StatePanel
-      v-if="observed"
-      :loading="pending"
-      :error="error"
-      :empty="view === 'overview' && !health && !pending && !error"
-      description="尚未取得本机运行状态。"
-      @retry="refresh"
-    >
-      <template v-if="view === 'overview'"><HealthSummary v-if="health" :health="health" /></template>
-      <CollectorInterfacePanel v-else-if="view === 'interfaces'" :interfaces="interfaces" />
-      <CollectorSyslogPanel v-else-if="view === 'syslog'" :health="health" />
-      <template v-else-if="view === 'responses'"
-        ><ResponseConfiguration /><ResponseConnectors :items="health?.response_connectors ?? []"
-      /></template>
-      <section v-else class="panel">
-        <div class="panel-header"><h2>采集配置</h2></div>
-        <div class="panel-body">
-          <CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" />
-        </div>
-      </section>
-    </StatePanel>
+    <template v-if="observed">
+      <StatePanel
+        :loading="pending"
+        :error="error"
+        :empty="view === 'overview' && !health && !pending && !error"
+        description="尚未取得本机运行状态。"
+        @retry="refresh"
+      >
+        <template v-if="view === 'overview'"><HealthSummary v-if="health" :health="health" /></template>
+        <CollectorInterfacePanel v-else-if="view === 'interfaces'" :interfaces="interfaces" />
+        <CollectorSyslogPanel v-else-if="view === 'syslog'" :health="health" />
+        <template v-else-if="view === 'responses'"
+          ><ResponseConfiguration /><ResponseConnectors :items="health?.response_connectors ?? []"
+        /></template>
+        <section v-else class="panel">
+          <div class="panel-header"><h2>采集配置</h2></div>
+          <div class="panel-body">
+            <CaptureForm :interfaces="interfaces" :capture="capture" :saving="saving" @save="submit" />
+          </div>
+        </section>
+      </StatePanel>
+      <LocalPacketRetention v-if="view === 'capture'" />
+    </template>
     <CollectorIdentity v-else-if="view === 'identity'" />
     <PacketArchiveWorkspace v-else-if="view === 'archives'" :api="session.api" local />
     <ReplayWorkspace

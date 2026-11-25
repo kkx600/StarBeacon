@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"io"
 	"net/netip"
-	"slices"
 	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/packetpolicy"
 	bolt "go.etcd.io/bbolt"
 )
 
 const (
-	RetentionSmart     = "smart"
-	RetentionFull      = "full"
-	RetentionAlertOnly = "alert_only"
+	RetentionSmart     = packetpolicy.Smart
+	RetentionFull      = packetpolicy.Full
+	RetentionAlertOnly = packetpolicy.AlertOnly
 
 	retainAll       = "retained"
 	retainPrefix    = "policy_truncated"
@@ -26,24 +26,13 @@ const (
 	alertGap        = "packet_seal_alert_window_unavailable"
 	sessionBudget   = "packet_seal_session_budget"
 
-	maxPolicyRevision = 1<<53 - 1
 	maxSessionRecords = 1024
-	maxPolicyBytes    = 16 * 1024
+	maxPolicyBytes    = packetpolicy.MaxBytes
 )
 
 var retentionPolicies = []byte("packet_retention_policies")
 
-// RetentionPolicy 由采集器读取，封段时冻结。IP 和网段名单只影响留存决策。
-type RetentionPolicy struct {
-	NetworkDomain  string         `json:"network_domain"`
-	Revision       uint64         `json:"revision"`
-	Mode           string         `json:"mode"`
-	EncryptedBytes *int           `json:"encrypted_bytes,omitempty"`
-	PlainBytes     int            `json:"plain_bytes,omitempty"`
-	DedupMillis    *int           `json:"dedup_millis,omitempty"`
-	Protect        []netip.Prefix `json:"protect,omitempty"`
-	Observe        []netip.Prefix `json:"observe,omitempty"`
-}
+type RetentionPolicy = packetpolicy.Policy
 
 func readRetentionPolicy(path string) (RetentionPolicy, error) {
 	policy := RetentionPolicy{Mode: RetentionSmart, PlainBytes: 1 << 20}
@@ -59,38 +48,13 @@ func readRetentionPolicy(path string) (RetentionPolicy, error) {
 		return policy, err
 	}
 	fields := []string{"network_domain", "revision", "mode", "encrypted_bytes", "plain_bytes", "dedup_millis", "protect", "observe"}
-	if contract.JSONFields(string(raw), fields, maxPolicyBytes) != nil || json.Unmarshal(raw, &policy) != nil || !policy.valid() {
+	if contract.JSONFields(string(raw), fields, maxPolicyBytes) != nil || json.Unmarshal(raw, &policy) != nil || !policy.Valid() {
 		return policy, ErrIntegrity
 	}
 	return policy, nil
 }
 
-func retentionMode(mode string) bool {
-	return mode == RetentionSmart || mode == RetentionFull || mode == RetentionAlertOnly
-}
-
-func (p RetentionPolicy) valid() bool {
-	if !contract.ValidID(p.NetworkDomain) || p.Revision == 0 || p.Revision > maxPolicyRevision || !retentionMode(p.Mode) ||
-		p.PlainBytes < 64<<10 || p.PlainBytes > 64<<20 || p.EncryptedBytes == nil || *p.EncryptedBytes < 0 || *p.EncryptedBytes > 1<<20 ||
-		p.DedupMillis == nil || *p.DedupMillis != 0 && (*p.DedupMillis < 10 || *p.DedupMillis > 500) {
-		return false
-	}
-	for _, list := range [][]netip.Prefix{p.Protect, p.Observe} {
-		if len(list) > 128 {
-			return false
-		}
-		seen := make(map[netip.Prefix]bool, len(list))
-		for _, prefix := range list {
-			if !prefix.IsValid() || prefix.Addr().Is4In6() || prefix.Masked() != prefix || seen[prefix] {
-				return false
-			}
-			seen[prefix] = true
-		}
-	}
-	return true
-}
-
-func (p RetentionPolicy) protects(key flowKey) bool {
+func retentionProtects(p RetentionPolicy, key flowKey) bool {
 	for _, list := range [][]netip.Prefix{p.Protect, p.Observe} {
 		for _, prefix := range list {
 			if prefix.Contains(key.A.Addr()) || prefix.Contains(key.B.Addr()) {
@@ -152,10 +116,10 @@ func (r RetentionSummary) valid(c Capture) bool {
 		if r.NetworkDomain != "" || r.Degradation != invalidPolicy {
 			return false
 		}
-	} else if r.PolicyRevision > maxPolicyRevision || !contract.ValidID(r.NetworkDomain) {
+	} else if r.PolicyRevision > packetpolicy.MaxRevision || !contract.ValidID(r.NetworkDomain) {
 		return false
 	}
-	return retentionMode(r.Mode) && r.OriginalPackets >= c.Packets && r.OriginalPackets <= 1048576 &&
+	return packetpolicy.ValidMode(r.Mode) && r.OriginalPackets >= c.Packets && r.OriginalPackets <= 1048576 &&
 		r.OriginalBytes >= r.OriginalPackets && r.OriginalBytes <= uint64(MaxSegmentBytes) && r.OriginalBytes >= r.RetainedBytes &&
 		r.RetainedBytes == c.PacketBytes && r.DuplicateBytes <= r.OriginalBytes-r.RetainedBytes &&
 		r.UnclassifiedBytes <= r.OriginalBytes && r.UnclassifiedRetainedBytes <= r.UnclassifiedBytes &&
@@ -207,7 +171,9 @@ type sealPlan struct {
 func freezeRetention(tx *bolt.Tx, policy RetentionPolicy, failed bool) (*sealPlan, error) {
 	plan := &sealPlan{Policy: policy, AlertCutoff: uint64(tx.ID())}
 	if failed {
-		plan.Policy = RetentionPolicy{Mode: RetentionFull}
+		if !policy.Valid() {
+			plan.Policy = RetentionPolicy{Mode: RetentionFull}
+		}
 		plan.Degradation = invalidPolicy
 		return plan, nil
 	}
@@ -218,11 +184,11 @@ func freezeRetention(tx *bolt.Tx, policy RetentionPolicy, failed bool) (*sealPla
 	key := []byte(policy.NetworkDomain)
 	var previous RetentionPolicy
 	if raw := bucket.Get(key); raw != nil {
-		if json.Unmarshal(raw, &previous) != nil || !previous.valid() {
+		if json.Unmarshal(raw, &previous) != nil || !previous.Valid() {
 			return nil, ErrIntegrity
 		}
 	}
-	if policy.Revision < previous.Revision || policy.Revision == previous.Revision && !sameRetentionPolicy(previous, policy) {
+	if policy.Revision < previous.Revision || policy.Revision == previous.Revision && !previous.Equal(policy) {
 		plan.Policy, plan.Degradation = previous, invalidPolicy
 		return plan, nil
 	}
@@ -244,12 +210,6 @@ func freezeRetention(tx *bolt.Tx, policy RetentionPolicy, failed bool) (*sealPla
 		plan.Degradation = skipClustering
 	}
 	return plan, nil
-}
-
-func sameRetentionPolicy(a, b RetentionPolicy) bool {
-	return a.NetworkDomain == b.NetworkDomain && a.Mode == b.Mode && a.Revision == b.Revision &&
-		*a.EncryptedBytes == *b.EncryptedBytes && a.PlainBytes == b.PlainBytes && *a.DedupMillis == *b.DedupMillis &&
-		slices.Equal(a.Protect, b.Protect) && slices.Equal(a.Observe, b.Observe)
 }
 
 func (p sealPlan) rawFallback() bool {

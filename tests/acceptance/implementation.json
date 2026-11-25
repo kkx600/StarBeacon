@@ -809,11 +809,25 @@
         "internal/packetarchive/flow_observation.go",
         "internal/store/packet_session_projection.go",
         "internal/worker/packet_sessions.go",
-        "migrations/00058_packet_session_outbox.sql"
+        "migrations/00058_packet_session_outbox.sql",
+        "internal/packetpolicy/policy.go",
+        "internal/packetarchive/retention_settings.go",
+        "internal/agent/packet_retention.go",
+        "internal/store/packet_retention.go",
+        "internal/platform/packet_retention.go",
+        "internal/store/packet_session_search.go",
+        "internal/packetarchive/segment_flow.go",
+        "internal/platform/packet_flow.go",
+        "web/platform/src/features/traffic/FullTrafficWorkspace.vue",
+        "web/platform/src/features/settings/PacketStorageSettings.vue",
+        "web/collector/src/features/network/LocalPacketRetention.vue"
       ],
       "pages": [
         "platform:/traffic/archives",
-        "collector:/network/archives"
+        "collector:/network/archives",
+        "platform:/traffic/full-traffic",
+        "platform:/system/settings?section=traffic",
+        "collector:/network/capture"
       ],
       "tests": [
         "internal/packetarchive/codec_test.go",
@@ -840,9 +854,14 @@
         "internal/agent/packet_session_test.go",
         "tests/integration/packet_segment_index_test.go",
         "internal/packetarchive/flow_observation_test.go",
-        "internal/store/packet_session_projection_test.go"
+        "internal/store/packet_session_projection_test.go",
+        "internal/packetarchive/retention_settings_test.go",
+        "internal/packetarchive/segment_flow_test.go",
+        "internal/packetpolicy/policy_test.go",
+        "internal/store/packet_session_search_test.go",
+        "web/tests/packet-flow-workspaces.test.ts"
       ],
-      "boundary": "独立 AF_PACKET 原包捕获、无损 Zstandard 独立帧、精确摘要与 mTLS、不可变对象版本、私有暂存、全部租户共享的平台原包存储（不设租户额度，剩余空间低于阈值或总量超过可选上限时按全局最早归档回收，传输或导出中的原包跳过）、默认 180 天或自定义最长期限、确认后回收。本机与平台原包目录、详情、核验下载和访问审计。 试行采集器原样写入热段，封段冻结三种留存策略、名单快照及已持久化的告警范围。目录保留会话的原始和保留字节、修订及裁剪标记。已裁剪的会话拒绝完整导出，压力降级写入目录与采集器质量区。两端按实际捕获序号查看单个 Ethernet 帧：每次先完整核验归档，再由维护中的 gopacket 有界解码最多 16 层；显示实际 MAC/IP/端口/TCP 标志与序号、VLAN/ARP/ICMP/IPv6 分片字段、纳秒捕获时间、原始 HEX／UTF-8 与截断／卸载边界。发送前复核会话与管理员资格，审计失败不返回原字节。平台与采集器有界多切片会话导出：固定双方 IP/端口/MAC/VLAN，同注册/进程/配置，原始帧、纳秒时间和逐包来源映射；普通 TCP 握手、双向序号/冲突重传/FIN 核对，严格不足返回原因，快照须明确选择。定稿段按流聚簇并自适应选择帧编码，流表、帧位图和地址过滤器只读取并核验候选帧。采集器查询待确认制品，平台使用指定对象版本，损坏索引可重建。UDP 可生成快照。不含完整协议索引、随机包索引、应用流重组、TLS 解密、校验和确认、分卷、TFO/同时打开/RST 接受资格、保全、生产对象存储、HA 和海量吞吐资格。官方 S3 SDK 的受控协议测试不代替真实存储验收，不授予发布资格。 持久确认与会话窗口待办同事务登记。索引按归档和观察位置确定稳定标识，未知提交可安全重试。"
+      "boundary": "独立 AF_PACKET 原包捕获、无损 Zstandard 独立帧、精确摘要与 mTLS、不可变对象版本、私有暂存、全部租户共享的平台原包存储（不设租户额度，剩余空间低于阈值或总量超过可选上限时按全局最早归档回收，传输或导出中的原包跳过）、默认 180 天或自定义最长期限、确认后回收。本机与平台原包目录、详情、核验下载和访问审计。 试行采集器原样写入热段，封段冻结三种留存策略、名单快照及已持久化的告警范围。目录保留会话的原始和保留字节、修订及裁剪标记。已裁剪的会话拒绝完整导出，压力降级写入目录与采集器质量区。两端按实际捕获序号查看单个 Ethernet 帧：每次先完整核验归档，再由维护中的 gopacket 有界解码最多 16 层；显示实际 MAC/IP/端口/TCP 标志与序号、VLAN/ARP/ICMP/IPv6 分片字段、纳秒捕获时间、原始 HEX／UTF-8 与截断／卸载边界。发送前复核会话与管理员资格，审计失败不返回原字节。平台与采集器有界多切片会话导出：固定双方 IP/端口/MAC/VLAN，同注册/进程/配置，原始帧、纳秒时间和逐包来源映射；普通 TCP 握手、双向序号/冲突重传/FIN 核对，严格不足返回原因，快照须明确选择。定稿段按流聚簇并自适应选择帧编码，流表、帧位图和地址过滤器只读取并核验候选帧。采集器查询待确认制品，平台使用指定对象版本，损坏索引可重建。UDP 可生成快照。不含完整协议索引、随机包索引、应用流重组、TLS 解密、校验和确认、分卷、TFO/同时打开/RST 接受资格、保全、生产对象存储、HA 和海量吞吐资格。官方 S3 SDK 的受控协议测试不代替真实存储验收，不授予发布资格。 持久确认与会话窗口待办同事务登记。索引按归档和观察位置确定稳定标识，未知提交可安全重试。 全流量回溯按实际固定双向端点、时间和留存结果检索。定稿归档只读取并核验所选分段的候选帧。截断快照在文件与回执带有留存标记，仅元数据分段无原包操作。全流量存储设置读取采集器实际修订、热层暂存预留和温层租户用量。试行采集器通过本地设置或平台签名任务按修订和摘要比较更新，平台通过心跳同步实际策略。封段时持久冻结该窗口的配置。冷层用量仍待接入。"
     },
     {
       "id": "incidents",
@@ -2124,7 +2143,8 @@
         "完整发送前记录原包访问审计；浏览器接收后核验长度和 SHA-256",
         "采集器本机待确认制品详情与有界下载",
         "有界多切片普通 TCP 会话导出：原始三次握手、双向序号连续性及 FIN 核验，缺口明确拒绝",
-        "两端单个原包实际序号定位及协议／字节查看"
+        "两端单个原包实际序号定位及协议／字节查看",
+        "平台全流量回溯支持精确会话分段检索、逐包查看和有留存标记的 PCAPNG 快照"
       ],
       "remaining": [
         "异步取证任务、ZIP 制品、任务取消、下载授权与保全流程",
@@ -2954,7 +2974,8 @@
         "mTLS 上报、对象版本冻结与持久确认后回收",
         "容量预占与默认 180 天／自定义留存、失败恢复",
         "原包捕获状态与分段目录",
-        "有界多切片普通 TCP 会话原字节导出与逐包协议查看"
+        "有界多切片普通 TCP 会话原字节导出与逐包协议查看",
+        "试行采集器本地留存配置和平台签名下发共用修订，平台同步采集器实际策略和热温用量"
       ],
       "remaining": [
         "真实生产 S3 版本存储与全链路验收",

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/kkx600/StarBeacon/internal/clientip"
 	"io"
 	"net"
 	"net/http"
@@ -18,9 +17,12 @@ import (
 
 	"github.com/gopacket/gopacket/pcapgo"
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
+	"github.com/kkx600/StarBeacon/internal/clientip"
 	"github.com/kkx600/StarBeacon/internal/config"
+	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/packetpolicy"
 	"github.com/kkx600/StarBeacon/internal/testpcap"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
@@ -47,6 +49,63 @@ func packetControllerFixture(t *testing.T) (*PacketArchiveController, *WAL) {
 	}
 	w.packetArchives = p
 	return p, w
+}
+
+func TestLocalPacketRetentionRejectsUnmanagedAndCanceledChanges(t *testing.T) {
+	p, wal := packetControllerFixture(t)
+	read := func(path string, code int, state string) {
+		t.Helper()
+		w := httptest.NewRecorder()
+		wal.localPacketRetention(w, httptest.NewRequest("GET", path, nil))
+		if w.Code != code || !strings.Contains(w.Body.String(), state) {
+			t.Fatalf("留存配置读取应返回 %d %s，实得 %d %s", code, state, w.Code, w.Body)
+		}
+	}
+	path := "/packet-retention"
+	read(path+"?mode=full", 400, "invalid_request")
+	read(path, 200, `"state":"not_configured"`)
+	encrypted, dedup := 16384, 50
+	base := packetpolicy.Policy{NetworkDomain: "test_domain", Revision: 1, Mode: "full", EncryptedBytes: &encrypted, PlainBytes: 65536, DedupMillis: &dedup}
+	next := base
+	next.Revision, next.Mode = 2, "smart"
+	body, err := json.Marshal(packetpolicy.Change{ExpectedRevision: 1, ExpectedSHA256: base.Digest(), Policy: next})
+	if err != nil {
+		t.Fatal(err)
+	}
+	write := func(ctx context.Context, input []byte, code int, errorCode string) {
+		t.Helper()
+		r := httptest.NewRequestWithContext(ctx, "PUT", path, bytes.NewReader(input))
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		wal.saveLocalPacketRetention(w, r)
+		if w.Code != code || !strings.Contains(w.Body.String(), errorCode) {
+			t.Fatalf("留存策略写入应返回 %d %s，实得 %d %s", code, errorCode, w.Code, w.Body)
+		}
+	}
+	write(context.Background(), []byte(`{"policy":{}}`), 400, "invalid_packet_retention")
+	write(context.Background(), body, 409, "packet_retention_changed")
+	p.Spool.RetentionFile = filepath.Join(t.TempDir(), "retention.json")
+	read(path, 200, `"state":"unavailable"`)
+	file, err := json.Marshal(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p.Spool.RetentionFile, file, 0600); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	write(ctx, body, 503, "packet_retention_write_failed")
+	if _, code, err := p.executeRetention(ctx, control.Command{ID: "task_owned", Payload: body}); code != "packet_retention_write_failed" || !errors.Is(err, context.Canceled) {
+		t.Fatal("被取消的下发仍应用策略", code, err)
+	}
+	if _, code, err := p.executeRetention(context.Background(), control.Command{ID: "task_owned", Payload: json.RawMessage(`{}`)}); code != "invalid_packet_retention" || err == nil {
+		t.Fatal("无效策略未被拒绝", code, err)
+	}
+	active, err := p.Spool.RetentionObservation()
+	if err != nil || active.Origin != "file" || !active.Policy.Equal(base) {
+		t.Fatal("取消应保留原策略", active, err)
+	}
 }
 
 func localPacketFixture(t *testing.T, p *PacketArchiveController, id string, prepare bool) (packetarchive.LocalRecord, []byte) {

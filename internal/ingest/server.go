@@ -14,6 +14,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
+	"github.com/kkx600/StarBeacon/internal/packetpolicy"
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
 	"github.com/kkx600/StarBeacon/internal/store"
@@ -307,6 +308,14 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 				if m.PayloadSchema != "host.health.v1" || json.Unmarshal(m.PayloadJson, &h) != nil || h.ObservedAt.IsZero() || h.ProtocolCapabilities != nil && h.ProtocolCapabilities.Validate() != nil {
 					stop()
 					return status.Error(codes.InvalidArgument, "健康消息无效")
+				}
+				if len(h.PacketRetention) != 0 {
+					var retention packetpolicy.Status
+					if json.Unmarshal(h.PacketRetention, &retention) != nil || !retention.Valid() || len(h.PacketArchive) == 0 ||
+						retention.ObservedAt.Before(h.ObservedAt.Add(-time.Minute)) || retention.ObservedAt.After(h.ObservedAt.Add(time.Minute)) {
+						stop()
+						return status.Error(codes.InvalidArgument, "留存配置观测无效")
+					}
 				}
 				if len(h.SyslogSources) > syslogdata.MaxSources {
 					stop()

@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -267,6 +268,38 @@ func TestPacketArchivesMTLSUploadImmutableDownloadRLSAndRetentionRecovery(t *tes
 		require(t, e)
 		if len(entries) != 0 {
 			t.Fatal("逐包核验失败后没有回收暂存", entries)
+		}
+	})
+	t.Run("旧版归档的分段逐包查看保留授权和字节约束", func(t *testing.T) {
+		path := "/packet-archives/" + row.ID + "/flow-packets/1"
+		flow := map[string]string{
+			"endpoint_a": "192.0.2.10:40000", "endpoint_b": "198.51.100.20:80", "transport": "tcp",
+			"manifest_sha256": row.ManifestSHA256, "archive_raw_sha256": row.Manifest.Encoding.RawSHA256,
+		}
+		var view packetarchive.SegmentFlowInspection
+		httpA.request("POST", path, "", flow, &view, 200)
+		reader, e := pcapgo.NewNgReader(bytes.NewReader(raw), pcapgo.DefaultNgReaderOptions)
+		require(t, e)
+		frame, captured, e := reader.ReadPacketData()
+		require(t, e)
+		if view.Retention != "retained" || view.Total != 9 || view.PacketSHA256 != packetarchive.Digest(frame) ||
+			view.Packet != base64.StdEncoding.EncodeToString(frame) || !view.CapturedAt.Equal(captured.Timestamp) {
+			t.Fatal("旧版归档读取返回了不匹配的分段帧")
+		}
+		httpB.request("POST", path, "", flow, nil, 404)
+		httpViewer.request("POST", path, "", flow, nil, 403)
+		httpViewer.request("GET", "/packet-storage", "", nil, nil, 403)
+		flow["manifest_sha256"] = strings.Repeat("0", 64)
+		var rejected struct{ Code string }
+		httpA.request("POST", path, "", flow, &rejected, 409)
+		if rejected.Code != "packet_directory_changed" {
+			t.Fatal("旧目录摘要未在对象读取前被拒绝", rejected.Code)
+		}
+		flow["manifest_sha256"] = row.ManifestSHA256
+		inspectionObjects.setHook(func() error { return errors.New("验收对象暂不可读") })
+		httpA.request("POST", path, "", flow, &rejected, 503)
+		if rejected.Code != "packet_object_unconfirmed" {
+			t.Fatal("无法取得已确认对象时仍可读取", rejected.Code)
 		}
 	})
 	t.Run("实际会话导出与原包访问隔离", func(t *testing.T) {

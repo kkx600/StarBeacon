@@ -149,6 +149,8 @@ func LocalHandler(wal *WAL, auth *httpapi.Auth, statePath string, managers ...*T
 	}
 	httpapi.Health(m, func(ctx context.Context) error { _, _, e := wal.Stats(); return e })
 	registerLocalPackets(m, wal, auth)
+	m.HandleFunc("GET /api/local/v1/packet-retention", auth.Require(true, wal.localPacketRetention))
+	m.HandleFunc("PUT /api/local/v1/packet-retention", auth.Require(true, wal.saveLocalPacketRetention))
 	m.HandleFunc("GET /api/local/v1/identity", auth.Require(true, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RawQuery != "" {
 			httpapi.Fail(w, r, 400, "invalid_identity_request", "证书状态查询不接受额外参数")

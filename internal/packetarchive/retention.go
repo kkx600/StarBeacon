@@ -102,7 +102,7 @@ func scanRetention(ctx context.Context, source *os.File, c Capture, policy Reten
 			active[frame.key] = index
 			flows = append(flows, retentionFlowState{
 				RetentionSession: RetentionSession{flowKey: frame.key, FirstPacket: order, StartedAt: stamp, EndedAt: stamp, PolicyRevision: policy.Revision},
-				protected:        policy.protects(frame.key),
+				protected:        retentionProtects(policy, frame.key),
 			})
 		}
 		flow := &flows[index]
@@ -316,7 +316,7 @@ func (s *Spool) finalizeRetention(ctx context.Context, row LocalRecord, raw *os.
 	if plan.rawFallback() {
 		return fallback(plan.Degradation)
 	}
-	if !plan.Policy.valid() || plan.AlertCutoff == 0 {
+	if !plan.Policy.Valid() || plan.AlertCutoff == 0 {
 		return capture, nil, nil, ErrIntegrity
 	}
 	var alerts []retentionAlert

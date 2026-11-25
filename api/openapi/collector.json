@@ -2060,6 +2060,160 @@
           }
         }
       }
+    },
+    "/api/local/v1/packet-retention": {
+      "get": {
+        "summary": "读取本机留存配置",
+        "x-required-role": "admin",
+        "description": "返回本机当前修订、配置来源和暂存预留。尚未启用试行时返回 not_configured。",
+        "responses": {
+          "200": {
+            "description": "采集器当前留存配置和实际暂存预留。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketRetentionStatus"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "保存本机留存策略",
+        "x-required-role": "admin",
+        "description": "按期望修订和摘要原子比较更新。同一网络域的新修订必须加一。采集器把保存记录同步给平台。",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PacketRetentionChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "在本机持久化并记录审计，下一次封段使用新配置。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacketRetentionObservation"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "需要登录。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份缺少权限或请求校验失败。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "观测或对象的修订发生变化。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "签名、存储或对象校验服务异常。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2266,6 +2420,9 @@
           },
           "engine_health": {
             "$ref": "#/components/schemas/EngineHealth"
+          },
+          "packet_retention": {
+            "$ref": "#/components/schemas/PacketRetentionStatus"
           }
         },
         "required": [
@@ -2552,7 +2709,8 @@
               "response.block",
               "response.read",
               "response.revoke",
-              "applications.apply"
+              "applications.apply",
+              "packet.retention.configure"
             ]
           },
           "state": {
@@ -5024,6 +5182,189 @@
           "state",
           "original_bytes",
           "retained_bytes"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionPolicy": {
+        "type": "object",
+        "properties": {
+          "network_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "smart",
+              "full",
+              "alert_only"
+            ]
+          },
+          "encrypted_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1048576
+          },
+          "plain_bytes": {
+            "type": "integer",
+            "minimum": 65536,
+            "maximum": 67108864
+          },
+          "dedup_millis": {
+            "oneOf": [
+              {
+                "const": 0
+              },
+              {
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 500
+              }
+            ]
+          },
+          "protect": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 48,
+              "description": "规范化的 IPv4/IPv6 CIDR 网段，地址需对齐掩码。"
+            }
+          },
+          "observe": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 48,
+              "description": "规范化的 IPv4/IPv6 CIDR 网段，地址需对齐掩码。"
+            }
+          }
+        },
+        "required": [
+          "network_domain",
+          "revision",
+          "mode",
+          "encrypted_bytes",
+          "plain_bytes",
+          "dedup_millis"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionChange": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740990
+          },
+          "expected_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PacketRetentionPolicy"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "expected_sha256",
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionObservation": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/PacketRetentionPolicy"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "file",
+              "local",
+              "platform"
+            ]
+          },
+          "task_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "applied_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "policy",
+          "sha256",
+          "origin"
+        ],
+        "additionalProperties": false
+      },
+      "PacketRetentionStatus": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable",
+              "not_configured"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/PacketRetentionObservation"
+          },
+          "reserved_bytes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quota_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "segment_bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "rotate_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "state",
+          "observed_at",
+          "reserved_bytes",
+          "quota_bytes",
+          "segment_bytes",
+          "rotate_seconds"
         ],
         "additionalProperties": false
       }
