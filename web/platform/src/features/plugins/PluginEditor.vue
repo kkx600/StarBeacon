@@ -11,12 +11,13 @@ import {
   type PluginVersion,
 } from '@starbeacon/shared/responsePlugins.ts';
 import { session } from '../../session';
+import type { GeneratedPlugin } from './usePluginGeneration';
 
 const ACheckboxGroup = Checkbox.Group;
 const ARadioGroup = Radio.Group;
 const ARadioButton = Radio.Button;
 
-const props = defineProps<{ version?: PluginVersion }>();
+const props = defineProps<{ version?: PluginVersion; generated?: GeneratedPlugin }>();
 const emit = defineEmits<{ close: []; saved: [PluginVersion] }>();
 const sampleTemplate = {
   schema_version: 'response.template.v1',
@@ -24,15 +25,16 @@ const sampleTemplate = {
 };
 const sampleScript = 'def health(ctx):\n    return http.get(ctx.base_url + "/health").json()["healthy"]\n';
 const sampleExamples: PluginExample[] = [{ method: 'GET', path: '/health', status: 200, response: '{"healthy":true}' }];
+const material = props.version ?? props.generated;
 const form = reactive({
   id: props.version?.id ?? '',
-  name: props.version?.name ?? '',
-  device: props.version?.device ?? '',
-  kind: props.version?.kind ?? ('template' as PluginKind),
-  template: JSON.stringify(props.version?.template ?? sampleTemplate, null, 2),
-  source: props.version?.script?.source ?? sampleScript,
-  entries: props.version?.script?.entries.slice() ?? (['health'] as PluginEntry[]),
-  examples: JSON.stringify(props.version ? (props.version.examples ?? []) : sampleExamples, null, 2),
+  name: material?.name ?? '',
+  device: material?.device ?? '',
+  kind: (material?.script ? 'script' : 'template') as PluginKind,
+  template: JSON.stringify(material?.template ?? sampleTemplate, null, 2),
+  source: material?.script?.source ?? sampleScript,
+  entries: material?.script?.entries.slice() ?? (['health'] as PluginEntry[]),
+  examples: JSON.stringify(material ? (material.examples ?? []) : sampleExamples, null, 2),
 });
 const entryOptions = Object.entries(entryLabels).map(([value, label]) => ({ value, label }));
 const saving = shallowRef(false);
@@ -94,7 +96,7 @@ onScopeDispose(() => controller?.abort());
 <template>
   <a-modal
     :open="true"
-    :title="version ? '编辑联动插件' : '新建联动插件'"
+    :title="version ? '编辑联动插件' : generated ? '审阅生成草稿' : '新建联动插件'"
     :width="800"
     ok-text="保存草稿"
     cancel-text="取消"

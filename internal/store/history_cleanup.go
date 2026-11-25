@@ -25,7 +25,7 @@ var historyCategories = []historyCategory{
 	{"notification_batches", "expires_at", `NOT EXISTS(SELECT 1 FROM notification_deliveries d WHERE d.tenant_id=h.tenant_id AND d.batch_id=h.id)`},
 	{"notification_channel_versions", "expires_at", `NOT EXISTS(SELECT 1 FROM notification_channels c WHERE c.tenant_id=h.tenant_id AND c.id=h.channel_id AND c.revision=h.revision) AND NOT EXISTS(SELECT 1 FROM notification_batches b WHERE b.tenant_id=h.tenant_id AND b.channel_id=h.channel_id AND b.channel_revision=h.revision)`},
 	{"model_capability_checks", "expires_at", `state<>'running'`},
-	{"model_provider_versions", "expires_at", `NOT EXISTS(SELECT 1 FROM model_providers p WHERE p.tenant_id=h.tenant_id AND p.id=h.provider_id AND p.revision=h.revision) AND NOT EXISTS(SELECT 1 FROM model_capability_checks c WHERE c.tenant_id=h.tenant_id AND c.provider_id=h.provider_id AND c.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM analysis_jobs j WHERE j.tenant_id=h.tenant_id AND j.provider_id=h.provider_id AND j.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM rule_generation_jobs g WHERE g.tenant_id=h.tenant_id AND g.provider_id=h.provider_id AND g.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM alert_triage_jobs t WHERE t.tenant_id=h.tenant_id AND t.provider_id=h.provider_id AND t.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM report_plans p WHERE p.tenant_id=h.tenant_id AND p.provider_id=h.provider_id AND p.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM report_plan_runs r WHERE r.tenant_id=h.tenant_id AND r.provider_id=h.provider_id AND r.provider_revision=h.revision)`},
+	{"model_provider_versions", "expires_at", `NOT EXISTS(SELECT 1 FROM model_providers p WHERE p.tenant_id=h.tenant_id AND p.id=h.provider_id AND p.revision=h.revision) AND NOT EXISTS(SELECT 1 FROM model_capability_checks c WHERE c.tenant_id=h.tenant_id AND c.provider_id=h.provider_id AND c.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM analysis_jobs j WHERE j.tenant_id=h.tenant_id AND j.provider_id=h.provider_id AND j.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM rule_generation_jobs g WHERE g.tenant_id=h.tenant_id AND g.provider_id=h.provider_id AND g.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM alert_triage_jobs t WHERE t.tenant_id=h.tenant_id AND t.provider_id=h.provider_id AND t.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM response_plugin_generations g WHERE g.tenant_id=h.tenant_id AND g.provider_id=h.provider_id AND g.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM report_plans p WHERE p.tenant_id=h.tenant_id AND p.provider_id=h.provider_id AND p.provider_revision=h.revision) AND NOT EXISTS(SELECT 1 FROM report_plan_runs r WHERE r.tenant_id=h.tenant_id AND r.provider_id=h.provider_id AND r.provider_revision=h.revision)`},
 	{"report_plan_runs", "expires_at", `(state<>'preparing' OR deadline<=now()) AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded'))`},
 	{"analysis_jobs", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded')) AND NOT EXISTS(SELECT 1 FROM report_plan_runs r WHERE r.tenant_id=h.tenant_id AND r.analysis_id=h.id)`},
 	{"analysis_threads", "expires_at", `NOT EXISTS(SELECT 1 FROM analysis_jobs j WHERE j.tenant_id=h.tenant_id AND j.thread_id=h.id)`},
@@ -64,6 +64,7 @@ var historyCategories = []historyCategory{
 	{"watchlist_hits", "expires_at", "true"},
 	{"watchlist_hit_days", "expires_at", "true"},
 	{"packet_session_outbox", "expires_at", "true"},
+	{"response_plugin_generations", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded'))`},
 }
 
 type HistorySweep struct {
@@ -171,6 +172,9 @@ func (p *Postgres) sweepTenantHistory(ctx context.Context, tenant string, budget
 		}
 		// CA 调用期限为 15 秒；进程崩溃遗留的签发不重试，转为未知状态保留核查依据。
 		if _, err := tx.Exec(ctx, `WITH picked AS(SELECT id FROM probe_certificates WHERE tenant_id=$1 AND state='signing' AND created_at<now()-interval '1 minute' ORDER BY created_at,id LIMIT 16 FOR UPDATE SKIP LOCKED) UPDATE probe_certificates p SET state='unknown' FROM picked WHERE p.tenant_id=$1 AND p.id=picked.id`, tenant); err != nil {
+			return err
+		}
+		if err := recoverPluginGenerations(ctx, tx, tenant); err != nil {
 			return err
 		}
 		if next < 0 || next >= len(historyCategories) {

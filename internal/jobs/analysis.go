@@ -10,6 +10,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/assistant"
 	"github.com/kkx600/StarBeacon/internal/llm"
 	"github.com/kkx600/StarBeacon/internal/outbound"
+	"github.com/kkx600/StarBeacon/internal/plugingen"
 	"github.com/kkx600/StarBeacon/internal/secrets"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/riverqueue/river"
@@ -64,10 +65,14 @@ func NewAnalysis(db *store.Postgres, vault *secrets.Vault, policy outbound.Polic
 	}
 	river.AddWorker(workers, &ReportPlanWorker{DB: db, Vault: vault, Snapshot: snapshot})
 	river.AddWorker(workers, &RuleGenerationWorker{DB: db, Vault: vault, Client: llm.Client{Policy: policy}})
+	river.AddWorker(workers, &PluginGenerationWorker{DB: db, Vault: vault, Client: llm.Client{Policy: policy}})
 	river.AddWorker(workers, &AlertTriageWorker{DB: db, Vault: vault, Client: llm.Client{Policy: policy}, Source: source})
 	return river.NewClient(riverpgxv5.New(db.Pool), &river.Config{
 		Schema: assistant.QueueSchema, Workers: workers,
-		Queues:      map[string]river.QueueConfig{"assistant": {MaxWorkers: 3}, "reports": {MaxWorkers: 1}, "report_plans": {MaxWorkers: 1}, "rule_generation": {MaxWorkers: 1}, "alert_triage": {MaxWorkers: 1}},
+		Queues: map[string]river.QueueConfig{
+			"assistant": {MaxWorkers: 3}, "reports": {MaxWorkers: 1}, "report_plans": {MaxWorkers: 1},
+			"rule_generation": {MaxWorkers: 1}, "alert_triage": {MaxWorkers: 1}, plugingen.Queue: {MaxWorkers: 1},
+		},
 		MaxAttempts: 1, JobTimeout: 140 * time.Second, RescueStuckJobsAfter: 3 * time.Minute, SoftStopTimeout: 5 * time.Second,
 		// 运行账号不持有 REINDEX 权限；索引维护由受控运维命令承担。
 		ReindexerIndexNames:         []string{},

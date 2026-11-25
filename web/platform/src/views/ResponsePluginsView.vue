@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
-import { EditOutlined, PlayCircleOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { EditOutlined, PlayCircleOutlined, PlusOutlined, RobotOutlined } from '@ant-design/icons-vue';
 import type { TableColumnType } from 'ant-design-vue';
 import ListPager from '@starbeacon/shared/components/ListPager.vue';
 import ListTable from '@starbeacon/shared/components/ListTable.vue';
@@ -11,12 +11,15 @@ import { entryLabels, pluginEntries, type PluginVersion } from '@starbeacon/shar
 import { formatTime } from '@starbeacon/shared/types.ts';
 import PluginWorkspaceTabs from '../features/plugins/PluginWorkspaceTabs.vue';
 import PluginEditor from '../features/plugins/PluginEditor.vue';
+import PluginGenerationDialog from '../features/plugins/PluginGenerationDialog.vue';
 import PluginOperationsPanel from '../features/plugins/PluginOperationsPanel.vue';
 import { usePluginCatalog } from '../features/plugins/usePluginCatalog';
+import type { GeneratedPlugin } from '../features/plugins/usePluginGeneration';
 
 const { page, cursors, pageSize, loading, error, scope, refresh, move, resize } = usePluginCatalog();
-const editor = shallowRef<{ version?: PluginVersion } | null>(null);
+const editor = shallowRef<{ version?: PluginVersion; generated?: GeneratedPlugin } | null>(null);
 const operations = shallowRef<PluginVersion | null>(null);
+const generationOpen = shallowRef(false);
 const columns: TableColumnType<PluginVersion>[] = [
   { title: '编号', dataIndex: 'id', key: 'id', width: 120, ellipsis: true },
   { title: '插件名称', dataIndex: 'name', key: 'name', width: 160, ellipsis: true },
@@ -55,9 +58,14 @@ function saved() {
   editor.value = null;
   void refresh();
 }
+function review(generated: GeneratedPlugin) {
+  generationOpen.value = false;
+  editor.value = { generated };
+}
 watch(scope, () => {
   editor.value = null;
   operations.value = null;
+  generationOpen.value = false;
 });
 </script>
 
@@ -65,6 +73,7 @@ watch(scope, () => {
   <PluginWorkspaceTabs active="plugins" />
   <PageHeader title="联动插件" description="插件通过模拟、真实设备只读和能力验收后，可签名下发到指定采集器。">
     <a-button :loading="loading" @click="refresh">刷新</a-button>
+    <a-button @click="generationOpen = true"><RobotOutlined /> AI 生成插件</a-button>
     <a-button type="primary" @click="editor = {}"><PlusOutlined /> 新建插件</a-button>
   </PageHeader>
   <section class="panel table-panel">
@@ -116,6 +125,13 @@ watch(scope, () => {
       @change="resize"
     />
   </section>
-  <PluginEditor v-if="editor" :version="editor.version" @close="editor = null" @saved="saved" />
+  <PluginEditor
+    v-if="editor"
+    :version="editor.version"
+    :generated="editor.generated"
+    @close="editor = null"
+    @saved="saved"
+  />
+  <PluginGenerationDialog v-if="generationOpen" @close="generationOpen = false" @review="review" />
   <PluginOperationsPanel v-if="operations" :version="operations" @close="operations = null" @changed="refresh" />
 </template>

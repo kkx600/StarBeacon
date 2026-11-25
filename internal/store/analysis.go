@@ -273,8 +273,19 @@ func checkModelBudget(ctx context.Context, tx pgx.Tx, tenant, provider string, d
 	if err := recoverAlertTriage(ctx, tx, tenant); err != nil {
 		return err
 	}
+	if err := recoverPluginGenerations(ctx, tx, tenant); err != nil {
+		return err
+	}
 	var count, active, tenantActive int
-	if err := tx.QueryRow(ctx, `SELECT count(*) FILTER(WHERE provider_id=$2 AND created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'),count(*) FILTER(WHERE provider_id=$2 AND active),count(*) FILTER(WHERE active) FROM (SELECT provider_id,created_at,(state='running' AND deadline>now()) AS active FROM model_capability_checks WHERE tenant_id=$1 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) AS active FROM analysis_jobs WHERE tenant_id=$1 AND provider_id IS NOT NULL UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) AS active FROM rule_generation_jobs WHERE tenant_id=$1 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) AS active FROM alert_triage_jobs WHERE tenant_id=$1) calls`, tenant, provider).Scan(&count, &active, &tenantActive); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT count(*) FILTER(WHERE provider_id=$2 AND created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'),
+		count(*) FILTER(WHERE provider_id=$2 AND active),count(*) FILTER(WHERE active)
+		FROM (
+		 SELECT provider_id,created_at,(state='running' AND deadline>now()) AS active FROM model_capability_checks WHERE tenant_id=$1
+		 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) FROM analysis_jobs WHERE tenant_id=$1 AND provider_id IS NOT NULL
+		 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) FROM rule_generation_jobs WHERE tenant_id=$1
+		 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) FROM alert_triage_jobs WHERE tenant_id=$1
+		 UNION ALL SELECT provider_id,created_at,(state IN ('queued','running')) FROM response_plugin_generations WHERE tenant_id=$1
+		) calls`, tenant, provider).Scan(&count, &active, &tenantActive); err != nil {
 		return err
 	}
 	if count >= daily || active >= 1 || tenantActive >= 4 {
