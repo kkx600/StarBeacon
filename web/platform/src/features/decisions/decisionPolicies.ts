@@ -32,6 +32,19 @@ export const policyModes = {
   approval: '持续评估与人工确认',
   automatic: '持续评估与自动执行',
 } as const;
+export const automationLevels = {
+  observe: '仅观察',
+  approval: '人机协同',
+  conditional: '条件自动',
+  full: '全自动',
+} as const;
+export type AutomationLevel = keyof typeof automationLevels;
+export const decisionConfirmationWindowMs = 15 * 60 * 1000;
+const modeLevels: Record<keyof typeof policyModes, readonly AutomationLevel[]> = {
+  shadow: ['observe'],
+  approval: ['approval'],
+  automatic: ['conditional', 'full'],
+};
 export interface AutomaticConfig {
   sensor_id: string;
   registration_id: string;
@@ -62,6 +75,8 @@ export interface PolicyDefinition {
   max_age_seconds: number;
   protected_prefixes: string[];
   continuous?: ContinuousConfig;
+  automation_level?: AutomationLevel;
+  small_block_max_seconds?: number;
 }
 export interface PolicyChange {
   id: string;
@@ -175,7 +190,7 @@ export function validContinuous(v: unknown, mode: string): v is ContinuousConfig
     Number(v.provider_revision) < 1
   )
     return false;
-  if (mode === 'approval') return Object.keys(v).length === 2 && !Object.hasOwn(v, 'automatic');
+  if (mode === 'approval' || mode === 'shadow') return Object.keys(v).length === 2 && !Object.hasOwn(v, 'automatic');
   if (Object.hasOwn(v, 'trigger') && !validTriageTrigger(v.trigger)) return false;
   const a = v.automatic;
   return (
@@ -209,15 +224,25 @@ export function orderedPolicy(d: PolicyDefinition): PolicyDefinition {
     max_age_seconds: d.max_age_seconds,
     protected_prefixes: [...d.protected_prefixes],
     ...(d.continuous ? { continuous: orderedContinuous(d.continuous) } : {}),
+    ...(d.automation_level ? { automation_level: d.automation_level } : {}),
+    ...(d.small_block_max_seconds ? { small_block_max_seconds: d.small_block_max_seconds } : {}),
   };
 }
 export function validPolicyDefinition(v: unknown): v is PolicyDefinition {
+  if (!object(v) || !Object.hasOwn(policyModes, String(v.mode))) return false;
+  const mode = v.mode as keyof typeof policyModes,
+    continuous = Object.hasOwn(v, 'continuous'),
+    level = Object.hasOwn(v, 'automation_level'),
+    limit = Object.hasOwn(v, 'small_block_max_seconds');
   return (
-    object(v) &&
-    Object.keys(v).length === (v.mode === 'shadow' ? 7 : 8) &&
+    Object.keys(v).length === 7 + Number(continuous) + Number(level) + Number(limit) &&
     v.schema_version === 'decision-policy.v1' &&
-    Object.hasOwn(policyModes, String(v.mode)) &&
-    (v.mode === 'shadow' ? !Object.hasOwn(v, 'continuous') : validContinuous(v.continuous, String(v.mode))) &&
+    (continuous ? validContinuous(v.continuous, mode) : mode === 'shadow') &&
+    (!level || modeLevels[mode].includes(v.automation_level as AutomationLevel)) &&
+    (!limit ||
+      (Number.isSafeInteger(v.small_block_max_seconds) &&
+        Number(v.small_block_max_seconds) >= 0 &&
+        Number(v.small_block_max_seconds) <= 7200)) &&
     text(v.expression, 2048, true, true) &&
     new TextEncoder().encode(v.expression).length <= 2048 &&
     typeof v.threshold === 'number' &&

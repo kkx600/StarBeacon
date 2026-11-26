@@ -58,7 +58,7 @@ func (c ContinuousConfig) Validate(mode string) error {
 	if c.Trigger != nil && (mode != "automatic" || c.Trigger.Validate() != nil) {
 		return ErrInput
 	}
-	if mode == "approval" && c.Automatic == nil {
+	if (mode == "approval" || mode == "shadow") && c.Automatic == nil {
 		return nil
 	}
 	if mode != "automatic" || c.Automatic == nil {
@@ -95,6 +95,14 @@ type ContinuousRecord struct {
 	CreatedAt        time.Time        `json:"created_at"`
 	ExpiresAt        time.Time        `json:"expires_at"`
 	SHA256           string           `json:"sha256"`
+	Plan             *PlanSummary     `json:"plan,omitempty"`
+}
+
+func (r ContinuousRecord) ConfirmationDeadline() time.Time {
+	if r.Plan != nil && r.Plan.ConfirmUntil != nil {
+		return *r.Plan.ConfirmUntil
+	}
+	return r.CreatedAt.Add(ConfirmationWindow)
 }
 
 func (r ContinuousRecord) Seal() (ContinuousRecord, error) {
@@ -105,15 +113,27 @@ func (r ContinuousRecord) Seal() (ContinuousRecord, error) {
 	if r.SchemaVersion != ContinuousSchema || !contract.ValidID(r.TenantID) || !contract.ValidID(r.ID) || !contract.ValidID(r.CreatedBy) || !contract.ValidID(r.EvaluationID) || !assessment.ValidDigest(r.EvaluationSHA256) || !contract.ValidID(r.PolicyID) || r.PolicyRevision < 1 || r.PolicyRevision > MaxRevision || !assessment.ValidDigest(r.DefinitionSHA256) || !contract.ValidID(r.TriageID) || !contract.ValidID(r.EventID) || !assessment.ValidDigest(r.RawSHA256) || r.Config.Validate(mode) != nil || r.CreatedAt.IsZero() || r.CreatedAt.Location() != time.UTC || r.ExpiresAt.Location() != time.UTC || !r.ExpiresAt.After(r.CreatedAt) || r.TargetIP != "" && !responseapi.ValidTarget(r.TargetIP) {
 		return ContinuousRecord{}, ErrSource
 	}
+	if r.Plan != nil && (!r.Plan.valid() ||
+		(r.Plan.ConfirmUntil != nil) != (r.State == "awaiting_confirmation") ||
+		r.Plan.ConfirmUntil != nil && (r.Plan.ConfirmUntil.Location() != time.UTC || !r.Plan.ConfirmUntil.After(r.CreatedAt) ||
+			r.Plan.ConfirmUntil.After(r.CreatedAt.Add(ConfirmationWindow)) || r.Plan.ConfirmUntil.After(r.ExpiresAt))) {
+		return ContinuousRecord{}, ErrSource
+	}
 	if r.State == "queued" {
 		if mode != "automatic" || r.Code != "policy_authorized" || !contract.ValidID(r.TaskID) || r.TargetIP == "" {
 			return ContinuousRecord{}, ErrSource
 		}
-	} else if r.State == "awaiting_confirmation" {
-		if mode != "approval" || r.Code != "manual_confirmation_required" || r.TaskID != "" {
+		if r.Plan != nil && !(r.Plan.Action == "block_source" && (r.Plan.Level == Full || r.Plan.Level == Conditional && r.Plan.Impact == "small")) {
 			return ContinuousRecord{}, ErrSource
 		}
-	} else if r.State != "skipped" || r.TaskID != "" || !slices.Contains([]string{"policy_not_matched", "model_binding_changed", "score_below_threshold", "conclusion_not_eligible", "evidence_limited", "references_incomplete", "sensor_binding_changed", "evidence_changed", "target_cooldown", "event_already_authorized", "hourly_quota", "device_unavailable", "target_protected", "task_conflict", "tenant_quota"}, r.Code) {
+	} else if r.State == "awaiting_confirmation" {
+		if r.Code != "manual_confirmation_required" || r.TaskID != "" ||
+			r.Plan == nil && mode != "approval" ||
+			r.Plan != nil && !(r.Plan.Action == "block_source" && r.TargetIP != "" &&
+				(r.Plan.Level == Approval || r.Plan.Level == Conditional && r.Plan.Impact == "high")) {
+			return ContinuousRecord{}, ErrSource
+		}
+	} else if r.State != "skipped" || r.TaskID != "" || !slices.Contains([]string{"policy_not_matched", "model_binding_changed", "score_below_threshold", "conclusion_not_eligible", "evidence_limited", "references_incomplete", "sensor_binding_changed", "evidence_changed", "target_cooldown", "event_already_authorized", "hourly_quota", "device_unavailable", "target_protected", "task_conflict", "tenant_quota", "observation_only", "manual_investigation", "plan_already_recorded"}, r.Code) {
 		return ContinuousRecord{}, ErrSource
 	}
 	r.SHA256 = ""

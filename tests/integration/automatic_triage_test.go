@@ -33,6 +33,32 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+func enableAutomaticPolicyFixture(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal, change decision.Change, key string) decision.Record {
+	t.Helper()
+	_, archive := decisionArchiveFixture(t, ctx, f, u)
+	job, err := f.Runtime.AlertTriage(ctx, u, archive.TriageID)
+	require(t, err)
+	job.Request.ProviderID = change.Definition.Continuous.ProviderID
+	job.Request.ProviderRevision = change.Definition.Continuous.ProviderRevision
+	job = insertContinuousTriage(t, ctx, f, u, job, "triage_policy_qualification", "event_policy_qualification", "192.0.2.20")
+	// 预置上一计费日的影子研判，保留本日真实模型请求的单次预算。
+	require(t, f.Owner.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE alert_triage_jobs SET created_at=created_at-interval '1 day' WHERE tenant_id=$1 AND id=$2`, u.TenantID, job.ID)
+		return err
+	}))
+	shadow := change
+	shadow.Definition = change.Definition.ShadowCriteria()
+	record, err := f.Runtime.SaveDecisionPolicy(ctx, u, key+"_shadow", shadow)
+	require(t, err)
+	_, err = f.Runtime.CreateDecisionEvaluation(ctx, u, key+"_qualify", decision.EvaluationRequest{PolicyID: record.ID, ExpectedRevision: record.Revision, TriageID: job.ID})
+	require(t, err)
+	change.ExpectedRevision = record.Revision
+	record, err = f.Runtime.SaveDecisionPolicy(ctx, u, key, change)
+	require(t, err)
+	saveAutomationCeiling(t, ctx, f, u, decision.Full, false)
+	return record
+}
+
 func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -52,8 +78,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 	change := decisionPolicyInput("policy_auto")
 	change.Definition.Mode = "automatic"
 	change.Definition.Continuous = &decision.ContinuousConfig{ProviderID: "provider_auto", ProviderRevision: 1, Automatic: &decision.AutomaticConfig{SensorID: "sensor_response", RegistrationID: "registration_response", ConnectorID: response.ConnectorID, ConfigSHA256: response.ConfigSHA256, TTLSeconds: 60, CooldownSeconds: 3600, MaxHourlyActions: 1, AcceptUncalibratedScore: true}, Trigger: &decision.TriageTrigger{Severities: []string{"high"}, MaxDailyJobs: 2, AllowModelContext: true}}
-	policy, err := f.Runtime.SaveDecisionPolicy(ctx, u, "auto_enable", change)
-	require(t, err)
+	policy := enableAutomaticPolicyFixture(t, ctx, f, u, change, "auto_enable")
 	es, err := store.OpenES(os.Getenv("SB_ES_URL"), "")
 	require(t, err)
 	now := time.Now().UTC()
@@ -214,7 +239,7 @@ func TestAutomaticTriageIndexedEvidenceConcurrencyQuotaAndContinuousDecision(t *
 		t.Fatal("触发记录不能反映已提交与额度拒绝")
 	}
 	client := authenticatedFaultHTTP(t, ctx, f.Runtime, api, u.Username, password)
-	client.request("GET", "/decision-policies/"+policy.ID+"/revisions/1/triggers", "", nil, &pageTriggers, 200)
+	client.request("GET", fmt.Sprintf("/decision-policies/%s/revisions/%d/triggers", policy.ID, policy.Revision), "", nil, &pageTriggers, 200)
 	if len(pageTriggers.Items) != 2 {
 		t.Fatal("自动研判 HTTP 目录缺失")
 	}
@@ -243,8 +268,7 @@ func TestAutomaticTriageRevocationBeforeChargingAndNoHistoricalReactivation(t *t
 	change := decisionPolicyInput("policy_revocation")
 	change.Definition.Mode = "automatic"
 	change.Definition.Continuous = &decision.ContinuousConfig{ProviderID: "provider_revocation", ProviderRevision: 1, Automatic: &decision.AutomaticConfig{SensorID: "sensor_response", RegistrationID: "registration_response", ConnectorID: response.ConnectorID, ConfigSHA256: response.ConfigSHA256, TTLSeconds: 60, CooldownSeconds: 3600, MaxHourlyActions: 1, AcceptUncalibratedScore: true}, Trigger: &decision.TriageTrigger{Severities: []string{"high"}, MaxDailyJobs: 10, AllowModelContext: true}}
-	policy, err := f.Runtime.SaveDecisionPolicy(ctx, u, "revocation_enable", change)
-	require(t, err)
+	policy := enableAutomaticPolicyFixture(t, ctx, f, u, change, "revocation_enable")
 	queue, err := jobs.NewAnalysis(f.Runtime, vault, outbound.Policy{}, nil)
 	require(t, err)
 	admit := func(event string) (store.AutomaticTriageCandidate, triage.Evidence) {

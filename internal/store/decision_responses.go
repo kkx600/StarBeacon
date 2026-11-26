@@ -12,6 +12,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/decision"
 	"github.com/kkx600/StarBeacon/internal/model"
+	responseapi "github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/triage"
 )
 
@@ -101,7 +102,7 @@ func (p *Postgres) CreateDecisionResponse(ctx context.Context, u model.Principal
 		if err := responseTaskActor(ctx, tx, u); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, u.TenantID+"/decision-response"); err != nil {
+		if err := lockDecisionAutomation(ctx, tx, u.TenantID); err != nil {
 			return err
 		}
 		err := existingDecisionResponse(ctx, tx, u, id, key, request, &record)
@@ -133,16 +134,9 @@ func (p *Postgres) CreateDecisionResponse(ctx context.Context, u model.Principal
 			return err
 		}
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		intent, err := decision.ResponseIntent(ctx, evaluation, policy, job, evidence, request, now)
+		intent, err := qualifyDecisionConfirmation(ctx, tx, u, evaluation, policy, job, evidence, request, now)
 		if err != nil {
 			return err
-		}
-		var registration string
-		if err := tx.QueryRow(ctx, `SELECT registration_id FROM sensors WHERE tenant_id=$1 AND id=$2 AND active FOR UPDATE`, u.TenantID, request.SensorID).Scan(&registration); err != nil {
-			return err
-		}
-		if registration != request.RegistrationID {
-			return ErrConflict
 		}
 		raw, err := json.Marshal(intent)
 		if err != nil {
@@ -171,4 +165,81 @@ func (p *Postgres) CreateDecisionResponse(ctx context.Context, u model.Principal
 		return insertOperationAudit(ctx, tx, u, "decision.response.confirm", record.ID, model.RequestMetadataFrom(ctx).RequestID)
 	})
 	return record, err
+}
+
+func qualifyDecisionConfirmation(ctx context.Context, tx pgx.Tx, u model.Principal, evaluation decision.Evaluation, policy decision.Record,
+	job triage.Job, evidence triage.Evidence, request decision.ResponseRequest, now time.Time) (responseapi.Intent, error) {
+	settings, err := decisionAutomationSettings(ctx, tx, u.TenantID)
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	if settings.Effective(policy.Definition.Level()) == decision.Observe {
+		return responseapi.Intent{}, decision.ErrPermission
+	}
+	item, err := decisionPlanForConfirmation(ctx, tx, u, evaluation.ID, now)
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	if !policy.Active || policy.Revision != evaluation.Policy.Revision || policy.DefinitionSHA256 != evaluation.Policy.DefinitionSHA256 {
+		return responseapi.Intent{}, decision.ErrSource
+	}
+	recorded, err := decisionEventHasPlan(ctx, tx, policy, evaluation.ID, evaluation.Result.EventID, evaluation.Result.RawSHA256)
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	if recorded {
+		return responseapi.Intent{}, decision.ErrPlanClosed
+	}
+	bound, err := decisionProviderCurrent(ctx, tx, u.TenantID, *policy.Definition.Continuous, job)
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	if !bound {
+		return responseapi.Intent{}, decision.ErrSource
+	}
+	var intent responseapi.Intent
+	deadline := evaluation.Result.EvaluatedAt.Add(decision.ConfirmationWindow)
+	limits := decision.AutomaticConfig{SensorID: request.SensorID, RegistrationID: request.RegistrationID, ConnectorID: request.ConnectorID,
+		CooldownSeconds: max(300, request.TTLSeconds), MaxHourlyActions: 10}
+	if item == nil {
+		intent, err = decision.ResponseIntent(ctx, evaluation, policy, job, evidence, request, now)
+	} else {
+		deadline = item.Run.ConfirmationDeadline()
+		intent, err = decision.ConfirmPlanIntent(ctx, evaluation, policy, job, evidence, request, item.Run, now)
+		if item.Run.Config.Automatic != nil {
+			limits = *item.Run.Config.Automatic
+		}
+	}
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	code, err := decisionBlockLimits(ctx, tx, policy, evaluation.Result.EventID, evaluation.Result.RawSHA256, limits, intent.TargetIP)
+	if err != nil {
+		return responseapi.Intent{}, err
+	}
+	switch code {
+	case "":
+	case "hourly_quota":
+		return responseapi.Intent{}, responseapi.ErrQuota
+	default:
+		return responseapi.Intent{}, ErrConflict
+	}
+	if err := decisionDestination(ctx, tx, policy, evidence, request.SensorID, request.RegistrationID, now); err != nil {
+		return responseapi.Intent{}, err
+	}
+	observedSensor, observedRegistration := decisionFact(evidence, "sensor.id"), decisionFact(evidence, "sensor.registration")
+	if observedSensor != request.SensorID || observedRegistration != request.RegistrationID {
+		if _, err := CheckWatchlistResponseTx(ctx, tx, u.TenantID, observedSensor, observedRegistration, intent.TargetIP, now); err != nil {
+			return responseapi.Intent{}, err
+		}
+		if err := decisionDestination(ctx, tx, policy, evidence, observedSensor, observedRegistration, now); err != nil {
+			return responseapi.Intent{}, err
+		}
+	}
+	deadline = minTime(deadline, minTime(evaluation.ExpiresAt, job.ExpiresAt))
+	deadline = minTime(deadline, evidence.ObservedAt.Add(time.Duration(policy.Definition.MaxAgeSeconds)*time.Second))
+	if !deadline.After(time.Now()) {
+		return responseapi.Intent{}, decision.ErrPlanClosed
+	}
+	return intent, nil
 }

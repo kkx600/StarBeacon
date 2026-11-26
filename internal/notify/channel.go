@@ -174,21 +174,25 @@ func Summaries(alerts []model.Alert) []Summary {
 }
 
 type Message struct {
-	ID        string           `json:"delivery_id"`
-	TenantID  string           `json:"tenant_id"`
-	BatchID   string           `json:"batch_id"`
-	CreatedAt time.Time        `json:"created_at"`
-	Alerts    []Summary        `json:"alerts"`
-	Logs      []AuditLog       `json:"logs,omitempty"`
-	Quality   []QualitySummary `json:"quality,omitempty"`
-	Gateway   *GatewaySummary  `json:"gateway,omitempty"`
-	Recipient string           `json:"-"`
-	Test      bool             `json:"test"`
+	ID              string           `json:"delivery_id"`
+	TenantID        string           `json:"tenant_id"`
+	BatchID         string           `json:"batch_id"`
+	CreatedAt       time.Time        `json:"created_at"`
+	Alerts          []Summary        `json:"alerts"`
+	Logs            []AuditLog       `json:"logs,omitempty"`
+	Quality         []QualitySummary `json:"quality,omitempty"`
+	Gateway         *GatewaySummary  `json:"gateway,omitempty"`
+	DecisionTimeout *DecisionTimeout `json:"decision_timeout,omitempty"`
+	Recipient       string           `json:"-"`
+	Test            bool             `json:"test"`
 }
 
 func (m Message) Text() string {
 	if m.Test {
 		return "星烽 StarBeacon 通知渠道测试。该消息用于验证渠道受理情况。"
+	}
+	if m.DecisionTimeout != nil {
+		return "星烽 StarBeacon 处置方案超时\n" + m.DecisionTimeout.PlanID + " 已超过确认时限，未签发任务。\n请在 AI 值守核对处置流水。\n投递标识：" + m.ID
 	}
 	if m.Gateway != nil {
 		status := "出侧仍有流量"

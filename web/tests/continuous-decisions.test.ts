@@ -22,6 +22,7 @@ import {
   orderedContinuousRecord,
   validContinuousRecord,
   type ContinuousRecord,
+  type DecisionPlanSummary,
 } from '../platform/src/features/decisions/continuousDecisions';
 import DecisionPolicyForm from '../platform/src/features/decisions/DecisionPolicyForm.vue';
 import ContinuousDecisionPanel from '../platform/src/features/decisions/ContinuousDecisionPanel.vue';
@@ -295,6 +296,71 @@ describe('持续决策配置与独立授权契约', () => {
       ),
     ).toBe(false);
     expect(await validContinuousRecord(await run(approval), approval, e.tenant_id, e.created_by)).toBe(false);
+  });
+  it('按服务端字段顺序核对新增级别、观察计划和人工确认时限', async () => {
+    const e = await evaluation();
+    e.policy.definition.automation_level = 'conditional';
+    e.policy.definition.small_block_max_seconds = 90;
+    expect(await validPolicy(e.policy, e.tenant_id)).toBe(false);
+    e.policy.definition_sha256 = await goJSONDigest(orderedPolicy(e.policy.definition));
+    e.result.definition_sha256 = e.policy.definition_sha256;
+    e.sha256 = await goJSONDigest(orderedEvaluation(e));
+    expect(await validPolicy(e.policy, e.tenant_id)).toBe(true);
+    const d = e.policy.definition;
+    expect(validPolicyDefinition({ ...d, automation_level: 'observe' })).toBe(false);
+    expect(validPolicyDefinition({ ...d, small_block_max_seconds: 7201 })).toBe(false);
+    const shadow = (await responseEvaluation()).policy.definition;
+    expect(
+      validPolicyDefinition({ ...shadow, continuous: { provider_id: 'provider_owned', provider_revision: 1 } }),
+    ).toBe(true);
+
+    const pending = await run(e, 'awaiting_confirmation', 'manual_confirmation_required');
+    const observed: DecisionPlanSummary = {
+      level: 'observe',
+      impact: 'high',
+      action: 'block_source',
+      confidence: e.result.confidence!,
+      verdict: 'confirmed',
+      outcome: 'attempt',
+      references: ['source.ip', 'rule.id'],
+      missing: ['终端证据'],
+      evidence_sha256: e.result.evidence_sha256,
+    };
+    pending.plan = {
+      ...observed,
+      level: 'conditional',
+      confirm_until: new Date(Date.parse(pending.created_at) + 90_000).toISOString(),
+    };
+    pending.sha256 = await goJSONDigest(orderedContinuousRecord(pending));
+    const valid = (r: unknown) => validContinuousRecord(r, e, e.tenant_id, e.created_by);
+    expect(await valid(pending)).toBe(true);
+    for (const plan of [
+      null,
+      { ...pending.plan, unknown: false },
+      { ...pending.plan, level: 'observe' },
+      { ...pending.plan, level: 'automatic' },
+      { ...pending.plan, action: 'notify' },
+      { ...pending.plan, impact: 'small' },
+      { ...pending.plan, verdict: 'success' },
+      { ...pending.plan, outcome: 'blocked' },
+      { ...pending.plan, confidence: 0.98 },
+      { ...pending.plan, references: [false] },
+      { ...pending.plan, evidence_sha256: 'd'.repeat(64) },
+      { ...pending.plan, confirm_until: null },
+      { ...pending.plan, confirm_until: pending.expires_at },
+    ]) {
+      expect(await valid({ ...pending, plan })).toBe(false);
+    }
+    expect(await valid({ ...pending, plan: { ...pending.plan, missing: [] } })).toBe(false);
+    const observation = await run(e, 'skipped', 'observation_only');
+    observation.plan = observed;
+    observation.sha256 = await goJSONDigest(orderedContinuousRecord(observation));
+    expect(await valid(observation)).toBe(true);
+    const authorized = await run(e);
+    authorized.plan = { ...observed, level: 'conditional', impact: 'small' };
+    authorized.sha256 = await goJSONDigest(orderedContinuousRecord(authorized));
+    expect(await valid(authorized)).toBe(true);
+    expect(await valid({ ...authorized, plan: { ...authorized.plan, impact: 'high' } })).toBe(false);
   });
 });
 describe('持续决策表单与授权详情交互', () => {

@@ -36,7 +36,7 @@ func decisionArchiveFixture(t *testing.T, ctx context.Context, f *isolatedDataba
 	answer := triage.Answer{Verdict: "confirmed", Outcome: "attempt", Confidence: .87, Reason: "固定数据库测试材料", References: []string{"rule.id"}, CounterEvidence: []string{"授权测试未排除"}, Missing: []string{"终端证据"}, Recommendation: "investigate", NeedsReview: true}
 	data := func(v any) []byte { raw, err := json.Marshal(v); require(t, err); return raw }
 	require(t, f.Owner.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, `INSERT INTO model_providers(tenant_id,id,revision,public) VALUES($1,'provider_archive',1,'{}');`, u.TenantID); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO model_providers(tenant_id,id,revision,public) VALUES($1,'provider_archive',1,'{"enabled":true}');`, u.TenantID); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO model_provider_versions(tenant_id,provider_id,revision,ciphertext,expires_at) VALUES($1,'provider_archive',1,'database-fixture-only',now()+interval '180 days')`, u.TenantID); err != nil {

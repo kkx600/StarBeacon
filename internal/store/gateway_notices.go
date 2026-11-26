@@ -39,7 +39,7 @@ func (p *Postgres) EnqueueGatewayNotices(ctx context.Context, tenant string, vau
 			return err
 		}
 		for _, item := range notices {
-			if err := enqueueMessageTx(ctx, tx, tenant, item.RequestID, nil, nil, &item, vault, ""); err != nil {
+			if err := enqueueMessageTx(ctx, tx, notify.Message{TenantID: tenant, BatchID: item.RequestID, Gateway: &item}, vault, ""); err != nil {
 				return err
 			}
 			if _, err := tx.Exec(ctx, `UPDATE gateway_block_requests SET notice_pending=false WHERE tenant_id=$1 AND id=$2`,

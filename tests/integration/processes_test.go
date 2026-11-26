@@ -304,7 +304,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 				return err
 			}
 			// 隔离测试租户按外键依赖先清理任务授权证明，再清理任务本身。
-			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "response_watchlist_checks", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
+			for _, table := range []string{"sensor_quality_outbox", "sensor_quality_cursors", "packet_archives", "notification_deliveries", "notification_batches", "notification_channel_versions", "notification_channels", "response_watchlist_checks", "sensor_tasks", "correlation_rule_revisions", "correlation_rules", "application_rule_revisions", "application_rules", "replay_samples", "rule_packages", "rule_generation_jobs", "rule_sid_registry", "rule_sid_state", "decision_plan_reviews", "decision_automation_settings", "decision_continuous_runs", "decision_responses", "decision_evaluations", "decision_policies", "decision_policy_revisions", "alert_triage_jobs", "model_capability_checks", "model_provider_versions", "model_providers", "operation_audits", "login_audits", "routes", "sensors", "retention_policies"} {
 				if _, err := tx.Exec(clean, "DELETE FROM "+table+" WHERE tenant_id=$1", tenant); err != nil {
 					return err
 				}
@@ -618,11 +618,10 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	require(t, err)
 	pcap, err := testpcap.HTTP(false)
 	require(t, err)
-	packetPath, rulesPath, logDir, overlayPath := filepath.Join(dir, "traffic.pcap"), filepath.Join(dir, "live.rules"), filepath.Join(dir, "suricata-log"), filepath.Join(dir, "suricata-overlay.yaml")
-	require(t, os.Mkdir(logDir, 0700))
-	started := time.Now()
-	if !managed {
-		require(t, os.WriteFile(packetPath, pcap, 0600))
+	analyzeOffline := func(data []byte, name string) time.Time {
+		packetPath, rulesPath, logDir, overlayPath := filepath.Join(dir, name+".pcap"), filepath.Join(dir, "live.rules"), filepath.Join(dir, name+"-suricata-log"), filepath.Join(dir, "suricata-overlay.yaml")
+		require(t, os.Mkdir(logDir, 0700))
+		require(t, os.WriteFile(packetPath, data, 0600))
 		require(t, os.WriteFile(rulesPath, []byte(rules), 0600))
 		require(t, os.WriteFile(overlayPath, []byte("%YAML 1.1\n---\nrun-as: {}\nunix-command:\n  enabled: no\noutputs:\n  - eve-log:\n      enabled: yes\n      filetype: regular\n      filename: eve.json\n      ethernet: yes\n      types:\n        - alert\n        - http:\n            extended: yes\n        - flow\n        - stats:\n            totals: yes\n            threads: no\n"), 0600))
 		detection, detectionStop := context.WithTimeout(ctx, 15*time.Second)
@@ -638,12 +637,17 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		if !bytes.Contains(eve, []byte("StarBeacon end-to-end capture")) {
 			t.Fatal("实际 PCAP 未产生目标告警")
 		}
-		started = time.Now()
+		appended := time.Now()
 		file, err := os.OpenFile(evePath, os.O_APPEND|os.O_WRONLY, 0600)
 		require(t, err)
 		_, err = file.Write(eve)
 		require(t, err)
 		require(t, file.Close())
+		return appended
+	}
+	started := time.Now()
+	if !managed {
+		started = analyzeOffline(pcap, "traffic")
 	} else {
 		endpoint := os.Getenv("SB_TEST_CAPTURE_ENDPOINT")
 		if endpoint == "" {
@@ -734,7 +738,7 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		if !t.Failed() {
 			return
 		}
-		logCaptureEvidence(t, filepath.Join(logDir, "eve.json"))
+		logCaptureEvidence(t, filepath.Join(dir, "traffic-suricata-log", "eve.json"))
 		inspect, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
 		all, err := es.SearchTraffic(inspect, tenant, model.TrafficSearchRequest{SearchRequest: model.SearchRequest{Start: query.Start, End: query.End}})
@@ -846,8 +850,19 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	})
 	verifyNativeRuleGeneration(t, ctx, platformHTTP, collectorHTTP, provider.URL, modelCalls)
 	triageJob := verifyNativeAlertTriage(t, ctx, platformHTTP, alerts.Items[0], triageProvider.URL, triageCalls)
+	verifyNativeCorrelation(t, platformHTTP, alerts.Items[0])
 	if !managed {
-		verifyNativeContinuousDecision(t, ctx, platformHTTP, alerts.Items[0], identity.SensorID, responseDevice, triageProvider.URL)
+		extra, err := testpcap.HTTPPathFrom(false, "/starbeacon/validation-continuous", "192.0.2.50")
+		require(t, err)
+		analyzeOffline(extra, "continuous")
+		autoQuery := query
+		autoQuery.Filter = `http.request.uri contains "/starbeacon/validation-continuous"`
+		var autoAlerts model.SearchResult
+		eventually(t, ctx, "独立来源原生告警已索引", func() bool {
+			platformHTTP.request("POST", "/alerts/search", "", autoQuery, &autoAlerts, 200)
+			return len(autoAlerts.Items) == 1 && autoAlerts.Items[0].Source.IP == "192.0.2.50"
+		})
+		verifyNativeContinuousDecision(t, ctx, platformHTTP, autoAlerts.Items[0], identity.SensorID, responseDevice, triageProvider.URL)
 	}
 	verifyNativeResponse(t, ctx, platformHTTP, identity.SensorID, responseDevice)
 	if !managed {
@@ -974,5 +989,4 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 	} else {
 		t.Logf("原生 PCAP 告警的 EVE → WAL → mTLS → NATS → ES → 通知受理耗时 %.3fs（单个离线样本）；主控及采集器登录、心跳、检索、坏批次隔离、平台指定探针重放和采集器本地重放通过", acceptedDuration.Seconds())
 	}
-	verifyNativeCorrelation(t, platformHTTP, alerts.Items[0])
 }

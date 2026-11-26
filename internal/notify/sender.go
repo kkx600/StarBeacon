@@ -42,7 +42,7 @@ func (s Sender) Send(ctx context.Context, config Config, message Message) (out O
 	started := time.Now()
 	defer func() { out.DurationMS = time.Since(started).Milliseconds(); out.ObservedAt = time.Now().UTC() }()
 	if config.Validate(s.Policy) != nil || message.ID == "" || len(message.Alerts) > contract.MaxBatchRecords ||
-		!validAuditLogs(config, message) || !validQuality(config, message) || !validGatewayMessage(config, message) {
+		!validAuditLogs(config, message) || !validQuality(config, message) || !validGatewayMessage(config, message) || !validDecisionTimeout(config, message) {
 		return Outcome{State: "failed", Code: "invalid_config"}
 	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -268,7 +268,9 @@ func (s Sender) email(ctx context.Context, config Config, message Message) Outco
 	if msg.From(config.From) != nil || msg.To(message.Recipient) != nil {
 		return Outcome{State: "failed", Code: "invalid_recipient"}
 	}
-	if message.Gateway != nil {
+	if message.DecisionTimeout != nil {
+		msg.Subject("星烽 StarBeacon 处置方案超时")
+	} else if message.Gateway != nil {
 		msg.Subject("星烽 StarBeacon 网关观察")
 	} else if len(message.Quality) > 0 {
 		msg.Subject("星烽 StarBeacon 探针检测质量")

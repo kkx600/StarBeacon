@@ -64,6 +64,11 @@ func (p *Postgres) SaveInventory(ctx context.Context, user model.Principal, kind
 		return result, ErrConflict
 	}
 	err = p.TenantTx(ctx, user.TenantID, func(tx pgx.Tx) error {
+		if kind == "assets" || kind == "networks" {
+			if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, user.TenantID+"/inventory/address-space"); err != nil {
+				return err
+			}
+		}
 		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, user.TenantID+"/inventory/"+kind+"/"+id); err != nil {
 			return err
 		}

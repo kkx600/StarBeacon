@@ -132,7 +132,8 @@ func CreateRuntimeRole(ctx context.Context, p *store.Postgres, password string) 
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON watchlist_hits TO starbeacon_app; GRANT SELECT,INSERT,UPDATE,DELETE ON watchlist_hit_days TO starbeacon_app`); e != nil {
 		return e
 	}
-	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON decision_continuous_runs TO starbeacon_app`); e != nil {
+	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,DELETE ON decision_continuous_runs,decision_plan_reviews TO starbeacon_app;
+		GRANT SELECT,INSERT,UPDATE ON decision_automation_settings TO starbeacon_app`); e != nil {
 		return e
 	}
 	if _, e = tx.Exec(ctx, `GRANT SELECT,INSERT,UPDATE ON rule_sync_plans TO starbeacon_app; GRANT SELECT,INSERT,UPDATE,DELETE ON rule_sync_runs TO starbeacon_app; GRANT SELECT,INSERT,UPDATE,DELETE ON decision_triage_triggers TO starbeacon_app`); e != nil {

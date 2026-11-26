@@ -86,6 +86,7 @@ func (a *API) Handler() http.Handler {
 	a.registerCorrelation(m)
 	a.registerWatchlists(m)
 	a.registerDecisionPolicies(m)
+	a.registerDecisionAutomation(m)
 	a.registerSavedSearches(m)
 	a.registerReplay(m)
 	a.registerPacketArchives(m)

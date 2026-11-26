@@ -11355,7 +11355,7 @@
       },
       "post": {
         "summary": "维护决策策略",
-        "description": "仅有效管理员。支持 shadow 按需评估、approval 持续评估与独立人工确认、automatic 持续评估与限时任务授权。持续模式绑定提供方修订，仅处理当前维护者在本修订保存后创建并完成的本人研判；不扫描旧告警或自动请求模型。自动配置固定观测及执行探针注册、连接器摘要、TTL、冷却、每小时预算与明确评分授权。CAS、不可变修订、幂等回执及审计同事务；1024 次变更/租户/滚动 24 小时。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史默认 operations 180 天，当前配置受引用保护。",
+        "description": "新场景从 shadow 开始。提高级别或变更当前高级别的判断依据，需要同一账号、场景、判断条件和提供方修订下的有效影子评估。运行级别受租户全局上限与暂停约束。持续模式仅处理当前维护者在本修订保存后创建并完成的指定模型研判。模型触发需要独立数据和费用许可。自动配置固定观测及执行探针注册、连接器摘要、TTL、冷却、小时预算与评分授权。CAS、不可变修订、幂等回执及审计同事务。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史默认按 operations 保留 180 天。",
         "responses": {
           "400": {
             "description": "请求未完成，具体含义见 code/message。",
@@ -11473,6 +11473,89 @@
           }
         ],
         "x-required-role": "admin"
+      }
+    },
+    "/api/v1/decision-automation": {
+      "get": {
+        "summary": "读取自动处置设置和场景的当前级别",
+        "description": "按租户返回默认上限、暂停状态和有界的当前场景。升级后租户默认上限为人机协同。",
+        "responses": {
+          "200": {"description": "当前设置与场景", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionAutomationState"}}}},
+          "400": {"description": "查询参数无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "账号权限已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      },
+      "put": {
+        "summary": "保存自动处置上限和暂停状态",
+        "description": "按预期修订写入。管理员可以明确恢复自动处置。已登记的待确认方案保持等待，已签发的租约保留原授权。",
+        "x-required-role": "admin",
+        "parameters": [{"name": "X-CSRF-Token", "in": "header", "required": true, "schema": {"type": "string"}}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionAutomationChange"}}}},
+        "responses": {
+          "200": {"description": "更新后的自动处置设置", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionAutomationSettings"}}}},
+          "400": {"description": "输入无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "管理员或 CSRF 权限不足", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "设置修订已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/decision-automation/pause": {
+      "post": {
+        "summary": "暂停新的自动处置",
+        "description": "无请求体。立即把当前有效上限收紧至人机协同，原本仅观察的场景保持仅观察。已签发任务和租约继续执行。重复暂停返回当前修订。",
+        "x-required-role": "admin",
+        "parameters": [{"name": "X-CSRF-Token", "in": "header", "required": true, "schema": {"type": "string"}}],
+        "responses": {
+          "200": {"description": "暂停后的设置", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionAutomationSettings"}}}},
+          "400": {"description": "查询参数或请求体无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "管理员或 CSRF 权限不足", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/decision-plans": {
+      "get": {
+        "summary": "读取本人的待确认方案、处置流水或评测样本",
+        "description": "待确认按时限升序，流水和评测样本按登记时间倒序。评测样本只包含人工驳回的方案、原材料摘要与原因。",
+        "parameters": [
+          {"name": "view", "in": "query", "schema": {"enum": ["pending", "history", "feedback"], "default": "pending"}},
+          {"name": "cursor", "in": "query", "schema": {"type": "string", "maxLength": 64}},
+          {"$ref": "#/components/parameters/ListPageLimit"}
+        ],
+        "responses": {
+          "200": {"description": "本人方案", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionPlanPage"}}}},
+          "400": {"description": "查询参数无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "账号权限已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "游标不可访问或已过期", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/decision-evaluations/{id}/response/reject": {
+      "post": {
+        "summary": "驳回本人的待确认处置方案",
+        "description": "绑定原方案摘要并填写原因，持久保存人工驳回样本。原输入重复提交返回首次回执。确认、驳回与过期只有一个结果。",
+        "x-required-role": "admin",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "maxLength": 64}},
+          {"name": "X-CSRF-Token", "in": "header", "required": true, "schema": {"type": "string"}}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionPlanRejection"}}}},
+        "responses": {
+          "200": {"description": "原驳回结果", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionPlanReview"}}}},
+          "400": {"description": "评估、方案摘要或原因无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "管理员或 CSRF 权限不足", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "本人方案不可访问或已回收", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "原方案摘要不一致或方案已关闭", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
       }
     },
     "/api/v1/decision-policies/{id}/revisions/{revision}": {
@@ -12313,7 +12396,7 @@
       },
       "post": {
         "summary": "管理员确认原研判的单次限时处置",
-        "description": "从原评估派生唯一源 IP，不接收 target_ip。原评估必须 matched/block_source、未到期，当前策略修订、定义、本人研判、实际 ES 告警白名单和判断结果须保持一致；重新核对观测时限、注册代次、签名及 35 秒内连接器状态。授权档案、签名任务及两份审计在同一事务提交；任一失败整体回滚。同一评估只接受一次授权，换请求键不补发。原键绑定账号与全部原输入，重复确认先读取原档案，不重复读取模型、不依赖已回收材料、不延长期限；账号实时资格仍需成立。每实例最多两个并发确认，最近 24 小时租户响应任务最多 1024 项。未知提交应保留原键。202 仅代表人工任务受理，设备配置回读和实际流量效果分别核验。此接口只提供独立人工确认；持续策略授权通过独立档案记录，多级审批尚未提供。 新封禁在授权事务内核对有效保护名单；命中返回 409 response_target_protected，不生成任务。授权成功的原任务保存 response_protection，原请求确认仍返回原回执。",
+        "description": "从本人原评估派生唯一源 IP。当前策略、模型修订、实际告警白名单、观测时限、注册代次和设备状态须一致。仅观察、驳回或超时方案不可确认。自动策略降级后的待确认方案必须沿用原探针、连接器和期限。双方保护名单、冷却及预算在同一授权事务核对。授权档案、签名任务与审计原子提交，原键重复确认返回原回执。202 表示签名任务已受理，实际设备回读在任务详情查看。",
         "x-required-role": "admin",
         "responses": {
           "202": {
@@ -28541,6 +28624,118 @@
         "additionalProperties": false,
         "description": "不同产品均参与冲突判断，最多展示 16 条命中，每条最多 8 条依据。原材料与 ID 排序的规则快照分别绑定 SHA-256；不保存流量归因或模型置信度，不生成告警或网络动作。"
       },
+      "DecisionAutomationLevel": {
+        "type": "string",
+        "enum": ["observe", "approval", "conditional", "full"]
+      },
+      "DecisionAutomationSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision", "ceiling", "paused"],
+        "properties": {
+          "revision": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+          "ceiling": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+          "paused": {"type": "boolean"}
+        }
+      },
+      "DecisionAutomationChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expected_revision", "ceiling", "paused"],
+        "properties": {
+          "expected_revision": {"type": "integer", "minimum": 0, "maximum": 9007199254740990},
+          "ceiling": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+          "paused": {"type": "boolean"}
+        }
+      },
+      "DecisionAutomationState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["settings", "scenes"],
+        "properties": {
+          "settings": {"$ref": "#/components/schemas/DecisionAutomationSettings"},
+          "scenes": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "name", "revision", "active", "level", "effective", "small_block_max_seconds"],
+              "properties": {
+                "id": {"type": "string", "maxLength": 64},
+                "name": {"type": "string", "maxLength": 128},
+                "revision": {"type": "integer", "minimum": 1, "maximum": 1000000},
+                "active": {"type": "boolean"},
+                "level": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+                "effective": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+                "small_block_max_seconds": {"type": "integer", "minimum": 1, "maximum": 7200}
+              }
+            }
+          }
+        }
+      },
+      "DecisionPlanSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "impact", "action", "confidence", "verdict", "outcome", "references", "missing", "evidence_sha256"],
+        "properties": {
+          "level": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+          "impact": {"enum": ["none", "small", "high"]},
+          "action": {"enum": ["investigate", "notify", "block_source"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1, "description": "模型自报置信度"},
+          "verdict": {"enum": ["confirmed", "undetermined", "false_positive"]},
+          "outcome": {"enum": ["attempt", "unknown"]},
+          "references": {"type": "array", "maxItems": 8, "items": {"type": "string"}},
+          "missing": {"type": "array", "maxItems": 8, "items": {"type": "string"}},
+          "evidence_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "confirm_until": {"type": "string", "format": "date-time", "description": "待确认时返回。最长 15 分钟，并受材料与档案有效期约束。"}
+        }
+      },
+      "DecisionPlanRejection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plan_sha256", "reason"],
+        "properties": {
+          "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 500}
+        }
+      },
+      "DecisionPlanReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["state", "plan_sha256", "actor_id", "reason", "reviewed_at"],
+        "properties": {
+          "state": {"enum": ["rejected", "expired"]},
+          "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "actor_id": {"type": "string", "maxLength": 64, "description": "超时由系统登记，此字段为空。"},
+          "reason": {"type": "string", "maxLength": 500},
+          "reviewed_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "DecisionPlanPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "next_cursor"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["run", "state", "task_id", "task_state"],
+              "properties": {
+                "run": {"$ref": "#/components/schemas/DecisionContinuousRun"},
+                "state": {"enum": ["queued", "awaiting_confirmation", "skipped", "confirmed", "rejected", "expired"]},
+                "task_id": {"type": "string", "maxLength": 64},
+                "task_state": {"type": "string", "description": "当前任务状态，任务不存在或已回收时为空。"},
+                "review": {"$ref": "#/components/schemas/DecisionPlanReview"}
+              }
+            }
+          },
+          "next_cursor": {"type": "string", "maxLength": 64}
+        }
+      },
       "DecisionPolicyDefinition": {
         "type": "object",
         "properties": {
@@ -28548,8 +28743,7 @@
             "const": "decision-policy.v1"
           },
           "mode": {
-            "const": "shadow",
-            "description": "当前仅支持影子评估；approval/automatic 返回 409。",
+            "description": "运行模式。shadow 为仅观察，approval 为人机协同，automatic 结合 automation_level 表示条件自动或全自动。",
             "enum": [
               "shadow",
               "approval",
@@ -28594,6 +28788,13 @@
           },
           "continuous": {
             "$ref": "#/components/schemas/DecisionContinuousConfig"
+          },
+          "automation_level": {"$ref": "#/components/schemas/DecisionAutomationLevel"},
+          "small_block_max_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 7200,
+            "description": "小影响外部来源封禁的时限上限。省略或为零时使用 7200 秒，实际执行仍受连接器限制。"
           }
         },
         "required": [
@@ -28616,10 +28817,11 @@
               }
             },
             "then": {
-              "not": {
-                "required": [
-                  "continuous"
-                ]
+              "properties": {
+                "automation_level": {"const": "observe"},
+                "continuous": {
+                  "not": {"anyOf": [{"required": ["automatic"]}, {"required": ["trigger"]}]}
+                }
               }
             }
           },
@@ -28650,6 +28852,7 @@
             },
             "then": {
               "properties": {
+                "automation_level": {"const": "approval"},
                 "continuous": {
                   "allOf": [
                     {
@@ -28681,6 +28884,7 @@
             },
             "then": {
               "properties": {
+                "automation_level": {"enum": ["conditional", "full"]},
                 "threshold": {
                   "minimum": 0.5
                 },
@@ -29653,7 +29857,7 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^decision_response_[a-f0-9]{32}$"
+            "pattern": "^continuous_[a-f0-9]{32}$"
           },
           "created_by": {
             "type": "string",
@@ -29721,6 +29925,7 @@
           "config": {
             "$ref": "#/components/schemas/DecisionContinuousConfig"
           },
+          "plan": {"$ref": "#/components/schemas/DecisionPlanSummary"},
           "state": {
             "type": "string",
             "enum": [
@@ -29747,7 +29952,11 @@
               "hourly_quota",
               "device_unavailable",
               "task_conflict",
-              "tenant_quota"
+              "tenant_quota",
+              "target_protected",
+              "observation_only",
+              "manual_investigation",
+              "plan_already_recorded"
             ]
           }
         },

@@ -31,12 +31,58 @@ func (r ResponseRequest) Validate() error {
 	return nil
 }
 
+func ManualPlanReason(policy Record, job triage.Job) string {
+	if job.Answer == nil || job.Answer.Verdict != "confirmed" || job.Answer.Outcome != "attempt" {
+		return "conclusion_not_eligible"
+	}
+	if job.Answer.Confidence < policy.Definition.Threshold {
+		return "score_below_threshold"
+	}
+	if job.Evidence.Limited {
+		return "evidence_limited"
+	}
+	return ""
+}
+
 // 提交时重新核对当前策略、原研判与实际告警白名单；历史匹配不能替代当前执行资格。
 func ResponseIntent(ctx context.Context, e Evaluation, policy Record, job triage.Job, evidence triage.Evidence, request ResponseRequest, now time.Time) (responseapi.Intent, error) {
-	// 自动模式使用独立持续授权，人工入口不得为同一策略建立第二条执行路径。
-	if policy.Definition.Mode == "automatic" || e.Policy.Definition.Mode == "automatic" {
+	// 普通确认只处理人机协同评估。受上限降级的自动策略须提供原待确认方案。
+	if policy.Definition.Level() != Approval || e.Policy.Definition.Level() != Approval {
 		return responseapi.Intent{}, ErrPermission
 	}
+	if ManualPlanReason(policy, job) != "" {
+		return responseapi.Intent{}, ErrSource
+	}
+	return responseIntent(ctx, e, policy, job, evidence, request, now)
+}
+
+// 人工确认降级后的自动方案时，设备、期限和材料仍由原方案绑定。
+func ConfirmPlanIntent(ctx context.Context, e Evaluation, policy Record, job triage.Job, evidence triage.Evidence, request ResponseRequest, run ContinuousRecord, now time.Time) (responseapi.Intent, error) {
+	if run.State != "awaiting_confirmation" || run.EvaluationID != e.ID || run.EvaluationSHA256 != e.SHA256 ||
+		run.PolicyID != policy.ID || run.PolicyRevision != policy.Revision || run.DefinitionSHA256 != policy.DefinitionSHA256 ||
+		run.TriageID != job.ID || run.TargetIP != e.Result.TargetIP {
+		return responseapi.Intent{}, ErrPermission
+	}
+	if !run.ConfirmationDeadline().After(now) {
+		return responseapi.Intent{}, ErrPlanClosed
+	}
+	if a := run.Config.Automatic; a != nil {
+		if request.SensorID != a.SensorID || request.RegistrationID != a.RegistrationID ||
+			request.ConnectorID != a.ConnectorID || request.ConfigSHA256 != a.ConfigSHA256 || request.TTLSeconds != a.TTLSeconds {
+			return responseapi.Intent{}, ErrSource
+		}
+		work, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		defer cancel()
+		if _, code, err := AutomaticIntent(work, policy, job, evidence, now); err != nil || code != "policy_authorized" {
+			return responseapi.Intent{}, ErrSource
+		}
+	} else if ManualPlanReason(policy, job) != "" {
+		return responseapi.Intent{}, ErrSource
+	}
+	return responseIntent(ctx, e, policy, job, evidence, request, now)
+}
+
+func responseIntent(ctx context.Context, e Evaluation, policy Record, job triage.Job, evidence triage.Evidence, request ResponseRequest, now time.Time) (responseapi.Intent, error) {
 	sealed, err := e.Seal()
 	if request.Validate() != nil || err != nil || sealed.SHA256 != e.SHA256 || request.EvaluationSHA256 != e.SHA256 || now.IsZero() || e.Result.EvaluatedAt.After(now) || !e.ExpiresAt.After(now) || e.Result.Status != "matched" || e.Result.CandidateAction != "block_source" || e.Result.TargetIP == "" || policy.Validate() != nil || policy.TenantID != e.TenantID || policy.ID != e.Policy.ID || policy.Revision != e.Policy.Revision || policy.DefinitionSHA256 != e.Policy.DefinitionSHA256 || !policy.Active || job.ID != e.Result.TriageID || job.Evidence.SHA256 != e.Result.EvidenceSHA256 {
 		return responseapi.Intent{}, ErrSource

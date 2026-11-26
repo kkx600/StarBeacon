@@ -14,6 +14,8 @@ func responseMaterial(t *testing.T) (Evaluation, Record, triage.Job, ResponseReq
 	t.Helper()
 	p, job, now := source(t)
 	p.Definition.CandidateAction = "block_source"
+	p.Definition.Mode = "approval"
+	p.Definition.Continuous = &ContinuousConfig{ProviderID: job.Request.ProviderID, ProviderRevision: job.Request.ProviderRevision}
 	p.DefinitionSHA256 = Digest(p.Definition)
 	r, err := Evaluate(context.Background(), p, job, now)
 	if err != nil {

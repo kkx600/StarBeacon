@@ -3,6 +3,7 @@ package testpcap
 
 import (
 	"bytes"
+	"errors"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
@@ -16,6 +17,15 @@ func HTTP(ng bool) ([]byte, error) {
 
 // 正反样本共享相同通信过程，由标准协议序列化重新计算长度、序号和校验和。
 func HTTPPath(ng bool, path string) ([]byte, error) {
+	return HTTPPathFrom(ng, path, "192.0.2.10")
+}
+
+// HTTPPathFrom 为独立处置试验生成不同来源的离线 HTTP 会话。
+func HTTPPathFrom(ng bool, path, source string) ([]byte, error) {
+	sourceIP := net.ParseIP(source).To4()
+	if sourceIP == nil {
+		return nil, errors.New("离线 HTTP 样本需要 IPv4 来源")
+	}
 	var output bytes.Buffer
 	var write func(gopacket.CaptureInfo, []byte) error
 	var flush func() error
@@ -45,7 +55,7 @@ func HTTPPath(ng bool, path string) ([]byte, error) {
 	c, s := uint32(1000), uint32(5000)
 	frames := []frame{{false, c, 0, true, false, false, false, nil}, {true, s, c + 1, true, true, false, false, nil}, {false, c + 1, s + 1, false, true, false, false, nil}, {false, c + 1, s + 1, false, true, true, false, request}, {true, s + 1, c + 1 + uint32(len(request)), false, true, false, false, nil}, {true, s + 1, c + 1 + uint32(len(request)), false, true, true, false, response}, {false, c + 1 + uint32(len(request)), s + 1 + uint32(len(response)), false, true, false, true, nil}, {true, s + 1 + uint32(len(response)), c + 2 + uint32(len(request)), false, true, false, true, nil}, {false, c + 2 + uint32(len(request)), s + 2 + uint32(len(response)), false, true, false, false, nil}}
 	for i, f := range frames {
-		src, dst := net.ParseIP("192.0.2.10"), net.ParseIP("198.51.100.20")
+		src, dst := sourceIP, net.ParseIP("198.51.100.20")
 		srcMAC, dstMAC := net.HardwareAddr{0x02, 0, 0, 0, 0, 1}, net.HardwareAddr{0x02, 0, 0, 0, 0, 2}
 		srcPort, dstPort := layers.TCPPort(40000), layers.TCPPort(80)
 		if f.server {

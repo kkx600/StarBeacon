@@ -10,18 +10,21 @@ import {
   type DecisionResponseRequest,
 } from '../platform/src/features/decisions/decisionResponses';
 
-export async function responseEvaluation(): Promise<EvaluationRecord> {
+export async function responseEvaluation(mode: 'shadow' | 'approval' = 'shadow'): Promise<EvaluationRecord> {
   const job = structuredClone(triageJob),
     material = job.evidence;
   material.sha256 = await goJSONDigest({ ...material, sha256: '' });
   const definition = {
     schema_version: 'decision-policy.v1' as const,
-    mode: 'shadow' as const,
+    mode,
     expression: 'confidence >= threshold',
     threshold: 0.8,
     candidate_action: 'block_source' as const,
     max_age_seconds: 3600,
     protected_prefixes: [],
+    ...(mode === 'approval'
+      ? { continuous: { provider_id: job.request.provider_id, provider_revision: job.request.provider_revision } }
+      : {}),
   };
   const policy: PolicyRecord = {
     tenant_id: principal.tenant_id,

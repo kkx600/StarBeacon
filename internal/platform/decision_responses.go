@@ -21,6 +21,8 @@ import (
 
 func decisionResponseFailure(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, decision.ErrPlanClosed):
+		httpapi.Fail(w, r, 409, "decision_plan_closed", err.Error())
 	case errors.Is(err, watchlist.ErrProtected):
 		httpapi.Fail(w, r, 409, "response_target_protected", "目标命中当前有效保护名单，未创建封禁任务；请核对名单范围。")
 	case errors.Is(err, decision.ErrInput), errors.Is(err, response.ErrInput):

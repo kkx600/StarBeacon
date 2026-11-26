@@ -26,10 +26,18 @@ import (
 func decisionResponseFixture(t *testing.T, ctx context.Context) (*isolatedDatabase, model.Principal, ed25519.PrivateKey, decision.Evaluation, decision.ResponseRequest, triage.Evidence, string) {
 	t.Helper()
 	f, u, signer, input, password := responseTaskFixture(t, ctx)
-	_, request := decisionArchiveFixture(t, ctx, f, u)
-	evaluation, err := f.Runtime.CreateDecisionEvaluation(ctx, u, "response_archive", request)
+	policy, request := decisionArchiveFixture(t, ctx, f, u)
+	_, err := f.Runtime.CreateDecisionEvaluation(ctx, u, "response_shadow", request)
 	require(t, err)
 	job, err := f.Runtime.AlertTriage(ctx, u, request.TriageID)
+	require(t, err)
+	edit := decisionPolicyEdit(policy)
+	edit.Definition.Mode = "approval"
+	edit.Definition.Continuous = &decision.ContinuousConfig{ProviderID: job.Request.ProviderID, ProviderRevision: job.Request.ProviderRevision}
+	policy, err = f.Runtime.SaveDecisionPolicy(ctx, u, "response_policy_approve", edit)
+	require(t, err)
+	request.ExpectedRevision = policy.Revision
+	evaluation, err := f.Runtime.CreateDecisionEvaluation(ctx, u, "response_archive", request)
 	require(t, err)
 	return f, u, signer, evaluation, decision.ResponseRequest{EvaluationSHA256: evaluation.SHA256, SensorID: "sensor_response", RegistrationID: "registration_response", ConnectorID: input.ConnectorID, ConfigSHA256: input.ConfigSHA256, TTLSeconds: 300, Reason: "管理员核对原告警后确认", Confirmed: true}, job.Evidence, password
 }
@@ -364,6 +372,11 @@ func verifyNativeDecisionResponse(t *testing.T, ctx context.Context, client *liv
 	var policy decision.Record
 	client.request("POST", "/decision-policies", "native_consent_policy", change, &policy, 200)
 	var evaluation decision.Evaluation
+	client.request("POST", "/decision-evaluations", "native_consent_shadow", decision.EvaluationRequest{PolicyID: policy.ID, ExpectedRevision: policy.Revision, TriageID: job.ID}, &evaluation, 200)
+	edit := decisionPolicyEdit(policy)
+	edit.Definition.Mode = "approval"
+	edit.Definition.Continuous = &decision.ContinuousConfig{ProviderID: job.Request.ProviderID, ProviderRevision: job.Request.ProviderRevision}
+	client.request("POST", "/decision-policies", "native_consent_promote", edit, &policy, 200)
 	client.request("POST", "/decision-evaluations", "native_consent_evaluation", decision.EvaluationRequest{PolicyID: policy.ID, ExpectedRevision: policy.Revision, TriageID: job.ID}, &evaluation, 200)
 	if evaluation.Result.Status != "matched" || evaluation.Result.TargetIP == "" || evaluation.Result.ExecutionAuthorized {
 		t.Fatal("原生研判没有合法处置候选")

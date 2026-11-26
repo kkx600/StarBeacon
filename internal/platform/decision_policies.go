@@ -44,7 +44,7 @@ func decodeDecision(w http.ResponseWriter, r *http.Request, target any) error {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16384)
 	var raw json.RawMessage
-	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), []string{"id", "policy_id", "expected_revision", "name", "description", "active", "definition", "schema_version", "mode", "expression", "threshold", "candidate_action", "max_age_seconds", "protected_prefixes", "triage_id", "continuous", "provider_id", "provider_revision", "automatic", "sensor_id", "registration_id", "connector_id", "config_sha256", "ttl_seconds", "cooldown_seconds", "max_hourly_actions", "accept_uncalibrated_score", "trigger", "severities", "max_daily_jobs", "allow_model_context"}, 16384) != nil {
+	if httpapi.Decode(w, r, &raw) != nil || contract.JSONFields(string(raw), []string{"id", "policy_id", "expected_revision", "name", "description", "active", "definition", "schema_version", "mode", "expression", "threshold", "candidate_action", "max_age_seconds", "protected_prefixes", "triage_id", "continuous", "provider_id", "provider_revision", "automatic", "sensor_id", "registration_id", "connector_id", "config_sha256", "ttl_seconds", "cooldown_seconds", "max_hourly_actions", "accept_uncalibrated_score", "trigger", "severities", "max_daily_jobs", "allow_model_context", "automation_level", "small_block_max_seconds"}, 16384) != nil {
 		return decision.ErrInput
 	}
 	var root, definition, continuous map[string]json.RawMessage
@@ -77,6 +77,8 @@ func decisionFailure(w http.ResponseWriter, r *http.Request, err error) {
 		httpapi.Fail(w, r, 400, "invalid_decision_policy", "请核对策略名称、表达式类型、阈值、材料时限与保护网段")
 	case errors.Is(err, decision.ErrMode):
 		httpapi.Fail(w, r, 409, "decision_mode_unavailable", "持续决策需要指定模型修订；自动执行还须完整绑定探针、设备、期限、频率及评分授权")
+	case errors.Is(err, decision.ErrShadowRequired):
+		httpapi.Fail(w, r, 409, "decision_shadow_required", err.Error())
 	case errors.Is(err, decision.ErrPermission):
 		httpapi.Fail(w, r, 403, "decision_policy_forbidden", "当前账号不再具有决策策略操作权限，请重新登录并核对权限")
 	case errors.Is(err, decision.ErrQuota):

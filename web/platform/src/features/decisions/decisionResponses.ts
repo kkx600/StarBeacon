@@ -1,7 +1,7 @@
 import type { Sensor } from '@starbeacon/shared/types.ts';
 import { readyConnector } from '@starbeacon/shared/response.ts';
 import { goJSONDigest } from '@starbeacon/shared/utils/goJSONDigest.ts';
-import { policyID } from './decisionPolicies';
+import { decisionConfirmationWindowMs, policyID } from './decisionPolicies';
 import { validEvaluation, type EvaluationRecord } from './decisionEvaluations';
 
 export interface DecisionResponseRequest {
@@ -37,12 +37,15 @@ const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const digest = (v: unknown) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
 const date = (v: unknown) => typeof v === 'string' && Number.isFinite(Date.parse(v));
 export function eligibleDecisionResponse(e: EvaluationRecord, now = Date.now()) {
+  const evaluated = Date.parse(e.result.evaluated_at);
   return (
+    e.policy.definition.mode === 'approval' &&
     e.result.status === 'matched' &&
     e.result.candidate_action === 'block_source' &&
     !!e.result.target_ip &&
     Date.parse(e.expires_at) > now &&
-    Date.parse(e.result.evaluated_at) <= now
+    evaluated <= now &&
+    evaluated + decisionConfirmationWindowMs > now
   );
 }
 export function eligibleResponseSensor(s: Sensor, now = Date.now()) {

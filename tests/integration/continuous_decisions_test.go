@@ -22,18 +22,29 @@ import (
 
 func continuousFixture(t *testing.T, ctx context.Context, mode string) (*isolatedDatabase, store.DecisionCandidate, ed25519.PrivateKey, triage.Job, string) {
 	t.Helper()
+	return continuousAutomationFixture(t, ctx, mode, "", decision.Full)
+}
+
+func continuousAutomationFixture(t *testing.T, ctx context.Context, mode string, level, ceiling decision.Level) (*isolatedDatabase, store.DecisionCandidate, ed25519.PrivateKey, triage.Job, string) {
+	t.Helper()
 	f, u, signer, input, password := responseTaskFixture(t, ctx)
 	p, request := decisionArchiveFixture(t, ctx, f, u)
 	job, err := f.Runtime.AlertTriage(ctx, u, request.TriageID)
 	require(t, err)
 	edit := decisionPolicyEdit(p)
 	edit.Definition.Mode = mode
+	edit.Definition.AutomationLevel = level
 	edit.Definition.Continuous = &decision.ContinuousConfig{ProviderID: job.Request.ProviderID, ProviderRevision: 1}
 	if mode == "automatic" {
 		edit.Definition.Continuous.Automatic = &decision.AutomaticConfig{SensorID: "sensor_response", RegistrationID: "registration_response", ConnectorID: input.ConnectorID, ConfigSHA256: input.ConfigSHA256, TTLSeconds: 60, CooldownSeconds: 3600, MaxHourlyActions: 1, AcceptUncalibratedScore: true}
 	}
+	_, err = f.Runtime.CreateDecisionEvaluation(ctx, u, "continuous_policy_shadow", request)
+	require(t, err)
 	p, err = f.Runtime.SaveDecisionPolicy(ctx, u, "continuous_policy_enable", edit)
 	require(t, err)
+	if ceiling != "" {
+		saveAutomationCeiling(t, ctx, f, u, ceiling, false)
+	}
 	job.Answer.Recommendation = "block_source"
 	job.Answer.References = []string{"source.ip", "rule.id"}
 	for i := range job.Evidence.Facts {
@@ -52,6 +63,15 @@ func continuousFixture(t *testing.T, ctx context.Context, mode string) (*isolate
 	}))
 	job = insertContinuousTriage(t, ctx, f, u, job, "triage_continuous_first", "event_continuous_first", "192.0.2.10")
 	return f, store.DecisionCandidate{Principal: u, Policy: p, TriageID: job.ID}, signer, job, password
+}
+
+func saveAutomationCeiling(t *testing.T, ctx context.Context, f *isolatedDatabase, u model.Principal, level decision.Level, paused bool) decision.AutomationSettings {
+	t.Helper()
+	state, err := f.Runtime.DecisionAutomation(ctx, u)
+	require(t, err)
+	result, err := f.Runtime.ChangeDecisionAutomation(ctx, u, &decision.AutomationChange{ExpectedRevision: state.Settings.Revision, Ceiling: level, Paused: &paused})
+	require(t, err)
+	return result
 }
 
 // 固定研判只检验持久授权与事务边界；真实模型与采集器链路由进程用例另行验证。

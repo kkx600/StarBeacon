@@ -57,7 +57,7 @@ defineEmits<{ close: []; respond: [record: EvaluationRecord] }>();
     </dl>
     <h3>判断表达式</h3>
     <pre class="evaluation-expression">{{ record.policy.definition.expression }}</pre>
-    <ContinuousDecisionPanel v-if="record.policy.definition.mode !== 'shadow'" :record="record" />
+    <ContinuousDecisionPanel v-if="record.policy.definition.continuous" :record="record" />
     <h3>证据与执行限制</h3>
     <ul>
       <li v-for="item in record.result.limitations" :key="item">{{ item }}</li>
@@ -65,14 +65,15 @@ defineEmits<{ close: []; respond: [record: EvaluationRecord] }>();
     <div
       v-if="
         canRespond &&
-        record.policy.definition.mode !== 'automatic' &&
         record.result.status === 'matched' &&
         record.result.candidate_action === 'block_source' &&
         record.result.target_ip
       "
       class="filter-actions"
     >
-      <a-button type="primary" @click="$emit('respond', record)">处置确认</a-button>
+      <a-button type="primary" @click="$emit('respond', record)">{{
+        record.policy.definition.mode === 'approval' ? '处置确认' : '查看处置记录'
+      }}</a-button>
     </div>
   </a-modal>
 </template>

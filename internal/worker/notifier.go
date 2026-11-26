@@ -126,6 +126,11 @@ func (n *Notifier) deliver(ctx context.Context) error {
 				}
 				cancel()
 				work, cancel = context.WithTimeout(ctx, 5*time.Second)
+				if err := n.DB.ExpireDecisionPlans(work, tenant, n.Vault); err != nil {
+					slog.Warn("处置方案超时通知待重试")
+				}
+				cancel()
+				work, cancel = context.WithTimeout(ctx, 5*time.Second)
 				lease, leaseError := n.DB.LeaseNotification(work, tenant, n.Vault)
 				cancel()
 				if errors.Is(leaseError, pgx.ErrNoRows) || lease.ID == "" {

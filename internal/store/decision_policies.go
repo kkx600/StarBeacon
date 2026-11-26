@@ -108,6 +108,9 @@ func (p *Postgres) SaveDecisionPolicy(ctx context.Context, u model.Principal, ke
 		if err := decisionPolicyUser(ctx, tx, u, true); err != nil {
 			return err
 		}
+		if err := lockDecisionAutomation(ctx, tx, u.TenantID); err != nil {
+			return err
+		}
 		var inputHash string
 		err := tx.QueryRow(ctx, `SELECT input_hash FROM decision_policy_revisions WHERE tenant_id=$1 AND created_by=$2 AND key_hash=$3`, u.TenantID, u.ID, Hash(key)).Scan(&inputHash)
 		if err == nil {
@@ -136,6 +139,9 @@ func (p *Postgres) SaveDecisionPolicy(ctx context.Context, u model.Principal, ke
 		}
 		if current.Revision > 0 && current.Name == c.Name && current.Description == c.Description && current.Active == *c.Active && current.DefinitionSHA256 == decision.Digest(c.Definition) {
 			return decision.ErrInput
+		}
+		if err := qualifyDecisionPromotion(ctx, tx, u, current, c); err != nil {
+			return err
 		}
 		if *c.Active && c.Definition.Continuous != nil && c.Definition.Continuous.Trigger != nil {
 			var count int

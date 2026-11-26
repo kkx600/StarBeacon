@@ -26,20 +26,37 @@ func verifyNativeContinuousDecision(t *testing.T, ctx context.Context, client *l
 	writes, deletes := device.writes, device.deletes
 	device.mu.Unlock()
 	var provider llm.Provider
-	config := llm.Config{Name: "持续决策协议验证", Kind: "openai_responses", BaseURL: url + "/v1", Model: "owned-triage-model", Enabled: true, APIKey: "owned-triage-key", MaxOutputTokens: 512, TimeoutSeconds: 5, DailyRequests: 2}
+	config := llm.Config{Name: "持续决策协议验证", Kind: "openai_responses", BaseURL: url + "/v1", Model: "owned-triage-model", Enabled: true, APIKey: "owned-triage-key", MaxOutputTokens: 512, TimeoutSeconds: 5, DailyRequests: 3}
 	client.request("POST", "/models/providers", "", store.ModelChange{ID: "provider_continuous_native", ReplaceKey: true, Config: config}, &provider, 200)
 	change := decisionPolicyInput("policy_continuous_native")
 	change.Definition.Mode = "automatic"
 	change.Definition.MaxAgeSeconds = 86400
 	change.Definition.Continuous = &decision.ContinuousConfig{ProviderID: provider.ID, ProviderRevision: provider.Revision, Automatic: &decision.AutomaticConfig{SensorID: sensor, RegistrationID: alert.RegistrationID, ConnectorID: device.config.ID, ConfigSHA256: device.config.SHA256(), TTLSeconds: 60, CooldownSeconds: 3600, MaxHourlyActions: 2, AcceptUncalibratedScore: true}}
 	var policy decision.Record
-	client.request("POST", "/decision-policies", "native_continuous_policy", change, &policy, 200)
+	shadow := change
+	shadow.Definition = change.Definition.ShadowCriteria()
+	client.request("POST", "/decision-policies", "native_continuous_shadow", shadow, &policy, 200)
 	request := triage.Request{EventID: alert.EventID, RawSHA256: alert.RawSHA256, ProviderID: provider.ID, ProviderRevision: provider.Revision, Note: "[automatic_response] 受控协议测试，根据实际源 IP 和规则引用判断", AllowContext: true}
 	create := func(key string) triage.Job {
 		var j triage.Job
 		client.request("POST", "/alerts/"+alert.EventID+"/triage", key, request, &j, 202)
 		return j
 	}
+	proof := create("native_continuous_qualification")
+	eventually(t, ctx, "实际模型研判完成供影子评估使用", func() bool {
+		client.request("GET", "/alert-triage/jobs/"+proof.ID, "", nil, &proof, 200)
+		return proof.State == "succeeded"
+	})
+	client.request("POST", "/decision-evaluations", "native_continuous_proof",
+		decision.EvaluationRequest{PolicyID: policy.ID, ExpectedRevision: policy.Revision, TriageID: proof.ID}, nil, 200)
+	change.ExpectedRevision = policy.Revision
+	client.request("POST", "/decision-policies", "native_continuous_policy", change, &policy, 200)
+	var automation decision.AutomationState
+	client.request("GET", "/decision-automation", "", nil, &automation, 200)
+	paused := false
+	client.request("PUT", "/decision-automation", "", decision.AutomationChange{
+		ExpectedRevision: automation.Settings.Revision, Ceiling: decision.Full, Paused: &paused,
+	}, nil, 200)
 	read := func(job triage.Job) decision.ContinuousRecord {
 		var result decision.ContinuousRecord
 		eventually(t, ctx, "持续决策保存本人评估与独立授权", func() bool {

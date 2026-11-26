@@ -68,24 +68,29 @@ func Compile(expression string) (cel.Program, error) {
 }
 
 type Definition struct {
-	SchemaVersion     string            `json:"schema_version"`
-	Mode              string            `json:"mode"`
-	Expression        string            `json:"expression"`
-	Threshold         float64           `json:"threshold"`
-	CandidateAction   string            `json:"candidate_action"`
-	MaxAgeSeconds     int               `json:"max_age_seconds"`
-	ProtectedPrefixes []string          `json:"protected_prefixes"`
-	Continuous        *ContinuousConfig `json:"continuous,omitempty"`
+	SchemaVersion        string            `json:"schema_version"`
+	Mode                 string            `json:"mode"`
+	Expression           string            `json:"expression"`
+	Threshold            float64           `json:"threshold"`
+	CandidateAction      string            `json:"candidate_action"`
+	MaxAgeSeconds        int               `json:"max_age_seconds"`
+	ProtectedPrefixes    []string          `json:"protected_prefixes"`
+	Continuous           *ContinuousConfig `json:"continuous,omitempty"`
+	AutomationLevel      Level             `json:"automation_level,omitempty"`
+	SmallBlockMaxSeconds int               `json:"small_block_max_seconds,omitempty"`
 }
 
 func (d Definition) Validate() error {
 	if !slices.Contains([]string{"shadow", "approval", "automatic"}, d.Mode) {
 		return ErrInput
 	}
-	if d.Mode == "shadow" && d.Continuous != nil {
+	if d.AutomationLevel != "" && (d.Mode == "shadow" && d.AutomationLevel != Observe ||
+		d.Mode == "approval" && d.AutomationLevel != Approval ||
+		d.Mode == "automatic" && d.AutomationLevel != Conditional && d.AutomationLevel != Full) ||
+		d.SmallBlockMaxSeconds < 0 || d.SmallBlockMaxSeconds > MaxSmallBlock {
 		return ErrInput
 	}
-	if d.Mode != "shadow" && (d.Continuous == nil || d.Continuous.Validate(d.Mode) != nil) {
+	if d.Mode != "shadow" && d.Continuous == nil || d.Continuous != nil && d.Continuous.Validate(d.Mode) != nil {
 		return ErrMode
 	}
 	if d.Mode == "automatic" && (d.CandidateAction != "block_source" || d.Threshold < 0.5) {

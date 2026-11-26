@@ -15,9 +15,15 @@ import {
 import type { EvaluationRecord } from '../platform/src/features/decisions/decisionEvaluations';
 import DecisionResponseDialog from '../platform/src/features/decisions/DecisionResponseDialog.vue';
 import DecisionEvaluationsWorkspace from '../platform/src/features/decisions/DecisionEvaluationsWorkspace.vue';
-import { responseEvaluation, responseInput, responseReceipt, responseSensor } from './decisionResponseFixtures';
+import {
+  responseEvaluation as evaluationFixture,
+  responseInput,
+  responseReceipt,
+  responseSensor,
+} from './decisionResponseFixtures';
 import { principal, click, deferred, closedMessage } from './fixtures';
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
+const responseEvaluation = () => evaluationFixture('approval');
 const user = shallowRef(principal);
 vi.mock('../platform/src/session', () => ({
   session: {
@@ -106,6 +112,8 @@ describe('研判处置授权档案', () => {
       input = responseInput(e);
     expect(validResponseRequest(input)).toBe(true);
     expect(eligibleDecisionResponse(e)).toBe(true);
+    expect(eligibleDecisionResponse(await evaluationFixture())).toBe(false);
+    expect(eligibleDecisionResponse(e, Date.parse(e.result.evaluated_at) + 15 * 60 * 1000)).toBe(false);
     expect(eligibleResponseSensor(responseSensor())).toBe(true);
     for (const v of [
       null,
@@ -269,7 +277,7 @@ describe('研判到人工处置的界面', () => {
       Promise.resolve(
         path === '/decision-evaluations/' + e.id
           ? e
-          : path.endsWith('/response')
+          : path.endsWith('/response') || path.endsWith('/continuous')
             ? { item: null }
             : path.startsWith('/sensors')
               ? { items: [responseSensor()] }

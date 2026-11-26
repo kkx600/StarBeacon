@@ -1074,6 +1074,28 @@
       "boundary": "64 个租户策略、CAS 与不可变修订、幂等提交、180 天历史与当前引用保护；CEL 标量有界语法和按需影子评估，实时账号与本人研判绑定。冻结材料摘要、观测时限、保护网段与自报分数必须核对；结果始终无执行授权。评估结果、策略快照、原请求回执和操作审计同事务，本人目录与详情重新核对来源摘要；不可变档案独立留存，默认 operations 180 天，当前材料回收或策略修改不重算历史。独立人工处置确认由 decision_response 提供；持续授权由 continuous_decisions 独立提供；多级审批、领域校准或真实流量效果资格尚未交付。此来源远程验收以独立记录为准。"
     },
     {
+      "id": "decision_automation",
+      "name": "四级自动处置与待确认方案",
+      "code": [
+        "internal/decision/automation.go",
+        "internal/store/decision_automation.go",
+        "internal/store/decision_plan_evidence.go",
+        "internal/store/decision_plans.go",
+        "internal/store/decision_plan_notices.go",
+        "internal/platform/decision_automation.go",
+        "migrations/00064_decision_automation.sql"
+      ],
+      "pages": [],
+      "tests": [
+        "internal/decision/automation_test.go",
+        "internal/platform/decision_automation_test.go",
+        "internal/notify/decision_test.go",
+        "tests/integration/decision_automation_test.go",
+        "tests/integration/continuous_decisions_test.go"
+      ],
+      "boundary": "升级后默认将后续自动策略压至人机协同。新场景经过同场景、同条件和模型修订的影子评估才能提级。条件自动只自动签发小影响的外部源 IP 限时任务。源和目的保护、证据门槛、预算、冷却与设备资格同样适用。确认沿用现有签名通道，同一方案的驳回和确认互斥。超时留档并通知，驳回的有界材料和人工标签进入本人评测样本。"
+    },
+    {
       "id": "response_http",
       "name": "采集器 HTTP 联动与限时封禁",
       "code": [
@@ -2403,6 +2425,7 @@
         "decision_policies",
         "decision_response",
         "continuous_decisions",
+        "decision_automation",
         "watchlists"
       ],
       "implemented": [
@@ -2412,7 +2435,8 @@
         "管理员确认原评估，当前证据与设备绑定、单次授权档案、签名任务及审计原子提交；未知提交核对原键",
         "完成本人指定模型新研判的持续判断；人工确认候选与绑定设备的限时自动授权；固定门槛、目标冷却、告警去重、小时预算及独立不可变档案",
         "独立授权的索引后新告警自动研判登记、共享费用预算、队列幂等、执行前许可核对及本人触发记录",
-        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。"
+        "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
+        "租户四级上限和场景级别、自动处置暂停、绑定方案确认、超时通知与人工驳回评测样本"
       ],
       "remaining": [
         "跨账号授权范围与多级审批/编排",

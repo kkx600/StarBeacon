@@ -89,7 +89,7 @@ function input(): PolicyChange {
         .split('\n')
         .map(p => p.trim())
         .filter(Boolean),
-      ...(continuous.mode === 'shadow'
+      ...(continuous.mode === 'shadow' && !(d?.mode === 'shadow' && d.continuous)
         ? {}
         : {
             continuous: {
@@ -120,6 +120,8 @@ function input(): PolicyChange {
                 : {}),
             },
           }),
+      ...(d?.automation_level && d.mode === continuous.mode ? { automation_level: d.automation_level } : {}),
+      ...(d?.small_block_max_seconds ? { small_block_max_seconds: d.small_block_max_seconds } : {}),
     },
   };
 }
