@@ -134,6 +134,13 @@ func TestAnalysisPersistentJobsReportsOwnershipBudgetsAndCancellation(t *testing
 			text = "连接成功。"
 		} else if strings.Contains(payload.Input, "无效引用") {
 			text = `{"summary":"需要核对","observations":[{"text":"调查","sources":["foreign.source"]}],"recommendations":[]}`
+		} else if strings.Contains(payload.Input, "值班编排草稿") {
+			var prompt map[string]string
+			if json.Unmarshal([]byte(payload.Input), &prompt) != nil || len(prompt) != 1 || prompt["description"] != "值班编排草稿" {
+				w.WriteHeader(400)
+				return
+			}
+			text = `{"summary":"告警进入后通知值班人","steps":[{"kind":"trigger","description":"等待已记录的告警"},{"kind":"notify","description":"通知值班人"}]}`
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"id": "response_owned", "object": "response", "status": "completed", "model": "owned-model", "output": []any{map[string]any{"type": "message", "role": "assistant", "id": "message_owned", "status": "completed", "content": []any{map[string]any{"type": "output_text", "text": text, "annotations": []any{}}}}}, "usage": map[string]int{"input_tokens": 30, "output_tokens": 40, "total_tokens": 70}})
@@ -351,6 +358,25 @@ func TestAnalysisPersistentJobsReportsOwnershipBudgetsAndCancellation(t *testing
 	bad := input
 	bad.AllowContext = false
 	a.request("POST", "/analysis/jobs", "no_context_owned", bad, nil, 400)
+	draft := input
+	draft.Purpose, draft.Question = assistant.PlaybookDraft, "值班编排草稿"
+	var generated assistant.Job
+	a.request("POST", "/analysis/jobs", "private_playbook_draft", draft, &generated, 202)
+	generated = wait(generated.ID)
+	if generated.Template != assistant.PlaybookDraftTemplate || generated.Answer == nil ||
+		len(generated.Answer.Steps) != 2 || len(generated.Evidence.Segments) != 0 {
+		t.Fatal("编排结果或模型材料边界不正确", generated)
+	}
+	other.request("GET", "/analysis/jobs/"+generated.ID, "", nil, nil, 404)
+	viewer.request("POST", "/analysis/jobs", "viewer_playbook_draft", draft, nil, 403)
+	history, err = db.AnalysisHistory(ctx, user, generated.Request.ThreadID)
+	require(t, err)
+	if len(history) != 0 {
+		t.Fatal("私有草稿进入通用统计对话上下文")
+	}
+	wrongThread := input
+	wrongThread.ThreadID, wrongThread.ParentID, wrongThread.Question = generated.Request.ThreadID, generated.ID, "继续"
+	a.request("POST", "/analysis/jobs", "unsafe_playbook_continue", wrongThread, nil, 409)
 	// 最后降低额度，业务调用和连接验证必须同时受已有提交量约束。
 	config.DailyRequests = 1
 	a.request("POST", "/models/providers", "", store.ModelChange{ID: saved.ID, ExpectedRevision: 2, Config: config}, &saved, 200)

@@ -35,10 +35,16 @@ func (w *AnalysisWorker) Work(ctx context.Context, job *river.Job[assistant.Args
 	if !lease.Execute {
 		return nil
 	}
-	result := w.Client.Generate(ctx, lease.Config, assistant.Instructions, lease.Prompt, lease.Config.MaxOutputTokens)
+	result := w.Client.Generate(ctx, lease.Config, lease.Job.Request.Instructions(), lease.Prompt, lease.Config.MaxOutputTokens)
 	var answer *assistant.Answer
 	if result.State == "succeeded" {
-		value, err := assistant.DecodeAnswer(result.Text, lease.Job.Evidence)
+		var value assistant.Answer
+		var err error
+		if lease.Job.Request.Purpose == assistant.PlaybookDraft {
+			value, err = assistant.DecodePlaybookDraft(result.Text)
+		} else {
+			value, err = assistant.DecodeAnswer(result.Text, lease.Job.Evidence)
+		}
 		if err != nil {
 			result.State, result.Code = "failed", "invalid_analysis_output"
 		} else {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { Modal as AModal, Descriptions as ADescriptions, Tabs } from 'ant-design-vue';
 const TabPane = Tabs.TabPane;
 const ADescriptionsItem = ADescriptions.Item;
@@ -12,6 +12,7 @@ import AlertAssessment from './AlertAssessment.vue';
 import AlertTriage from './AlertTriage.vue';
 import AlertWatchlistHits from './AlertWatchlistHits.vue';
 import ApplicationAttribution from '@starbeacon/shared/components/ApplicationAttribution.vue';
+import { openCopilotAlert } from '../copilot/context';
 const props = defineProps<{ alert: Alert | null }>();
 const deviceAlert = computed(() => props.alert?.event.dataset?.startsWith('设备告警 · ') ?? false);
 const active = ref('evidence'),
@@ -24,6 +25,12 @@ watch(
   },
 );
 const emit = defineEmits<{ close: [] }>();
+const openAssistant = inject(openCopilotAlert, undefined);
+function analyzeAlert() {
+  const alert = props.alert;
+  if (alert && !locked.value)
+    openAssistant?.({ eventID: alert.event_id, digest: alert.raw_sha256, title: alert.rule.name ?? alert.event_id });
+}
 function investigate() {
   if (!props.alert || locked.value || session.current.value?.role !== 'admin') return;
   void router.push({ path: '/incidents', query: { alert_id: props.alert.event_id, sha256: props.alert.raw_sha256 } });
@@ -59,6 +66,9 @@ function investigate() {
             @click="investigate"
             >建立事件调查</a-button
           >
+          <a-button v-if="openAssistant" class="section-gap" :disabled="locked" @click="analyzeAlert">
+            在 AI 助手中查看
+          </a-button>
           <a-descriptions bordered :column="1" size="small">
             <a-descriptions-item label="告警名称">{{ alert.rule.name }}</a-descriptions-item>
             <a-descriptions-item v-if="deviceAlert" label="来源">{{ alert.event.dataset }}</a-descriptions-item>

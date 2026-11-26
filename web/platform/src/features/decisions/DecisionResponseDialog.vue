@@ -10,6 +10,7 @@ import { readSensorDirectory } from '@starbeacon/shared/sensors.ts';
 import StatePanel from '@starbeacon/shared/components/StatePanel.vue';
 import { session } from '../../session';
 import { validEvaluation, type EvaluationRecord } from './decisionEvaluations';
+import { validContinuousRecord, type ContinuousRecord } from './continuousDecisions';
 import {
   eligibleDecisionResponse,
   eligibleResponseSensor,
@@ -18,8 +19,8 @@ import {
   type DecisionResponseRequest,
 } from './decisionResponses';
 const message = useFeedback();
-const props = defineProps<{ record: EvaluationRecord }>();
-const emit = defineEmits<{ close: [] }>(),
+const props = defineProps<{ record: EvaluationRecord; plan?: ContinuousRecord }>();
+const emit = defineEmits<{ close: []; saved: [] }>(),
   router = useRouter();
 const sensors = shallowRef<Sensor[]>([]),
   existing = shallowRef<DecisionResponseRecord | null>(null),
@@ -29,16 +30,24 @@ const sensors = shallowRef<Sensor[]>([]),
   unconfirmed = ref(false),
   now = ref(Date.now());
 const form = reactive({ sensor_id: '', connector_id: '', ttl_seconds: 300, reason: '', confirmed: false });
+const binding = computed(() => props.plan?.config.automatic);
 const sensor = computed(() => sensors.value.find(v => v.id === form.sensor_id));
 const connectors = computed(() =>
-  (sensor.value?.health.response_connectors ?? []).filter(v => readyConnector(v, now.value)),
+  (sensor.value?.health.response_connectors ?? []).filter(
+    v =>
+      readyConnector(v, now.value) &&
+      (!binding.value ||
+        (v.connector_id === binding.value.connector_id &&
+          v.config_sha256 === binding.value.config_sha256 &&
+          v.max_ttl_seconds >= binding.value.ttl_seconds)),
+  ),
 );
 const connector = computed(() => connectors.value.find(v => v.connector_id === form.connector_id));
 const locked = computed(() => saving.value || unconfirmed.value);
 const eligible = computed(
   () =>
     session.current.value?.role === 'admin' &&
-    eligibleDecisionResponse(props.record, now.value) &&
+    eligibleDecisionResponse(props.record, now.value, props.plan) &&
     !!sensor.value &&
     eligibleResponseSensor(sensor.value, now.value) &&
     !!connector.value,
@@ -62,6 +71,8 @@ async function load() {
   try {
     if (!u || u.role !== 'admin' || !(await validEvaluation(props.record, u.tenant_id, u.id)))
       throw new Error('评估记录与当前账号不一致，请刷新后核对评估记录。');
+    if (props.plan && !(await validContinuousRecord(props.plan, props.record, u.tenant_id, u.id)))
+      throw new Error('处置方案与评估证据的摘要不一致，请刷新原方案。');
     const result = await session.api.request<unknown>(
       '/decision-evaluations/' + encodeURIComponent(props.record.id) + '/response',
       { signal: read.signal },
@@ -75,13 +86,25 @@ async function load() {
       if (!read.signal.aborted) existing.value = result.item as DecisionResponseRecord;
       return;
     }
-    if (!eligibleDecisionResponse(props.record, Date.now()))
+    if (!eligibleDecisionResponse(props.record, Date.now(), props.plan))
       throw new Error('该评估没有有效的源 IP 封禁候选，请重新核对研判和策略。');
     const rows = await readSensorDirectory(session.api, read.signal);
     if (read.signal.aborted) return;
-    sensors.value = rows.filter(v => eligibleResponseSensor(v));
+    sensors.value = rows.filter(
+      v =>
+        eligibleResponseSensor(v) &&
+        (!binding.value || (v.id === binding.value.sensor_id && v.registration_id === binding.value.registration_id)),
+    );
     if (!sensors.value.length) throw new Error('没有具备就绪联动设备的在线探针，请核对采集器配置与设备身份。');
     if (sensors.value.length === 1) form.sensor_id = sensors.value[0]!.id;
+    if (binding.value) {
+      form.connector_id = binding.value.connector_id;
+      form.ttl_seconds = binding.value.ttl_seconds;
+      if (!connector.value) {
+        sensors.value = [];
+        throw new Error('原方案绑定的设备配置或期限已失效，请核对设备回报。');
+      }
+    }
   } catch (cause) {
     if (!read.signal.aborted) error.value = cause instanceof Error ? cause.message : '处置材料读取失败，请重试。';
   } finally {
@@ -99,6 +122,7 @@ async function submit() {
       !Number.isSafeInteger(form.ttl_seconds) ||
       form.ttl_seconds < 30 ||
       form.ttl_seconds > connector.value.max_ttl_seconds ||
+      (binding.value && form.ttl_seconds !== binding.value.ttl_seconds) ||
       !form.reason.trim() ||
       form.reason !== form.reason.trim() ||
       [...form.reason].length > 500 ||
@@ -143,6 +167,7 @@ async function submit() {
     attempt = undefined;
     unconfirmed.value = false;
     message.success('处置任务已受理，请核对设备配置回执与实际流量效果');
+    emit('saved');
   } catch (cause) {
     if (!request.signal.aborted) {
       error.value = cause instanceof Error ? cause.message : '处置提交结果未确认，请核对原提交。';
@@ -176,6 +201,7 @@ watch(
   () => [
     props.record.id,
     props.record.sha256,
+    props.plan?.sha256,
     session.current.value?.tenant_id,
     session.current.value?.id,
     session.current.value?.role,
@@ -212,7 +238,11 @@ onScopeDispose(() => {
     <a-alert
       type="warning"
       show-icon
-      message="影子评估没有执行授权。此操作由管理员独立确认并创建限时任务，模型自报分数不代表经校准的攻击概率。"
+      :message="
+        plan
+          ? '核对原方案的执行通道、期限与材料。提交后请查看实际设备回读。'
+          : '影子评估没有执行授权。此操作由管理员独立确认并创建限时任务，模型自报分数不代表经校准的攻击概率。'
+      "
       class="section-gap"
     />
     <dl class="decision-response-context">
@@ -275,7 +305,7 @@ onScopeDispose(() => {
             aria-label="处置执行探针"
             show-search
             :option-filter-prop="'label'"
-            :disabled="locked"
+            :disabled="locked || !!binding"
             :options="sensors.map(v => ({ value: v.id, label: v.name + ' · ' + v.id }))"
             placeholder="选择可访问联动设备的在线探针"
         /></a-form-item>
@@ -284,7 +314,7 @@ onScopeDispose(() => {
             ><a-select
               v-model:value="form.connector_id"
               aria-label="处置联动设备"
-              :disabled="locked || !sensor"
+              :disabled="locked || !sensor || !!binding"
               :options="
                 connectors.map(v => ({ value: v.connector_id, label: v.device_id + ' · ' + v.version }))
               " /></a-form-item
@@ -295,7 +325,7 @@ onScopeDispose(() => {
               :min="30"
               :max="connector?.max_ttl_seconds ?? 30"
               :precision="0"
-              :disabled="locked"
+              :disabled="locked || !!binding"
           /></a-form-item>
         </div>
         <a-form-item label="操作依据" required

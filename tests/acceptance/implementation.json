@@ -605,12 +605,17 @@
       "name": "智能助手与周期报告",
       "code": [
         "internal/assistant/analysis.go",
+        "internal/assistant/playbook_draft.go",
         "internal/assistant/report.go",
         "internal/jobs/analysis.go",
         "internal/store/analysis.go",
         "internal/platform/analysis.go",
         "migrations/00010_analysis.sql",
         "web/platform/src/features/analysis/AssistantWorkspace.vue",
+        "web/platform/src/features/copilot/CopilotDrawer.vue",
+        "web/platform/src/features/copilot/CopilotAlertTriage.vue",
+        "web/platform/src/features/copilot/CopilotAnalysis.vue",
+        "web/platform/src/features/copilot/search.ts",
         "web/platform/src/features/analysis/ReportsWorkspace.vue",
         "internal/assistant/plans.go",
         "internal/store/report_plans.go",
@@ -630,6 +635,7 @@
         "internal/assistant/analysis_test.go",
         "tests/integration/analysis_test.go",
         "web/tests/analysis.test.ts",
+        "web/tests/ai-ops.test.ts",
         "web/tests/api.test.ts",
         "tests/integration/analysis_boundaries_test.go",
         "tests/integration/storage_failures_test.go",
@@ -639,7 +645,7 @@
         "web/tests/report-plans.test.ts",
         "tests/integration/report_plan_failures_test.go"
       ],
-      "boundary": "实际统计驱动的私有对话、自然日/完整周/月报告、冻结快照、校验引用、统计降级与 HTML 导出；River 社区核心持久作业、共享额度、幂等、取消与未知结果。报告计划按固定时区、时间与模型修订持久调度，停止及权限变化阻止未提交周期，停机恢复只生成最近完整周期并记录错过范围；对应真实依赖测试及原生 UI 验收正在执行。真实模型领域效果、自然语言检索/SSE、发布/PDF、知识库及统计报告的完整验收仍待完成。指定探针告警的自动研判由持续决策能力独立提供，其规模、恢复与领域效果仍需验收。"
+      "boundary": "实际统计驱动的私有对话、自然日/完整周/月报告、冻结快照、校验引用、统计降级与 HTML 导出；River 社区核心持久作业、共享额度、幂等、取消与未知结果。全局抽屉保留页面上下文，按权限检索告警、解释所选总览统计与值守指标；管理员可确认材料后发起仅观察的研判，或生成私有编排、联动插件草稿。编排草稿模型只读取本次描述。报告计划按固定时区、时间与模型修订持久调度，停止及权限变化阻止未提交周期，停机恢复只生成最近完整周期并记录错过范围。复杂自然语言筛选、真实模型领域效果、SSE、发布/PDF、知识库及统计报告的完整验收仍待完成。"
     },
     {
       "id": "mcp",
@@ -1078,22 +1084,34 @@
       "name": "四级自动处置与待确认方案",
       "code": [
         "internal/decision/automation.go",
+        "internal/decision/activity.go",
+        "internal/decision/metrics.go",
         "internal/store/decision_automation.go",
         "internal/store/decision_plan_evidence.go",
         "internal/store/decision_plans.go",
+        "internal/store/decision_plan_activity.go",
+        "internal/store/decision_plan_metrics.go",
         "internal/store/decision_plan_notices.go",
         "internal/platform/decision_automation.go",
-        "migrations/00064_decision_automation.sql"
+        "migrations/00064_decision_automation.sql",
+        "web/platform/src/views/AiOpsView.vue",
+        "web/platform/src/features/decisions/PlanReviewDialog.vue",
+        "web/platform/src/features/settings/AutomationSettings.vue"
       ],
-      "pages": [],
+      "pages": [
+        "platform:/ai/ai-ops",
+        "platform:/system/settings?section=automation"
+      ],
       "tests": [
         "internal/decision/automation_test.go",
         "internal/platform/decision_automation_test.go",
         "internal/notify/decision_test.go",
         "tests/integration/decision_automation_test.go",
+        "tests/integration/decision_ops_test.go",
+        "web/tests/ai-ops.test.ts",
         "tests/integration/continuous_decisions_test.go"
       ],
-      "boundary": "升级后默认将后续自动策略压至人机协同。新场景经过同场景、同条件和模型修订的影子评估才能提级。条件自动只自动签发小影响的外部源 IP 限时任务。源和目的保护、证据门槛、预算、冷却与设备资格同样适用。确认沿用现有签名通道，同一方案的驳回和确认互斥。超时留档并通知，驳回的有界材料和人工标签进入本人评测样本。"
+      "boundary": "升级后默认将后续自动策略压至人机协同。新场景经过同场景、同条件和模型修订的影子评估才能提级。条件自动只自动签发小影响的外部源 IP 限时任务。源和目的保护、证据门槛、预算、冷却与设备资格同样适用。确认沿用现有签名通道，同一方案的驳回和确认互斥。超时留档并通知，驳回的有界材料和人工标签进入本人评测样本。值守按当前账号读取待确认、自然日指标和设备回执流水，设置页按修订编辑上限与场景。"
     },
     {
       "id": "response_http",
@@ -2436,7 +2454,8 @@
         "完成本人指定模型新研判的持续判断；人工确认候选与绑定设备的限时自动授权；固定门槛、目标冷却、告警去重、小时预算及独立不可变档案",
         "独立授权的索引后新告警自动研判登记、共享费用预算、队列幂等、执行前许可核对及本人触发记录",
         "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
-        "租户四级上限和场景级别、自动处置暂停、绑定方案确认、超时通知与人工驳回评测样本"
+        "租户四级上限和场景级别、自动处置暂停、绑定方案确认、超时通知与人工驳回评测样本",
+        "值守台的本人待确认目录、处置指标和实际设备回读，系统设置管理自动化级别"
       ],
       "remaining": [
         "跨账号授权范围与多级审批/编排",
@@ -2581,7 +2600,8 @@
         "模型严格结构化建议、实际字段引用、反证与缺失信息",
         "自报分数标识、人工复核边界、持久作业和取消",
         "告警详情模型研判、事实引用、冻结材料、所有者历史、未知提交确认和活动作业有限轮询",
-        "按指定探针/等级及日额度自动提交白名单字段；队列执行前核对许可，历史重投不补发"
+        "按指定探针/等级及日额度自动提交白名单字段；队列执行前核对许可，历史重投不补发",
+        "从告警详情带入助手，创建仅观察研判，持续策略和任务评估均排除该材料"
       ],
       "remaining": [
         "同源码远程及原生页面验收",
@@ -2598,10 +2618,11 @@
       ],
       "implemented": [
         "管理员私有对话、完整统计窗口、冻结来源与最近成功问答上下文",
-        "持久作业、幂等确认、取消和来源引用校验"
+        "持久作业、幂等确认、取消和来源引用校验",
+        "全局助手带入页面，支持当前账号的有界告警检索、页面数据解释和私有草稿"
       ],
       "remaining": [
-        "受权限约束的自然语言查询、逐事件证据解释、SSE",
+        "复杂自然语言筛选、跨域证据解释、SSE",
         "完整授权版本撤回、真实模型质量、工具审批与评测"
       ]
     },

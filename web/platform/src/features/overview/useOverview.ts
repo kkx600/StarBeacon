@@ -1,7 +1,9 @@
-import { onBeforeUnmount, onMounted, readonly, shallowRef } from 'vue';
+import { inject, onBeforeUnmount, onMounted, readonly, shallowRef } from 'vue';
 import { session } from '../../session';
 import { validOverview, type Overview } from './overview';
+import { updateCopilotOverview } from '../copilot/context';
 export function useOverview() {
+  const updateAssistant = inject(updateCopilotOverview, undefined);
   const data = shallowRef<Overview | null>(null),
     pending = shallowRef(false),
     error = shallowRef(''),
@@ -28,6 +30,7 @@ export function useOverview() {
       if (current === generation) {
         if (!validOverview(value)) throw new Error('态势统计未能完整返回');
         data.value = value;
+        updateAssistant?.(value);
       }
     } catch (e) {
       if (current === generation && !(e instanceof DOMException && e.name === 'AbortError'))
@@ -43,6 +46,7 @@ export function useOverview() {
     }, 30000);
   });
   onBeforeUnmount(() => {
+    updateAssistant?.();
     generation++;
     controller?.abort();
     if (timer) clearInterval(timer);

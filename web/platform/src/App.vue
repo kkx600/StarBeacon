@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, shallowRef, watch } from 'vue';
+import { computed, defineAsyncComponent, h, nextTick, provide, shallowRef, watch } from 'vue';
 import {
   AlertOutlined,
   ApiOutlined,
@@ -23,10 +23,17 @@ import { appTheme } from '@starbeacon/shared/theme.ts';
 import AppShell from '@starbeacon/shared/components/AppShell.vue';
 import { session } from './session';
 import PasswordDialog from './features/users/PasswordDialog.vue';
+import { openCopilotAlert, updateCopilotOverview, type CopilotAlert } from './features/copilot/context';
+import type { Overview } from './features/overview/overview';
+const CopilotDrawer = defineAsyncComponent(() => import('./features/copilot/CopilotDrawer.vue'));
 const [message, MessageContextHolder] = antMessage.useMessage();
 const route = useRoute(),
   router = useRouter();
 const passwordOpen = shallowRef(false);
+const assistantOpen = shallowRef(false);
+const assistantAlert = shallowRef<CopilotAlert>();
+const assistantOverview = shallowRef<Overview>();
+let assistantTrigger: HTMLElement | undefined;
 const user = session.current;
 const shellKey = computed(() => JSON.stringify([user.value?.tenant_id, user.value?.id, user.value?.role]));
 const icons = {
@@ -66,6 +73,23 @@ const activeWorkspace = computed(() => {
 const assistantPath = computed(
   () => platformScreens.find(screen => screen.id === 'chat' && (!screen.admin || user.value?.role === 'admin'))?.path,
 );
+function openAssistant(alert?: CopilotAlert) {
+  assistantTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+  assistantAlert.value = alert;
+  assistantOpen.value = true;
+}
+function closeAssistant(restoreFocus = false) {
+  assistantOpen.value = false;
+  assistantAlert.value = undefined;
+  const trigger = assistantTrigger;
+  assistantTrigger = undefined;
+  if (restoreFocus) void nextTick(() => trigger?.focus());
+}
+provide(openCopilotAlert, openAssistant);
+provide(updateCopilotOverview, snapshot => {
+  assistantOverview.value = snapshot;
+});
+watch([shellKey, () => route.path], () => closeAssistant());
 const breadcrumbs = computed(() => {
   const group = navigationGroups.find(item => item.id === route.meta.navGroup);
   const item = workspace.value;
@@ -119,14 +143,23 @@ async function logout() {
         :breadcrumbs="breadcrumbs"
         :items="items"
         :active-workspace="activeWorkspace"
-        :show-assistant="!!assistantPath"
+        :show-assistant="!!user"
         allow-password-change
-        @assistant="assistantPath && navigate(assistantPath)"
+        @assistant="openAssistant()"
         @password="passwordOpen = true"
         @navigate="navigate"
         @logout="logout"
         ><RouterView :key="route.path"
       /></AppShell>
+      <CopilotDrawer
+        v-if="assistantOpen && user && route.path !== '/login'"
+        :context="String(route.meta.title ?? '星烽 StarBeacon')"
+        :workspace="String(route.meta.navWorkspace ?? '')"
+        :alert="assistantAlert"
+        :overview="assistantOverview"
+        :chat-path="assistantPath"
+        @close="closeAssistant(true)"
+      />
       <PasswordDialog v-if="passwordOpen" own @close="passwordOpen = false" /> </AApp
   ></a-config-provider>
 </template>

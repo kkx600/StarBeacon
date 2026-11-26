@@ -90,6 +90,7 @@ describe('业务导航与路由契约', () => {
     '/inventory/networks',
     '/inventory/discovery',
     '/ai/assistant',
+    '/ai/ai-ops',
     '/response/policies',
     '/response/evaluations',
     '/response/plugins',
@@ -159,7 +160,7 @@ describe('业务导航与路由契约', () => {
   it('两个角色的侧栏只包含可访问的工程工作区，并进入各自的首个可用视图', () => {
     const viewer = navigationForRole(false);
     const admin = navigationForRole(true);
-    expect(admin.flatMap(group => group.children)).toHaveLength(28);
+    expect(admin.flatMap(group => group.children)).toHaveLength(29);
     for (const [groups, screens] of [
       [viewer, platformScreens.filter(screen => !screen.admin)],
       [admin, platformScreens],
@@ -242,6 +243,7 @@ describe('业务导航与路由契约', () => {
     const categories = wrapper.get('nav[aria-label="设置分类"]');
     expect(categories.findAll('a').map(link => link.text())).toEqual([
       '用户管理',
+      '自动处置',
       '网关阻断',
       '全流量存储',
       '功能目录',
@@ -264,9 +266,9 @@ describe('业务导航与路由契约', () => {
     const rows = wrapper.findAll('tr[data-row-key]');
     expect(rows).toHaveLength(43);
     const unavailable = rows.filter(row => row.text().includes('当前版本未提供'));
-    expect(unavailable).toHaveLength(16);
+    expect(unavailable).toHaveLength(15);
     expect(unavailable.every(row => row.get('button').attributes('disabled') !== undefined)).toBe(true);
-    expect(unavailable.find(row => row.attributes('data-row-key') === 'ai-ops')?.text()).toContain('AI 值守');
+    expect(rows.find(row => row.attributes('data-row-key') === 'ai-ops')?.text()).not.toContain('当前版本未提供');
     expect(unavailable.find(row => row.attributes('data-row-key') === 'users')?.text()).toContain('认证与授权');
     await categories.get('a[href="/system/settings/users"]').trigger('click');
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/system/settings/users'));
@@ -303,14 +305,14 @@ describe('业务导航与路由契约', () => {
       wrapper.unmount();
     }
   });
-  it('AI 值守的规范地址仍加载当前版本未提供页面', async () => {
+  it('AI 值守的规范地址加载处置台并链接自动处置设置', async () => {
     const router = await routerFor('/ai/ai-ops');
     const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
     try {
       await flushPromises();
       expect(router.currentRoute.value.meta.admin).toBe(true);
       expect(wrapper.get('h1').text()).toBe('AI 值守');
-      expect(wrapper.text()).toContain('当前版本未提供此功能');
+      expect(wrapper.get('a[href="/system/settings?section=automation"]').text()).toBe('自动处置设置');
     } finally {
       wrapper.unmount();
     }

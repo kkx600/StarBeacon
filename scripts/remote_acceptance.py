@@ -315,8 +315,7 @@ def run_backend(state):
     # 编译与测试二进制启动独立准备；不让冷编译争用原生命令的业务期限。
     # 不执行用例、不生成通过报告；实际测试仍以 -count=1 和原期限重新执行。
     compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "--entrypoint", "go", "runner", "test", "-race", "-json", "-count=1", "-coverpkg=./cmd/...,./internal/...", "-run=^$", "./cmd/...", "./internal/..."], timeout=600)
-    # 观察预算覆盖单元、两组顺序集成及覆盖整理，不改变各业务请求和用例的期限。
-    # 两组各保留 1260 秒外层预算，另留编译、单元及退出整理时间。
+    # 总观察时限覆盖单元、顺序集成各组及覆盖整理，各组仍按原用例时限执行。
     compose(state, ["run", "--rm", "--no-deps", "--volume", state["directory"] + "/go-build-cache:/tmp/go-cache", "runner"], timeout=3000)
     try:
         compose(state, ["up", "-d", "--no-build", "capture-fixture"], timeout=60)

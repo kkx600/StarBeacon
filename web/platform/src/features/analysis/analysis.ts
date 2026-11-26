@@ -13,11 +13,29 @@ export interface AnalysisRequest {
   period: string;
   timezone: string;
   allow_context: boolean;
+  purpose?: 'playbook_draft';
+}
+export const draftStepNames = {
+  trigger: '触发器',
+  triage: 'AI 研判',
+  condition: '条件',
+  approval: '人工确认',
+  protection: '保护名单检查',
+  plugin: '联动插件',
+  gateway: '网关阻断',
+  verify: '核验',
+  notify: '通知',
+  compensate: '补偿',
+} as const;
+export interface DraftStep {
+  kind: keyof typeof draftStepNames;
+  description: string;
 }
 export interface AnalysisAnswer {
   summary: string;
   observations: { text: string; sources: string[] }[];
   recommendations: { text: string; sources: string[] }[];
+  steps?: DraftStep[];
 }
 export interface AnalysisJob {
   id: string;
@@ -205,7 +223,15 @@ export function validJob(value: unknown): value is AnalysisJob {
   )
     return false;
   const segments = value.evidence.segments;
-  if (!Array.isArray(segments) || segments.length < 1 || segments.length > 2) return false;
+  const draft = value.request.purpose === 'playbook_draft';
+  if (
+    !Array.isArray(segments) ||
+    (draft ? segments.length !== 0 : segments.length < 1 || segments.length > 2) ||
+    (draft
+      ? value.request.kind !== 'chat' || value.template !== 'playbook-draft.v1'
+      : value.request.purpose !== undefined)
+  )
+    return false;
   let boundary = value.evidence.window.start;
   for (const s of segments) {
     if (
@@ -236,7 +262,7 @@ export function validJob(value: unknown): value is AnalysisJob {
     boundary = s.window.end;
   }
   if (
-    boundary !== value.evidence.window.end ||
+    (!draft && boundary !== value.evidence.window.end) ||
     value.request.window.start !== value.evidence.window.start ||
     value.request.window.end !== value.evidence.window.end
   )
@@ -267,6 +293,27 @@ export function validJob(value: unknown): value is AnalysisJob {
     answer.recommendations.length > 10
   )
     return false;
+  if (draft) {
+    return (
+      text(answer.summary, 240) &&
+      !!answer.summary &&
+      answer.observations.length === 0 &&
+      answer.recommendations.length === 0 &&
+      Array.isArray(answer.steps) &&
+      answer.steps.length >= 1 &&
+      answer.steps.length <= 12 &&
+      answer.steps[0]?.kind === 'trigger' &&
+      answer.steps.every(
+        step =>
+          record(step) &&
+          typeof step.kind === 'string' &&
+          Object.hasOwn(draftStepNames, step.kind) &&
+          text(step.description, 240) &&
+          !!step.description,
+      )
+    );
+  }
+  if (answer.steps !== undefined) return false;
   const sources = new Set(analysisFacts(value as unknown as AnalysisJob).map(f => f.id));
   return [...answer.observations, ...answer.recommendations].every(
     row =>
@@ -280,6 +327,7 @@ export function validJob(value: unknown): value is AnalysisJob {
   );
 }
 export function analysisFacts(job: AnalysisJob) {
+  if (job.request.purpose === 'playbook_draft') return [];
   const facts = [
     { id: 'window', label: '完整统计范围', value: `${job.evidence.window.start} — ${job.evidence.window.end}` },
     { id: 'alerts.total', label: '已索引告警总数', value: totalAlerts(job) },

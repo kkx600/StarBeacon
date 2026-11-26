@@ -88,7 +88,7 @@ func (p *Postgres) AnalysisHistory(ctx context.Context, user model.Principal, th
 		if err := tx.QueryRow(ctx, `SELECT id FROM analysis_threads WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND expires_at>now()`, user.TenantID, thread, user.ID).Scan(&id); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT request->>'question',COALESCE(answer->>'summary','') FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() AND state='succeeded' ORDER BY created_at DESC,id DESC LIMIT 8`, user.TenantID, thread, user.ID)
+		rows, err := tx.Query(ctx, `SELECT request->>'question',COALESCE(answer->>'summary','') FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() AND state='succeeded' AND NOT (request ? 'purpose') ORDER BY created_at DESC,id DESC LIMIT 8`, user.TenantID, thread, user.ID)
 		if err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ func (p *Postgres) createAnalysis(ctx context.Context, user model.Principal, inp
 		if submitted >= 10000 {
 			return ErrModelQuota
 		}
-		job = assistant.Job{ID: RandomID("analysis_"), Revision: 1, Request: input, State: "queued", Template: assistant.TemplateVersion, Evidence: evidence, Result: llm.Result{State: "queued", Code: "awaiting_execution"}}
+		job = assistant.Job{ID: RandomID("analysis_"), Revision: 1, Request: input, State: "queued", Template: input.Template(), Evidence: evidence, Result: llm.Result{State: "queued", Code: "awaiting_execution"}}
 		category := "reports"
 		if input.Kind == "chat" {
 			category = "models"
@@ -207,11 +207,11 @@ func (p *Postgres) createAnalysis(ctx context.Context, user model.Principal, inp
 				if err := tx.QueryRow(ctx, `SELECT id FROM analysis_threads WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND expires_at>now() FOR UPDATE`, user.TenantID, input.ThreadID, user.ID).Scan(&thread); err != nil {
 					return err
 				}
-				var last, state string
-				if err := tx.QueryRow(ctx, `SELECT id,state FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() ORDER BY created_at DESC,id DESC LIMIT 1`, user.TenantID, input.ThreadID, user.ID).Scan(&last, &state); err != nil {
+				var last, state, purpose string
+				if err := tx.QueryRow(ctx, `SELECT id,state,COALESCE(request->>'purpose','') FROM analysis_jobs WHERE tenant_id=$1 AND thread_id=$2 AND created_by=$3 AND expires_at>now() ORDER BY created_at DESC,id DESC LIMIT 1`, user.TenantID, input.ThreadID, user.ID).Scan(&last, &state, &purpose); err != nil {
 					return err
 				}
-				if last != input.ParentID || state == "queued" || state == "running" {
+				if last != input.ParentID || purpose != input.Purpose || state == "queued" || state == "running" {
 					return ErrConflict
 				}
 				if _, err := tx.Exec(ctx, `UPDATE analysis_threads SET updated_at=clock_timestamp(),expires_at=now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='models'),180)) WHERE tenant_id=$1 AND id=$2`, user.TenantID, input.ThreadID); err != nil {
@@ -432,7 +432,7 @@ func (p *Postgres) StartAnalysis(ctx context.Context, args assistant.Args, river
 				code = "provider_disabled"
 			}
 		}
-		if Hash(prompt) != promptHash || lease.Job.Template != assistant.TemplateVersion || prompt == "" || !validAnalysisWindow(lease.Job.Request.Window, lease.Job.Request.Kind) {
+		if Hash(prompt) != promptHash || lease.Job.Template != lease.Job.Request.Template() || prompt == "" || !validAnalysisWindow(lease.Job.Request.Window, lease.Job.Request.Kind) {
 			code = "analysis_input_invalid"
 		}
 		if code != "" {

@@ -16,6 +16,7 @@ import {
 } from './usePluginGeneration';
 
 const emit = defineEmits<{ close: []; review: [GeneratedPlugin] }>();
+defineProps<{ draftOnly?: boolean }>();
 const ACheckbox = Checkbox;
 const ACheckboxGroup = Checkbox.Group;
 const ATabs = Tabs;
@@ -134,6 +135,7 @@ async function generate(retry = false) {
     :open="true"
     title="AI 生成插件"
     :width="800"
+    :z-index="draftOnly ? 1200 : undefined"
     :footer="null"
     :closable="!posting"
     :keyboard="!posting"
@@ -260,8 +262,14 @@ async function generate(retry = false) {
               >{{ selected.candidate.script ? 'Starlark 脚本' : '声明式模板' }} ·
               {{ selected.candidate.examples?.length ?? 0 }} 项样例</span
             >
-            <a-button type="primary" @click="emit('review', selected.candidate)">在编辑器审阅</a-button>
+            <a-button v-if="!draftOnly" type="primary" @click="emit('review', selected.candidate)"
+              >在编辑器审阅</a-button
+            >
           </div>
+          <details v-if="draftOnly && selected.candidate">
+            <summary>查看草稿</summary>
+            <pre class="technical generation-preview">{{ JSON.stringify(selected.candidate, null, 2) }}</pre>
+          </details>
         </section>
       </a-tab-pane>
     </a-tabs>
@@ -269,6 +277,12 @@ async function generate(retry = false) {
 </template>
 
 <style scoped>
+.generation-preview {
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .generation-inputs {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(140px, 1fr);

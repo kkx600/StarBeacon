@@ -578,6 +578,14 @@
       "admin": true
     },
     {
+      "id": "ai-ops",
+      "workspace": "ai-ops",
+      "path": "/ai/ai-ops",
+      "title": "AI 值守",
+      "module": "aiOps",
+      "admin": true
+    },
+    {
       "id": "chat",
       "workspace": "chat",
       "path": "/ai/assistant",

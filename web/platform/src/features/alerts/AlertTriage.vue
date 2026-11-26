@@ -293,7 +293,7 @@ onScopeDispose(() => {
           />
           <div v-if="selected.answer" class="triage-answer section-gap">
             <a-button
-              v-if="session.current.value?.role === 'admin'"
+              v-if="session.current.value?.role === 'admin' && !selected.request.observation_only"
               :disabled="locked || loading || !!detailError"
               @click="openPolicies"
               >评估决策策略</a-button

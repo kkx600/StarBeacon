@@ -45,6 +45,25 @@ class IntegrationExecutionTest(unittest.TestCase):
         names = [value for group in manifest["groups"] for value in group["tests"]]
         self.assertEqual(sorted(names), self.names)
 
+    def test_large_inventory_distributes_tests_without_relaxing_shard_budget(self):
+        self.names = [f"TestCase{i:03d}" for i in range(165)]
+        observed = []
+
+        def execute(arguments, environment, name, timeout=600):
+            if name != "go-integration-inventory":
+                self.assertIn("-timeout=1200s", arguments)
+                self.assertEqual(timeout, 1260)
+                observed.append(name)
+            return self.execute(arguments, environment, name, timeout)
+
+        result = execution.run(self.root, {}, execute)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(observed, ["go-integration-01", "go-integration-02", "go-integration-03"])
+        self.assertEqual(result["group_count"], 3)
+        execution.verify(self.root, result)
+        manifest = json.loads((self.root / "go-integration-manifest.json").read_text())
+        self.assertEqual([len(group["tests"]) for group in manifest["groups"]], [55, 55, 55])
+
     def test_missing_skipped_duplicate_or_failed_tests_cannot_pass(self):
         for flag in ("omit", "skip", "duplicate", "process_failure"):
             setattr(self, flag, True)

@@ -62,6 +62,7 @@ const canSend = computed(
     !busy.value &&
     (unconfirmed.value ||
       (!blocked.value &&
+        latest.value?.request.purpose !== 'playbook_draft' &&
         state.available.value &&
         providers.value.some(p => p.id === provider.value) &&
         allowed.value &&

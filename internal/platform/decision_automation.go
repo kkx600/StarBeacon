@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/decision"
@@ -16,6 +17,8 @@ func (a *API) registerDecisionAutomation(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/decision-automation", a.Auth.Require(true, a.saveDecisionAutomation))
 	m.HandleFunc("POST /api/v1/decision-automation/pause", a.Auth.Require(true, a.pauseDecisionAutomation))
 	m.HandleFunc("GET /api/v1/decision-plans", a.Auth.Require(false, a.decisionPlans))
+	m.HandleFunc("GET /api/v1/decision-plans/metrics", a.Auth.Require(false, a.decisionPlanMetrics))
+	m.HandleFunc("GET /api/v1/decision-plans/activity", a.Auth.Require(false, a.decisionPlanActivity))
 	m.HandleFunc("POST /api/v1/decision-evaluations/{id}/response/reject", a.Auth.Require(true, a.rejectDecisionPlan))
 }
 
@@ -124,4 +127,43 @@ func (a *API) rejectDecisionPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpapi.JSON(w, 200, result)
+}
+
+func (a *API) decisionPlanMetrics(w http.ResponseWriter, r *http.Request) {
+	now := time.Now()
+	zone := r.URL.Query().Get("timezone")
+	if _, err := decision.PlanMetricsDay(now, zone); err != nil || !incidentQuery(r, "timezone") {
+		decisionFailure(w, r, decision.ErrInput)
+		return
+	}
+	if !a.decisionReady(w, r) {
+		return
+	}
+	out, err := a.DB.DecisionPlanMetrics(r.Context(), httpapi.Principal(r), now, zone)
+	if err != nil {
+		decisionFailure(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, out)
+}
+
+func (a *API) decisionPlanActivity(w http.ResponseWriter, r *http.Request) {
+	limit, ok := requestListLimit(w, r)
+	if !ok {
+		return
+	}
+	cursor := r.URL.Query().Get("cursor")
+	if _, _, err := decision.ActivityCursor(cursor); err != nil || !incidentQuery(r, "cursor", "limit") {
+		decisionFailure(w, r, decision.ErrInput)
+		return
+	}
+	if !a.decisionReady(w, r) {
+		return
+	}
+	out, err := a.DB.DecisionPlanActivity(r.Context(), httpapi.Principal(r), cursor, limit)
+	if err != nil {
+		decisionFailure(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, out)
 }

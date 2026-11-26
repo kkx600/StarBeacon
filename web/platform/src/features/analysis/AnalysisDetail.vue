@@ -15,6 +15,7 @@ import { countText } from '../overview/overview';
 import {
   analysisCodes,
   analysisFacts,
+  draftStepNames,
   kindNames,
   stateNames,
   totalAlerts,
@@ -35,6 +36,7 @@ watch(
 );
 onScopeDispose(() => downloadControl?.abort());
 const facts = computed(() => (props.job ? analysisFacts(props.job) : []));
+const draft = computed(() => props.job?.request.purpose === 'playbook_draft');
 const factColumns = [
   { title: '来源编号', dataIndex: 'id', width: 192, className: 'technical', ellipsis: true },
   { title: '统计项', dataIndex: 'label', width: 218, ellipsis: true },
@@ -122,15 +124,21 @@ async function download() {
           show-icon
           class="section-gap"
         />
-        <MetricBar :items="metrics" />
-        <p class="muted">
+        <MetricBar v-if="!draft" :items="metrics" />
+        <p v-if="!draft" class="muted">
           统计范围：{{ formatTime(job.evidence.window.start) }} — {{ formatTime(job.evidence.window.end) }} ·
           {{ job.request.timezone || 'UTC' }}
         </p>
         <section v-if="job.answer" class="analysis-narrative">
-          <h2>模型概述</h2>
+          <h2>{{ draft ? '处置编排草稿' : '模型概述' }}</h2>
           <p>{{ job.answer.summary }}</p>
+          <ol v-if="job.answer.steps">
+            <li v-for="(item, index) in job.answer.steps" :key="index">
+              <strong>{{ draftStepNames[item.kind] }}</strong> {{ item.description }}
+            </li>
+          </ol>
           <template
+            v-else
             v-for="group in [
               { label: '统计观察', items: job.answer.observations },
               { label: '调查建议', items: job.answer.recommendations },
@@ -147,17 +155,23 @@ async function download() {
         <a-alert
           v-else-if="!working(job.state)"
           type="info"
-          message="智能总结未返回，完整统计来源仍可复核。"
+          :message="draft ? '模型未生成编排草稿。' : '智能总结未返回，完整统计来源仍可复核。'"
           show-icon
           class="section-gap"
         />
-        <div class="heading-with-help">
+        <div v-if="!draft" class="heading-with-help">
           <h2>统计来源</h2>
           <PageHelp title="统计来源">
             <p>统计快照仅记录已索引告警。检测结论与周期覆盖率需独立核对，模型建议需人工复核。</p>
           </PageHelp>
         </div>
-        <ListTable :data-source="facts" :columns="factColumns" :pagination="tablePagination()" :scroll="{ x: 710 }" />
+        <ListTable
+          v-if="!draft"
+          :data-source="facts"
+          :columns="factColumns"
+          :pagination="tablePagination()"
+          :scroll="{ x: 710 }"
+        />
         <dl class="analysis-metadata">
           <dt>分析标识</dt>
           <dd>{{ job.id }}</dd>

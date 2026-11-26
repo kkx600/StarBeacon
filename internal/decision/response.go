@@ -47,7 +47,8 @@ func ManualPlanReason(policy Record, job triage.Job) string {
 // 提交时重新核对当前策略、原研判与实际告警白名单；历史匹配不能替代当前执行资格。
 func ResponseIntent(ctx context.Context, e Evaluation, policy Record, job triage.Job, evidence triage.Evidence, request ResponseRequest, now time.Time) (responseapi.Intent, error) {
 	// 普通确认只处理人机协同评估。受上限降级的自动策略须提供原待确认方案。
-	if policy.Definition.Level() != Approval || e.Policy.Definition.Level() != Approval {
+	if policy.Definition.Mode != "approval" || e.Policy.Definition.Mode != "approval" ||
+		policy.Definition.Level() != Approval || e.Policy.Definition.Level() != Approval {
 		return responseapi.Intent{}, ErrPermission
 	}
 	if ManualPlanReason(policy, job) != "" {

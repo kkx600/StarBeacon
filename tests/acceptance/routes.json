@@ -74,6 +74,7 @@
     "/system/operations/health",
     "/system/settings",
     "/system/settings/users",
+    "/system/settings?section=automation",
     "/system/settings?section=features",
     "/system/settings?section=traffic",
     "/system/tenants",

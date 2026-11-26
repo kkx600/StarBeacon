@@ -12,7 +12,7 @@ import {
   type PolicyRecord,
 } from './decisionPolicies';
 
-export function useDecisionPolicies() {
+export function useDecisionPolicies(readList = true) {
   const page = shallowRef<PolicyPage>({ items: [], next_cursor: '' }),
     pending = shallowRef(true),
     error = shallowRef(''),
@@ -143,7 +143,7 @@ export function useDecisionPolicies() {
     active.value = '';
     cursors.value = [''];
     pageSize.value = defaultPageSize;
-    void refresh();
+    if (readList) void refresh();
   }
   watch(
     () => [session.current.value?.tenant_id, session.current.value?.id, session.current.value?.role].join('/'),
@@ -155,7 +155,7 @@ export function useDecisionPolicies() {
     write?.abort();
     attempt = undefined;
   });
-  void refresh();
+  if (readList) void refresh();
   return {
     page: shallowReadonly(page),
     pending: shallowReadonly(pending),

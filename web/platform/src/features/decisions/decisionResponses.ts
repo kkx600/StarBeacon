@@ -3,6 +3,7 @@ import { readyConnector } from '@starbeacon/shared/response.ts';
 import { goJSONDigest } from '@starbeacon/shared/utils/goJSONDigest.ts';
 import { decisionConfirmationWindowMs, policyID } from './decisionPolicies';
 import { validEvaluation, type EvaluationRecord } from './decisionEvaluations';
+import type { ContinuousRecord } from './continuousDecisions';
 
 export interface DecisionResponseRequest {
   evaluation_sha256: string;
@@ -36,16 +37,22 @@ export interface DecisionResponseRecord {
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const digest = (v: unknown) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
 const date = (v: unknown) => typeof v === 'string' && Number.isFinite(Date.parse(v));
-export function eligibleDecisionResponse(e: EvaluationRecord, now = Date.now()) {
+export function eligibleDecisionResponse(e: EvaluationRecord, now = Date.now(), plan?: ContinuousRecord) {
   const evaluated = Date.parse(e.result.evaluated_at);
+  const permitted = plan
+    ? plan.state === 'awaiting_confirmation' &&
+      plan.evaluation_id === e.id &&
+      plan.evaluation_sha256 === e.sha256 &&
+      Date.parse(plan.plan?.confirm_until ?? plan.expires_at) > now
+    : e.policy.definition.mode === 'approval' && e.policy.definition.automation_level !== 'observe';
   return (
-    e.policy.definition.mode === 'approval' &&
+    permitted &&
     e.result.status === 'matched' &&
     e.result.candidate_action === 'block_source' &&
     !!e.result.target_ip &&
     Date.parse(e.expires_at) > now &&
     evaluated <= now &&
-    evaluated + decisionConfirmationWindowMs > now
+    (plan !== undefined || evaluated + decisionConfirmationWindowMs > now)
   );
 }
 export function eligibleResponseSensor(s: Sensor, now = Date.now()) {

@@ -31,6 +31,11 @@ func TestDecisionAutomationHTTPBoundsAndUnavailableStorage(t *testing.T) {
 		{"目录超限", "GET", "/decision-plans?limit=140", "", a.decisionPlans, 400},
 		{"未知目录", "GET", "/decision-plans?view=all", "", a.decisionPlans, 400},
 		{"无效游标", "GET", "/decision-plans?cursor=%2F", "", a.decisionPlans, 400},
+		{"合法指标", "GET", "/decision-plans/metrics?timezone=Asia%2FShanghai", "", a.decisionPlanMetrics, 503},
+		{"禁止模糊时区", "GET", "/decision-plans/metrics?timezone=Local", "", a.decisionPlanMetrics, 400},
+		{"重复时区", "GET", "/decision-plans/metrics?timezone=UTC&timezone=Asia%2FShanghai", "", a.decisionPlanMetrics, 400},
+		{"合法流水", "GET", "/decision-plans/activity", "", a.decisionPlanActivity, 503},
+		{"流水非法游标", "GET", "/decision-plans/activity?cursor=5", "", a.decisionPlanActivity, 400},
 		{"合法驳回", "POST", "/decision-evaluations/evaluation_owned/response/reject", validRejection, a.rejectDecisionPlan, 503},
 		{"空白原因", "POST", "/decision-evaluations/evaluation_owned/response/reject", strings.Replace(validRejection, "核对材料后驳回", " ", 1), a.rejectDecisionPlan, 400},
 	} {

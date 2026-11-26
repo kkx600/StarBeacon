@@ -11355,7 +11355,7 @@
       },
       "post": {
         "summary": "维护决策策略",
-        "description": "新场景从 shadow 开始。提高级别或变更当前高级别的判断依据，需要同一账号、场景、判断条件和提供方修订下的有效影子评估。运行级别受租户全局上限与暂停约束。持续模式仅处理当前维护者在本修订保存后创建并完成的指定模型研判。模型触发需要独立数据和费用许可。自动配置固定观测及执行探针注册、连接器摘要、TTL、冷却、小时预算与评分授权。CAS、不可变修订、幂等回执及审计同事务。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史默认按 operations 保留 180 天。",
+        "description": "新场景从仅观察开始。场景级别可在已有运行模式能力内收紧，保留原绑定。提高级别或变更当前高级别的判断依据，需要同一账号、场景、判断条件和提供方修订下的有效影子评估。实际级别受租户全局上限与暂停约束。持续模式处理当前维护者在本修订保存后完成的指定模型研判，排除仅观察研判。模型触发需要独立的数据和费用许可。自动配置固定观测及执行探针注册、连接器摘要、TTL、冷却、小时预算与评分授权。CAS、不可变修订、幂等回执及审计同事务。请求最多 16 KiB，拒绝重复键、未知字段、大小写别名和查询参数。历史默认按 operations 保留 180 天。",
         "responses": {
           "400": {
             "description": "请求未完成，具体含义见 code/message。",
@@ -11534,6 +11534,37 @@
           "403": {"description": "账号权限已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "404": {"description": "游标不可访问或已过期", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "503": {"description": "决策存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/decision-plans/metrics": {
+      "get": {
+        "summary": "读取本人今日的值守指标",
+        "description": "时间范围为所选时区的自然日。待确认为当前未到期的存量。已执行从已核验的设备回执计数，缺少耗时样本时均值为空。",
+        "parameters": [{"name": "timezone", "in": "query", "schema": {"type": "string", "maxLength": 128, "default": "UTC"}}],
+        "responses": {
+          "200": {"description": "本人值守指标", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionPlanMetrics"}}}},
+          "400": {"description": "时区或查询无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "账号权限已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "值守存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/decision-plans/activity": {
+      "get": {
+        "summary": "读取本人处置流水",
+        "description": "按时间倒序汇总研判、方案、保护名单拦截、人工审核、授权任务与原租约解除回读。解除记录只在采集器回读确认后出现。",
+        "parameters": [
+          {"name": "cursor", "in": "query", "schema": {"type": "string", "pattern": "^[A-Za-z0-9_-]*$", "maxLength": 112}},
+          {"$ref": "#/components/parameters/ListPageLimit"}
+        ],
+        "responses": {
+          "200": {"description": "本人处置流水", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DecisionActivityPage"}}}},
+          "400": {"description": "游标或分页无效", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "未登录", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "账号权限已变化", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "值守存储暂不可用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
         }
       }
     },
@@ -22507,7 +22538,8 @@
             "type": "boolean",
             "default": false,
             "description": "本次模型调用读取统计和对话内容的许可；与公网连接许可分开。"
-          }
+          },
+          "purpose": {"const": "playbook_draft", "description": "单次独立的编排草稿，仅使用本次描述。不能带入原有对话或生成授权。"}
         },
         "required": [
           "kind"
@@ -22523,7 +22555,7 @@
           },
           "segments": {
             "type": "array",
-            "minItems": 1,
+            "minItems": 0,
             "maxItems": 2,
             "items": {
               "$ref": "#/components/schemas/OverviewSnapshot"
@@ -22539,7 +22571,7 @@
           "segments",
           "sha256"
         ],
-        "description": "连续、无重叠的实际告警统计快照及内容摘要；合计使用精确整数，不合并分段 Top 排名。资产及探针状态为生成时登记状态，不构成历史覆盖率或完整接入水位。"
+        "description": "连续、无重叠的实际告警统计快照及内容摘要。仅生成编排草稿时统计分段为空。资产及探针状态为生成时登记状态，不构成历史覆盖率或完整接入水位。"
       },
       "AnalysisPoint": {
         "type": "object",
@@ -22586,6 +22618,21 @@
             "items": {
               "$ref": "#/components/schemas/AnalysisPoint"
             }
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "description": "仅编排草稿返回的建议步骤，配置与授权由操作员填写。",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "description"],
+              "properties": {
+                "kind": {"enum": ["trigger", "triage", "condition", "approval", "protection", "plugin", "gateway", "verify", "notify", "compensate"]},
+                "description": {"type": "string", "minLength": 1, "maxLength": 240}
+              }
+            }
           }
         },
         "required": [
@@ -22627,7 +22674,7 @@
             "type": "boolean"
           },
           "template": {
-            "const": "analysis.v1"
+            "enum": ["analysis.v1", "playbook-draft.v1"]
           },
           "evidence": {
             "$ref": "#/components/schemas/AnalysisEvidence"
@@ -25372,6 +25419,11 @@
             "enum": [
               true
             ]
+          },
+          "observation_only": {
+            "type": "boolean",
+            "default": false,
+            "description": "仅观察。全局助手始终启用，档案不能进入持续决策，也不满足设备任务的评估资格。"
           }
         },
         "required": [
@@ -28691,6 +28743,49 @@
           "confirm_until": {"type": "string", "format": "date-time", "description": "待确认时返回。最长 15 分钟，并受材料与档案有效期约束。"}
         }
       },
+      "DecisionPlanMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["timezone", "start", "end", "triage_count", "triage_mean_ms", "pending", "executed", "automatic", "rejected", "protected"],
+        "properties": {
+          "timezone": {"type": "string", "maxLength": 128},
+          "start": {"type": "string", "format": "date-time"},
+          "end": {"type": "string", "format": "date-time"},
+          "triage_count": {"type": "integer", "minimum": 0},
+          "triage_mean_ms": {"type": ["integer", "null"], "minimum": 0},
+          "pending": {"type": "integer", "minimum": 0},
+          "executed": {"type": "integer", "minimum": 0},
+          "automatic": {"type": "integer", "minimum": 0},
+          "rejected": {"type": "integer", "minimum": 0},
+          "protected": {"type": "integer", "minimum": 0}
+        }
+      },
+      "DecisionActivityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "next_cursor"],
+        "properties": {
+          "next_cursor": {"type": "string", "maxLength": 112},
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "at", "kind", "state", "object", "code", "task_id"],
+              "properties": {
+                "id": {"type": "string", "maxLength": 64},
+                "at": {"type": "string", "format": "date-time"},
+                "kind": {"enum": ["triage", "plan", "protection", "review", "automatic", "manual", "release"]},
+                "state": {"type": "string"},
+                "object": {"type": "string"},
+                "code": {"type": "string"},
+                "task_id": {"type": "string", "maxLength": 64}
+              }
+            }
+          }
+        }
+      },
       "DecisionPlanRejection": {
         "type": "object",
         "additionalProperties": false,
@@ -28743,7 +28838,7 @@
             "const": "decision-policy.v1"
           },
           "mode": {
-            "description": "运行模式。shadow 为仅观察，approval 为人机协同，automatic 结合 automation_level 表示条件自动或全自动。",
+            "description": "运行模式约束可用策略绑定。automation_level 可低于模式的默认级别，且保留原配置。",
             "enum": [
               "shadow",
               "approval",
@@ -28852,7 +28947,7 @@
             },
             "then": {
               "properties": {
-                "automation_level": {"const": "approval"},
+                "automation_level": {"enum": ["observe", "approval"]},
                 "continuous": {
                   "allOf": [
                     {
@@ -28884,7 +28979,7 @@
             },
             "then": {
               "properties": {
-                "automation_level": {"enum": ["conditional", "full"]},
+                "automation_level": {"enum": ["observe", "approval", "conditional", "full"]},
                 "threshold": {
                   "minimum": 0.5
                 },

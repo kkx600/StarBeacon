@@ -22,6 +22,7 @@ const components: Record<string, NonNullable<RouteRecordRaw['component']>> = {
   operations: () => import('./views/OperationsView.vue'),
   notifications: () => import('./views/NotificationsView.vue'),
   models: () => import('./views/ModelsView.vue'),
+  aiOps: () => import('./views/AiOpsView.vue'),
   assistant: () => import('./views/AssistantView.vue'),
   reports: () => import('./views/ReportsView.vue'),
   retention: () => import('./views/RetentionView.vue'),

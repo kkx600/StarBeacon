@@ -133,8 +133,9 @@ func qualifyDecisionPromotion(ctx context.Context, tx pgx.Tx, u model.Principal,
 	}
 	proof, err := readDecisionEvaluation(tx.QueryRow(ctx, `SELECT `+decisionEvaluationColumns+` FROM decision_evaluations v
 		WHERE v.tenant_id=$1 AND v.created_by=$2 AND v.policy_id=$3 AND v.status='matched' AND v.expires_at>now()
-		  AND v.record->'policy'->'definition'->>'mode'='shadow'
-		  AND (v.record->'policy'->'definition') - ARRAY['continuous','automation_level','small_block_max_seconds']::text[] = $4::jsonb
+		  AND (v.record->'policy'->'definition'->>'mode'='shadow' OR v.record->'policy'->'definition'->>'automation_level'='observe')
+		  AND jsonb_set(v.record->'policy'->'definition','{mode}','"shadow"'::jsonb) -
+		      ARRAY['continuous','automation_level','small_block_max_seconds']::text[] = $4::jsonb
 		  AND v.record->'result'->>'provider_id'=$5 AND v.record->'result'->>'provider_revision'=$6::bigint::text
 		ORDER BY v.sequence DESC LIMIT 1`, u.TenantID, u.ID, change.ID, raw, next.Continuous.ProviderID, next.Continuous.ProviderRevision))
 	if errors.Is(err, pgx.ErrNoRows) {

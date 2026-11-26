@@ -41,6 +41,7 @@ type Request struct {
 	ProviderRevision int64  `json:"provider_revision"`
 	Note             string `json:"note"`
 	AllowContext     bool   `json:"allow_context"`
+	ObservationOnly  bool   `json:"observation_only,omitempty"`
 }
 
 func clean(text string, limit int) bool {

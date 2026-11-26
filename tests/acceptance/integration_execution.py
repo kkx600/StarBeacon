@@ -9,6 +9,19 @@ import time
 from check_go_coverage import merge_profiles
 
 INSTRUMENTATION_WARNING = "warning: no packages being tested depend on matches for pattern ./cmd/..."
+LEGACY_STRATEGY = "sequential_shards_v1"
+STRATEGY = "sequential_shards_v2"
+MAX_TESTS_PER_GROUP = 64
+
+
+def split_tests(names, strategy):
+    if strategy == LEGACY_STRATEGY:
+        count = 2 if len(names) > MAX_TESTS_PER_GROUP else 1
+    elif strategy == STRATEGY:
+        count = (len(names) + MAX_TESTS_PER_GROUP - 1) // MAX_TESTS_PER_GROUP
+    else:
+        raise ValueError("集成执行策略无效")
+    return [names[i::count] for i in range(count)]
 
 
 def events(path):
@@ -61,11 +74,11 @@ def verify_group(path, names):
 
 def run(directory, environment, execute):
     started = time.monotonic()
-    result = {"name": "go-integration", "status": "failed", "exit_code": 1, "strategy": "sequential_shards_v1"}
+    result = {"name": "go-integration", "status": "failed", "exit_code": 1, "strategy": STRATEGY}
     manifest = {"schema_version": 1, "strategy": result["strategy"], "status": "failed", "tests": [], "groups": []}
     try:
         for path in directory.glob("go-integration*"):
-            if path.name in ("go-integration.jsonl", "go-integration.cover", "go-integration-manifest.json") or re.fullmatch(r"go-integration-(?:inventory|[0-9]{2})\.(?:jsonl|cover)", path.name):
+            if path.name in ("go-integration.jsonl", "go-integration.cover", "go-integration-manifest.json") or re.fullmatch(r"go-integration-(?:inventory|[0-9]{2,})\.(?:jsonl|cover)", path.name):
                 path.unlink()
         args = ["go", "test", "-race", "-json", "-tags=integration", "-count=1", "-timeout=1200s", "-coverpkg=./cmd/...,./internal/..."]
         listing = execute([*args, "-list=^(Test|Example|Fuzz)", "-run=^$", "./tests/integration"], environment, "go-integration-inventory")
@@ -76,7 +89,7 @@ def run(directory, environment, execute):
         names = inventory(directory / "go-integration-inventory.jsonl")
         manifest["tests"] = names
         manifest["inventory_sha256"] = hashlib.sha256("\n".join(names).encode()).hexdigest()
-        groups = [names[i::2] for i in range(2)] if len(names) > 64 else [names]
+        groups = split_tests(names, STRATEGY)
         for i, subset in enumerate(groups, 1):
             name = f"go-integration-{i:02d}"
             pattern = "^(" + "|".join(re.escape(value) for value in subset) + ")$"
@@ -105,13 +118,14 @@ def verify(directory: pathlib.Path, result: dict):
     manifest = json.loads((directory / "go-integration-manifest.json").read_text())
     names = inventory(directory / "go-integration-inventory.jsonl")
     expected = hashlib.sha256("\n".join(names).encode()).hexdigest()
-    if (manifest.get("schema_version") != 1 or manifest.get("strategy") != "sequential_shards_v1" or manifest.get("status") != "passed"
+    strategy = result.get("strategy")
+    if (manifest.get("schema_version") != 1 or manifest.get("strategy") != strategy or manifest.get("status") != "passed"
             or manifest.get("tests") != names or manifest.get("inventory_sha256") != expected
             or result.get("inventory_sha256") != expected or result.get("test_count") != len(names)):
         raise ValueError("集成清单与执行结果不一致")
     groups = manifest.get("groups", [])
-    expected_groups = [names[i::2] for i in range(2)] if len(names) > 64 else [names]
-    if len(groups) != len(expected_groups) or result.get("group_count") != len(groups):
+    expected_groups = split_tests(names, strategy)
+    if len(groups) != len(expected_groups) or type(result.get("group_count")) is not int or result["group_count"] != len(groups):
         raise ValueError("集成分组存在遗漏")
     for i, (group, subset) in enumerate(zip(groups, expected_groups), 1):
         stem = f"go-integration-{i:02d}"

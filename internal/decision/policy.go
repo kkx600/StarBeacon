@@ -84,9 +84,8 @@ func (d Definition) Validate() error {
 	if !slices.Contains([]string{"shadow", "approval", "automatic"}, d.Mode) {
 		return ErrInput
 	}
-	if d.AutomationLevel != "" && (d.Mode == "shadow" && d.AutomationLevel != Observe ||
-		d.Mode == "approval" && d.AutomationLevel != Approval ||
-		d.Mode == "automatic" && d.AutomationLevel != Conditional && d.AutomationLevel != Full) ||
+	if d.AutomationLevel != "" && (!d.AutomationLevel.Valid() || d.Mode == "shadow" && d.AutomationLevel != Observe ||
+		d.Mode == "approval" && Approval.Below(d.AutomationLevel)) ||
 		d.SmallBlockMaxSeconds < 0 || d.SmallBlockMaxSeconds > MaxSmallBlock {
 		return ErrInput
 	}
@@ -206,7 +205,7 @@ func Evaluate(ctx context.Context, policy Record, job triage.Job, now time.Time)
 	if !policy.Active {
 		result.Reasons = append(result.Reasons, "policy_inactive")
 	}
-	if job.State != "succeeded" || job.Result.State != "succeeded" || job.CancelRequested || job.Answer == nil || !job.ExpiresAt.After(now) {
+	if job.State != "succeeded" || job.Result.State != "succeeded" || job.CancelRequested || job.Request.ObservationOnly || job.Answer == nil || !job.ExpiresAt.After(now) {
 		result.Reasons = append(result.Reasons, "triage_not_eligible")
 	}
 	age := now.Sub(sealed.ObservedAt)

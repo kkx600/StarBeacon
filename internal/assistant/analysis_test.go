@@ -14,6 +14,42 @@ func sample(window analytics.Window) analytics.Snapshot {
 	return analytics.Snapshot{Window: window, ObservedAt: time.Now().UTC(), Events: analytics.Events{Total: "2", Interval: analytics.Interval(window), Trend: []analytics.Bucket{}, Severity: d, Protocols: d, Rules: d, Sensors: d}, Inventory: analytics.Inventory{Assets: "1", Groups: "0", Networks: "0", Sensors: "1", Online: "1", Offline: "0", Disabled: "0"}, Limitations: []string{"已索引告警不代表攻击成功"}}
 }
 
+func TestPlaybookDraftKeepsTheModelOnTheCurrentDescription(t *testing.T) {
+	now := time.Now().UTC()
+	window := analytics.Window{Start: now.Add(-time.Hour), End: now}
+	r := Request{Kind: "chat", Purpose: PlaybookDraft, ProviderID: "provider_owned", ProviderRevision: 1,
+		Window: window, Question: "通知值班员", AllowContext: true}
+	if _, err := r.Normalize(now); err != nil {
+		t.Fatal(err)
+	}
+	r.ThreadID = "unrelated_thread"
+	if _, err := r.Normalize(now); err == nil {
+		t.Fatal("草稿引入已有对话")
+	}
+	if _, err := DraftEvidence(analytics.Window{}); err == nil {
+		t.Fatal("空窗口通过草稿快照核对")
+	}
+	frozen, err := Freeze(window, []analytics.Snapshot{sample(window)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := Prompt(frozen, r, []Turn{{Question: "其他页面的材料", Summary: "其他结论"}})
+	if err != nil || body != `{"description":"通知值班员"}` {
+		t.Fatal(body, err)
+	}
+	for _, value := range []string{
+		strings.Repeat("x", 16385),
+		`{"summary":"告警草稿","steps":[{"kind":"notify","description":"先通知"}]}`,
+		`{"summary":"告警草稿","steps":[{"kind":"trigger","description":"等待告警","device_id":"foreign"}]}`,
+		`{"summary":"告警草稿","steps":[{"kind":"trigger","description":"等待告警"},{"kind":"execute","description":"执行指令"}]}`,
+		`{"summary":"告警草稿","steps":[{"kind":"trigger","description":""}]}`,
+	} {
+		if _, err := DecodePlaybookDraft(value); err != ErrAnswer {
+			t.Fatal("不符合草稿契约的输出通过了核对", err)
+		}
+	}
+}
+
 func TestReportCalendarAndRequestBoundaries(t *testing.T) {
 	now := time.Date(2027, 2, 1, 0, 0, 0, 0, time.UTC)
 	for _, test := range []struct {

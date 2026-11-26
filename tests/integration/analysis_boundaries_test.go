@@ -82,7 +82,12 @@ func TestAnalysisTransactionsPaginationAndExecutionGuards(t *testing.T) {
 			_, e := db.AnalysisConversation(ctx, u, seed.Request.ThreadID, seed.ID, 10)
 			return e
 		}},
-		{"followup", []string{"SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE rule_generation_jobs SET state='uncertain'", "UPDATE alert_triage_jobs SET state='uncertain'", "SELECT count(*) FILTER", "SELECT count(*) FROM analysis_jobs", "SELECT id FROM analysis_threads", "SELECT id,state FROM analysis_jobs", "UPDATE analysis_threads", "INSERT INTO analysis_jobs", "UPDATE analysis_jobs SET river_job_id", "INSERT INTO operation_audits"}, func(db *store.Postgres) error {
+		{"followup", []string{
+			"SELECT revision FROM model_providers", "SELECT ciphertext", "UPDATE rule_generation_jobs SET state='uncertain'",
+			"UPDATE alert_triage_jobs SET state='uncertain'", "SELECT count(*) FILTER", "SELECT count(*) FROM analysis_jobs",
+			"SELECT id FROM analysis_threads", "SELECT id,state,COALESCE(request->>'purpose','') FROM analysis_jobs",
+			"UPDATE analysis_threads", "INSERT INTO analysis_jobs", "UPDATE analysis_jobs SET river_job_id", "INSERT INTO operation_audits",
+		}, func(db *store.Postgres) error {
 			_, e := db.CreateAnalysis(ctx, u, follow, "followup_fault", assistant.Evidence{}, "限定证据范围", queue, vault, "followup_fault")
 			return e
 		}},

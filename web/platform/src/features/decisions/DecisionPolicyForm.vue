@@ -11,6 +11,9 @@ import {
   policyActions,
   policyModes,
   policyChangeError,
+  automationLevels,
+  modeLevels,
+  type AutomationLevel,
   policyID,
   validPolicyValidation,
   type PolicyChange,
@@ -22,6 +25,7 @@ const props = defineProps<{
   busy: boolean;
   unconfirmed: boolean;
   error: string;
+  automation?: boolean;
 }>();
 const emit = defineEmits<{ save: [input: PolicyChange]; confirm: []; close: [] }>();
 const draft = props.draft,
@@ -51,6 +55,9 @@ const continuous = reactive({
   max_hourly_actions: d?.continuous?.automatic?.max_hourly_actions ?? 10,
   accept_uncalibrated_score: d?.continuous?.automatic?.accept_uncalibrated_score ?? false,
 });
+const level = ref<AutomationLevel>(d?.automation_level ?? modeLevels[d?.mode ?? 'shadow'].at(-1) ?? 'observe');
+const smallBlock = ref(d?.small_block_max_seconds ?? 7200);
+const allowedLevels = computed(() => modeLevels[continuous.mode]);
 const trigger = reactive({
   enabled: !!d?.continuous?.trigger,
   severities: d?.continuous?.trigger?.severities.slice() ?? ['critical', 'high'],
@@ -72,6 +79,21 @@ const localError = ref(''),
 let stopped = false,
   read: AbortController | undefined;
 function input(): PolicyChange {
+  const changedMode = d?.mode !== continuous.mode;
+  const levelChange =
+    props.automation &&
+    (changedMode || level.value !== (d?.automation_level ?? modeLevels[d?.mode ?? 'shadow'].at(-1)));
+  const requestedLevel = levelChange
+    ? level.value
+    : changedMode && continuous.mode !== 'shadow'
+      ? 'observe'
+      : changedMode
+        ? undefined
+        : d?.automation_level;
+  const limit =
+    props.automation && smallBlock.value !== (d?.small_block_max_seconds ?? 7200)
+      ? smallBlock.value
+      : d?.small_block_max_seconds;
   return {
     id,
     expected_revision: draft?.expected_revision ?? record?.revision ?? 0,
@@ -120,8 +142,8 @@ function input(): PolicyChange {
                 : {}),
             },
           }),
-      ...(d?.automation_level && d.mode === continuous.mode ? { automation_level: d.automation_level } : {}),
-      ...(d?.small_block_max_seconds ? { small_block_max_seconds: d.small_block_max_seconds } : {}),
+      ...(requestedLevel ? { automation_level: requestedLevel } : {}),
+      ...(limit !== undefined ? { small_block_max_seconds: limit } : {}),
     },
   };
 }
@@ -216,9 +238,14 @@ watch(
   mode => {
     if (mode === 'automatic') form.action = 'block_source';
     if (mode !== 'shadow') void readBindings();
+    if (!allowedLevels.value.includes(level.value)) level.value = 'observe';
   },
   { immediate: true },
 );
+watch([level, smallBlock], () => {
+  validation.value = '';
+  read?.abort();
+});
 async function validate() {
   if (locked.value) return;
   const c = input();
@@ -341,6 +368,24 @@ onScopeDispose(() => {
             :options="Object.entries(policyActions).map(([value, label]) => ({ value, label }))"
             @keydown.esc.stop
         /></a-form-item>
+        <template v-if="automation">
+          <a-form-item label="场景自动化级别" extra="升级前需有同一场景的有效影子评估。">
+            <a-select
+              v-model:value="level"
+              aria-label="场景自动化级别"
+              :options="allowedLevels.map(value => ({ value, label: automationLevels[value] }))"
+            />
+          </a-form-item>
+          <a-form-item label="小影响封禁上限（秒）">
+            <a-input-number
+              v-model:value="smallBlock"
+              aria-label="小影响封禁上限"
+              :min="1"
+              :max="7200"
+              :precision="0"
+            />
+          </a-form-item>
+        </template>
         <h3 class="form-section-title">判断条件</h3>
         <a-form-item
           label="模型自报分数阈值"

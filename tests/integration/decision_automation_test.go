@@ -143,6 +143,28 @@ func TestDecisionAutomationDefaultCeilingPauseAndShadowQualification(t *testing.
 	if _, err := f.Runtime.SaveDecisionPolicy(ctx, u, "automation_loose_promotion", proposed); !errors.Is(err, decision.ErrShadowRequired) {
 		t.Fatal("仅表达式命中的低置信度材料取得提级资格", err)
 	}
+	retained := decisionPolicyEdit(c.Policy)
+	retained.Definition.AutomationLevel = decision.Observe
+	retained.Definition.Expression = `confidence >= threshold && reference_count > 0`
+	bound, err := f.Runtime.SaveDecisionPolicy(ctx, u, "automation_keep_binding", retained)
+	require(t, err)
+	if bound.Definition.Continuous.Automatic == nil || bound.Definition.Level() != decision.Observe {
+		t.Fatal("场景降级丢失原设备绑定", bound)
+	}
+	promotion := decisionPolicyEdit(bound)
+	promotion.Definition.AutomationLevel = decision.Approval
+	if _, err := f.Runtime.SaveDecisionPolicy(ctx, u, "automation_early_raise", promotion); !errors.Is(err, decision.ErrShadowRequired) {
+		t.Fatal("不同判断条件未经观察取得提级资格", err)
+	}
+	proofJob := insertContinuousTriage(t, ctx, f, u, job, "triage_bound_shadow", "event_bound_shadow", "192.0.2.41")
+	if _, proof := completeContinuous(t, ctx, f, store.DecisionCandidate{Principal: u, Policy: bound}, proofJob, signer); proof.Code != "observation_only" {
+		t.Fatal("保留绑定的观察场景未保持观察", proof)
+	}
+	elevated, err := f.Runtime.SaveDecisionPolicy(ctx, u, "automation_raise_bound_scene", promotion)
+	require(t, err)
+	if elevated.Definition.Level() != decision.Approval || elevated.Definition.Continuous.Automatic == nil {
+		t.Fatal("同一场景的有效观察无法支持提级", elevated)
+	}
 	assertResponseProtectionCounts(t, ctx, f, u.TenantID, 1, 1)
 }
 

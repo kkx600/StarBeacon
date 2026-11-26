@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, shallowRef } from 'vue';
 import { DOMWrapper, flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import { Form, Select } from 'ant-design-vue';
+import { Form, Select, message } from 'ant-design-vue';
 import { registerAnt } from '@starbeacon/shared/ant.ts';
 import { goJSONDigest } from '@starbeacon/shared/utils/goJSONDigest.ts';
-import { principal, click, deferred } from './fixtures';
-import { responseEvaluation, responseSensor } from './decisionResponseFixtures';
+import { principal, click, closedMessage, deferred } from './fixtures';
+import { responseEvaluation, responseInput, responseReceipt, responseSensor } from './decisionResponseFixtures';
 import {
   orderedPolicy,
   orderedContinuous,
@@ -25,6 +25,9 @@ import {
   type DecisionPlanSummary,
 } from '../platform/src/features/decisions/continuousDecisions';
 import DecisionPolicyForm from '../platform/src/features/decisions/DecisionPolicyForm.vue';
+import PlanReviewDialog from '../platform/src/features/decisions/PlanReviewDialog.vue';
+import { readPlans } from '../platform/src/features/decisions/automation';
+import AiOpsView from '../platform/src/views/AiOpsView.vue';
 import ContinuousDecisionPanel from '../platform/src/features/decisions/ContinuousDecisionPanel.vue';
 import AutomaticTriagePanel from '../platform/src/features/decisions/AutomaticTriagePanel.vue';
 import {
@@ -106,6 +109,7 @@ beforeEach(() => {
   request.mockReset();
   user.value = principal;
   vi.stubGlobal('crypto', { subtle: webcrypto.subtle, randomUUID });
+  vi.spyOn(message, 'success').mockImplementation(closedMessage);
 });
 describe('持续决策配置与独立授权契约', () => {
   it('触发记录核对原策略、探针、修订、状态和分页，拒绝不完整或混入其他范围的回执', async () => {
@@ -307,7 +311,7 @@ describe('持续决策配置与独立授权契约', () => {
     e.sha256 = await goJSONDigest(orderedEvaluation(e));
     expect(await validPolicy(e.policy, e.tenant_id)).toBe(true);
     const d = e.policy.definition;
-    expect(validPolicyDefinition({ ...d, automation_level: 'observe' })).toBe(false);
+    expect(validPolicyDefinition({ ...d, automation_level: 'observe' })).toBe(true);
     expect(validPolicyDefinition({ ...d, small_block_max_seconds: 7201 })).toBe(false);
     const shadow = (await responseEvaluation()).policy.definition;
     expect(
@@ -361,6 +365,158 @@ describe('持续决策配置与独立授权契约', () => {
     authorized.sha256 = await goJSONDigest(orderedContinuousRecord(authorized));
     expect(await valid(authorized)).toBe(true);
     expect(await valid({ ...authorized, plan: { ...authorized.plan, impact: 'high' } })).toBe(false);
+  });
+});
+
+async function pendingPlan(e: EvaluationRecord): Promise<ContinuousRecord> {
+  const pending = await run(e, 'awaiting_confirmation', 'manual_confirmation_required');
+  pending.plan = {
+    level: 'approval',
+    impact: 'small',
+    action: 'block_source',
+    confidence: e.result.confidence!,
+    verdict: 'confirmed',
+    outcome: 'attempt',
+    references: ['source.ip', 'rule.id'],
+    missing: ['终端证据'],
+    evidence_sha256: e.result.evidence_sha256,
+    confirm_until: new Date(Date.parse(pending.created_at) + 90000).toISOString(),
+  };
+  pending.sha256 = await goJSONDigest(orderedContinuousRecord(pending));
+  return pending;
+}
+
+async function reviewPlan(pending: ContinuousRecord) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/:pathMatch(.*)*', component: defineComponent({ render: () => h('div') }) }],
+  });
+  await router.push('/ai/ai-ops');
+  const wrapper = mount(PlanReviewDialog, {
+    props: { run: pending },
+    attachTo: document.body,
+    global: { plugins: [registerAnt, router] },
+  });
+  await flushPromises();
+  return wrapper;
+}
+
+describe('值守方案核对', () => {
+  it('值守按服务端页序打开方案，临时查询失败可重新核对', async () => {
+    const e = await evaluation();
+    const pending = await pendingPlan(e);
+    const row = { run: pending, state: 'awaiting_confirmation', task_id: '', task_state: '' };
+    let failing = true;
+    request.mockImplementation(async (path: string) => {
+      if (path === '/decision-automation')
+        return { settings: { revision: 1, ceiling: 'approval', paused: false }, scenes: [] };
+      if (path.startsWith('/decision-plans/metrics?'))
+        return {
+          timezone: 'UTC',
+          start: '2026-11-26T00:00:00Z',
+          end: '2026-11-27T00:00:00Z',
+          triage_count: 1,
+          triage_mean_ms: null,
+          pending: 2,
+          executed: 0,
+          automatic: 0,
+          rejected: 0,
+          protected: 0,
+        };
+      if (path === '/decision-evaluations/' + e.id) return e;
+      if (path.startsWith('/decision-plans?')) {
+        if (failing) throw new Error('目录短时不可读');
+        if (path.includes('cursor=' + pending.id)) return { items: [], next_cursor: '' };
+        return { items: [row], next_cursor: pending.id };
+      }
+      throw new Error(path);
+    });
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:pathMatch(.*)*', component: defineComponent({ render: () => h('div') }) }],
+    });
+    await router.push('/ai/ai-ops');
+    const wrapper = mount(AiOpsView, { attachTo: document.body, global: { plugins: [registerAnt, router] } });
+    try {
+      await flushPromises();
+      expect(wrapper.text()).toContain('目录短时不可读');
+      expect(wrapper.text()).not.toContain('查看方案');
+      failing = false;
+      await click('重试');
+      expect(wrapper.text()).toContain(pending.target_ip);
+      await click('下一页');
+      expect(wrapper.text()).toContain('第 2 页');
+      await click('上一页');
+      expect(wrapper.text()).toContain('第 1 页');
+      await click('查看方案');
+      await vi.waitFor(() => expect(body().text()).toContain('材料摘要'));
+      expect(body().text()).toContain(e.result.evidence_sha256);
+      await click('返回');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it('待确认目录与驳回保持原证据，失配回执仍可核对', async () => {
+    const e = await evaluation();
+    const pending = await pendingPlan(e);
+    const reason = '复核独立材料后确定无需处置';
+    const row = { run: pending, state: 'awaiting_confirmation', task_id: '', task_state: '' };
+    const response = {
+      state: 'rejected',
+      plan_sha256: pending.sha256,
+      reason,
+      actor_id: e.created_by,
+      reviewed_at: pending.created_at,
+    };
+    request.mockResolvedValueOnce({ items: [row], next_cursor: pending.id });
+    expect(await readPlans('', 20, new AbortController().signal)).toEqual({ items: [row], next_cursor: pending.id });
+    request
+      .mockResolvedValueOnce(e)
+      .mockResolvedValueOnce({ ...response, actor_id: 'another_actor' })
+      .mockResolvedValueOnce(response);
+    const wrapper = await reviewPlan(pending);
+    await click('驳回方案');
+    expect(body().text()).toContain('终端证据');
+    await body().get('textarea#reject-reason').setValue(reason);
+    await body().get('.ant-modal form').trigger('submit');
+    await flushPromises();
+    expect(wrapper.emitted('saved')).toBeUndefined();
+    expect(body().text()).toContain('驳回回执尚未确认');
+    await body().get('.ant-modal form').trigger('submit');
+    await flushPromises();
+    expect(request).toHaveBeenLastCalledWith(
+      '/decision-evaluations/' + e.id + '/response/reject',
+      expect.objectContaining({ method: 'POST', body: { plan_sha256: pending.sha256, reason } }),
+    );
+    expect(wrapper.emitted('saved')).toHaveLength(1);
+    expect(wrapper.emitted('close')).toHaveLength(1);
+  });
+
+  it('确认降级自动方案保留在案探针、连接器和期限', async () => {
+    const e = await evaluation();
+    const pending = await pendingPlan(e);
+    const signed = await responseReceipt(e);
+    request.mockImplementation(async (path: string, options: { method?: string } = {}) => {
+      if (path.endsWith('/response')) return options.method === 'POST' ? signed : { item: null };
+      if (path === '/decision-evaluations/' + e.id) return e;
+      return { items: [responseSensor()] };
+    });
+    const wrapper = await reviewPlan(pending);
+    await click('确认处置');
+    await vi.waitFor(() => expect(body().find('input[aria-label="处置封禁期限"]').exists()).toBe(true));
+    expect(body().get('input[aria-label="处置封禁期限"]').attributes('disabled')).toBeDefined();
+    expect((body().get('input[aria-label="处置封禁期限"]').element as HTMLInputElement).value).toBe('300');
+    await body().get('textarea[aria-label="处置操作依据"]').setValue(signed.request.reason);
+    await body().get('.ant-modal input[type="checkbox"]').setValue(true);
+    await body().get('.ant-modal form').trigger('submit');
+    await flushPromises();
+    expect(request).toHaveBeenLastCalledWith(
+      '/decision-evaluations/' + e.id + '/response',
+      expect.objectContaining({ method: 'POST', body: responseInput(e) }),
+    );
+    await vi.waitFor(() => expect(body().text()).toContain(signed.task_id));
+    expect(wrapper.emitted('saved')).toHaveLength(1);
   });
 });
 describe('持续决策表单与授权详情交互', () => {

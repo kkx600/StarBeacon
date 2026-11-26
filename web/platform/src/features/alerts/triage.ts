@@ -34,6 +34,7 @@ export interface TriageRequest {
   provider_revision: number;
   note: string;
   allow_context: boolean;
+  observation_only?: boolean;
 }
 interface TriageFact {
   id: string;
@@ -148,7 +149,8 @@ export function sameTriageRequest(a: TriageRequest, b: TriageRequest) {
     a.provider_id === b.provider_id &&
     a.provider_revision === b.provider_revision &&
     a.note === b.note &&
-    a.allow_context === b.allow_context
+    a.allow_context === b.allow_context &&
+    !!a.observation_only === !!b.observation_only
   );
 }
 export function validTriageRequest(v: unknown): v is TriageRequest {
@@ -160,7 +162,8 @@ export function validTriageRequest(v: unknown): v is TriageRequest {
     Number.isSafeInteger(v.provider_revision) &&
     Number(v.provider_revision) > 0 &&
     text(v.note, 2000, true) &&
-    v.allow_context === true
+    v.allow_context === true &&
+    (v.observation_only === undefined || typeof v.observation_only === 'boolean')
   );
 }
 export function validTriageProviders(v: unknown): v is { items: TriageProvider[]; available: boolean } {

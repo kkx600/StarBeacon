@@ -46,11 +46,15 @@ func TestDecisionAutomationLevelsAndImpact(t *testing.T) {
 		t.Fatal("场景未收紧小影响范围")
 	}
 	p, _, _ := automaticSource(t)
-	for _, level := range []Level{Observe, Approval, "unknown"} {
+	for _, level := range []Level{Observe, Approval, Conditional, Full} {
 		p.Definition.AutomationLevel = level
-		if p.Definition.Validate() == nil {
-			t.Fatal("运行模式与自动化级别冲突", level)
+		if p.Definition.Validate() != nil || p.Definition.Level() != level || p.Definition.Continuous.Automatic == nil {
+			t.Fatal("降低场景级别时应保留经授权的设备绑定", level)
 		}
+	}
+	p.Definition.AutomationLevel = "unknown"
+	if p.Definition.Validate() == nil {
+		t.Fatal("接受了未知的自动化级别")
 	}
 	p.Definition.AutomationLevel = Conditional
 	if p.Definition.Validate() != nil || p.Definition.Level() != Conditional || p.Definition.ShadowCriteria().Level() != Observe {
@@ -59,6 +63,44 @@ func TestDecisionAutomationLevelsAndImpact(t *testing.T) {
 	p.Definition.SmallBlockMaxSeconds = 7201
 	if p.Definition.Validate() == nil {
 		t.Fatal("场景扩大了默认小影响上限")
+	}
+}
+
+func TestObservationTriageCannotAuthorizeResponse(t *testing.T) {
+	p, job, now := automaticSource(t)
+	job.Request.ObservationOnly = true
+	r, err := Evaluate(context.Background(), p, job, now)
+	if err != nil || r.Status != "abstained" || r.ExecutionAuthorized {
+		t.Fatal(r, err)
+	}
+	if _, code, err := AutomaticIntent(context.Background(), p, job, job.Evidence, now); err != nil || code != "policy_not_matched" {
+		t.Fatal(code, err)
+	}
+}
+
+func TestPlanMetricsNaturalDayAndActivityCursor(t *testing.T) {
+	for _, tc := range []struct {
+		zone, now, start string
+		hours            int
+	}{
+		{"America/New_York", "2026-03-08T12:00:00Z", "2026-03-08T05:00:00Z", 23},
+		{"America/New_York", "2026-11-01T12:00:00Z", "2026-11-01T04:00:00Z", 25},
+		{"Africa/Cairo", "2026-04-24T12:00:00Z", "2026-04-23T22:00:00Z", 23},
+		{"America/Santiago", "2026-09-06T12:00:00Z", "2026-09-06T04:00:00Z", 23},
+		{"America/Havana", "2026-11-01T12:00:00Z", "2026-11-01T04:00:00Z", 25},
+		{"Pacific/Apia", "2011-12-29T20:00:00Z", "2011-12-29T10:00:00Z", 24},
+	} {
+		now, _ := time.Parse(time.RFC3339, tc.now)
+		start, _ := time.Parse(time.RFC3339, tc.start)
+		day, err := PlanMetricsDay(now, tc.zone)
+		if err != nil || !day.Start.Equal(start) || day.End.Sub(day.Start) != time.Duration(tc.hours)*time.Hour {
+			t.Fatal("自然日未包含时区切换边界", tc.zone, day, err)
+		}
+	}
+	item := PlanActivity{ID: "task_owned", At: time.Now().UTC().Truncate(time.Microsecond)}
+	stamp, id, err := ActivityCursor(item.Cursor())
+	if err != nil || stamp == nil || !stamp.Equal(item.At) || id != item.ID {
+		t.Fatal("流水游标未保留时间精度", stamp, id, err)
 	}
 }
 

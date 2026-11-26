@@ -67,30 +67,35 @@ func (a *API) createAnalysis(w http.ResponseWriter, r *http.Request) {
 		httpapi.Fail(w, r, 503, "analysis_unavailable", "模型分析执行服务异常，请稍后重试。仍可生成统计报告")
 		return
 	}
-	if a.ES == nil {
+	if a.ES == nil && input.Purpose != assistant.PlaybookDraft {
 		httpapi.Fail(w, r, 503, "analysis_unavailable", "统计服务异常，模型调用未提交。请稍后重试")
 		return
 	}
 	ctx, stop := context.WithTimeout(r.Context(), 12*time.Second)
 	defer stop()
-	snapshots := []analytics.Snapshot{}
-	for _, window := range assistant.Windows(input.Window) {
-		// 作业保存完整统计快照；模型不持有 ES 凭据，也不能扩大时间或租户范围。
-		rawWindow, _ := json.Marshal(window)
-		cacheKey := "sb:overview:" + user.TenantID + ":" + user.Role + ":" + store.Hash(string(rawWindow))
-		snapshot, err := a.overviewSnapshot(ctx, user, window, cacheKey)
-		if err != nil {
-			if errors.Is(err, errOverviewQuota) {
-				w.Header().Set("Retry-After", "60")
-				httpapi.Fail(w, r, 429, "overview_quota_exceeded", "统计请求过于频繁，分析尚未提交，请稍后重试")
-			} else {
-				httpapi.Fail(w, r, 503, "analysis_unavailable", "统计未能完整返回，分析尚未提交")
+	var evidence assistant.Evidence
+	if input.Purpose == assistant.PlaybookDraft {
+		evidence, err = assistant.DraftEvidence(input.Window)
+	} else {
+		snapshots := []analytics.Snapshot{}
+		for _, window := range assistant.Windows(input.Window) {
+			// 作业保存完整统计快照；模型不持有 ES 凭据，也不能扩大时间或租户范围。
+			rawWindow, _ := json.Marshal(window)
+			cacheKey := "sb:overview:" + user.TenantID + ":" + user.Role + ":" + store.Hash(string(rawWindow))
+			snapshot, err := a.overviewSnapshot(ctx, user, window, cacheKey)
+			if err != nil {
+				if errors.Is(err, errOverviewQuota) {
+					w.Header().Set("Retry-After", "60")
+					httpapi.Fail(w, r, 429, "overview_quota_exceeded", "统计请求过于频繁，分析尚未提交，请稍后重试")
+				} else {
+					httpapi.Fail(w, r, 503, "analysis_unavailable", "统计未能完整返回，分析尚未提交")
+				}
+				return
 			}
-			return
+			snapshots = append(snapshots, snapshot)
 		}
-		snapshots = append(snapshots, snapshot)
+		evidence, err = assistant.Freeze(input.Window, snapshots)
 	}
-	evidence, err := assistant.Freeze(input.Window, snapshots)
 	if err != nil {
 		analysisFailure(w, r, err)
 		return

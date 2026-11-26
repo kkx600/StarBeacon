@@ -40,10 +40,10 @@ export const automationLevels = {
 } as const;
 export type AutomationLevel = keyof typeof automationLevels;
 export const decisionConfirmationWindowMs = 15 * 60 * 1000;
-const modeLevels: Record<keyof typeof policyModes, readonly AutomationLevel[]> = {
+export const modeLevels: Record<keyof typeof policyModes, readonly AutomationLevel[]> = {
   shadow: ['observe'],
-  approval: ['approval'],
-  automatic: ['conditional', 'full'],
+  approval: ['observe', 'approval'],
+  automatic: ['observe', 'approval', 'conditional', 'full'],
 };
 export interface AutomaticConfig {
   sensor_id: string;
