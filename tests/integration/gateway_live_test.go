@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -60,6 +61,19 @@ func (p *httpGatewayPeer) exchange(t *testing.T, socket int) bool {
 	return allowed
 }
 
+func (p *httpGatewayPeer) reconnect(t *testing.T) uint16 {
+	t.Helper()
+	_, err := fmt.Fprintln(p.input, "reconnect")
+	require(t, err)
+	var port uint16
+	require(t, p.output.Decode(&port))
+	if port == 0 || port == p.ports[0] || port == p.ports[1] {
+		t.Fatal("HTTP 重连没有使用新的源端口", port)
+	}
+	p.ports[1] = port
+	return port
+}
+
 // 仅在本轮 Docker 网关的两个数据面接口接收报头和数据长度，按实验五元组计数。
 func gatewayPacketObserver(t *testing.T, name string) int {
 	t.Helper()
@@ -77,8 +91,16 @@ func gatewayPacketObserver(t *testing.T, name string) int {
 
 func observedGatewayPayloads(t *testing.T, fd int, f gatewayblock.Flow) int {
 	t.Helper()
+	return sampleGatewayPackets(t, fd)[f.SourcePort].payload
+}
+
+type gatewayPacketCounts struct{ payload, syn int }
+
+// 验收抓包固定到夹具的 HTTP 服务，独立计数源端口上的数据和起始握手。
+func sampleGatewayPackets(t *testing.T, fd int) map[uint16]gatewayPacketCounts {
+	t.Helper()
 	var buffer [65536]byte
-	packets := 0
+	packets := map[uint16]gatewayPacketCounts{}
 	for {
 		n, _, err := unix.Recvfrom(fd, buffer[:], 0)
 		if errors.Is(err, unix.EAGAIN) {
@@ -94,10 +116,100 @@ func observedGatewayPayloads(t *testing.T, fd int, f gatewayblock.Flow) int {
 		}
 		tcp := buffer[ipLength:n]
 		src, dst := netip.AddrFrom4([4]byte(buffer[12:16])), netip.AddrFrom4([4]byte(buffer[16:20]))
-		if src == f.SourceIP && dst == f.DestinationIP && binary.BigEndian.Uint16(tcp[0:2]) == f.SourcePort &&
-			binary.BigEndian.Uint16(tcp[2:4]) == f.DestinationPort && len(tcp) > int(tcp[12]>>4)*4 {
-			packets++
+		if src.String() != "10.203.35.3" || dst.String() != "10.203.36.3" || binary.BigEndian.Uint16(tcp[2:4]) != 8080 {
+			continue
 		}
+		port := binary.BigEndian.Uint16(tcp[:2])
+		counts := packets[port]
+		if len(tcp) > int(tcp[12]>>4)*4 {
+			counts.payload++
+		}
+		if tcp[13]&0x12 == 0x02 {
+			counts.syn++
+		}
+		packets[port] = counts
+	}
+}
+
+func TestGatewayBlockLiveDockerObservation(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Second)
+	t.Cleanup(cancel)
+	const source, destination = "10.203.35.3", "10.203.36.3"
+	pid, err := strconv.Atoi(os.Getenv("SB_GATEWAY_CLIENT_PID"))
+	require(t, err)
+	if pid < 2 || os.Getenv("SB_GATEWAY_FIXTURE") == "" {
+		t.Fatal("没有已核对的专属 Docker 拓扑")
+	}
+	egress := os.Getenv("SB_GATEWAY_RIGHT_IFACE")
+	left := gatewayPacketObserver(t, os.Getenv("SB_GATEWAY_LEFT_IFACE"))
+	right := gatewayPacketObserver(t, egress)
+	scope := gatewayblock.Scope{Sources: []netip.Prefix{netip.MustParsePrefix(source + "/32")},
+		Destinations: []netip.Prefix{netip.MustParsePrefix(destination + "/32")}}
+	f := newGatewayFixture(t, ctx, scope)
+	startLiveGatewayAgent(t, ctx, f, gatewayblock.LocalConfig{Enabled: true, Scope: scope, ObserveInterface: egress})
+	rule, _ := f.policies(18)
+	f.settings(true, 10)
+	for _, state := range []string{gatewayblock.FlowPaused, gatewayblock.FlowContinued, gatewayblock.FlowUnknown} {
+		if state == gatewayblock.FlowUnknown {
+			rule.ExpectedRevision, rule.Definition.LeaseSeconds = 1, 5
+			f.client.request("PUT", "/gateway-block/policies/"+testRulePolicy, "", rule, nil, 200)
+		}
+		peer := startGatewayHTTPPeer(t, ctx, pid, os.Getenv("SB_GATEWAY_FIXTURE"), destination)
+		if !peer.exchange(t, 0) || !peer.exchange(t, 1) {
+			t.Fatal("实验连接在触发前未建立", state)
+		}
+		sampleGatewayPackets(t, left)
+		sampleGatewayPackets(t, right)
+		alert := f.observe("1003340", source, destination, peer.ports[0])
+		require(t, f.db.Runtime.RecordGatewayBlockMatches(ctx, f.id.TenantID, []model.Alert{alert}))
+		eventually(t, ctx, "原连接的限时条目实际写入", func() bool {
+			record := f.gatewayRecord(alert.EventID)
+			if record.TaskID == "" {
+				return false
+			}
+			got, err := exec.CommandContext(ctx, "/usr/sbin/nft", "-n", "list", "set", "inet", "starbeacon_gateway", "tcp4").Output()
+			require(t, err)
+			return strings.Contains(string(got), record.TaskID)
+		})
+		time.Sleep(250 * time.Millisecond)
+		if peer.exchange(t, 0) || !peer.exchange(t, 1) {
+			t.Fatal("实验连接的数据交付与防火墙条目不符", state)
+		}
+		var freshPort uint16
+		if state == gatewayblock.FlowContinued {
+			freshPort = peer.reconnect(t)
+			if !peer.exchange(t, 1) {
+				t.Fatal("新的普通 HTTP 连接未成功交付")
+			}
+		}
+		in, out := sampleGatewayPackets(t, left), sampleGatewayPackets(t, right)
+		if in[peer.ports[0]].payload < 1 || out[peer.ports[0]].payload != 0 || out[peer.ports[1]].payload < 1 {
+			t.Fatal("原连接或对照连接的独立抓包不符", state, in, out)
+		}
+		result := awaitGatewayNft(t, f, alert.EventID)
+		seen := result.Observation
+		if seen == nil || seen.State != state || seen.Interface != egress || seen.OriginalPackets != 0 ||
+			seen.StartedAt.Before(result.VerifiedAt) || result.Flow.SourcePort != peer.ports[0] {
+			t.Fatal("防火墙回读与观察窗口记录不一致", state, result, seen)
+		}
+		switch state {
+		case gatewayblock.FlowContinued:
+			if seen.Reconnect == nil || seen.Reconnect.SourcePort != freshPort || out[freshPort].syn < 1 || seen.EgressPackets == 0 {
+				t.Fatal("独立抓包与重连流不一致", seen, out)
+			}
+		case gatewayblock.FlowPaused:
+			if seen.Reconnect != nil || seen.EgressPackets == 0 || seen.FinishedAt.Sub(seen.StartedAt) < gatewayblock.ObserveWindow {
+				t.Fatal("暂停结论缺少完整采样", seen)
+			}
+		case gatewayblock.FlowUnknown:
+			if seen.Code != "window_short" || seen.Reconnect != nil {
+				t.Fatal("观察窗口不足时未保留未知状态", seen)
+			}
+		}
+		t.Logf("%s，原连接数据入侧 %d 包、出侧 %d 包，对照连接出侧 %d 包，观察出侧 %d 包，新连接 SYN %d 包，原因 %q。",
+			state, in[peer.ports[0]].payload, out[peer.ports[0]].payload, out[peer.ports[1]].payload,
+			seen.EgressPackets, out[freshPort].syn, seen.Code)
+		require(t, peer.input.Close())
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/model"
+	"github.com/kkx600/StarBeacon/internal/transport"
 )
 
 func lockGatewayBlocks(ctx context.Context, tx pgx.Tx, tenant string) error {
@@ -168,6 +169,21 @@ func (p *Postgres) SaveGatewayBlockPolicy(ctx context.Context, u model.Principal
 			}
 			if !available {
 				return gatewayblock.ErrIneligible
+			}
+			if follow := change.Definition.FollowUp; follow != nil {
+				sensor := transport.SensorIdentity{TenantID: u.TenantID, SensorID: change.Definition.SensorID, RegistrationID: change.Definition.RegistrationID}
+				now := time.Now().UTC()
+				h, err := gatewayDeviceHealth(ctx, tx, sensor, now)
+				if err != nil {
+					return err
+				}
+				device, _, err := gatewayPluginDevice(ctx, tx, sensor, h, follow.PluginID, now)
+				if err != nil {
+					return err
+				}
+				if !follow.Matches(device) {
+					return gatewayblock.ErrIneligible
+				}
 			}
 		}
 		out, err = scanGatewayPolicy(tx.QueryRow(ctx, `INSERT INTO gateway_block_policies(tenant_id,id,revision,definition,author_id)

@@ -199,11 +199,21 @@ describe('响应动作检索与来源核对', () => {
   });
   it('工程入口只查询响应目录，筛选、重置与空结果可操作', async () => {
     request.mockImplementation(async (path: string) => responsePage(fromPath(path)));
-    const wrapper = mount(ResponseActionsView, { global: { plugins: [registerAnt] }, attachTo: document.body });
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/response/actions', component: ResponseActionsView },
+        { path: '/response/gateway-blocks', redirect: '/response/actions' },
+      ],
+    });
+    await router.push('/response/actions');
+    await router.isReady();
+    const wrapper = mount(ResponseActionsView, { global: { plugins: [registerAnt, router] }, attachTo: document.body });
     wrappers.push(wrapper);
     await flushPromises();
     await vi.waitFor(() => expect(wrapper.text()).toContain('当前条件下没有响应动作'));
     expect(wrapper.get('h1').text()).toBe('响应动作');
+    expect(wrapper.get('a[href="/response/gateway-blocks"]').text()).toBe('网关阻断');
     for (const [id, label] of [
       ['response-kind', '动作类型'],
       ['response-state', '执行状态'],
@@ -271,7 +281,10 @@ describe('响应动作检索与来源核对', () => {
   it('独立详情使用响应接口，其他任务不能混入；卸载后忽略迟到结果', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: '/response/actions', component: ResponseActionsView }],
+      routes: [
+        { path: '/response/actions', component: ResponseActionsView },
+        { path: '/response/gateway-blocks', redirect: '/response/actions' },
+      ],
     });
     await router.push('/response/actions?task=task_owned');
     await router.isReady();

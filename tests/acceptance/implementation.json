@@ -1477,21 +1477,33 @@
       "code": [
         "internal/gatewayblock/contract.go",
         "internal/gatewayblock/nft.go",
+        "internal/gatewayblock/observation.go",
+        "internal/gatewayblock/observer_linux.go",
         "internal/platform/gateway_blocks.go",
         "internal/store/gateway_config.go",
         "internal/store/gateway_requests.go",
         "internal/store/gateway_dispatch.go",
+        "internal/store/gateway_devices.go",
+        "internal/store/gateway_follow_up.go",
+        "internal/store/gateway_notices.go",
+        "web/platform/src/views/GatewayBlocksView.vue",
+        "web/platform/src/features/settings/GatewayBlockSettings.vue",
         "deploy/gateway/nftables.conf",
-        "migrations/00062_gateway_blocks.sql"
+        "migrations/00062_gateway_blocks.sql",
+        "migrations/00063_gateway_observations.sql"
       ],
-      "pages": [],
+      "pages": ["platform:/response/gateway-blocks"],
       "tests": [
         "internal/gatewayblock/gateway_test.go",
+        "internal/gatewayblock/observation_test.go",
+        "internal/gatewayblock/observer_linux_test.go",
         "tests/integration/gateway_blocks_test.go",
+        "tests/integration/gateway_observation_test.go",
         "tests/integration/gateway_live_test.go",
-        "tests/acceptance/gateway_live.py"
+        "tests/acceptance/gateway_live.py",
+        "web/tests/gateway-blocks.test.ts"
       ],
-      "boundary": "原生规则命中和已确认研判共用租户开关、注册代次、CIDR、两侧保护名单、滚动分钟限额和短时签名任务。独立 nftables 转发链处理单条已观测连接，原生限时条目与任务归属由网关读回。实际应用层影响需要结合流量观察。"
+      "boundary": "原生规则命中和已确认研判共用租户开关、注册代次、CIDR、两侧保护名单、滚动分钟限额和短时签名任务。独立 nftables 转发链读回单条限时连接条目。5 秒的指定网关出侧观察记录流量暂停、仍有流量或未知，重连在订阅渠道通知。自动联动要求同一采集器的当前插件代次、配置摘要、明确方向和期限，并在签发时再次核对授权、名单、共享响应预算和冷却。界面分别展示条目读回、流量证据与设备任务。"
     },
     {
       "id": "syslog",
@@ -2471,7 +2483,8 @@
         "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
         "模板以设备独立规则标识和所有者为条件，受控 HTTPS 设备协议验证限时封禁、回读和解除",
         "脚本在本地登记的测试终端使用独立 HTTPS 回读验收隔离与恢复",
-        "已登记的 Linux 网关可对规则命中和确认研判的五元组应用限时转发阻断，双端保护名单和分钟限额在签发时原子核对"
+        "已登记的 Linux 网关可对规则命中和确认研判的五元组应用限时转发阻断，双端保护名单和分钟限额在签发时原子核对",
+        "真实出侧观察以独立结果追溯暂停、重连或未知。暂停且当前策略预授权时可签发既有联动封禁任务并独立核对设备回执"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",

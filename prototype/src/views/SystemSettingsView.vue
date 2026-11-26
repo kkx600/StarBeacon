@@ -25,7 +25,7 @@ import {
   automationLevels,
   automationScenes,
   bypassEnabled,
-  bypassInjectLimit,
+  gatewayPerMinute,
   bypassInterface,
   bypassPolicies,
   fullRetentionScopes,
@@ -56,7 +56,7 @@ interface Section {
   title: string;
   icon: Component;
   help: string;
-  // 只有整块都是参数的分类用页脚“保存”；旁路阻断的保存按钮跟在参数块下面。
+  // 只有整块都是参数的分类用页脚“保存”。网关阻断的保存按钮跟在参数块下面。
   savable: boolean;
 }
 const sections: Section[] = [
@@ -76,9 +76,9 @@ const sections: Section[] = [
   },
   {
     key: 'bypass',
-    title: '旁路阻断',
+    title: '网关阻断',
     icon: StopOutlined,
-    help: '开关和注入上限点“保存”后生效；阻断策略逐条授权、启停立即生效，到期自动停用。',
+    help: '平台开关和每分钟限额保存后生效。阻断策略逐条授权，并在截止后停止签发。',
     savable: false,
   },
   {
@@ -176,8 +176,7 @@ const sceneColumns = [
   { title: '撤销', dataIndex: 'revoked', key: 'revoked', width: 64, align: 'right' as const },
 ];
 
-// 旁路阻断：开关和注入上限保存后生效；策略逐条授权，启停立即生效。
-const bypassDraft = reactive({ enabled: bypassEnabled.value, limit: bypassInjectLimit.value });
+const bypassDraft = reactive({ enabled: bypassEnabled.value, limit: gatewayPerMinute.value });
 const policyRows = computed(() => (empty.value ? [] : bypassPolicies.value));
 // 触发条件和目标范围不定宽、放不下用省略号，列宽合计约 930，1440 宽度下不出横向滚动；
 // 更窄时横向滚动，状态和启停固定在右侧仍能看到。
@@ -186,20 +185,21 @@ const policyColumns = [
   { title: '名称', dataIndex: 'name', key: 'name', width: 120, ellipsis: true },
   { title: '触发条件', dataIndex: 'trigger', key: 'trigger', ellipsis: true },
   { title: '目标范围', dataIndex: 'scope', key: 'scope', ellipsis: true },
-  { title: '方式', dataIndex: 'method', key: 'method', width: 100 },
+  { title: '联动预授权', dataIndex: 'followUp', key: 'followUp', width: 150 },
   { title: '授权人', dataIndex: 'owner', key: 'owner', width: 64 },
   { title: '有效期至', dataIndex: 'expires', key: 'expires', width: 156 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 80, fixed: 'right' as const },
   { title: '操作', key: 'actions', width: 52, fixed: 'right' as const },
 ];
-const policyTriggers = ['严重级别为严重', 'AI 结论为真实攻击', '命中指定规则族', '命中关联规则'];
+const policyTriggers = ['规则即时触发', '研判后触发'];
+const policyFollowUps = ['未预授权', '已部署插件 · 告警源 · 60 秒', '已部署插件 · 告警目的 · 60 秒'];
 const policyOpen = ref(false);
 const blankPolicy = () => ({
   name: '',
   trigger: policyTriggers[0]!,
   scope: '',
-  method: 'TCP RST 双向',
-  days: 30,
+  followUp: policyFollowUps[0]!,
+  hours: 1,
   confirmed: false,
 });
 const policyDraft = ref(blankPolicy());
@@ -219,10 +219,10 @@ function savePolicy() {
     name: draft.name.trim(),
     trigger: draft.trigger,
     scope: draft.scope.trim(),
-    method: draft.method,
+    followUp: draft.followUp,
     owner: '陈宁',
     // 原型使用固定示例时钟，和其他示例记录的时间保持一致。
-    expires: expiryFromDuration(`${draft.days} 天`, '2026-09-30T09:48:00Z') ?? '—',
+    expires: expiryFromDuration(`${draft.hours} 小时`, '2026-09-30T09:48:00Z') ?? '—',
     status: '启用',
   });
   closeDialogs();
@@ -273,7 +273,7 @@ function save() {
     automationScenes.value = automationDraft.scenes.map(scene => ({ ...scene }));
   } else if (section.value === 'bypass') {
     bypassEnabled.value = bypassDraft.enabled;
-    bypassInjectLimit.value = bypassDraft.limit;
+    gatewayPerMinute.value = bypassDraft.limit;
   } else if (section.value === 'traffic') {
     retentionPolicy.value = trafficDraft.policy;
     retentionParams.value = { ...trafficDraft.params, alwaysFull: [...trafficDraft.params.alwaysFull] };
@@ -407,19 +407,19 @@ watch(
       <template v-else-if="section === 'bypass'">
         <!-- 参数点“保存”才生效；策略按条目逐条生效，分成上下两块。 -->
         <div class="settings-block">
-          <h3 class="settings-subhead">开关与注入</h3>
+          <h3 class="settings-subhead">开关与限额</h3>
           <a-form layout="vertical" class="settings-grid">
-            <a-form-item label="旁路阻断" extra="默认关闭。">
+            <a-form-item label="网关阻断" extra="默认关闭。">
               <a-switch v-model:checked="bypassDraft.enabled" checked-children="开启" un-checked-children="关闭" />
             </a-form-item>
-            <a-form-item label="注入网口">
+            <a-form-item label="观察口">
               <span class="settings-readonly"
                 ><span class="status-dot success"></span><span class="mono">{{ bypassInterface }}</span> ·
                 链路正常</span
               >
             </a-form-item>
-            <a-form-item label="每分钟注入上限">
-              <a-input-number v-model:value="bypassDraft.limit" :min="1" :max="1000" class="settings-number">
+            <a-form-item label="每分钟限额">
+              <a-input-number v-model:value="bypassDraft.limit" :min="1" :max="60" class="settings-number">
                 <template #addonAfter>次</template>
               </a-input-number>
             </a-form-item>
@@ -596,17 +596,18 @@ watch(
       <a-form-item label="目标范围" required extra="保护名单里的地址不会被阻断。">
         <a-input v-model:value="policyDraft.scope" placeholder="例如：外部 → 核心业务资产组" />
       </a-form-item>
-      <a-form-item label="方式">
-        <a-radio-group v-model:value="policyDraft.method" :options="['TCP RST 双向', 'ICMP 不可达']" />
+      <a-form-item label="流量暂停后的联动预授权">
+        <a-select
+          v-model:value="policyDraft.followUp"
+          :options="policyFollowUps.map(value => ({ value, label: value }))"
+        />
       </a-form-item>
       <a-form-item label="有效期">
-        <a-input-number v-model:value="policyDraft.days" :min="1" :max="180" class="settings-number">
-          <template #addonAfter>天</template>
+        <a-input-number v-model:value="policyDraft.hours" :min="1" :max="24" class="settings-number">
+          <template #addonAfter>小时</template>
         </a-input-number>
       </a-form-item>
-      <a-checkbox v-model:checked="policyDraft.confirmed"
-        >我了解旁路阻断不保证断开连接，也不能代替防火墙封禁。</a-checkbox
-      >
+      <a-checkbox v-model:checked="policyDraft.confirmed">我确认此策略的连接范围、授权期限和联动选项。</a-checkbox>
     </a-form>
   </a-modal>
 </template>

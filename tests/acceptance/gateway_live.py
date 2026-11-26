@@ -76,6 +76,12 @@ def http_client():
     print(json.dumps([conn.getsockname()[1] for conn in connections]), flush=True)
     try:
         for sequence, line in enumerate(sys.stdin, 1):
+            if line.strip() == "reconnect":
+                fresh = socket.create_connection((SERVER, 8080), timeout=2)
+                connections[1].close()
+                connections[1], pending[1] = fresh, b""
+                print(json.dumps(fresh.getsockname()[1]), flush=True)
+                continue
             which = int(line)
             if which not in (0, 1):
                 raise ValueError("仅允许选择两个实验连接")
@@ -131,7 +137,7 @@ def private_environment(directory, network):
     }
 
 
-def qualify(source, project):
+def qualify(source, project, observation):
     source = source.resolve(strict=True)
     if os.geteuid() != 0 or not re.fullmatch(r"sbacc_[a-f0-9]{16}", project) or not (source / "go.mod").is_file():
         raise ValueError("需使用专属 Docker 验收工程与已同步的 Go 源码")
@@ -203,9 +209,10 @@ def qualify(source, project):
                    SB_GATEWAY_CLIENT_PID=str(client_pid), SB_GATEWAY_FIXTURE=str(script),
                    SB_GATEWAY_LEFT_IFACE=by_address[GATE_LEFT], SB_GATEWAY_RIGHT_IFACE=by_address[GATE_RIGHT])
         log = work / "gateway-live.log"
+        test = "TestGatewayBlockLiveDockerObservation" if observation else "TestGatewayBlockLiveDockerForwarding"
         with log.open("w") as target:
             proc = subprocess.run(ns(gateway_pid, str(binary_dir/"gateway.test"), "-test.v",
-                                     "-test.run=^TestGatewayBlockLiveDockerForwarding$", "-test.timeout=130s"),
+                                     f"-test.run=^{test}$", "-test.timeout=130s"),
                                   env=env, stdout=target, stderr=subprocess.STDOUT, timeout=150)
         redacted = ("postgres://", "redis://", "nats://")
         for line in log.read_text(errors="replace").splitlines():
@@ -251,8 +258,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=pathlib.Path, required=True)
     parser.add_argument("--project", required=True)
+    parser.add_argument("--observation", action="store_true")
     args = parser.parse_args()
-    return qualify(args.source, args.project)
+    return qualify(args.source, args.project, args.observation)
 
 
 if __name__ == "__main__":

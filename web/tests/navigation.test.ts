@@ -93,6 +93,7 @@ describe('业务导航与路由契约', () => {
     '/response/policies',
     '/response/evaluations',
     '/response/plugins',
+    '/response/gateway-blocks',
     '/ai/mcp',
     '/reports/plans',
   ])('实际路由 %s 的页面标题与导航名称一致', async path => {
@@ -239,7 +240,12 @@ describe('业务导航与路由契约', () => {
     const wrapper = mount(RouterView, { global: { plugins: [registerAnt, router] } });
     await flushPromises();
     const categories = wrapper.get('nav[aria-label="设置分类"]');
-    expect(categories.findAll('a').map(link => link.text())).toEqual(['用户管理', '全流量存储', '功能目录']);
+    expect(categories.findAll('a').map(link => link.text())).toEqual([
+      '用户管理',
+      '网关阻断',
+      '全流量存储',
+      '功能目录',
+    ]);
     expect(categories.get('[aria-current="page"]').text()).toBe('用户管理');
     expect(wrapper.get('section[aria-label="用户管理"] h2').text()).toBe('用户管理');
     expect(request.mock.calls.some(([path]) => String(path).startsWith('/users?'))).toBe(true);

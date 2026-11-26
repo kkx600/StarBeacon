@@ -28,6 +28,7 @@ const components: Record<string, NonNullable<RouteRecordRaw['component']>> = {
   incidents: () => import('./views/IncidentsView.vue'),
   settings: () => import('./views/SettingsView.vue'),
   responseActions: () => import('./views/ResponseActionsView.vue'),
+  gatewayBlocks: () => import('./views/GatewayBlocksView.vue'),
   responseDevices: () => import('./views/ResponseDevicesView.vue'),
   responsePlugins: () => import('./views/ResponsePluginsView.vue'),
 };

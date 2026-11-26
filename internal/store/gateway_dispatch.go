@@ -28,7 +28,9 @@ func (p *Postgres) NextGatewayBlock(ctx context.Context, sensor transport.Sensor
 		tenant := sensor.TenantID
 		var pending bool
 		err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM gateway_block_requests
-			WHERE tenant_id=$1 AND sensor_id=$2 AND registration_id=$3 AND state='pending' AND deadline>clock_timestamp())`,
+			WHERE tenant_id=$1 AND sensor_id=$2 AND registration_id=$3
+			AND ((state='pending' AND deadline>clock_timestamp()) OR
+			(follow_up_state='pending' AND follow_up_until>clock_timestamp())))`,
 			tenant, sensor.SensorID, sensor.RegistrationID).Scan(&pending)
 		if err != nil || !pending {
 			return err
@@ -41,6 +43,16 @@ func (p *Postgres) NextGatewayBlock(ctx context.Context, sensor transport.Sensor
 		}
 		binding, err := gatewayBinding(ctx, tx, sensor, signer.Public().(ed25519.PublicKey))
 		if err != nil || binding == nil {
+			return err
+		}
+		effect, err := scanGatewayRequest(tx.QueryRow(ctx, `SELECT `+gatewayRequestColumns+` FROM gateway_block_requests
+			WHERE tenant_id=$1 AND sensor_id=$2 AND registration_id=$3 AND follow_up_state='pending' AND follow_up_until>clock_timestamp()
+			ORDER BY follow_up_until,id LIMIT 1 FOR UPDATE`, tenant, sensor.SensorID, sensor.RegistrationID))
+		if err == nil {
+			delivery, err = authorizeGatewayFollowUp(ctx, tx, sensor, effect, *binding, signer)
+			return err
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
 		r, err := scanGatewayRequest(tx.QueryRow(ctx, `SELECT `+gatewayRequestColumns+` FROM gateway_block_requests
@@ -181,7 +193,8 @@ func signGatewayBlock(ctx context.Context, tx pgx.Tx, tenant string, r gatewayEv
 	lease := minTime(now.Add(time.Duration(policy.Definition.LeaseSeconds)*time.Second), policy.Definition.ValidUntil)
 	expires := minTime(now.Add(gatewayblock.DispatchWindow), minTime(r.Deadline, lease.Add(-time.Second)))
 	action := gatewayblock.Action{RequestID: r.ID, EventID: r.EventID, ConfigSHA256: binding.ConfigSHA256,
-		PolicyID: r.PolicyID, Revision: r.PolicyRevision, Trigger: r.Trigger, Flow: r.Flow, LeaseUntil: lease}
+		PolicyID: r.PolicyID, Revision: r.PolicyRevision, Trigger: r.Trigger, Flow: r.Flow, LeaseUntil: lease,
+		Observe: binding.Observation, FollowUp: policy.Definition.FollowUp != nil}
 	payload, err := json.Marshal(action)
 	if err != nil {
 		return nil, err

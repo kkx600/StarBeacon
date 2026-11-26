@@ -155,17 +155,19 @@ func (p *Postgres) EnqueueNotifications(ctx context.Context, tenant, batchID str
 }
 
 func enqueueNotificationTx(ctx context.Context, tx pgx.Tx, tenant, batchID string, alerts []notify.Summary, vault *secrets.Vault, testChannel string) error {
-	return enqueueMessageTx(ctx, tx, tenant, batchID, alerts, nil, vault, testChannel)
+	return enqueueMessageTx(ctx, tx, tenant, batchID, alerts, nil, nil, vault, testChannel)
 }
 
 func (p *Postgres) EnqueueQualityNotifications(ctx context.Context, tenant, batchID string, quality []notify.QualitySummary, vault *secrets.Vault) error {
 	if err := notify.ValidateQuality(tenant, batchID, quality); err != nil {
 		return err
 	}
-	return p.TenantTx(ctx, tenant, func(tx pgx.Tx) error { return enqueueMessageTx(ctx, tx, tenant, batchID, nil, quality, vault, "") })
+	return p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
+		return enqueueMessageTx(ctx, tx, tenant, batchID, nil, quality, nil, vault, "")
+	})
 }
 
-func enqueueMessageTx(ctx context.Context, tx pgx.Tx, tenant, batchID string, alerts []notify.Summary, quality []notify.QualitySummary, vault *secrets.Vault, testChannel string) error {
+func enqueueMessageTx(ctx context.Context, tx pgx.Tx, tenant, batchID string, alerts []notify.Summary, quality []notify.QualitySummary, gateway *notify.GatewaySummary, vault *secrets.Vault, testChannel string) error {
 	rows, err := tx.Query(ctx, `SELECT id,revision,enabled,muted_until FROM notification_channels WHERE tenant_id=$1 AND ($2='' OR id=$2) ORDER BY id LIMIT 50 FOR SHARE`, tenant, testChannel)
 	if err != nil {
 		return err
@@ -198,10 +200,10 @@ func enqueueMessageTx(ctx context.Context, tx pgx.Tx, tenant, batchID string, al
 			return err
 		}
 		selected := config.Select(alerts)
-		if len(quality) > 0 && !config.Accepts("quality") {
+		if (len(quality) > 0 || gateway != nil) && !config.Accepts("quality") {
 			continue
 		}
-		if len(selected) == 0 && len(quality) == 0 && testChannel == "" {
+		if len(selected) == 0 && len(quality) == 0 && gateway == nil && testChannel == "" {
 			continue
 		}
 		upstream := batchID
@@ -209,8 +211,13 @@ func enqueueMessageTx(ctx context.Context, tx pgx.Tx, tenant, batchID string, al
 			upstream = "quality:" + quality[0].ID
 			selected = []notify.Summary{}
 		}
+		if gateway != nil {
+			upstream = "gateway:" + gateway.RequestID
+			selected = []notify.Summary{}
+		}
 		id := "notice_" + Hash(tenant + "/" + upstream + "/" + target.id)[:57]
-		message := notify.Message{TenantID: tenant, BatchID: batchID, CreatedAt: time.Now().UTC(), Alerts: selected, Quality: quality, Test: testChannel != ""}
+		message := notify.Message{TenantID: tenant, BatchID: batchID, CreatedAt: time.Now().UTC(), Alerts: selected,
+			Quality: quality, Gateway: gateway, Test: testChannel != ""}
 		encoded, err := json.Marshal(message)
 		if err != nil {
 			return err
@@ -291,7 +298,21 @@ func (p *Postgres) NotificationDeliveries(ctx context.Context, tenant, cursor, s
 		return result, next, ErrNotificationQuery
 	}
 	err := p.TenantTx(ctx, tenant, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT d.id,b.channel_id,c.name,c.kind,b.channel_revision,d.recipient,d.state,d.version,d.attempts,jsonb_array_length(b.message->'alerts'),CASE WHEN b.message ? 'logs' THEN jsonb_array_length(b.message->'logs') WHEN b.message ? 'quality' THEN jsonb_array_length(b.message->'quality') ELSE jsonb_array_length(b.message->'alerts') END,COALESCE(b.message->'logs'->0->>'stream',CASE WHEN b.message ? 'quality' THEN 'quality' WHEN (b.message->>'test')::boolean THEN 'test' ELSE 'alerts' END),d.receipt,d.created_at,d.updated_at FROM notification_deliveries d JOIN notification_batches b ON b.tenant_id=d.tenant_id AND b.id=d.batch_id JOIN notification_channels c ON c.tenant_id=b.tenant_id AND c.id=b.channel_id WHERE d.tenant_id=$1 AND ($2::timestamptz IS NULL OR (d.created_at,d.id)<($2::timestamptz,$3::text)) AND ($4='' OR d.state=$4) AND d.expires_at>now() ORDER BY d.created_at DESC,d.id DESC LIMIT $5`, tenant, at, after, state, limit+1)
+		rows, err := tx.Query(ctx, `SELECT d.id,b.channel_id,c.name,c.kind,b.channel_revision,d.recipient,d.state,d.version,d.attempts,
+			jsonb_array_length(b.message->'alerts'),
+			CASE WHEN b.message ? 'logs' THEN jsonb_array_length(b.message->'logs')
+				WHEN b.message ? 'quality' THEN jsonb_array_length(b.message->'quality')
+				WHEN b.message ? 'gateway' THEN 1
+				ELSE jsonb_array_length(b.message->'alerts') END,
+			COALESCE(b.message->'logs'->0->>'stream',CASE
+				WHEN b.message ? 'quality' OR b.message ? 'gateway' THEN 'quality'
+				WHEN (b.message->>'test')::boolean THEN 'test' ELSE 'alerts' END),
+			d.receipt,d.created_at,d.updated_at FROM notification_deliveries d
+			JOIN notification_batches b ON b.tenant_id=d.tenant_id AND b.id=d.batch_id
+			JOIN notification_channels c ON c.tenant_id=b.tenant_id AND c.id=b.channel_id
+			WHERE d.tenant_id=$1 AND ($2::timestamptz IS NULL OR (d.created_at,d.id)<($2::timestamptz,$3::text))
+			AND ($4='' OR d.state=$4) AND d.expires_at>now()
+			ORDER BY d.created_at DESC,d.id DESC LIMIT $5`, tenant, at, after, state, limit+1)
 		if err != nil {
 			return err
 		}

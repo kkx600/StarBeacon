@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { AppstoreOutlined, DatabaseOutlined, TeamOutlined } from '@ant-design/icons-vue';
+import { AppstoreOutlined, DatabaseOutlined, SafetyOutlined, TeamOutlined } from '@ant-design/icons-vue';
 import PageHeader from '@starbeacon/shared/components/PageHeader.vue';
 import UsersWorkspace from '../users/UsersWorkspace.vue';
 import FeatureDirectory from './FeatureDirectory.vue';
 import PacketStorageSettings from './PacketStorageSettings.vue';
+import GatewayBlockSettings from './GatewayBlockSettings.vue';
 
 const route = useRoute();
 const sections = [
   { key: 'users', title: '用户管理', to: '/system/settings/users', icon: TeamOutlined },
+  {
+    key: 'gateway-block',
+    title: '网关阻断',
+    to: { path: '/system/settings', query: { section: 'gateway-block' } },
+    icon: SafetyOutlined,
+  },
   {
     key: 'traffic',
     title: '全流量存储',
@@ -25,12 +32,14 @@ const sections = [
 ];
 const section = computed(() => {
   const name = route.query.section;
-  return route.meta.workspaceView !== 'users' && (name === 'features' || name === 'traffic') ? name : 'users';
+  return route.meta.workspaceView !== 'users' && (name === 'features' || name === 'traffic' || name === 'gateway-block')
+    ? name
+    : 'users';
 });
 </script>
 
 <template>
-  <PageHeader title="系统设置" description="管理本租户的用户账号，查找当前版本的功能入口。" />
+  <PageHeader title="系统设置" description="管理本租户的用户账号、网关阻断和全流量存储设置。" />
   <div class="settings-layout">
     <nav class="panel settings-nav" aria-label="设置分类">
       <RouterLink v-for="item in sections" :key="item.key" :to="item.to" custom v-slot="{ href, navigate }">
@@ -42,6 +51,7 @@ const section = computed(() => {
     </nav>
     <section class="settings-section" aria-label="当前设置分类">
       <UsersWorkspace v-if="section === 'users'" />
+      <GatewayBlockSettings v-else-if="section === 'gateway-block'" />
       <PacketStorageSettings v-else-if="section === 'traffic'" />
       <FeatureDirectory v-else />
     </section>

@@ -19890,6 +19890,44 @@
         }
       }
     },
+    "/api/v1/gateway-block/requests": {
+      "get": {
+        "summary": "列出受控网关阻断记录",
+        "description": "按创建时间和编号续页，独立返回防火墙回读、五秒出侧观察和后续联动。汇总使用过去 24 小时的请求。",
+        "x-required-role": "admin",
+        "parameters": [
+          {"name": "cursor","in": "query","schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}},
+          {"$ref": "#/components/parameters/ListPageLimit"}
+        ],
+        "responses": {
+          "200": {"description": "操作成功","content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockRequestPage"}}}},
+          "400": {"description": "参数无效","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "会话无效","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "管理员权限不足","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "游标不可查","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "网关记录不可用","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
+    "/api/v1/gateway-block/plugins": {
+      "get": {
+        "summary": "核对可预授权的插件",
+        "description": "只列出指定采集器注册代次上已启用、具备封禁能力、设备与当前绑定均可核对的插件。",
+        "x-required-role": "admin",
+        "parameters": [
+          {"name": "sensor_id","in": "query","required": true,"schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}},
+          {"name": "registration_id","in": "query","required": true,"schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}}
+        ],
+        "responses": {
+          "200": {"description": "操作成功","content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayFollowUpDevices"}}}},
+          "400": {"description": "参数无效","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "会话无效","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "管理员权限不足","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "采集器注册代次不可查","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"description": "插件目录不可用","content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
     "/api/v1/gateway-block/requests/{id}": {
       "get": {
         "summary": "查询受控网关请求",
@@ -36901,7 +36939,46 @@
           "rule_revision": {"type": "string","pattern": "^[1-9][0-9]{0,9}$"},
           "scope": {"$ref": "#/components/schemas/GatewayBlockScope"},
           "lease_seconds": {"type": "integer","minimum": 5,"maximum": 60},
-          "valid_until": {"type": "string","format": "date-time"}
+          "valid_until": {"type": "string","format": "date-time"},
+          "follow_up": {"$ref": "#/components/schemas/GatewayFollowUp"}
+        }
+      },
+      "GatewayFollowUp": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plugin_id","generation","connector_id","config_sha256","target_side","ttl_seconds"],
+        "properties": {
+          "plugin_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "generation": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "connector_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "config_sha256": {"type": "string","pattern": "^[a-f0-9]{64}$"},
+          "target_side": {"type": "string","enum": ["source","destination"]},
+          "ttl_seconds": {"type": "integer","minimum": 30,"maximum": 3600}
+        }
+      },
+      "GatewayFollowUpDevices": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["plugin_id","generation","version","connector_id","device_id","config_sha256","max_ttl_seconds"],
+              "properties": {
+                "plugin_id": {"type": "string"},
+                "generation": {"type": "integer","minimum": 1},
+                "version": {"type": "integer","minimum": 1},
+                "connector_id": {"type": "string"},
+                "device_id": {"type": "string"},
+                "config_sha256": {"type": "string","pattern": "^[a-f0-9]{64}$"},
+                "max_ttl_seconds": {"type": "integer","minimum": 30,"maximum": 3600}
+              }
+            }
+          }
         }
       },
       "GatewayBlockPolicyChange": {
@@ -36973,7 +37050,9 @@
           "state",
           "code",
           "observed_at",
-          "created_at"
+          "created_at",
+          "follow_up_state",
+          "follow_up_code"
         ],
         "properties": {
           "id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
@@ -36992,7 +37071,64 @@
           "observed_at": {"type": "string","format": "date-time"},
           "created_at": {"type": "string","format": "date-time"},
           "authorized_at": {"type": "string","format": "date-time"},
-          "lease_until": {"type": "string","format": "date-time"}
+          "lease_until": {"type": "string","format": "date-time"},
+          "gateway_result": {"$ref": "#/components/schemas/GatewayReadback"},
+          "task_state": {"type": "string"},
+          "follow_up_state": {"type": "string","enum": ["none","pending","skipped","issued"]},
+          "follow_up_code": {"type": "string"},
+          "follow_up_task_id": {"type": "string"},
+          "follow_up_task_state": {"type": "string"}
+        }
+      },
+      "GatewayReadback": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_id","config_sha256","flow","lease_until","verified_at"],
+        "properties": {
+          "request_id": {"type": "string"},
+          "config_sha256": {"type": "string","pattern": "^[a-f0-9]{64}$"},
+          "flow": {"$ref": "#/components/schemas/GatewayBlockFlow"},
+          "lease_until": {"type": "string","format": "date-time"},
+          "verified_at": {"type": "string","format": "date-time"},
+          "observation": {"$ref": "#/components/schemas/GatewayObservation"}
+        }
+      },
+      "GatewayObservation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["state","code","interface","started_at","finished_at","egress_packets","original_packets"],
+        "properties": {
+          "state": {"type": "string","enum": ["paused","continued","unknown"]},
+          "code": {"type": "string"},
+          "interface": {"type": "string"},
+          "started_at": {"type": "string","format": "date-time"},
+          "finished_at": {"type": "string","format": "date-time"},
+          "egress_packets": {"type": "integer","minimum": 0,"maximum": 1048576},
+          "original_packets": {"type": "integer","minimum": 0,"maximum": 1048576},
+          "reconnect": {"$ref": "#/components/schemas/GatewayBlockFlow"}
+        }
+      },
+      "GatewayBlockRequestPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items","next_cursor","enabled","online_gateways","last_day"],
+        "properties": {
+          "items": {"type": "array","items": {"$ref": "#/components/schemas/GatewayBlockRequest"}},
+          "next_cursor": {"type": "string"},
+          "enabled": {"type": "boolean"},
+          "online_gateways": {"type": "integer","minimum": 0},
+          "last_day": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["total","paused","continued","unknown","protected"],
+            "properties": {
+              "total": {"type": "integer","minimum": 0},
+              "paused": {"type": "integer","minimum": 0},
+              "continued": {"type": "integer","minimum": 0},
+              "unknown": {"type": "integer","minimum": 0},
+              "protected": {"type": "integer","minimum": 0}
+            }
+          }
         }
       }
     },

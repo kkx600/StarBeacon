@@ -66,8 +66,9 @@ func (s *Service) local() (LocalConfig, error) {
 		return config, ErrUnavailable
 	}
 	raw, err := io.ReadAll(io.LimitReader(file, configLimit+1))
-	if err != nil || contract.JSONFields(string(raw), []string{"enabled", "scope", "sources", "destinations"}, configLimit) != nil ||
-		json.Unmarshal(raw, &config) != nil || !config.Enabled || !config.Scope.Valid() {
+	if err != nil || contract.JSONFields(string(raw), []string{"enabled", "scope", "sources", "destinations", "observe_interface"}, configLimit) != nil ||
+		json.Unmarshal(raw, &config) != nil || !config.Enabled || !config.Scope.Valid() ||
+		config.ObserveInterface != "" && !observationInterface(config.ObserveInterface) {
 		return LocalConfig{}, ErrUnavailable
 	}
 	return config, nil
@@ -192,7 +193,8 @@ func (s *Service) Apply(ctx context.Context, commandID string, a Action, expires
 	if err != nil {
 		return Result{}, "gateway_unavailable", err
 	}
-	if !contract.ValidID(commandID) || !a.Flow.Valid() || !config.Scope.Allows(a.Flow) || config.Binding().ConfigSHA256 != a.ConfigSHA256 {
+	if !contract.ValidID(commandID) || !a.Flow.Valid() || !config.Scope.Allows(a.Flow) || config.Binding().ConfigSHA256 != a.ConfigSHA256 ||
+		a.Observe && config.ObserveInterface == "" {
 		return Result{}, "gateway_scope_changed", ErrIneligible
 	}
 	call, cancel := context.WithDeadline(ctx, expires)
@@ -218,7 +220,31 @@ func (s *Service) Apply(ctx context.Context, commandID string, a Action, expires
 	if err != nil || !verifyElement(raw, a.Flow, commandID, int(a.LeaseUntil.Sub(now)/time.Second)+1) {
 		return Result{}, "result_unknown", ErrUnknown
 	}
-	return Result{RequestID: a.RequestID, ConfigSHA256: a.ConfigSHA256, Flow: a.Flow, LeaseUntil: a.LeaseUntil, VerifiedAt: now}, "", nil
+	result := Result{RequestID: a.RequestID, ConfigSHA256: a.ConfigSHA256, Flow: a.Flow, LeaseUntil: a.LeaseUntil, VerifiedAt: now}
+	if a.Observe {
+		cancel()
+		observation := ObserveEgress(ctx, config.ObserveInterface, a.Flow, now, a.LeaseUntil)
+		if observation.State != FlowUnknown && !s.observationBindingCurrent(ctx, commandID, a) {
+			observation.State, observation.Code = FlowUnknown, "observer_changed"
+		}
+		result.Observation = &observation
+	}
+	return result, "", nil
+}
+
+// 观察完成后再次核对本地配置、转发链和原有限时条目。观察失败仍保留最初的独立回读。
+func (s *Service) observationBindingCurrent(ctx context.Context, commandID string, a Action) bool {
+	config, err := s.local()
+	if err != nil || config.Binding().ConfigSHA256 != a.ConfigSHA256 || !a.LeaseUntil.After(time.Now()) {
+		return false
+	}
+	call, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+	defer cancel()
+	if !s.ready(call, &a.Flow) {
+		return false
+	}
+	raw, err := s.nft(call, "-j", "-n", "list", "set", "inet", table, a.Flow.setName())
+	return err == nil && verifyElement(raw, a.Flow, commandID, int(time.Until(a.LeaseUntil)/time.Second)+1)
 }
 
 func verifyElement(raw []byte, flow Flow, owner string, maxSeconds int) bool {

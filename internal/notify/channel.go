@@ -181,6 +181,7 @@ type Message struct {
 	Alerts    []Summary        `json:"alerts"`
 	Logs      []AuditLog       `json:"logs,omitempty"`
 	Quality   []QualitySummary `json:"quality,omitempty"`
+	Gateway   *GatewaySummary  `json:"gateway,omitempty"`
 	Recipient string           `json:"-"`
 	Test      bool             `json:"test"`
 }
@@ -188,6 +189,14 @@ type Message struct {
 func (m Message) Text() string {
 	if m.Test {
 		return "星烽 StarBeacon 通知渠道测试。该消息用于验证渠道受理情况。"
+	}
+	if m.Gateway != nil {
+		status := "出侧仍有流量"
+		if m.Gateway.Reconnected {
+			status = "检测到重连"
+		}
+		return "星烽 StarBeacon 网关观察\n" + status + " · " + m.Gateway.SensorID + " · " + m.Gateway.RequestID +
+			"\n请在响应中心核对连接记录。\n投递标识：" + m.ID
 	}
 	var output strings.Builder
 	if len(m.Quality) > 0 {

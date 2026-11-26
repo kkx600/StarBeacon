@@ -543,6 +543,14 @@
       "admin": true
     },
     {
+      "id": "bypass-blocking",
+      "workspace": "actions",
+      "path": "/response/gateway-blocks",
+      "title": "网关阻断",
+      "module": "gatewayBlocks",
+      "admin": true
+    },
+    {
       "id": "channels",
       "workspace": "notifications",
       "path": "/notifications/channels",

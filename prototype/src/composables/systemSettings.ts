@@ -74,14 +74,14 @@ export const storageTiers = [
 
 export const bypassEnabled = ref(true);
 export const bypassInterface = 'eth2';
-export const bypassInjectLimit = ref(60);
+export const gatewayPerMinute = ref(10);
 export const bypassPolicies = ref([
   {
     id: 'BYPASS-P-0001',
     name: 'C2 外联即时断开',
     trigger: 'AI 结论为真实攻击，且命中 C2 情报',
     scope: '研发网络域 → 外部',
-    method: 'TCP RST 双向',
+    followUp: '已部署插件 · 告警目的 · 60 秒',
     owner: '陈宁',
     expires: '2026-12-31 23:59:59',
     status: '启用',
@@ -91,7 +91,7 @@ export const bypassPolicies = ref([
     name: '高危漏洞利用断开',
     trigger: '严重级别为严重，规则族为漏洞利用',
     scope: '外部 → 核心业务资产组',
-    method: 'TCP RST 双向',
+    followUp: '未预授权',
     owner: '林悦',
     expires: '2026-10-31 23:59:59',
     status: '启用',
@@ -101,7 +101,7 @@ export const bypassPolicies = ref([
     name: '可疑 DNS 隧道',
     trigger: '关联规则：DNS 隧道特征',
     scope: '全部内部地址 → 外部 53/UDP',
-    method: 'ICMP 不可达',
+    followUp: '未预授权',
     owner: '—',
     expires: '—',
     status: '待确认',

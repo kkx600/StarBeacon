@@ -97,14 +97,14 @@ func TestGatewayActionAndIndependentReceiptUseExactFlowAndDeadline(t *testing.T)
 			t.Fatal("无效命令通过", err)
 		}
 	}
-	result := Result{a.RequestID, a.ConfigSHA256, a.Flow, a.LeaseUntil, now.Add(time.Second)}
+	result := Result{RequestID: a.RequestID, ConfigSHA256: a.ConfigSHA256, Flow: a.Flow, LeaseUntil: a.LeaseUntil, VerifiedAt: now.Add(time.Second)}
 	body, _ := json.Marshal(result)
-	if err := VerifyResult(body, a, now, now.Add(2*time.Second)); err != nil {
+	if _, err := ReadResult(body, a, now, now.Add(DispatchWindow), now.Add(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	result.Flow.DestinationPort++
 	body, _ = json.Marshal(result)
-	if err := VerifyResult(body, a, now, now.Add(2*time.Second)); !errors.Is(err, ErrUnknown) {
+	if _, err := ReadResult(body, a, now, now.Add(DispatchWindow), now.Add(2*time.Second)); !errors.Is(err, ErrUnknown) {
 		t.Fatal("另一连接回执通过", err)
 	}
 }

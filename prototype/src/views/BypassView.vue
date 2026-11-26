@@ -12,8 +12,7 @@ import StatePanel from '../../../web/packages/shared/src/components/StatePanel.v
 import HelpNote from '../components/HelpNote.vue';
 import { bypassEnabled, bypassInterface } from '../composables/systemSettings';
 
-// 旁路阻断：采集器通过独立的注入网口向命中的连接双向发送 TCP RST（UDP 发 ICMP 不可达）。
-// 开关、注入上限和阻断策略属于系统设置，本页只看阻断记录。
+// 网关阻断记录分别展示防火墙回读、出侧观察与联动结果。
 const props = defineProps<{ page: PageSpec; state: PreviewState }>();
 const emit = defineEmits<{ state: [value: PreviewState] }>();
 const router = useRouter();
@@ -26,9 +25,9 @@ const records = ref([
     protocol: 'TCP',
     policy: 'C2 外联即时断开',
     alert: 'ALERTS-0002',
-    injected: 'RST ×2',
-    effect: '已终止',
-    follow: '防火墙封禁 24 小时',
+    readback: '已回读',
+    effect: '流量暂停',
+    follow: '设备租约已回读 · 60 秒',
   },
   {
     id: 'BYPASS-0002',
@@ -37,9 +36,9 @@ const records = ref([
     protocol: 'TCP',
     policy: '高危漏洞利用断开',
     alert: 'ALERTS-0006',
-    injected: 'RST ×2',
-    effect: '已终止',
-    follow: '防火墙封禁 2 小时',
+    readback: '已回读',
+    effect: '流量暂停',
+    follow: '未预授权',
   },
   {
     id: 'BYPASS-0003',
@@ -48,9 +47,9 @@ const records = ref([
     protocol: 'TCP',
     policy: '高危漏洞利用断开',
     alert: 'ALERTS-0001',
-    injected: 'RST ×2',
+    readback: '已回读',
     effect: '仍有流量',
-    follow: '4 秒后重连，已封禁',
+    follow: '观察到重连 · 已通知值班',
   },
   {
     id: 'BYPASS-0004',
@@ -59,9 +58,9 @@ const records = ref([
     protocol: 'QUIC',
     policy: 'C2 外联即时断开',
     alert: 'ALERTS-0012',
-    injected: 'ICMP 不可达 ×1',
+    readback: '已回读',
     effect: '结果未知',
-    follow: '等待插件确认',
+    follow: '未签发 · 观察口不可用',
   },
   {
     id: 'BYPASS-0005',
@@ -70,8 +69,8 @@ const records = ref([
     protocol: 'TCP',
     policy: '高危漏洞利用断开',
     alert: 'ALERTS-0015',
-    injected: '未注入',
-    effect: '保护名单拦截',
+    readback: '已拒绝',
+    effect: '暂无观察',
     follow: '目标属于管理地址',
   },
 ]);
@@ -81,19 +80,19 @@ const recordColumns = [
   { title: '连接', dataIndex: 'session', key: 'session', width: 306, ellipsis: true },
   { title: '命中策略', dataIndex: 'policy', key: 'policy', width: 150, ellipsis: true },
   { title: '触发告警', dataIndex: 'alert', key: 'alert', width: 104 },
-  { title: '注入', dataIndex: 'injected', key: 'injected', width: 112 },
-  { title: '效果观察', dataIndex: 'effect', key: 'effect', width: 116 },
-  { title: '后续', dataIndex: 'follow', key: 'follow', ellipsis: true },
+  { title: '防火墙回读', dataIndex: 'readback', key: 'readback', width: 112 },
+  { title: '流量观察', dataIndex: 'effect', key: 'effect', width: 116 },
+  { title: '联动封禁', dataIndex: 'follow', key: 'follow', ellipsis: true },
 ];
 const empty = computed(() => props.state === 'empty');
 const metrics = computed<MetricSpec[]>(() => [
-  { label: '今日阻断连接', value: empty.value ? '0' : '37' },
-  { label: '确认终止', value: empty.value ? '0' : '31' },
+  { label: '近 24 小时请求', value: empty.value ? '0' : '42' },
+  { label: '流量暂停', value: empty.value ? '0' : '31' },
   { label: '仍有流量', value: empty.value ? '0' : '4', tone: 'warning' },
   { label: '结果未知', value: empty.value ? '0' : '2', tone: 'warning' },
   { label: '保护名单拦截', value: empty.value ? '0' : '5' },
 ]);
-const effectTones = { 已终止: 'success', 仍有流量: 'warning', 结果未知: 'warning', 保护名单拦截: 'neutral' } as const;
+const effectTones = { 流量暂停: 'success', 仍有流量: 'warning', 结果未知: 'warning', 暂无观察: 'neutral' } as const;
 
 const settingsLink = { path: '/page/system-settings', query: { section: 'bypass' } };
 function openSettings() {
@@ -104,15 +103,12 @@ function openSettings() {
 <template>
   <PageHeader :help-entries="helpEntries" :title="page.title" :description="page.description">
     <a-space wrap :size="16">
-      <span class="bypass-now">旁路阻断：{{ bypassEnabled ? '启用' : '未启用' }}</span>
-      <span class="bypass-now"><span class="status-dot success"></span>注入网口 {{ bypassInterface }} · 链路正常</span>
-      <router-link class="bypass-edit" :to="settingsLink">修改</router-link>
+      <span class="bypass-now">网关阻断 {{ bypassEnabled ? '已启用' : '已停用' }}</span>
+      <span class="bypass-now"><span class="status-dot success"></span>观察口 {{ bypassInterface }} · 链路正常</span>
+      <router-link class="bypass-edit" :to="settingsLink">网关阻断设置</router-link>
     </a-space>
   </PageHeader>
-  <HelpNote
-    message="旁路阻断是尽力而为：注入的 RST 可能晚于对端数据到达，对 QUIC 等 UDP 协议效果有限，对方也可以重连。它用来先断开连接争取时间，持久封禁由联动插件在防火墙上完成。"
-  />
-  <HelpNote message="本页为合成示例，不向任何网络发包。" />
+  <HelpNote message="受控网关对单条连接应用限时防火墙条目。出侧观察和联动设备回读分别记入记录。" />
 
   <StatePanel
     v-if="state === 'loading' || state === 'error'"
@@ -122,13 +118,7 @@ function openSettings() {
   />
   <template v-else>
     <MetricBar :items="metrics" />
-    <a-alert
-      v-if="!bypassEnabled"
-      class="page-notice"
-      type="warning"
-      show-icon
-      message="旁路阻断未启用，不会产生新的阻断记录。"
-    >
+    <a-alert v-if="!bypassEnabled" class="page-notice" type="warning" show-icon message="网关阻断已停用。">
       <template #action>
         <a-button type="link" size="small" @click="openSettings">去启用</a-button>
       </template>
@@ -141,7 +131,7 @@ function openSettings() {
         v-if="empty"
         empty
         title="还没有阻断记录"
-        description="启用阻断策略并命中后，每次注入和效果观察会出现在这里。"
+        description="这里显示网关阻断请求、条目回读和流量观察。"
         action="管理阻断策略"
         @action="openSettings"
       />

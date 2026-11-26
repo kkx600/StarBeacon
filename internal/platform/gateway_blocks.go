@@ -19,7 +19,9 @@ func (a *API) registerGatewayBlocks(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/gateway-block/settings", a.Auth.Require(true, a.saveGatewayBlockSettings))
 	m.HandleFunc("GET /api/v1/gateway-block/policies", a.Auth.Require(true, a.gatewayBlockPolicies))
 	m.HandleFunc("PUT /api/v1/gateway-block/policies/{id}", a.Auth.Require(true, a.saveGatewayBlockPolicy))
+	m.HandleFunc("GET /api/v1/gateway-block/requests", a.Auth.Require(true, a.gatewayBlockRequests))
 	m.HandleFunc("GET /api/v1/gateway-block/requests/{id}", a.Auth.Require(true, a.gatewayBlockRequest))
+	m.HandleFunc("GET /api/v1/gateway-block/plugins", a.Auth.Require(true, a.gatewayFollowUpDevices))
 	m.HandleFunc("POST /api/v1/alerts/{id}/gateway-blocks", a.Auth.Require(true, a.createGatewayBlockReview))
 }
 
@@ -109,7 +111,8 @@ func (a *API) gatewayBlockPolicies(w http.ResponseWriter, r *http.Request) {
 func (a *API) saveGatewayBlockPolicy(w http.ResponseWriter, r *http.Request) {
 	var change gatewayblock.PolicyChange
 	fields := []string{"expected_revision", "definition", "name", "enabled", "trigger", "sensor_id", "registration_id",
-		"rule_id", "rule_revision", "scope", "sources", "destinations", "lease_seconds", "valid_until"}
+		"rule_id", "rule_revision", "scope", "sources", "destinations", "lease_seconds", "valid_until", "follow_up",
+		"plugin_id", "generation", "connector_id", "config_sha256", "target_side", "ttl_seconds"}
 	if !a.gatewayReady(w, r, contract.ValidID(r.PathValue("id")) && readGatewayJSON(w, r, &change, fields)) {
 		return
 	}
@@ -119,6 +122,33 @@ func (a *API) saveGatewayBlockPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpapi.JSON(w, 200, result)
+}
+
+func (a *API) gatewayBlockRequests(w http.ResponseWriter, r *http.Request) {
+	cursor := r.URL.Query().Get("cursor")
+	limit, ok := requestListLimit(w, r)
+	if !ok || !a.gatewayReady(w, r, incidentQuery(r, "cursor", "limit") && (cursor == "" || contract.ValidID(cursor))) {
+		return
+	}
+	result, err := a.DB.GatewayBlockRequests(r.Context(), httpapi.Principal(r), cursor, limit)
+	if err != nil {
+		gatewayFailure(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, result)
+}
+
+func (a *API) gatewayFollowUpDevices(w http.ResponseWriter, r *http.Request) {
+	sensor, registration := r.URL.Query().Get("sensor_id"), r.URL.Query().Get("registration_id")
+	if !a.gatewayReady(w, r, incidentQuery(r, "sensor_id", "registration_id") && contract.ValidID(sensor) && contract.ValidID(registration)) {
+		return
+	}
+	items, err := a.DB.GatewayFollowUpDevices(r.Context(), httpapi.Principal(r), sensor, registration)
+	if err != nil {
+		gatewayFailure(w, r, err)
+		return
+	}
+	httpapi.JSON(w, 200, map[string]any{"items": items})
 }
 
 func (a *API) gatewayBlockRequest(w http.ResponseWriter, r *http.Request) {

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kkx600/StarBeacon/internal/control"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/responsescript"
 	bolt "go.etcd.io/bbolt"
@@ -70,8 +69,7 @@ func (r *pluginRuntime) bindConnector() error {
 		// 生产 IP 处置沿用现有设备身份和原生到期核验。
 		return nil
 	}
-	scope, _ := json.Marshal([]string{"response.plugin.connector.v1", r.profile.binding().BindingSHA256, r.version.DefinitionSHA256()})
-	hash := control.Digest(scope)
+	hash := response.PluginConnectorSHA256(r.profile.binding().BindingSHA256, r.version.DefinitionSHA256())
 	if r.template != nil {
 		if err := r.template.BindPlugin(hash); err != nil {
 			return err

@@ -202,6 +202,10 @@ type SignedPlugin struct {
 	Signature []byte      `json:"signature"`
 }
 
+func PluginConnectorSHA256(binding, definition string) string {
+	return digest([]string{"response.plugin.connector.v1", binding, definition})
+}
+
 func (g PluginGrant) Validate() error {
 	if !contract.ValidID(g.TenantID) || !contract.ValidID(g.SensorID) || !contract.ValidID(g.RegistrationID) ||
 		g.Binding.Validate() != nil || g.Version < 1 || g.Version > MaxPluginVersions || !validHash(g.DefinitionSHA256) {

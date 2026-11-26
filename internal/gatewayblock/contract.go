@@ -127,6 +127,7 @@ type Definition struct {
 	Scope          Scope     `json:"scope"`
 	LeaseSeconds   int       `json:"lease_seconds"`
 	ValidUntil     time.Time `json:"valid_until"`
+	FollowUp       *FollowUp `json:"follow_up,omitempty"`
 }
 
 func numbered(value string) bool {
@@ -139,7 +140,8 @@ func (d Definition) Valid() bool {
 		!strings.ContainsFunc(d.Name, unicode.IsControl) &&
 		(d.Trigger == Rule || d.Trigger == Review) && contract.ValidID(d.SensorID) &&
 		contract.ValidID(d.RegistrationID) && numbered(d.RuleID) && numbered(d.RuleRevision) &&
-		d.Scope.Valid() && d.LeaseSeconds >= 5 && d.LeaseSeconds <= 60 && !d.ValidUntil.IsZero()
+		d.Scope.Valid() && d.LeaseSeconds >= 5 && d.LeaseSeconds <= 60 && !d.ValidUntil.IsZero() &&
+		(d.FollowUp == nil || d.LeaseSeconds >= 8 && d.FollowUp.Valid())
 }
 
 type PolicyChange struct {
@@ -163,6 +165,22 @@ type Policy struct {
 type PolicyPage struct {
 	Items      []Policy `json:"items"`
 	NextCursor string   `json:"next_cursor"`
+}
+
+type RequestPage struct {
+	Items          []Request     `json:"items"`
+	NextCursor     string        `json:"next_cursor"`
+	Enabled        bool          `json:"enabled"`
+	OnlineGateways int           `json:"online_gateways"`
+	LastDay        RequestCounts `json:"last_day"`
+}
+
+type RequestCounts struct {
+	Total     int `json:"total"`
+	Paused    int `json:"paused"`
+	Continued int `json:"continued"`
+	Unknown   int `json:"unknown"`
+	Protected int `json:"protected"`
 }
 
 type ReviewRequest struct {
@@ -195,21 +213,29 @@ type Request struct {
 	CreatedAt          time.Time  `json:"created_at"`
 	AuthorizedAt       *time.Time `json:"authorized_at,omitempty"`
 	LeaseUntil         *time.Time `json:"lease_until,omitempty"`
+	GatewayResult      *Result    `json:"gateway_result,omitempty"`
+	TaskState          string     `json:"task_state,omitempty"`
+	FollowUpState      string     `json:"follow_up_state"`
+	FollowUpCode       string     `json:"follow_up_code"`
+	FollowUpTaskID     string     `json:"follow_up_task_id,omitempty"`
+	FollowUpTaskState  string     `json:"follow_up_task_state,omitempty"`
 }
 
 type LocalConfig struct {
-	Enabled bool  `json:"enabled"`
-	Scope   Scope `json:"scope"`
+	Enabled          bool   `json:"enabled"`
+	Scope            Scope  `json:"scope"`
+	ObserveInterface string `json:"observe_interface,omitempty"`
 }
 
 func (c LocalConfig) Binding() Health {
 	raw, _ := json.Marshal(c)
 	hash := sha256.Sum256(raw)
-	return Health{ConfigSHA256: hex.EncodeToString(hash[:])}
+	return Health{ConfigSHA256: hex.EncodeToString(hash[:]), Observation: c.ObserveInterface != ""}
 }
 
 type Health struct {
 	ConfigSHA256 string `json:"config_sha256"`
+	Observation  bool   `json:"observation,omitempty"`
 }
 
 func ValidDigest(s string) bool {
@@ -226,12 +252,14 @@ type Action struct {
 	Trigger      string    `json:"trigger"`
 	Flow         Flow      `json:"flow"`
 	LeaseUntil   time.Time `json:"lease_until"`
+	Observe      bool      `json:"observe,omitempty"`
+	FollowUp     bool      `json:"follow_up,omitempty"`
 }
 
 func ReadAction(raw []byte, issued, expires time.Time) (Action, error) {
 	var a Action
 	fields := []string{"request_id", "event_id", "config_sha256", "policy_id", "policy_revision", "trigger", "flow",
-		"source_ip", "source_port", "destination_ip", "destination_port", "transport", "lease_until"}
+		"source_ip", "source_port", "destination_ip", "destination_port", "transport", "lease_until", "observe", "follow_up"}
 	if contract.JSONFields(string(raw), fields, 4096) != nil || json.Unmarshal(raw, &a) != nil ||
 		!contract.ValidID(a.RequestID) || !ValidDigest(a.EventID) || !ValidDigest(a.ConfigSHA256) || !contract.ValidID(a.PolicyID) ||
 		a.Revision < 1 || a.Revision > MaxRevision || (a.Trigger != Rule && a.Trigger != Review) || !a.Flow.Valid() ||
@@ -242,21 +270,24 @@ func ReadAction(raw []byte, issued, expires time.Time) (Action, error) {
 }
 
 type Result struct {
-	RequestID    string    `json:"request_id"`
-	ConfigSHA256 string    `json:"config_sha256"`
-	Flow         Flow      `json:"flow"`
-	LeaseUntil   time.Time `json:"lease_until"`
-	VerifiedAt   time.Time `json:"verified_at"`
+	RequestID    string       `json:"request_id"`
+	ConfigSHA256 string       `json:"config_sha256"`
+	Flow         Flow         `json:"flow"`
+	LeaseUntil   time.Time    `json:"lease_until"`
+	VerifiedAt   time.Time    `json:"verified_at"`
+	Observation  *Observation `json:"observation,omitempty"`
 }
 
-func VerifyResult(raw []byte, a Action, issued, finished time.Time) error {
+func ReadResult(raw []byte, a Action, issued, expires, finished time.Time) (Result, error) {
 	var r Result
 	fields := []string{"request_id", "config_sha256", "flow", "source_ip", "source_port", "destination_ip",
-		"destination_port", "transport", "lease_until", "verified_at"}
+		"destination_port", "transport", "lease_until", "verified_at", "observation", "state", "code", "interface",
+		"started_at", "finished_at", "egress_packets", "original_packets", "reconnect"}
 	if contract.JSONFields(string(raw), fields, 4096) != nil || json.Unmarshal(raw, &r) != nil ||
 		r.RequestID != a.RequestID || r.ConfigSHA256 != a.ConfigSHA256 || r.Flow != a.Flow ||
-		!r.LeaseUntil.Equal(a.LeaseUntil) || r.VerifiedAt.Before(issued) || r.VerifiedAt.After(finished) || !r.VerifiedAt.Before(a.LeaseUntil) {
-		return ErrUnknown
+		!r.LeaseUntil.Equal(a.LeaseUntil) || r.VerifiedAt.Before(issued) || r.VerifiedAt.After(finished) || !r.VerifiedAt.Before(a.LeaseUntil) ||
+		a.Observe != (r.Observation != nil) || a.Observe && (r.VerifiedAt.After(expires) || !r.Observation.valid(r, finished)) {
+		return Result{}, ErrUnknown
 	}
-	return nil
+	return r, nil
 }

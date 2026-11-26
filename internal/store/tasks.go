@@ -399,12 +399,19 @@ func (p *Postgres) SaveReceipt(ctx context.Context, id transport.SensorIdentity,
 		if kind == gatewayblock.CommandKind && receipt.State == "succeeded" {
 			var c control.Command
 			if receipt.Code != "" || json.Unmarshal(command, &c) != nil || control.Validate(c) != nil ||
-				c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {
+				c.ID != receipt.CommandID || c.Kind != kind || c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {
 				return gatewayblock.ErrUnknown
 			}
 			action, err := gatewayblock.ReadAction(c.Payload, c.IssuedAt, c.ExpiresAt)
-			if err != nil || gatewayblock.VerifyResult(receipt.Result, action, c.IssuedAt, receipt.FinishedAt.UTC()) != nil {
+			if err != nil {
 				return gatewayblock.ErrUnknown
+			}
+			result, err := gatewayblock.ReadResult(receipt.Result, action, c.IssuedAt, c.ExpiresAt, receipt.FinishedAt.UTC())
+			if err != nil {
+				return err
+			}
+			if err := recordGatewayResult(ctx, tx, id.TenantID, receipt.CommandID, action, result, receipt.Result); err != nil {
+				return err
 			}
 		}
 		if strings.HasPrefix(kind, "response.") && receipt.State == "succeeded" {

@@ -22,6 +22,7 @@ type gatewayEvidence struct {
 	EventAt, ReceivedAt  time.Time
 	ActorID, KeyHash     string
 	Deadline             time.Time
+	FollowUpUntil        *time.Time
 }
 
 func gatewayObservation(alert model.Alert) (gatewayEvidence, error) {
@@ -65,18 +66,27 @@ func (e gatewayEvidence) qualifies(policy gatewayblock.Policy, config gatewayblo
 
 const gatewayRequestColumns = `id,event_id,raw_sha256,policy_id,policy_revision,assessment_revision,sensor_id,registration_id,trigger,
  flow,state,code,COALESCE(task_id,''),observed_at,created_at,authorized_at,lease_until,rule_id,rule_revision,event_at,received_at,
- actor_id,COALESCE(client_key_hash,''),deadline`
+ actor_id,COALESCE(client_key_hash,''),deadline,
+ COALESCE(gateway_result,(SELECT receipt->'result' FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id
+ AND t.id=gateway_block_requests.task_id AND t.state='succeeded')),
+ COALESCE((SELECT t.state FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id AND t.id=gateway_block_requests.task_id),''),
+ follow_up_state,follow_up_code,follow_up_until,COALESCE(follow_up_task_id,''),
+ COALESCE((SELECT t.state FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id AND t.id=gateway_block_requests.follow_up_task_id),'')`
 
 func scanGatewayRequest(row pgx.Row) (gatewayEvidence, error) {
 	var r gatewayEvidence
-	var flow []byte
+	var flow, result []byte
 	if err := row.Scan(&r.ID, &r.EventID, &r.RawSHA256, &r.PolicyID, &r.PolicyRevision, &r.AssessmentRevision,
 		&r.SensorID, &r.RegistrationID, &r.Trigger, &flow, &r.State, &r.Code, &r.TaskID, &r.ObservedAt,
-		&r.CreatedAt, &r.AuthorizedAt, &r.LeaseUntil, &r.RuleID, &r.RuleRevision, &r.EventAt, &r.ReceivedAt, &r.ActorID, &r.KeyHash, &r.Deadline); err != nil {
+		&r.CreatedAt, &r.AuthorizedAt, &r.LeaseUntil, &r.RuleID, &r.RuleRevision, &r.EventAt, &r.ReceivedAt, &r.ActorID, &r.KeyHash, &r.Deadline,
+		&result, &r.TaskState, &r.FollowUpState, &r.FollowUpCode, &r.FollowUpUntil, &r.FollowUpTaskID, &r.FollowUpTaskState); err != nil {
 		return r, err
 	}
 	if json.Unmarshal(flow, &r.Flow) != nil || !r.Flow.Valid() {
 		return gatewayEvidence{}, gatewayblock.ErrInput
+	}
+	if len(result) != 0 && json.Unmarshal(result, &r.GatewayResult) != nil {
+		return gatewayEvidence{}, gatewayblock.ErrUnknown
 	}
 	return r, nil
 }
@@ -175,6 +185,9 @@ func gatewayRequestResult(r gatewayEvidence) gatewayblock.Request {
 	if r.State == "pending" && !r.Deadline.After(time.Now()) {
 		r.State, r.Code = "denied", "observation_expired"
 	}
+	if r.FollowUpState == "pending" && (r.FollowUpUntil == nil || !r.FollowUpUntil.After(time.Now())) {
+		r.FollowUpState, r.FollowUpCode = "skipped", "observation_expired"
+	}
 	return r.Request
 }
 
@@ -256,5 +269,65 @@ func (p *Postgres) GatewayBlockRequest(ctx context.Context, u model.Principal, i
 		}
 		return err
 	})
+	return out, err
+}
+
+func (p *Postgres) GatewayBlockRequests(ctx context.Context, u model.Principal, cursor string, limit int) (gatewayblock.RequestPage, error) {
+	out := gatewayblock.RequestPage{Items: []gatewayblock.Request{}}
+	if !contract.ValidListLimit(limit) || cursor != "" && !contract.ValidID(cursor) {
+		return out, gatewayblock.ErrInput
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	err := p.TenantTx(ctx, u.TenantID, func(tx pgx.Tx) error {
+		if err := configurationActor(ctx, tx, u, false, gatewayblock.ErrPermission); err != nil {
+			return err
+		}
+		var before *time.Time
+		if cursor != "" {
+			if err := tx.QueryRow(ctx, `SELECT created_at FROM gateway_block_requests WHERE tenant_id=$1 AND id=$2 AND expires_at>now()`,
+				u.TenantID, cursor).Scan(&before); err != nil {
+				return err
+			}
+		}
+		settings, err := gatewaySettings(ctx, tx, u.TenantID)
+		if err != nil {
+			return err
+		}
+		out.Enabled = settings.Enabled
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM sensors WHERE tenant_id=$1 AND active
+			AND last_seen BETWEEN now()-interval '35 seconds' AND now()+interval '2 seconds'
+			AND health->'gateway_block'->>'config_sha256' ~ '^[a-f0-9]{64}$'`, u.TenantID).Scan(&out.OnlineGateways); err != nil {
+			return err
+		}
+		if err := tx.QueryRow(ctx, `SELECT count(*),
+			count(*) FILTER (WHERE gateway_result->'observation'->>'state'='paused'),
+			count(*) FILTER (WHERE gateway_result->'observation'->>'state'='continued'),
+			count(*) FILTER (WHERE gateway_result->'observation'->>'state'='unknown'),
+			count(*) FILTER (WHERE code='protected_endpoint' OR follow_up_code='protected_endpoint')
+			FROM gateway_block_requests WHERE tenant_id=$1 AND created_at>=now()-interval '24 hours' AND expires_at>now()`,
+			u.TenantID).Scan(&out.LastDay.Total, &out.LastDay.Paused, &out.LastDay.Continued, &out.LastDay.Unknown, &out.LastDay.Protected); err != nil {
+			return err
+		}
+		rows, err := tx.Query(ctx, `SELECT `+gatewayRequestColumns+` FROM gateway_block_requests
+			WHERE tenant_id=$1 AND expires_at>now() AND ($2::timestamptz IS NULL OR (created_at,id)<($2,$3))
+			ORDER BY created_at DESC,id DESC LIMIT $4`, u.TenantID, before, cursor, limit+1)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			r, err := scanGatewayRequest(rows)
+			if err != nil {
+				return err
+			}
+			out.Items = append(out.Items, gatewayRequestResult(r))
+		}
+		return rows.Err()
+	})
+	if err == nil && len(out.Items) > limit {
+		out.Items = out.Items[:limit]
+		out.NextCursor = out.Items[limit-1].ID
+	}
 	return out, err
 }
