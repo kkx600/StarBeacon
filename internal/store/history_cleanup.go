@@ -65,6 +65,7 @@ var historyCategories = []historyCategory{
 	{"watchlist_hit_days", "expires_at", "true"},
 	{"packet_session_outbox", "expires_at", "true"},
 	{"response_plugin_generations", "expires_at", `state NOT IN ('queued','running') AND NOT EXISTS(SELECT 1 FROM starbeacon_jobs.river_job j WHERE j.id=h.river_job_id AND j.state NOT IN ('completed','cancelled','discarded'))`},
+	{"gateway_block_requests", "expires_at", "true"},
 }
 
 type HistorySweep struct {

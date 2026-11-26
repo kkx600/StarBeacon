@@ -12,6 +12,7 @@ import (
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/config"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/httpapi"
 	"github.com/kkx600/StarBeacon/internal/probepki"
 	"github.com/kkx600/StarBeacon/internal/replay"
@@ -122,6 +123,12 @@ func Run(ctx context.Context, c config.Config) error {
 		wal.applicationState = func() json.RawMessage {
 			raw, _ := json.Marshal(engine.Applications.Snapshot())
 			return raw
+		}
+	}
+	if len(publicKey) > 0 {
+		engine.GatewayBlock = gatewayblock.NewService(c.GatewayBlockFile)
+		if engine.GatewayBlock != nil {
+			wal.gatewayBlockHealth = engine.GatewayBlock.Health
 		}
 	}
 	if c.ResponseConnectorsFile != "" || c.ResponsePluginBindings != "" {

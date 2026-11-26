@@ -60,6 +60,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/response-connectors", a.Auth.Require(true, a.responseConnectors))
 	a.registerResponsePlugins(m)
 	a.registerPluginGeneration(m)
+	a.registerGatewayBlocks(m)
 	a.registerSyslog(m)
 	a.registerSensorManagement(m)
 	a.registerQualityEvents(m)

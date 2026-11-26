@@ -64,6 +64,18 @@ func TestSyslogConfigurationIsAgentOnlyAndAbsolute(t *testing.T) {
 	}
 }
 
+func TestGatewayBlockConfigurationIsAgentOnlyAndAbsolute(t *testing.T) {
+	development(t)
+	t.Setenv("SB_GATEWAY_BLOCK_FILE", "gateway.json")
+	if _, err := Load("agent"); err == nil || !strings.Contains(err.Error(), "网关阻断配置") {
+		t.Fatal("采集器接受相对路径的本地网关配置", err)
+	}
+	t.Setenv("SB_GATEWAY_BLOCK_FILE", "/private/gateway.json")
+	if _, err := Load("platform"); err == nil || !strings.Contains(err.Error(), "网关阻断配置") {
+		t.Fatal("平台接受采集器本地网关配置", err)
+	}
+}
+
 func TestPluginBindingsUsePrivateAbsoluteAgentConfiguration(t *testing.T) {
 	for _, test := range []struct{ role, path string }{
 		{"agent", "plugins.json"},

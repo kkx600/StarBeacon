@@ -16,6 +16,7 @@ import (
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/enginehealth"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/probepki"
@@ -44,6 +45,7 @@ type WAL struct {
 	capabilities                              func() []string
 	responseHealth                            func() []response.Health
 	pluginBindings                            func() []response.PluginBinding
+	gatewayBlockHealth                        func(context.Context) *gatewayblock.Health
 	syslogHealth                              func() []syslogdata.Health
 	responseConfigCheck                       func() response.ConfigCheck
 	applicationState                          func() json.RawMessage

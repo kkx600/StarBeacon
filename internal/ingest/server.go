@@ -3,15 +3,18 @@ package ingest
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"time"
 
 	sensorv1 "github.com/kkx600/StarBeacon/api/sensor/v1"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	"github.com/kkx600/StarBeacon/internal/packetpolicy"
@@ -34,6 +37,7 @@ type Server struct {
 	Bus           *bus.Bus
 	ControlOnly   bool
 	TasksEnabled  bool
+	GatewaySigner ed25519.PrivateKey
 	Wakeup        *control.Wakeup
 	Samples       replay.Storage
 	Packets       packetarchive.ObjectStorage
@@ -240,6 +244,7 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 	}()
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
+	gatewayReady := false
 	var wake <-chan struct{}
 	if s.Wakeup != nil {
 		var stop func()
@@ -258,14 +263,26 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 		}
 		call, stop := context.WithTimeout(ctx, 3*time.Second)
 		defer stop()
-		v, err := s.DB.NextTask(call, id)
-		if err != nil {
-			return status.Error(codes.Unavailable, "任务状态暂时不可读取")
+		var v *store.TaskDelivery
+		if gatewayReady {
+			var err error
+			v, err = s.DB.NextGatewayBlock(call, id, s.GatewaySigner)
+			if err != nil {
+				v = nil
+				slog.Warn("受控网关阻断授权未完成", "sensor_id", id.SensorID)
+			}
+		}
+		if v == nil {
+			var err error
+			v, err = s.DB.NextTask(call, id)
+			if err != nil {
+				return status.Error(codes.Unavailable, "任务状态暂时不可读取")
+			}
 		}
 		if v == nil {
 			return nil
 		}
-		if _, err = s.identity(call); err != nil {
+		if _, err := s.identity(call); err != nil {
 			return err
 		}
 		var command control.Command
@@ -309,6 +326,10 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 					stop()
 					return status.Error(codes.InvalidArgument, "健康消息无效")
 				}
+				if h.GatewayBlock != nil && !gatewayblock.ValidDigest(h.GatewayBlock.ConfigSHA256) {
+					stop()
+					return status.Error(codes.InvalidArgument, "网关阻断配置摘要无效")
+				}
 				if len(h.PacketRetention) != 0 {
 					var retention packetpolicy.Status
 					if json.Unmarshal(h.PacketRetention, &retention) != nil || !retention.Valid() || len(h.PacketArchive) == 0 ||
@@ -342,6 +363,15 @@ func (s *Server) Control(stream grpc.BidiStreamingServer[sensorv1.AgentMessage, 
 					seenPlugins[binding.PluginID] = true
 				}
 				e = s.DB.Heartbeat(call, id, h)
+				enabled := h.GatewayBlock != nil && len(s.GatewaySigner) == ed25519.PrivateKeySize
+				if e == nil && enabled != gatewayReady {
+					gatewayReady = enabled
+					if enabled {
+						tick.Reset(time.Second)
+					} else {
+						tick.Reset(5 * time.Second)
+					}
+				}
 				ack.Kind = sensorv1.CommandKind_COMMAND_KIND_HEARTBEAT_ACK
 			case sensorv1.AgentMessageKind_AGENT_MESSAGE_KIND_TASK_RECEIPT:
 				var receipt control.Receipt

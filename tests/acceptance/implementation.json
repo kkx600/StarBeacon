@@ -1472,6 +1472,28 @@
       "boundary": "管理员提交明确授权的文档片段和能力。持久作业与连接验证、研判和规则生成共享模型额度，按所有者分页读取。受控 HTTPS 模型夹具核对严格输出、材料范围、一次性调用和失败状态。生成物只导入现有草稿编辑器，仍须通过独立试运行与签名。生成质量与商业设备兼容性待验证。"
     },
     {
+      "id": "gateway_block",
+      "name": "受控网关的限时连接阻断",
+      "code": [
+        "internal/gatewayblock/contract.go",
+        "internal/gatewayblock/nft.go",
+        "internal/platform/gateway_blocks.go",
+        "internal/store/gateway_config.go",
+        "internal/store/gateway_requests.go",
+        "internal/store/gateway_dispatch.go",
+        "deploy/gateway/nftables.conf",
+        "migrations/00062_gateway_blocks.sql"
+      ],
+      "pages": [],
+      "tests": [
+        "internal/gatewayblock/gateway_test.go",
+        "tests/integration/gateway_blocks_test.go",
+        "tests/integration/gateway_live_test.go",
+        "tests/acceptance/gateway_live.py"
+      ],
+      "boundary": "原生规则命中和已确认研判共用租户开关、注册代次、CIDR、两侧保护名单、滚动分钟限额和短时签名任务。独立 nftables 转发链处理单条已观测连接，原生限时条目与任务归属由网关读回。实际应用层影响需要结合流量观察。"
+    },
+    {
       "id": "syslog",
       "name": "Syslog 接收与日志检索",
       "code": [
@@ -2438,7 +2460,8 @@
         "response_catalog",
         "watchlists",
         "response_template_plugins",
-        "response_plugin_delivery"
+        "response_plugin_delivery",
+        "gateway_block"
       ],
       "implemented": [
         "显式人工授权的单 IP 限时封禁、原租约回读与条件解除；签名任务、固定到期、租约归属、默认 180 天追溯与不重发历史写入",
@@ -2447,11 +2470,13 @@
         "响应动作独立检索、31 天固定窗口与精确筛选、跨最近 200 项的绑定游标续页；原授权详情、原租约跳转及未知提交的冻结输入确认",
         "有效保护名单在新封禁授权时核对，拒绝目标留下确定性状态；非命中核对摘要绑定原任务，原租约回读与解除不受名单变更阻断。",
         "模板以设备独立规则标识和所有者为条件，受控 HTTPS 设备协议验证限时封禁、回读和解除",
-        "脚本在本地登记的测试终端使用独立 HTTPS 回读验收隔离与恢复"
+        "脚本在本地登记的测试终端使用独立 HTTPS 回读验收隔离与恢复",
+        "已登记的 Linux 网关可对规则命中和确认研判的五元组应用限时转发阻断，双端保护名单和分钟限额在签发时原子核对"
       ],
       "remaining": [
         "真实设备到期撤销与真实流量效果验收",
         "生产 EDR 隔离与恢复及跨设备冲突处理",
+        "网关效果观察、重连识别和工程操作页面",
         "自动研判的规模与恢复、多级审批、置信度校准与自动设备动作的整体验收"
       ]
     },

@@ -26,7 +26,11 @@ func (s *Elasticsearch) ReadAlertEvidence(parent context.Context, tenant, id, di
 	return s.readAlertIdentity(parent, tenant, id, digest, true)
 }
 
-func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, digest string, evidence bool) (model.Alert, error) {
+func (s *Elasticsearch) ReadGatewayAlert(parent context.Context, tenant, id, digest string) (model.Alert, error) {
+	return s.readAlertIdentity(parent, tenant, id, digest, true, "received_at", "event.dataset")
+}
+
+func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, digest string, evidence bool, extraFields ...string) (model.Alert, error) {
 	var empty model.Alert
 	if !contract.ValidID(tenant) || !contract.ValidID(id) || !assessment.ValidDigest(digest) {
 		return empty, assessment.ErrInput
@@ -37,6 +41,7 @@ func (s *Elasticsearch) readAlertIdentity(parent context.Context, tenant, id, di
 	if evidence {
 		fields = append(fields, "@timestamp", "observed_at", "sensor_id", "sensor_registration_id", "source", "destination", "network", "rule", "http", "suricata", "severity", "evidence_status")
 	}
+	fields = append(fields, extraFields...)
 	body, _ := json.Marshal(map[string]any{
 		"size": 2, "track_total_hits": true, "timeout": "3s", "_source": fields,
 		"query": map[string]any{"bool": map[string]any{"filter": []any{map[string]any{"term": map[string]string{"tenant_id": tenant}}, map[string]any{"term": map[string]string{"event_id": id}}}}},

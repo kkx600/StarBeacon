@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """专属 Docker 流量端点，仅用于产生可核对的真实 TCP/HTTP 会话。"""
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -15,7 +16,13 @@ class Traffic(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Connection", "close")
         self.end_headers()
-        self.wfile.write(body)
+        if len(body) <= 16 * 1024:
+            self.wfile.write(body)
+            return
+        # 大响应按小批发送，避免瞬时突发使真实网卡验收失去连续的 TCP 观测。
+        for offset in range(0, len(body), 16 * 1024):
+            self.wfile.write(body[offset:offset + 16 * 1024])
+            time.sleep(0.002)
 
     def log_message(self, *_):
         pass

@@ -19736,6 +19736,255 @@
           }
         }
       }
+    },
+    "/api/v1/gateway-block/settings": {
+      "get": {
+        "summary": "读取受控网关阻断设置",
+        "description": "租户默认关闭。每分钟上限对规则触发和研判确认共同生效。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockSettings"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        }
+      },
+      "put": {
+        "summary": "保存受控网关阻断设置",
+        "description": "用预期修订替换设置。原输入重试可确认对应结果。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockSettings"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {
+            "description": "修订、授权、研判或原提交冲突",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        },
+        "parameters": [{"name": "X-CSRF-Token","in": "header","required": true,"schema": {"type": "string"}}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockSettingsChange"}}}
+        }
+      }
+    },
+    "/api/v1/gateway-block/policies": {
+      "get": {
+        "summary": "列出受控网关阻断策略",
+        "description": "按编号游标续页，策略绑定采集器注册代次、检测规则修订与两侧 CIDR。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockPolicyPage"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}
+          },
+          {"$ref": "#/components/parameters/ListPageLimit"}
+        ]
+      }
+    },
+    "/api/v1/gateway-block/policies/{id}": {
+      "put": {
+        "summary": "保存受控网关阻断策略",
+        "description": "设置授权有效期与原生短时租约，通过预期修订发布。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockPolicy"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {
+            "description": "修订、授权、研判或原提交冲突",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "429": {
+            "description": "策略或待处理请求达到上限",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}
+          },
+          {"name": "X-CSRF-Token","in": "header","required": true,"schema": {"type": "string"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockPolicyChange"}}}
+        }
+      }
+    },
+    "/api/v1/gateway-block/requests/{id}": {
+      "get": {
+        "summary": "查询受控网关请求",
+        "description": "授权状态与签名任务关联。使用关联任务的独立回读判断防火墙条目状态。",
+        "x-required-role": "admin",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockRequest"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "404": {
+            "description": "告警、策略或请求不存在",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"}
+          }
+        ]
+      }
+    },
+    "/api/v1/alerts/{id}/gateway-blocks": {
+      "post": {
+        "summary": "按确认研判申请受控网关阻断",
+        "description": "服务读取原始告警的已观测五元组，签发前重新核对证据、保护名单和每分钟限额。",
+        "x-required-role": "admin",
+        "responses": {
+          "202": {
+            "description": "操作成功",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockRequest"}}}
+          },
+          "400": {
+            "description": "输入或请求范围无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "401": {
+            "description": "会话无效",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {
+            "description": "管理员、来源或 CSRF 权限不足",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "404": {
+            "description": "告警、策略或请求不存在",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {
+            "description": "修订、授权、研判或原提交冲突",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "429": {
+            "description": "策略或待处理请求达到上限",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "503": {
+            "description": "网关控制依赖不可用",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        },
+        "parameters": [
+          {"name": "id","in": "path","required": true,"schema": {"type": "string","pattern": "^[a-f0-9]{64}$"}},
+          {"name": "X-CSRF-Token","in": "header","required": true,"schema": {"type": "string"}},
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$","minLength": 8,"maxLength": 64}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GatewayBlockReview"}}}
+        }
+      }
     }
   },
   "components": {
@@ -36585,6 +36834,166 @@
           "operations"
         ],
         "additionalProperties": false
+      },
+      "GatewayBlockScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sources","destinations"],
+        "properties": {
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": {"type": "string","description": "显式 CIDR 授权范围"}
+          },
+          "destinations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": {"type": "string","description": "显式 CIDR 授权范围"}
+          }
+        }
+      },
+      "GatewayBlockSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision","enabled","per_minute","updated_at"],
+        "properties": {
+          "revision": {"type": "integer","minimum": 0,"maximum": 9007199254740991},
+          "enabled": {"type": "boolean"},
+          "per_minute": {"type": "integer","minimum": 1,"maximum": 60},
+          "updated_at": {"type": ["string","null"],"format": "date-time"}
+        }
+      },
+      "GatewayBlockSettingsChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["per_minute"],
+        "properties": {
+          "expected_revision": {"type": "integer","minimum": 0,"maximum": 9007199254740990,"default": 0},
+          "enabled": {"type": "boolean","default": false},
+          "per_minute": {"type": "integer","minimum": 1,"maximum": 60}
+        }
+      },
+      "GatewayBlockDefinition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "trigger",
+          "sensor_id",
+          "registration_id",
+          "rule_id",
+          "rule_revision",
+          "scope",
+          "lease_seconds",
+          "valid_until"
+        ],
+        "properties": {
+          "name": {"type": "string","maxLength": 120},
+          "enabled": {"type": "boolean"},
+          "trigger": {"type": "string","enum": ["rule","review"]},
+          "sensor_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "registration_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "rule_id": {"type": "string","pattern": "^[1-9][0-9]{0,9}$"},
+          "rule_revision": {"type": "string","pattern": "^[1-9][0-9]{0,9}$"},
+          "scope": {"$ref": "#/components/schemas/GatewayBlockScope"},
+          "lease_seconds": {"type": "integer","minimum": 5,"maximum": 60},
+          "valid_until": {"type": "string","format": "date-time"}
+        }
+      },
+      "GatewayBlockPolicyChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["definition"],
+        "properties": {
+          "expected_revision": {"type": "integer","minimum": 0,"maximum": 9007199254740990,"default": 0},
+          "definition": {"$ref": "#/components/schemas/GatewayBlockDefinition"}
+        }
+      },
+      "GatewayBlockPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id","revision","definition","author_id","updated_at"],
+        "properties": {
+          "id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "revision": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "definition": {"$ref": "#/components/schemas/GatewayBlockDefinition"},
+          "author_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "updated_at": {"type": "string","format": "date-time"}
+        }
+      },
+      "GatewayBlockPolicyPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items","next_cursor"],
+        "properties": {
+          "items": {"type": "array","items": {"$ref": "#/components/schemas/GatewayBlockPolicy"}},
+          "next_cursor": {"type": "string"}
+        }
+      },
+      "GatewayBlockReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["policy_id","policy_revision","assessment_revision","raw_sha256"],
+        "properties": {
+          "policy_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "policy_revision": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "assessment_revision": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "raw_sha256": {"type": "string","pattern": "^[a-f0-9]{64}$"}
+        }
+      },
+      "GatewayBlockFlow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_ip","source_port","destination_ip","destination_port","transport"],
+        "properties": {
+          "source_ip": {"type": "string"},
+          "source_port": {"type": "integer","minimum": 1,"maximum": 65535},
+          "destination_ip": {"type": "string"},
+          "destination_port": {"type": "integer","minimum": 1,"maximum": 65535},
+          "transport": {"type": "string","enum": ["tcp","udp"]}
+        }
+      },
+      "GatewayBlockRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "event_id",
+          "raw_sha256",
+          "policy_id",
+          "policy_revision",
+          "sensor_id",
+          "registration_id",
+          "trigger",
+          "flow",
+          "state",
+          "code",
+          "observed_at",
+          "created_at"
+        ],
+        "properties": {
+          "id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "event_id": {"type": "string","pattern": "^[a-f0-9]{64}$"},
+          "raw_sha256": {"type": "string","pattern": "^[a-f0-9]{64}$"},
+          "policy_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "policy_revision": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "assessment_revision": {"type": "integer","minimum": 1,"maximum": 9007199254740991},
+          "sensor_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "registration_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "trigger": {"type": "string","enum": ["rule","review"]},
+          "flow": {"$ref": "#/components/schemas/GatewayBlockFlow"},
+          "state": {"type": "string","enum": ["pending","denied","authorized"]},
+          "code": {"type": "string"},
+          "task_id": {"type": "string","pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "observed_at": {"type": "string","format": "date-time"},
+          "created_at": {"type": "string","format": "date-time"},
+          "authorized_at": {"type": "string","format": "date-time"},
+          "lease_until": {"type": "string","format": "date-time"}
+        }
       }
     },
     "parameters": {

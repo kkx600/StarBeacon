@@ -13,6 +13,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/bus"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/normalize"
 	"github.com/kkx600/StarBeacon/internal/notify"
@@ -164,6 +165,12 @@ func (w *Indexer) Process(ctx context.Context, data []byte) error {
 		// 观察名单命中同样以稳定事件身份去重；暂时性失败整批重投，确定性失败只记录而不阻塞告警流。
 		if e := recordWatchlistHits(ctx, w.DB.RecordWatchlistHits, envelope.TenantID, docs); e != nil {
 			return e
+		}
+		if e := w.DB.RecordGatewayBlockMatches(ctx, envelope.TenantID, docs); e != nil {
+			if !errors.Is(e, gatewayblock.ErrInput) {
+				return e
+			}
+			slog.Warn("网关阻断策略内容无效，未登记触发", "tenant_id", envelope.TenantID)
 		}
 	}
 	ids := make([]string, 0, len(docs))

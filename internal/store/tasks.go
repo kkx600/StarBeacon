@@ -13,6 +13,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/model"
 	"github.com/kkx600/StarBeacon/internal/packetarchive"
 	responseapi "github.com/kkx600/StarBeacon/internal/response"
@@ -56,6 +57,9 @@ func (p *Postgres) CreateTask(ctx context.Context, u model.Principal, sensor, ki
 
 // 同一事务供人工任务与研判处置确认复用，保持签名、预算、审计及在途约束一致。
 func createTaskTx(ctx context.Context, tx pgx.Tx, u model.Principal, sensor, kind, key string, payload json.RawMessage, signer ed25519.PrivateKey, mustCreate bool) (string, error) {
+	if kind == gatewayblock.CommandKind {
+		return "", gatewayblock.ErrPermission
+	}
 	var id string
 	var sampleID *string
 	var protection *watchlist.ResponseCheck
@@ -390,6 +394,17 @@ func (p *Postgres) SaveReceipt(ctx context.Context, id transport.SensorIdentity,
 		if (kind == responseapi.PluginTrialCommand || kind == responseapi.PluginApplyCommand) && receipt.State == "succeeded" {
 			if err := savePluginReceipt(ctx, tx, id, kind, command, receipt); err != nil {
 				return err
+			}
+		}
+		if kind == gatewayblock.CommandKind && receipt.State == "succeeded" {
+			var c control.Command
+			if receipt.Code != "" || json.Unmarshal(command, &c) != nil || control.Validate(c) != nil ||
+				c.TenantID != id.TenantID || c.SensorID != id.SensorID || c.RegistrationID != id.RegistrationID {
+				return gatewayblock.ErrUnknown
+			}
+			action, err := gatewayblock.ReadAction(c.Payload, c.IssuedAt, c.ExpiresAt)
+			if err != nil || gatewayblock.VerifyResult(receipt.Result, action, c.IssuedAt, receipt.FinishedAt.UTC()) != nil {
+				return gatewayblock.ErrUnknown
 			}
 		}
 		if strings.HasPrefix(kind, "response.") && receipt.State == "succeeded" {

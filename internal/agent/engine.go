@@ -23,6 +23,7 @@ import (
 	"github.com/kkx600/StarBeacon/internal/config"
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/store"
 	"github.com/shirou/gopsutil/v4/process"
@@ -36,6 +37,7 @@ type Engine struct {
 	Applications       *ApplicationService
 	Response           *ResponseService
 	Plugins            *PluginService
+	GatewayBlock       *gatewayblock.Service
 	LocalReplay        *ReplayService
 	ReplayClient       sensorv1.SensorServiceClient
 	isolationOnce      sync.Once
@@ -90,6 +92,18 @@ func (e *Engine) Capabilities() []string {
 	return out
 }
 func (e *Engine) Execute(ctx context.Context, c control.Command) (json.RawMessage, string, error) {
+	if c.Kind == gatewayblock.CommandKind {
+		action, err := gatewayblock.ReadAction(c.Payload, c.IssuedAt, c.ExpiresAt)
+		if err != nil {
+			return nil, "invalid_gateway_block", err
+		}
+		result, code, err := e.GatewayBlock.Apply(ctx, c.ID, action, c.ExpiresAt)
+		if err != nil {
+			return nil, code, err
+		}
+		raw, err := json.Marshal(result)
+		return raw, "", err
+	}
 	if c.Kind == response.PluginTrialCommand || c.Kind == response.PluginApplyCommand {
 		if e.Plugins == nil {
 			return nil, "plugin_unavailable", response.ErrUnavailable

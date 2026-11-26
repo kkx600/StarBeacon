@@ -394,7 +394,7 @@ func Run(ctx context.Context, role string, c config.Config) error {
 				default:
 				}
 			}
-			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketPool: packetPool, PacketPressure: pressure, Authority: api.Authority})
+			return serveGRPC(run, c, &ingest.Server{DB: db, ControlOnly: true, TasksEnabled: len(signer) > 0, GatewaySigner: signer, Wakeup: wakeup, Samples: samples, Packets: packets, PacketStaging: packetStaging, PacketPool: packetPool, PacketPressure: pressure, Authority: api.Authority})
 		})
 	case "ingest":
 		httpapi.Health(m, func(ctx context.Context) error {

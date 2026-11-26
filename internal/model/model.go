@@ -7,6 +7,7 @@ import (
 
 	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/enginehealth"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/protocolcap"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/syslogdata"
@@ -43,6 +44,7 @@ type HostHealth struct {
 	ApplicationRules         json.RawMessage          `json:"application_rules,omitempty"`
 	ResponseConnectors       []response.Health        `json:"response_connectors,omitempty"`
 	PluginBindings           []response.PluginBinding `json:"plugin_bindings,omitempty"`
+	GatewayBlock             *gatewayblock.Health     `json:"gateway_block,omitempty"`
 	SyslogSources            []syslogdata.Health      `json:"syslog_sources,omitempty"`
 	RegisteredRulesAvailable bool                     `json:"registered_rules_available"`
 	RegisteredRulesSHA256    string                   `json:"registered_rules_sha256,omitempty"`

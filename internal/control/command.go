@@ -18,6 +18,7 @@ import (
 
 	"github.com/kkx600/StarBeacon/internal/application"
 	"github.com/kkx600/StarBeacon/internal/contract"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/response"
 )
 
@@ -229,6 +230,9 @@ func Validate(c Command) error {
 		return errors.New("任务参数无效")
 	}
 	switch c.Kind {
+	case gatewayblock.CommandKind:
+		_, err := gatewayblock.ReadAction(c.Payload, c.IssuedAt, c.ExpiresAt)
+		return err
 	case response.PluginTrialCommand:
 		_, err := response.ReadPluginTrial(c.Payload)
 		return err

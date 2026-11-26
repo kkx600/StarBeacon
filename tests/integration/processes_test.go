@@ -387,7 +387,8 @@ func testLiveRolesCaptureToSearchNotificationAndReplay(t *testing.T, managed boo
 		rules += "\n" + `alert http any any -> any any (msg:"StarBeacon quality policy observation"; flow:established,to_server; http.uri; content:"/starbeacon/quality"; noalert; sid:1001000; rev:1;)`
 		agentConfig.CaptureManaged, agentConfig.AllowRuleApply = true, true
 		agentConfig.PacketCapture = true
-		agentConfig.PacketRotateInterval = 3 * time.Second
+		// 缩短夹具的热段周期，让三次留存切换在端到端时限内经历真实轮转。
+		agentConfig.PacketRotateInterval = 2 * time.Second
 		agentConfig.PacketRetentionFile = filepath.Join(dir, "packet-retention.json")
 		nativeRetentionPolicy(t, agentConfig.PacketRetentionFile, 1, packetarchive.RetentionSmart)
 		agentConfig.CaptureRotateBytes = 1024 * 1024

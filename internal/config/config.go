@@ -85,6 +85,7 @@ type Config struct {
 	MCPIssuer, MCPIntrospectionURL, MCPClientID, MCPClientSecret              string
 	ResponseConnectorsFile                                                    string
 	ResponsePluginBindings                                                    string
+	GatewayBlockFile                                                          string
 	SyslogSourcesFile                                                         string
 	ProbeCAURL, ProbeCARoot, ProbeCAProvisioner, ProbeCAJWK                   string
 	ProbeCertificateLifetime                                                  time.Duration
@@ -141,6 +142,7 @@ func Load(role string) (Config, error) {
 		MCPIssuer: env("MCP_ISSUER", ""), MCPIntrospectionURL: env("MCP_INTROSPECTION_URL", ""), MCPClientID: env("MCP_CLIENT_ID", ""), MCPClientSecret: env("MCP_CLIENT_SECRET", ""),
 		ResponseConnectorsFile: env("RESPONSE_CONNECTORS_FILE", ""),
 		ResponsePluginBindings: env("RESPONSE_PLUGIN_BINDINGS_FILE", ""),
+		GatewayBlockFile:       env("GATEWAY_BLOCK_FILE", ""),
 		SyslogSourcesFile:      env("SYSLOG_SOURCES_FILE", ""),
 		ProbeCAURL:             env("PROBE_CA_URL", ""), ProbeCARoot: env("PROBE_CA_ROOT", ""), ProbeCAProvisioner: env("PROBE_CA_PROVISIONER", ""), ProbeCAJWK: env("PROBE_CA_JWK", ""),
 		IdentityDir: env("IDENTITY_DIR", ""), IdentityRoot: env("IDENTITY_ROOT", ""), HTTPTLSCert: env("HTTP_TLS_CERT", ""), HTTPTLSKey: env("HTTP_TLS_KEY", ""),
@@ -186,6 +188,9 @@ func Load(role string) (Config, error) {
 	}
 	if c.ResponsePluginBindings != "" && (role != "agent" || !filepath.IsAbs(c.ResponsePluginBindings)) {
 		return c, fmt.Errorf("联动插件绑定仅在采集器使用，配置文件须为绝对路径")
+	}
+	if c.GatewayBlockFile != "" && (role != "agent" || !filepath.IsAbs(c.GatewayBlockFile)) {
+		return c, fmt.Errorf("网关阻断配置仅在采集器使用，配置文件须为绝对路径")
 	}
 	if c.Mode == "production" {
 		fallback := "/var/lib/starbeacon/replay-staging"

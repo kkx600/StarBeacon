@@ -13,6 +13,7 @@ import (
 
 	"github.com/kkx600/StarBeacon/internal/contract"
 	"github.com/kkx600/StarBeacon/internal/control"
+	"github.com/kkx600/StarBeacon/internal/gatewayblock"
 	"github.com/kkx600/StarBeacon/internal/response"
 	"github.com/kkx600/StarBeacon/internal/telemetry"
 	bolt "go.etcd.io/bbolt"
@@ -328,7 +329,8 @@ func (m *TaskManager) validateLocalTask(row LocalTask, id string) error {
 		return errors.New("本地任务来源不一致")
 	}
 	switch row.Command.Kind {
-	case "diagnostics", "capture.configure", control.PacketRetentionConfigure, "applications.apply", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile", "response.block", "response.read", "response.revoke", response.PluginTrialCommand, response.PluginApplyCommand:
+	case "diagnostics", "capture.configure", control.PacketRetentionConfigure, "applications.apply", "rules.validate", "rules.replay", "rules.apply", "rules.reconcile",
+		"response.block", "response.read", "response.revoke", response.PluginTrialCommand, response.PluginApplyCommand, gatewayblock.CommandKind:
 	default:
 		return errors.New("本地任务类型无效")
 	}
