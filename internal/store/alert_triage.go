@@ -100,6 +100,9 @@ func (p *Postgres) createAlertTriage(ctx context.Context, u model.Principal, inp
 		if err := activePlanOwner(ctx, tx, u.TenantID, u.ID); err != nil {
 			return err
 		}
+		if err := checkPlaybookTriage(ctx, tx, u, key, input); err != nil {
+			return err
+		}
 		var revision int64
 		if err := tx.QueryRow(ctx, `SELECT revision FROM model_providers WHERE tenant_id=$1 AND id=$2 FOR SHARE`, u.TenantID, input.ProviderID).Scan(&revision); err != nil {
 			return err

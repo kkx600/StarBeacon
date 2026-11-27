@@ -107,6 +107,15 @@ func authorizeGatewayBlock(ctx context.Context, tx pgx.Tx, tenant string, r gate
 	if !r.Deadline.After(now) {
 		return deny("observation_expired")
 	}
+	if r.PlaybookRunID != "" {
+		allowed, err := playbookGatewayAllowed(ctx, tx, tenant)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return deny("authorization_revoked")
+		}
+	}
 	settings, err := gatewaySettings(ctx, tx, tenant)
 	if err != nil {
 		return nil, err

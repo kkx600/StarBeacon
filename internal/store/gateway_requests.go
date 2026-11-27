@@ -23,6 +23,7 @@ type gatewayEvidence struct {
 	ActorID, KeyHash     string
 	Deadline             time.Time
 	FollowUpUntil        *time.Time
+	PlaybookRunID        string
 }
 
 func gatewayObservation(alert model.Alert) (gatewayEvidence, error) {
@@ -71,7 +72,8 @@ const gatewayRequestColumns = `id,event_id,raw_sha256,policy_id,policy_revision,
  AND t.id=gateway_block_requests.task_id AND t.state='succeeded')),
  COALESCE((SELECT t.state FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id AND t.id=gateway_block_requests.task_id),''),
  follow_up_state,follow_up_code,follow_up_until,COALESCE(follow_up_task_id,''),
- COALESCE((SELECT t.state FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id AND t.id=gateway_block_requests.follow_up_task_id),'')`
+ COALESCE((SELECT t.state FROM sensor_tasks t WHERE t.tenant_id=gateway_block_requests.tenant_id AND t.id=gateway_block_requests.follow_up_task_id),''),
+ COALESCE(playbook_run_id,'')`
 
 func scanGatewayRequest(row pgx.Row) (gatewayEvidence, error) {
 	var r gatewayEvidence
@@ -79,7 +81,7 @@ func scanGatewayRequest(row pgx.Row) (gatewayEvidence, error) {
 	if err := row.Scan(&r.ID, &r.EventID, &r.RawSHA256, &r.PolicyID, &r.PolicyRevision, &r.AssessmentRevision,
 		&r.SensorID, &r.RegistrationID, &r.Trigger, &flow, &r.State, &r.Code, &r.TaskID, &r.ObservedAt,
 		&r.CreatedAt, &r.AuthorizedAt, &r.LeaseUntil, &r.RuleID, &r.RuleRevision, &r.EventAt, &r.ReceivedAt, &r.ActorID, &r.KeyHash, &r.Deadline,
-		&result, &r.TaskState, &r.FollowUpState, &r.FollowUpCode, &r.FollowUpUntil, &r.FollowUpTaskID, &r.FollowUpTaskState); err != nil {
+		&result, &r.TaskState, &r.FollowUpState, &r.FollowUpCode, &r.FollowUpUntil, &r.FollowUpTaskID, &r.FollowUpTaskState, &r.PlaybookRunID); err != nil {
 		return r, err
 	}
 	if json.Unmarshal(flow, &r.Flow) != nil || !r.Flow.Valid() {
@@ -97,16 +99,19 @@ func insertGatewayRequest(ctx context.Context, tx pgx.Tx, tenant string, e gatew
 		age = gatewayblock.ReviewFreshness
 	}
 	deadline := minTime(e.EventAt.Add(age), minTime(e.ObservedAt.Add(age), policy.Definition.ValidUntil))
+	if !e.Deadline.IsZero() {
+		deadline = minTime(deadline, e.Deadline)
+	}
 	flow, _ := json.Marshal(e.Flow)
 	id := "gateway_" + Hash(tenant + "/" + e.EventID)[:40]
 	return scanGatewayRequest(tx.QueryRow(ctx, `INSERT INTO gateway_block_requests
 		(tenant_id,id,event_id,raw_sha256,policy_id,policy_revision,sensor_id,registration_id,trigger,rule_id,rule_revision,
-		 assessment_revision,actor_id,client_key_hash,flow,flow_key,observed_at,event_at,received_at,deadline,expires_at)
+		 assessment_revision,actor_id,client_key_hash,flow,flow_key,observed_at,event_at,received_at,deadline,expires_at,playbook_run_id)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NULLIF($14,''),$15,$16,$17,$18,$19,$20,
-		now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='operations'),180)))
+		now()+make_interval(days=>COALESCE((SELECT days FROM retention_policies WHERE tenant_id=$1 AND category='operations'),180)),NULLIF($21,''))
 		ON CONFLICT DO NOTHING RETURNING `+gatewayRequestColumns, tenant, id, e.EventID, e.RawSHA256, policy.ID, policy.Revision,
 		e.SensorID, e.RegistrationID, policy.Definition.Trigger, e.RuleID, e.RuleRevision, e.AssessmentRevision,
-		actor, e.KeyHash, flow, e.Flow.Key(), e.ObservedAt, e.EventAt, e.ReceivedAt, deadline))
+		actor, e.KeyHash, flow, e.Flow.Key(), e.ObservedAt, e.EventAt, e.ReceivedAt, deadline, e.PlaybookRunID))
 }
 
 func minTime(a, b time.Time) time.Time {
@@ -231,6 +236,9 @@ func (p *Postgres) CreateGatewayBlockReview(ctx context.Context, u model.Princip
 			return gatewayblock.ErrIneligible
 		}
 		if err := confirmedGatewayReview(ctx, tx, u.TenantID, evidence); err != nil {
+			return err
+		}
+		if err := checkPlaybookGateway(ctx, tx, u, key, &evidence, policy, time.Now().UTC()); err != nil {
 			return err
 		}
 		count, err := pendingGatewayCount(ctx, tx, u.TenantID)

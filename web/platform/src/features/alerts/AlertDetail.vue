@@ -36,6 +36,14 @@ function investigate() {
   void router.push({ path: '/incidents', query: { alert_id: props.alert.event_id, sha256: props.alert.raw_sha256 } });
   emit('close');
 }
+function startPlaybook() {
+  if (!props.alert || locked.value || session.current.value?.role !== 'admin') return;
+  void router.push({
+    path: '/response/playbooks',
+    query: { event_id: props.alert.event_id, sha256: props.alert.raw_sha256 },
+  });
+  emit('close');
+}
 </script>
 <template>
   <a-modal
@@ -68,6 +76,14 @@ function investigate() {
           >
           <a-button v-if="openAssistant" class="section-gap" :disabled="locked" @click="analyzeAlert">
             在 AI 助手中查看
+          </a-button>
+          <a-button
+            v-if="session.current.value?.role === 'admin' && !deviceAlert"
+            class="section-gap"
+            :disabled="locked"
+            @click="startPlaybook"
+          >
+            运行编排
           </a-button>
           <a-descriptions bordered :column="1" size="small">
             <a-descriptions-item label="告警名称">{{ alert.rule.name }}</a-descriptions-item>

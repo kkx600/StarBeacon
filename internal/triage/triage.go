@@ -42,6 +42,7 @@ type Request struct {
 	Note             string `json:"note"`
 	AllowContext     bool   `json:"allow_context"`
 	ObservationOnly  bool   `json:"observation_only,omitempty"`
+	ManualOnly       bool   `json:"manual_only,omitempty"`
 }
 
 func clean(text string, limit int) bool {
@@ -49,7 +50,7 @@ func clean(text string, limit int) bool {
 }
 
 func (r Request) Validate() error {
-	if !contract.ValidID(r.EventID) || !assessment.ValidDigest(r.RawSHA256) || !contract.ValidID(r.ProviderID) || r.ProviderRevision < 1 || r.ProviderRevision > 9007199254740991 || !clean(r.Note, 2000) || !r.AllowContext {
+	if !contract.ValidID(r.EventID) || !assessment.ValidDigest(r.RawSHA256) || !contract.ValidID(r.ProviderID) || r.ProviderRevision < 1 || r.ProviderRevision > 9007199254740991 || !clean(r.Note, 2000) || !r.AllowContext || r.ObservationOnly && r.ManualOnly {
 		return ErrInput
 	}
 	return nil

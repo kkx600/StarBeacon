@@ -1,8 +1,34 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-22",
+  "review_date": "2026-11-27",
   "scope": "完整产品 107 项复合需求，原型与协议测试不等同业务全项验收",
   "capabilities": [
+    {
+      "id": "playbooks",
+      "name": "受控人工编排与设备回执",
+      "code": [
+        "internal/playbook/playbook.go",
+        "internal/store/playbooks.go",
+        "internal/store/playbook_runs.go",
+        "internal/store/playbook_authorization.go",
+        "internal/platform/playbooks.go",
+        "migrations/00065_playbooks.sql",
+        "web/platform/src/views/PlaybooksView.vue",
+        "web/platform/src/views/PlaybookRunsView.vue",
+        "web/platform/src/features/playbooks/PlaybookEditor.vue",
+        "web/platform/src/features/playbooks/PlaybookRunDetails.vue"
+      ],
+      "pages": [
+        "platform:/response/playbooks",
+        "platform:/response/playbook-runs"
+      ],
+      "tests": [
+        "internal/playbook/playbook_test.go",
+        "tests/integration/playbooks_test.go",
+        "web/tests/playbooks.test.ts"
+      ],
+      "boundary": "可手工编辑顺序步骤，也可采纳私有 AI 草稿。发布固定修订和摘要，各设备动作必须独立通过名单检查、人工确认、设备核验和到期解除配置。仅从实际告警人工启动。AI 研判限制在人机协同通道。联动与网关调用原有授权和签名入口，作用范围和回执绑定本人运行及原告警。等待、拒绝、实际核验和解除期限分别登记。"
+    },
     {
       "id": "identity",
       "name": "身份与会话",
@@ -247,7 +273,7 @@
         "internal/agent/task_lookup_test.go",
         "web/tests/local-task-detail.test.ts"
       ],
-      "boundary": "诊断、rules.validate、rules.replay 有真实执行和精确回执；rules.apply 和 rules.reconcile 实现签名、设备与配置绑定，发布链路真实远程验收待完成。未投递任务可取消；中断规则任务需取得独立原生核实依据后才能继续发布。限时通用 HTTP 联动由 response_http 提供；没有系统升级、剧本或已执行任务的强制停止。 管理员可通过 task 查询参数独立读取本租户留存期内任务，不受最近 200 条列表上限影响；执行与记录期限分别呈现，关闭保留其它路由条件，身份变化取消旧读取。 列表使用租户和单探针时间顺序索引，升级需执行第 38 项迁移。 采集器本地管理员可通过独立任务主键和链接读取留存档案；新任务在接收时冻结本地保留截止，默认 180 天，SB_TASK_RETENTION_DAYS 只影响后续任务。未确认、执行中和未核实记录受清理保护；本地读取不取得平台任务授权。"
+      "boundary": "诊断、rules.validate、rules.replay 有真实执行和精确回执；rules.apply 和 rules.reconcile 实现签名、设备与配置绑定，发布链路真实远程验收待完成。未投递任务可取消；中断规则任务需取得独立原生核实依据后才能继续发布。限时通用 HTTP 联动由 response_http 提供；覆盖范围以诊断、规则发布、签名响应与采集任务为准。 管理员可通过 task 查询参数独立读取本租户留存期内任务，不受最近 200 条列表上限影响；执行与记录期限分别呈现，关闭保留其它路由条件，身份变化取消旧读取。 列表使用租户和单探针时间顺序索引，升级需执行第 38 项迁移。 采集器本地管理员可通过独立任务主键和链接读取留存档案；新任务在接收时冻结本地保留截止，默认 180 天，SB_TASK_RETENTION_DAYS 只影响后续任务。未确认、执行中和未核实记录受清理保护；本地读取不取得平台任务授权。"
     },
     {
       "id": "rules",
@@ -2538,24 +2564,34 @@
     },
     {
       "id": "SB-RSP-005",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "playbooks"
+      ],
+      "implemented": [
+        "编辑有界顺序步骤、AI 草稿采纳和无副作用演练",
+        "独立保护、确认、核验和解除配置",
+        "已登记模型、插件设备与网关策略绑定，草稿按修订写入，发布冻结摘要"
+      ],
       "remaining": [
-        "剧本 DAG/凭据引用/版本/验证/发布",
-        "副作用统一授权"
+        "分支 DAG、导入模板与跨团队授权"
       ]
     },
     {
       "id": "SB-RSP-006",
-      "state": "missing",
+      "state": "partial",
       "acceptance": "pending",
-      "capabilities": [],
-      "implemented": [],
+      "capabilities": [
+        "playbooks"
+      ],
+      "implemented": [
+        "从原告警启动已发布编排，按本人权限读取和逐步确认",
+        "研判不触发后台自动处置，设备操作复用原签名入口，绑定原审批与材料",
+        "重复提交不推进其他步骤，实际设备回执与解除期限分别持久登记"
+      ],
       "remaining": [
-        "剧本执行状态/审批/等待/取消/恢复/补偿",
-        "并发与故障幂等"
+        "事件自动启动、自动恢复和重试、跨人员审批与完整补偿调度"
       ]
     },
     {
@@ -3398,7 +3434,7 @@
     "Go 全量语句覆盖率与前端语句、分支、函数、行覆盖率必须按实际源码快照达到 90%；执行指标见工程实现与开发。覆盖率达标仅证明已有代码，不授予完整产品发布资格。",
     "持续 PCAP 捕获、独立帧压缩及有界普通 TCP 完整会话导出已有实际工程流程和远程功能测试；历史同源码全量覆盖率达到 90%；仍需对后续源码重新验收。精确包索引、规则来源、自动灰度和在线检测质量矩阵未完成。",
     "置信度校准、具体防火墙／EDR 的实际封禁效果及插件式认证未验收；通用 HTTP 限时租约链路单独核验。",
-    "统计对话、周期报告、告警模型研判、AI 规则生成、九个 MCP 只读工具及受限元数据资源、调查笔记和保护名单已有工程子流程；本批次定向测试不能代替同源码远程、原生与浏览器验收。真实模型领域效果、自动研判规模与恢复、多级审批和剧本编排、自然语言检索、知识库、业务证据资源与下载、应用识别、事件调查完整协作／情报／风险及文件沙箱仍有缺口。",
+    "统计对话、周期报告、告警模型研判、AI 规则生成、九个 MCP 只读工具及受限元数据资源、调查笔记和保护名单已有工程子流程；本批次定向测试不能代替同源码远程、原生与浏览器验收。真实模型领域效果、自动研判规模与恢复、多级审批和编排自动调度、自然语言检索、知识库、业务证据资源与下载、应用识别、事件调查完整协作／情报／风险及文件沙箱仍有缺口。",
     "生产 TLS/R3 队列/HA/备份恢复、真实办公渠道/模型/对象存储/设备/沙箱验收、1–200+ 探针容量和七档 PC 全路由交互验收未完成。",
     "标签发布流水线 .github/workflows/release.yml 只核对工程检查与发行包结构，不再以 107 项全量通过作为自动门禁；正式版本前仍需按核心功能清单完成同源远程端到端与生产部署验收（TLS、最小权限、原生隔离、独立网络）。工程预览 v0.1.0-rc.3 之后的改动尚未发布。"
   ]

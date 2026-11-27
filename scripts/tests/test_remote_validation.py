@@ -96,7 +96,7 @@ class RemoteValidationTests(unittest.TestCase):
         self.assertEqual(backend.call_args.args[-1], (identity["commit"], backend_digest))
 
     def test_workspace_runs_next_group_and_fetches_failure_evidence(self):
-        args = argparse.Namespace(host="home_dev", toolchain_path="/pinned/bin")
+        args = argparse.Namespace(host="home_dev", toolchain_path="/pinned/bin", frontend_workers=4)
         results = {"frontend": {"steps": []}, "contract": {"steps": []}}
         identity = {"commit": "a" * 40, "workspace_sha256": "b" * 64, "clean_commit": True}
         runtime = "/var/tmp/starbeacon-validation-quv450SJABXZ"
@@ -127,5 +127,9 @@ class RemoteValidationTests(unittest.TestCase):
             self.assertFalse(validation.run_remote_checks(args, output, ["frontend", "contract"], results))
         self.assertEqual(results["frontend"]["status"], "failed")
         self.assertEqual(results["contract"]["status"], "passed")
+        frontend = next(call for call in calls if "--worker" in call and "frontend" in call)
+        contract = next(call for call in calls if "--worker" in call and "contract" in call)
+        self.assertEqual(frontend[-2:], ["--frontend-workers", "4"])
+        self.assertNotIn("--frontend-workers", contract)
         self.assertEqual(json.loads((output / "reports/source.json").read_text()), identity)
         self.assertEqual(calls[-1], ["rm", "-rf", "--", runtime])

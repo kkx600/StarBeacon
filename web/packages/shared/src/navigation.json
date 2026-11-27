@@ -551,6 +551,22 @@
       "admin": true
     },
     {
+      "id": "playbooks",
+      "workspace": "playbooks",
+      "path": "/response/playbooks",
+      "title": "自动化编排",
+      "module": "playbooks",
+      "admin": true
+    },
+    {
+      "id": "playbook-runs",
+      "workspace": "playbooks",
+      "path": "/response/playbook-runs",
+      "title": "编排运行记录",
+      "module": "playbookRuns",
+      "admin": true
+    },
+    {
       "id": "channels",
       "workspace": "notifications",
       "path": "/notifications/channels",

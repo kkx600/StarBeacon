@@ -35,7 +35,7 @@ func (p *Postgres) ContinuousDecisionCandidates(ctx context.Context, tenant stri
 		if _, err := tx.Exec(ctx, `SET LOCAL statement_timeout='3s'`); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT `+decisionPolicyColumns+`,j.id,u.revision FROM decision_policies h JOIN decision_policy_revisions v ON v.tenant_id=h.tenant_id AND v.policy_id=h.id AND v.revision=h.revision JOIN users u ON u.tenant_id=v.tenant_id AND u.id=v.created_by AND u.active AND u.role='admin' JOIN alert_triage_jobs j ON j.tenant_id=v.tenant_id AND j.created_by=v.created_by AND j.provider_id=v.definition->'continuous'->>'provider_id' AND j.provider_revision=(v.definition->'continuous'->>'provider_revision')::bigint AND j.created_at>=v.created_at AND j.expires_at>now() AND j.state='succeeded' AND NOT j.cancel_requested AND j.request->>'observation_only' IS DISTINCT FROM 'true' WHERE h.tenant_id=$1 AND h.active AND NOT EXISTS(SELECT 1 FROM decision_continuous_runs r WHERE r.tenant_id=v.tenant_id AND r.policy_id=v.policy_id AND r.policy_revision=v.revision AND r.triage_id=j.id) ORDER BY j.created_at,j.id,v.policy_id LIMIT 16`, tenant)
+		rows, err := tx.Query(ctx, `SELECT `+decisionPolicyColumns+`,j.id,u.revision FROM decision_policies h JOIN decision_policy_revisions v ON v.tenant_id=h.tenant_id AND v.policy_id=h.id AND v.revision=h.revision JOIN users u ON u.tenant_id=v.tenant_id AND u.id=v.created_by AND u.active AND u.role='admin' JOIN alert_triage_jobs j ON j.tenant_id=v.tenant_id AND j.created_by=v.created_by AND j.provider_id=v.definition->'continuous'->>'provider_id' AND j.provider_revision=(v.definition->'continuous'->>'provider_revision')::bigint AND j.created_at>=v.created_at AND j.expires_at>now() AND j.state='succeeded' AND NOT j.cancel_requested AND j.request->>'observation_only' IS DISTINCT FROM 'true' AND j.request->>'manual_only' IS DISTINCT FROM 'true' WHERE h.tenant_id=$1 AND h.active AND NOT EXISTS(SELECT 1 FROM decision_continuous_runs r WHERE r.tenant_id=v.tenant_id AND r.policy_id=v.policy_id AND r.policy_revision=v.revision AND r.triage_id=j.id) ORDER BY j.created_at,j.id,v.policy_id LIMIT 16`, tenant)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func (p *Postgres) CompleteContinuousDecision(ctx context.Context, c DecisionCan
 		if err != nil {
 			return err
 		}
-		if job.CreatedAt.Before(policy.CreatedAt) || job.Evidence.SHA256 != e.Result.EvidenceSHA256 {
+		if job.Request.ManualOnly || job.CreatedAt.Before(policy.CreatedAt) || job.Evidence.SHA256 != e.Result.EvidenceSHA256 {
 			return decision.ErrSource
 		}
 		now := time.Now().UTC().Truncate(time.Microsecond)

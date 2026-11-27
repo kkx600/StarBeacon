@@ -205,7 +205,8 @@ func Evaluate(ctx context.Context, policy Record, job triage.Job, now time.Time)
 	if !policy.Active {
 		result.Reasons = append(result.Reasons, "policy_inactive")
 	}
-	if job.State != "succeeded" || job.Result.State != "succeeded" || job.CancelRequested || job.Request.ObservationOnly || job.Answer == nil || !job.ExpiresAt.After(now) {
+	if job.State != "succeeded" || job.Result.State != "succeeded" || job.CancelRequested || job.Request.ObservationOnly ||
+		job.Request.ManualOnly && policy.Definition.Mode != "approval" || job.Answer == nil || !job.ExpiresAt.After(now) {
 		result.Reasons = append(result.Reasons, "triage_not_eligible")
 	}
 	age := now.Sub(sealed.ObservedAt)

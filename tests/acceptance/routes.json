@@ -54,6 +54,7 @@
     "/response/plugins",
     "/response/evaluations",
     "/response/playbooks",
+    "/response/playbook-runs",
     "/response/policies",
     "/sensors/groups",
     "/sensors/identity",

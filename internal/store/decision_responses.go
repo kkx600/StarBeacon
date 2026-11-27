@@ -134,6 +134,9 @@ func (p *Postgres) CreateDecisionResponse(ctx context.Context, u model.Principal
 			return err
 		}
 		now := time.Now().UTC().Truncate(time.Microsecond)
+		if err := checkPlaybookPlugin(ctx, tx, u, key, evaluation, request, now); err != nil {
+			return err
+		}
 		intent, err := qualifyDecisionConfirmation(ctx, tx, u, evaluation, policy, job, evidence, request, now)
 		if err != nil {
 			return err

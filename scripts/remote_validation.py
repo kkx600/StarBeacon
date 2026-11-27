@@ -185,8 +185,11 @@ def run_remote_checks(args, output, groups, results, frozen_source=None):
             directory = output / group
             directory.mkdir()
             remote_script = runtime + "/source/scripts/remote_validation.py"
+            arguments = ["python3", remote_script, "--worker", group, "--toolchain-path", args.toolchain_path]
+            if group == "frontend":
+                arguments.extend(["--frontend-workers", str(args.frontend_workers)])
             passed = step(directory, result["steps"], "run", lambda log: runner_ssh(
-                args.host, ["python3", remote_script, "--worker", group, "--toolchain-path", args.toolchain_path],
+                args.host, arguments,
                 stdout=log, stderr=subprocess.STDOUT, timeout=2400,
             ))
             result.update(status="passed" if passed else "failed",
@@ -206,7 +209,7 @@ def run_remote_checks(args, output, groups, results, frozen_source=None):
             ))
 
 
-def worker(group, toolchain_path):
+def worker(group, toolchain_path, frontend_workers=2):
     staging = ROOT.parent
     evidence = staging / "reports" / group
     evidence.mkdir()
@@ -222,7 +225,7 @@ def worker(group, toolchain_path):
             ("prototype-install", ["pnpm", "--dir", "prototype", "install", "--frozen-lockfile"]),
             ("web-format", ["pnpm", "--dir", "web", "format:check"]),
             ("prototype-format", ["pnpm", "--dir", "prototype", "format:check"]),
-            ("frontend", [sys.executable, "scripts/qualify_frontend.py", "--output", str(local_frontend), "--max-workers", "2"]),
+            ("frontend", [sys.executable, "scripts/qualify_frontend.py", "--output", str(local_frontend), "--max-workers", str(frontend_workers)]),
             ("prototype-tests", ["node", "--test", "--test-reporter=tap",
                                *(str(p.relative_to(ROOT)) for p in sorted((ROOT / "prototype/scripts").glob("*.test.mjs")))]),
             *((name, ["pnpm", "--dir", "prototype", name]) for name in
@@ -326,11 +329,15 @@ def main():
     parser.add_argument("--backend-state", type=pathlib.Path,
                         default=os.environ.get("SB_CHECK_BACKEND_STATE", str(ACCEPTANCE_DIR / "remote.json")))
     parser.add_argument("--backend-build", choices=("remote", "cached"), default=os.environ.get("SB_CHECK_BACKEND_BUILD", "remote"))
+    parser.add_argument("--frontend-workers", type=int, choices=range(1, 5), default=os.environ.get("SB_CHECK_FRONTEND_WORKERS", "2"),
+                        help="前端执行进程数，默认 2，范围 1–4")
     parser.add_argument("--worker", choices=("frontend", "contract"), help=argparse.SUPPRESS)
     args = parser.parse_args()
 
+    if not 1 <= args.frontend_workers <= 4:
+        parser.error("前端执行进程数须为 1–4")
     if args.worker:
-        return worker(args.worker, args.toolchain_path)
+        return worker(args.worker, args.toolchain_path, args.frontend_workers)
     if args.group not in (*GROUPS, "all") or args.backend_build not in ("remote", "cached"):
         parser.error("验收组或后端构建方式无效")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", args.host) or args.host.startswith("-"):

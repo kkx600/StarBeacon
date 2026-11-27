@@ -32,6 +32,8 @@ const components: Record<string, NonNullable<RouteRecordRaw['component']>> = {
   gatewayBlocks: () => import('./views/GatewayBlocksView.vue'),
   responseDevices: () => import('./views/ResponseDevicesView.vue'),
   responsePlugins: () => import('./views/ResponsePluginsView.vue'),
+  playbooks: () => import('./views/PlaybooksView.vue'),
+  playbookRuns: () => import('./views/PlaybookRunsView.vue'),
 };
 export function screenMeta(screen: PlatformScreen) {
   const workspace = navigationWorkspaces.find(item => item.id === screen.workspace)!;

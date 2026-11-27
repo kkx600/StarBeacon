@@ -4,10 +4,11 @@ import { Alert, Button, Checkbox, Input, Select } from 'ant-design-vue';
 import { SendOutlined } from '@ant-design/icons-vue';
 import { formatTime } from '@starbeacon/shared/types.ts';
 import { useAnalysis } from '../analysis/useAnalysis';
-import { analysisCodes, blankRequest, draftStepNames, stateNames, working } from '../analysis/analysis';
+import { analysisCodes, blankRequest, draftStepNames, stateNames, working, type DraftStep } from '../analysis/analysis';
 import { useModels } from '../models/useModels';
 
-const props = defineProps<{ draft: boolean; context: string; question?: string }>();
+const props = defineProps<{ draft: boolean; context: string; question?: string; adoptable?: boolean }>();
+const emit = defineEmits<{ adopt: [steps: DraftStep[]] }>();
 const analysis = useAnalysis('chat');
 const models = useModels();
 const provider = shallowRef<string>();
@@ -105,6 +106,7 @@ async function send() {
           <small class="muted">{{ row.sources.join('、') }}</small>
         </div>
       </template>
+      <Button v-if="adoptable && job.answer.steps?.length" @click="emit('adopt', job.answer.steps!)">采用草稿</Button>
     </template>
     <p v-else-if="!working(job.state)">{{ analysisCodes[job.result.code] ?? '模型未返回可用结果。' }}</p>
   </section>

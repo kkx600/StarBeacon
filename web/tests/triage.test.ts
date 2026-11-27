@@ -364,7 +364,7 @@ describe('模型研判请求与生命周期', () => {
 });
 
 describe('告警模型研判交互', () => {
-  it('管理员从告警详情携带真实标识与摘要建立事件，只读账号没有操作入口', async () => {
+  it('管理员从告警详情携带真实标识与摘要建立事件或运行编排，只读账号没有操作入口', async () => {
     const navigate = vi.spyOn(router, 'push').mockResolvedValue(undefined);
     const alert: Alert = {
       event_id: triageEvent,
@@ -394,9 +394,16 @@ describe('告警模型研判交互', () => {
       query: { alert_id: triageEvent, sha256: triageDigest },
     });
     expect(wrapper.emitted('close')).toHaveLength(1);
+    await click('运行编排');
+    expect(navigate).toHaveBeenLastCalledWith({
+      path: '/response/playbooks',
+      query: { event_id: triageEvent, sha256: triageDigest },
+    });
+    expect(wrapper.emitted('close')).toHaveLength(2);
     (session.current as ShallowRef<Principal | null>).value = { ...principal, role: 'viewer' };
     await flushPromises();
     expect(document.body.textContent).not.toContain('建立事件调查');
+    expect(document.body.textContent).not.toContain('运行编排');
   });
   it('保持无业务表格布局，明确本次数据许可、模型自评分和真实引用', async () => {
     const wrapper = await workspace();

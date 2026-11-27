@@ -35,6 +35,7 @@ export interface TriageRequest {
   note: string;
   allow_context: boolean;
   observation_only?: boolean;
+  manual_only?: boolean;
 }
 interface TriageFact {
   id: string;
@@ -150,7 +151,8 @@ export function sameTriageRequest(a: TriageRequest, b: TriageRequest) {
     a.provider_revision === b.provider_revision &&
     a.note === b.note &&
     a.allow_context === b.allow_context &&
-    !!a.observation_only === !!b.observation_only
+    !!a.observation_only === !!b.observation_only &&
+    !!a.manual_only === !!b.manual_only
   );
 }
 export function validTriageRequest(v: unknown): v is TriageRequest {
@@ -163,7 +165,9 @@ export function validTriageRequest(v: unknown): v is TriageRequest {
     Number(v.provider_revision) > 0 &&
     text(v.note, 2000, true) &&
     v.allow_context === true &&
-    (v.observation_only === undefined || typeof v.observation_only === 'boolean')
+    (v.observation_only === undefined || typeof v.observation_only === 'boolean') &&
+    (v.manual_only === undefined || typeof v.manual_only === 'boolean') &&
+    !(v.observation_only && v.manual_only)
   );
 }
 export function validTriageProviders(v: unknown): v is { items: TriageProvider[]; available: boolean } {

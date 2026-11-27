@@ -95,6 +95,8 @@ describe('业务导航与路由契约', () => {
     '/response/evaluations',
     '/response/plugins',
     '/response/gateway-blocks',
+    '/response/playbooks',
+    '/response/playbook-runs',
     '/ai/mcp',
     '/reports/plans',
   ])('实际路由 %s 的页面标题与导航名称一致', async path => {
@@ -160,7 +162,7 @@ describe('业务导航与路由契约', () => {
   it('两个角色的侧栏只包含可访问的工程工作区，并进入各自的首个可用视图', () => {
     const viewer = navigationForRole(false);
     const admin = navigationForRole(true);
-    expect(admin.flatMap(group => group.children)).toHaveLength(29);
+    expect(admin.flatMap(group => group.children)).toHaveLength(30);
     for (const [groups, screens] of [
       [viewer, platformScreens.filter(screen => !screen.admin)],
       [admin, platformScreens],
@@ -266,9 +268,10 @@ describe('业务导航与路由契约', () => {
     const rows = wrapper.findAll('tr[data-row-key]');
     expect(rows).toHaveLength(43);
     const unavailable = rows.filter(row => row.text().includes('当前版本未提供'));
-    expect(unavailable).toHaveLength(15);
+    expect(unavailable).toHaveLength(14);
     expect(unavailable.every(row => row.get('button').attributes('disabled') !== undefined)).toBe(true);
     expect(rows.find(row => row.attributes('data-row-key') === 'ai-ops')?.text()).not.toContain('当前版本未提供');
+    expect(rows.find(row => row.attributes('data-row-key') === 'playbooks')?.text()).not.toContain('当前版本未提供');
     expect(unavailable.find(row => row.attributes('data-row-key') === 'users')?.text()).toContain('认证与授权');
     await categories.get('a[href="/system/settings/users"]').trigger('click');
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/system/settings/users'));
