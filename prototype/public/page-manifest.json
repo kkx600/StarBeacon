@@ -4327,37 +4327,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/auth-plugins?state=data",
+          "url": "/response/plugins?state=data",
           "image": "auth-plugins/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/auth-plugins?state=empty",
+          "url": "/response/plugins?state=empty",
           "image": "auth-plugins/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/auth-plugins?state=detail",
+          "url": "/response/plugins?state=detail",
           "image": "auth-plugins/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/auth-plugins?state=action",
+          "url": "/response/plugins?state=action",
           "image": "auth-plugins/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/auth-plugins?state=loading",
+          "url": "/response/plugins?state=loading",
           "image": "auth-plugins/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/auth-plugins?state=error",
+          "url": "/response/plugins?state=error",
           "image": "auth-plugins/error.jpg"
         }
       ]
@@ -4425,37 +4425,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/playbooks?state=data",
+          "url": "/response/playbooks?state=data",
           "image": "playbooks/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/playbooks?state=empty",
+          "url": "/response/playbooks?state=empty",
           "image": "playbooks/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/playbooks?state=detail",
+          "url": "/response/playbooks?state=detail",
           "image": "playbooks/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/playbooks?state=action",
+          "url": "/response/playbooks?state=action",
           "image": "playbooks/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/playbooks?state=loading",
+          "url": "/response/playbooks?state=loading",
           "image": "playbooks/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/playbooks?state=error",
+          "url": "/response/playbooks?state=error",
           "image": "playbooks/error.jpg"
         }
       ]
@@ -4474,37 +4474,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/playbook-runs?state=data",
+          "url": "/response/playbook-runs?state=data",
           "image": "playbook-runs/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/playbook-runs?state=empty",
+          "url": "/response/playbook-runs?state=empty",
           "image": "playbook-runs/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/playbook-runs?state=detail",
+          "url": "/response/playbook-runs?state=detail",
           "image": "playbook-runs/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/playbook-runs?state=action",
+          "url": "/response/playbook-runs?state=action",
           "image": "playbook-runs/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/playbook-runs?state=loading",
+          "url": "/response/playbook-runs?state=loading",
           "image": "playbook-runs/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/playbook-runs?state=error",
+          "url": "/response/playbook-runs?state=error",
           "image": "playbook-runs/error.jpg"
         }
       ]
@@ -6952,7 +6952,7 @@
       "title": "系统设置",
       "group": "system",
       "kind": "table",
-      "description": "系统级配置集中在这里：用户、自动处置、旁路阻断、全流量存储和探针健康。",
+      "description": "集中管理用户、自动处置、网关阻断、全流量存储和探针健康设置。",
       "requirements": [],
       "states": [
         {
@@ -7054,37 +7054,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/ai-ops?state=data",
+          "url": "/ai/ai-ops?state=data",
           "image": "ai-ops/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/ai-ops?state=empty",
+          "url": "/ai/ai-ops?state=empty",
           "image": "ai-ops/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/ai-ops?state=detail",
+          "url": "/ai/ai-ops?state=detail",
           "image": "ai-ops/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/ai-ops?state=action",
+          "url": "/ai/ai-ops?state=action",
           "image": "ai-ops/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/ai-ops?state=loading",
+          "url": "/ai/ai-ops?state=loading",
           "image": "ai-ops/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/ai-ops?state=error",
+          "url": "/ai/ai-ops?state=error",
           "image": "ai-ops/error.jpg"
         }
       ]
@@ -7092,10 +7092,10 @@
     {
       "id": "bypass-blocking",
       "workspace": "响应动作",
-      "title": "旁路阻断",
+      "title": "网关阻断",
       "group": "response",
       "kind": "bypass",
-      "description": "由采集器向命中的连接注入 TCP RST 或 ICMP 不可达，先断开连接，再由联动插件完成持久封禁。",
+      "description": "受控网关对已观测的连接应用限时防火墙条目，记录出侧流量结果及按策略授权的联动封禁。",
       "requirements": [
         "SB-RSP-004"
       ],
@@ -7103,37 +7103,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/bypass-blocking?state=data",
+          "url": "/response/gateway-blocks?state=data",
           "image": "bypass-blocking/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/bypass-blocking?state=empty",
+          "url": "/response/gateway-blocks?state=empty",
           "image": "bypass-blocking/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/bypass-blocking?state=detail",
+          "url": "/response/gateway-blocks?state=detail",
           "image": "bypass-blocking/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/bypass-blocking?state=action",
+          "url": "/response/gateway-blocks?state=action",
           "image": "bypass-blocking/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/bypass-blocking?state=loading",
+          "url": "/response/gateway-blocks?state=loading",
           "image": "bypass-blocking/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/bypass-blocking?state=error",
+          "url": "/response/gateway-blocks?state=error",
           "image": "bypass-blocking/error.jpg"
         }
       ]
@@ -7153,37 +7153,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/full-traffic?state=data",
+          "url": "/traffic/full-traffic?state=data",
           "image": "full-traffic/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/full-traffic?state=empty",
+          "url": "/traffic/full-traffic?state=empty",
           "image": "full-traffic/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/full-traffic?state=detail",
+          "url": "/traffic/full-traffic?state=detail",
           "image": "full-traffic/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/full-traffic?state=action",
+          "url": "/traffic/full-traffic?state=action",
           "image": "full-traffic/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/full-traffic?state=loading",
+          "url": "/traffic/full-traffic?state=loading",
           "image": "full-traffic/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/full-traffic?state=error",
+          "url": "/traffic/full-traffic?state=error",
           "image": "full-traffic/error.jpg"
         }
       ]

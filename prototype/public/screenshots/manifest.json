@@ -1404,7 +1404,7 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/auth-plugins?state=data",
+          "url": "/response/plugins?state=data",
           "image": "auth-plugins/data.jpg"
         }
       ]
@@ -1438,37 +1438,37 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/playbooks?state=data",
+          "url": "/response/playbooks?state=data",
           "image": "playbooks/data.jpg"
         },
         {
           "state": "empty",
           "title": "无数据",
-          "url": "/page/playbooks?state=empty",
+          "url": "/response/playbooks?state=empty",
           "image": "playbooks/empty.jpg"
         },
         {
           "state": "detail",
           "title": "查看详情",
-          "url": "/page/playbooks?state=detail",
+          "url": "/response/playbooks?state=detail",
           "image": "playbooks/detail.jpg"
         },
         {
           "state": "action",
           "title": "操作表单",
-          "url": "/page/playbooks?state=action",
+          "url": "/response/playbooks?state=action",
           "image": "playbooks/action.jpg"
         },
         {
           "state": "loading",
           "title": "加载中",
-          "url": "/page/playbooks?state=loading",
+          "url": "/response/playbooks?state=loading",
           "image": "playbooks/loading.jpg"
         },
         {
           "state": "error",
           "title": "加载失败",
-          "url": "/page/playbooks?state=error",
+          "url": "/response/playbooks?state=error",
           "image": "playbooks/error.jpg"
         }
       ]
@@ -1485,7 +1485,7 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/playbook-runs?state=data",
+          "url": "/response/playbook-runs?state=data",
           "image": "playbook-runs/data.jpg"
         }
       ]
@@ -2451,7 +2451,7 @@
       "id": "system-settings",
       "title": "系统设置",
       "group": "system",
-      "description": "系统级配置集中在这里：用户、自动处置、旁路阻断、全流量存储和探针健康。",
+      "description": "集中管理用户、自动处置、网关阻断、全流量存储和探针健康设置。",
       "requirements": [],
       "states": [
         {
@@ -2490,16 +2490,16 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/ai-ops?state=data",
+          "url": "/ai/ai-ops?state=data",
           "image": "ai-ops/data.jpg"
         }
       ]
     },
     {
       "id": "bypass-blocking",
-      "title": "旁路阻断",
+      "title": "网关阻断",
       "group": "response",
-      "description": "由采集器向命中的连接注入 TCP RST 或 ICMP 不可达，先断开连接，再由联动插件完成持久封禁。",
+      "description": "受控网关对已观测的连接应用限时防火墙条目，记录出侧流量结果及按策略授权的联动封禁。",
       "requirements": [
         "SB-RSP-004"
       ],
@@ -2507,7 +2507,7 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/bypass-blocking?state=data",
+          "url": "/response/gateway-blocks?state=data",
           "image": "bypass-blocking/data.jpg"
         }
       ]
@@ -2525,7 +2525,7 @@
         {
           "state": "data",
           "title": "有数据",
-          "url": "/page/full-traffic?state=data",
+          "url": "/traffic/full-traffic?state=data",
           "image": "full-traffic/data.jpg"
         }
       ]
